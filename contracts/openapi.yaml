@@ -1278,7 +1278,10 @@ paths:
       - incidents
   /v1/incidents/stream:
     get:
-      description: 'SSE: `event: incident`, data = one Incident (contracts/incident.schema.json).'
+      description: 'SSE: `event: incident`, data = one Incident (contracts/incident.schema.json).
+
+
+        Non-operator keys never receive action drafts, args or approver names.'
       operationId: incidents_stream_v1_incidents_stream_get
       parameters:
       - in: header
@@ -1343,7 +1346,8 @@ paths:
       - incidents
   /v1/incidents/{incident_id}:
     get:
-      description: One incident (contracts/incident.schema.json).
+      description: One incident (contracts/incident.schema.json). Action drafts/args/approver only for
+        operator scope.
       operationId: get_incident_v1_incidents__incident_id__get
       parameters:
       - in: path

@@ -8,7 +8,7 @@ The machine-readable sources of truth are in `contracts/`. Pydantic models in `p
 | `evidence.schema.json` | signals → arbiter → reasons |
 | `signal.schema.json` | signal plugin registration (`add-signal` skill) |
 | `event.schema.json` | Redis Stream `fl:events` → Sentinel |
-| `incident.schema.json` | Sentinel → board, REST, MCP, STIX |
+| `incident.schema.json` | Sentinel → board, REST, MCP, STIX. Timeline entries carry `what` (compat) plus optional bilingual `what_ar` / `what_en` |
 | `campaign.schema.json` | `GET /v1/campaigns`, SSE `/v1/campaigns/stream` (projection of an incident; computed by the API) |
 | `tools.schema.json` | investigator, Sentinel and MCP tool registry plus the JSON `Action` |
 | `openapi.yaml` | REST v1. FastAPI generates it; CI checks it hasn't drifted from the committed file |
@@ -18,7 +18,7 @@ Key invariants:
 2. `verdict` is never the word "safe".
 3. `no_warning_signs` always carries `actions.caution`.
 4. Degraded verdicts are never `no_warning_signs`.
-5. URLs in any output are defanged.
+5. URLs in any output are defanged. **One exception (L1 decision):** `GET /v1/intel/stix` returns fully refanged indicator values inside STIX patterns (valid STIX 2.1) and only to callers with the `intel` scope. Incidents, campaigns, MCP and the board stay defanged.
 6. Events and incidents never carry raw page or message text.
 
 ## Internal messages (API <-> worker)

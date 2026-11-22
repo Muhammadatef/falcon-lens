@@ -12,6 +12,8 @@ from pydantic import Field
 
 WAIT_S = 8
 READ_ONLY = ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True, open_world_hint=False)
+# check_* submit a job (and may enqueue analysis), so they are not read-only; repeating one is harmless.
+CHECK = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=True, open_world_hint=False)
 WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=False)
 
 INSTRUCTIONS = (
@@ -69,7 +71,7 @@ def _verdict_result(r: httpx.Response) -> dict[str, Any]:
 def build_mcp(api: ApiClient, *, name: str = "falcon-lens") -> MCPServer:
     mcp = MCPServer(name, instructions=INSTRUCTIONS, version="0.1.0")
 
-    @mcp.tool(annotations=READ_ONLY)
+    @mcp.tool(annotations=CHECK)
     async def check_url(
         url: Annotated[str, Field(min_length=1, max_length=4096, description="URL to check.")],
     ) -> dict[str, Any]:
@@ -77,7 +79,7 @@ def build_mcp(api: ApiClient, *, name: str = "falcon-lens") -> MCPServer:
         Returns the best verdict so far; `final=false` means call get_verdict again shortly."""
         return _verdict_result(await api.request("POST", "/v1/check/url", params={"wait": WAIT_S}, json={"url": url}))
 
-    @mcp.tool(annotations=READ_ONLY)
+    @mcp.tool(annotations=CHECK)
     async def check_message(
         text: Annotated[str, Field(min_length=1, max_length=8000, description="SMS/WhatsApp/chat message text.")],
     ) -> dict[str, Any]:
@@ -85,7 +87,7 @@ def build_mcp(api: ApiClient, *, name: str = "falcon-lens") -> MCPServer:
         r = await api.request("POST", "/v1/check/message", params={"wait": WAIT_S}, json={"text": text})
         return _verdict_result(r)
 
-    @mcp.tool(annotations=READ_ONLY)
+    @mcp.tool(annotations=CHECK)
     async def check_email(
         raw_email: Annotated[
             str, Field(min_length=1, max_length=2_000_000, description="Full RFC 5322 source (.eml).")

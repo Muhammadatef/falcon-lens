@@ -36,6 +36,7 @@ from falcon_api.auth import (
     MemoryKeyStore,
     Principal,
     ip_digest,
+    refuse_default_secrets,
 )
 from falcon_api.auth import StoreUnavailableError as AuthStoreUnavailableError
 from falcon_api.canon import canonicalize_url, sha256_hex
@@ -59,6 +60,9 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_WAIT_S = 8.0
 SSE_HEARTBEAT_S = 5.0
 SSE_MAX_S = 120.0
+SSE_SLOT_TTL_S = 330.0
+MAX_STREAMS_PER_KEY = 5
+MAX_STREAMS_PER_IP = 3
 _JSON_OVERHEAD = 64 * 1024
 BODY_LIMITS = {
     "/v1/check/url": 32 * 1024,
@@ -150,6 +154,15 @@ def build_app(
         "webhook_task": None,
     }
     pepper = settings.fl_api_key_pepper.get_secret_value() if settings.fl_api_key_pepper else None
+    refuse_default_secrets(
+        settings.fl_env,
+        {
+            "FL_API_KEY_PEPPER": pepper,
+            "FL_OPERATOR_KEY": settings.fl_operator_key.get_secret_value() if settings.fl_operator_key else None,
+            "FL_WEBHOOK_SECRET": settings.fl_webhook_secret.get_secret_value() if settings.fl_webhook_secret else None,
+            "FL_MCP_SERVICE_KEY": os.environ.get("FL_MCP_SERVICE_KEY"),
+        },
+    )
 
     def secret(v: Any) -> str | None:
         return v.get_secret_value() if v is not None else None
@@ -180,8 +193,14 @@ def build_app(
             await state["keystore"].init()
             auth = Authenticator(state["keystore"], pepper)
             seeds = [
-                ("sandbox", secret(settings.fl_sandbox_api_key), ["check", "read"], 30, "public sandbox key"),
-                ("operator", secret(settings.fl_operator_key), ["check", "read", "operator", "intel"], 120, "operator"),
+                ("sandbox", secret(settings.fl_sandbox_api_key), ["check"], 30, "public sandbox key (check only)"),
+                (
+                    "operator",
+                    secret(settings.fl_operator_key),
+                    ["read", "operator"],
+                    120,
+                    "operator (read + approve/reject)",
+                ),
                 ("mcp-service", os.environ.get("FL_MCP_SERVICE_KEY"), ["check", "read"], 120, "MCP service key"),
             ]
             for key_id, key, scopes, rate, label in seeds:
@@ -196,7 +215,7 @@ def build_app(
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         if state["redis"] is None and settings.redis_url:
-            state["redis"] = aioredis.from_url(settings.redis_url, decode_responses=True)
+            state["redis"] = aioredis.from_url(settings.redis_url, decode_responses=True, max_connections=64)
         if state["store"] is None and settings.database_url:
             state["store"] = PgVerdictStore(settings.database_url.get_secret_value())
         if state["redis"] is not None:
@@ -279,6 +298,41 @@ def build_app(
 
     def is_authed(request: Request) -> bool:
         return principal_of(request) is not None
+
+    # ---- concurrent SSE caps (in-process; one API replica) -----------------------------------
+    slots: dict[str, dict[str, float]] = {}
+
+    def slot_bucket(request: Request) -> tuple[str, int]:
+        p = principal_of(request)
+        return (f"key:{p.key_id}", MAX_STREAMS_PER_KEY) if p else (f"ip:{client_ip(request)}", MAX_STREAMS_PER_IP)
+
+    def stream_acquire(request: Request) -> None:
+        bucket, cap = slot_bucket(request)
+        now = time.monotonic()
+        held = slots.setdefault(bucket, {})
+        for tok, exp in list(held.items()):  # a slot whose stream never started expires on its own
+            if exp < now:
+                del held[tok]
+        if len(held) >= cap:
+            rate_limited.labels("stream").inc()
+            raise Problem(
+                429,
+                "too-many-streams",
+                "Too many concurrent streams",
+                headers={"Retry-After": "5", "X-RateLimit-Limit": str(cap)},
+            )
+        tok = uuid.uuid4().hex
+        held[tok] = now + SSE_SLOT_TTL_S
+        request.state.stream_slot = (bucket, tok)
+
+    def stream_release(request: Request) -> None:
+        slot = getattr(request.state, "stream_slot", None)
+        if slot:
+            slots.get(slot[0], {}).pop(slot[1], None)
+            request.state.stream_slot = None
+
+    def stream_gate(request: Request) -> None:
+        stream_acquire(request)
 
     def get_sentinel() -> SentinelClient:
         if state["sentinel"] is None:
@@ -366,7 +420,9 @@ def build_app(
             except AuthStoreUnavailableError:
                 resp = problem_response(request, Problem(503, "auth-unavailable", "Key store unavailable"))
             else:
-                if principal is None:
+                if principal is None and await count(f"rl:badkey:{client_ip(request)}:{int(time.time() // 60)}") > 10:
+                    resp = rate_response(request, 10, "badkey")
+                elif principal is None:
                     resp = problem_response(
                         request,
                         Problem(401, "unauthorized", "Invalid API key", headers={"WWW-Authenticate": "Bearer"}),
@@ -670,27 +726,33 @@ def build_app(
         responses={**PROBLEM_RESPONSES, 404: {"description": "Unknown verdict id (problem+json)"}},
     )
     async def verdict_events(
-        request: Request, verdict_id: Annotated[str, Depends(known_verdict)], _key: ApiKey = None
+        request: Request,
+        verdict_id: Annotated[str, Depends(known_verdict)],
+        _gate: Annotated[None, Depends(stream_gate)],
+        _key: ApiKey = None,
     ) -> AsyncIterator[ServerSentEvent]:
         """SSE stream of `event: verdict` messages (verdict JSON); closes after `final: true`."""
-        authenticated = is_authed(request)
-        j = jobs()
-        started = last_hb = time.monotonic()
-        n = 0
-        yield ServerSentEvent(comment="stream open", retry=3000)
-        async for doc in j.watch(verdict_id):
-            now = time.monotonic()
-            if doc is None:
-                if now - started > SSE_MAX_S:
-                    return
-                if now - last_hb >= SSE_HEARTBEAT_S:
-                    last_hb = now
-                    yield ServerSentEvent(comment="heartbeat")
-                continue
-            await j.note_final(doc)
-            yield ServerSentEvent(data=public_doc(doc, authenticated), event="verdict", id=f"{verdict_id}.{n}")
-            n += 1
-            last_hb = now
+        try:
+            authenticated = is_authed(request)
+            j = jobs()
+            started = last_hb = time.monotonic()
+            n = 0
+            yield ServerSentEvent(comment="stream open", retry=3000)
+            async for doc in j.watch(verdict_id):
+                now = time.monotonic()
+                if doc is None:
+                    if now - started > SSE_MAX_S:
+                        return
+                    if now - last_hb >= SSE_HEARTBEAT_S:
+                        last_hb = now
+                        yield ServerSentEvent(comment="heartbeat")
+                    continue
+                await j.note_final(doc)
+                yield ServerSentEvent(data=public_doc(doc, authenticated), event="verdict", id=f"{verdict_id}.{n}")
+                n += 1
+                last_hb = now
+        finally:
+            stream_release(request)
 
     async def verdict_known(verdict_id: str) -> bool:
         try:
@@ -710,6 +772,8 @@ def build_app(
             idem_save=idem_save,
             source_for=source_for,
             known_verdict=verdict_known,
+            stream_acquire=stream_acquire,
+            stream_release=stream_release,
         ),
     )
     return app

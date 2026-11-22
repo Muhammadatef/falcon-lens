@@ -72,6 +72,17 @@ def _allowed_hosts(settings: Settings) -> list[str]:
 
 def build_app(settings: Settings | None = None, *, api_transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
     settings = settings or get_settings()
+    bearer = settings.fl_mcp_bearer_token.get_secret_value() if settings.fl_mcp_bearer_token else None
+    if settings.fl_env != "local":
+        bad = [
+            n
+            for n, v in (("FL_MCP_BEARER_TOKEN", bearer), ("FL_MCP_SERVICE_KEY", os.environ.get("FL_MCP_SERVICE_KEY")))
+            if v and v.lower().startswith("change-me")
+        ]
+        if bad:
+            raise RuntimeError(
+                f"refusing to start with FL_ENV={settings.fl_env}: placeholder values for {', '.join(bad)}"
+            )
     api = ApiClient(
         os.environ.get("FL_API_URL", "http://api:8000"), os.environ.get("FL_MCP_SERVICE_KEY"), transport=api_transport
     )

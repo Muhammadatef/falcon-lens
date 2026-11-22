@@ -16,6 +16,7 @@ import yaml
 
 from falcon_api.problem import Problem
 from falcon_core.config import Settings
+from falcon_core.tools.stix import build_bundle as core_build_bundle
 
 CAMPAIGN_TYPES = ("campaign", "kit_reuse")
 SERIES_BUCKETS = 12
@@ -33,9 +34,13 @@ class SentinelClient:
     async def close(self) -> None:
         await self._http.aclose()
 
-    async def _call(self, method: str, path: str, **kw: Any) -> Any:
+    async def _call(self, method: str, path: str, *, name: str | None = None, **kw: Any) -> Any:
+        # The sentinel's internal routes all require the operator key (reads included).
+        headers = {"X-Operator-Key": self._key or ""}
+        if name:
+            headers["X-Operator-Name"] = name
         try:
-            r = await self._http.request(method, path, **kw)
+            r = await self._http.request(method, path, headers=headers, **kw)
         except httpx.HTTPError as exc:
             raise Problem(503, "sentinel-unavailable", "Sentinel unavailable") from exc
         if r.status_code == 404:
@@ -58,14 +63,24 @@ class SentinelClient:
             raise Problem(502, "sentinel-error", "Sentinel returned an unexpected body")
         return data
 
-    async def decide(self, incident_id: str, action_id: str, approve: bool) -> dict[str, Any]:
+    async def decide(self, incident_id: str, action_id: str, approve: bool, name: str) -> dict[str, Any]:
         verb = "approve" if approve else "reject"
-        data = await self._call(
-            "POST",
-            f"/internal/incidents/{incident_id}/actions/{action_id}/{verb}",
-            headers={"X-Operator-Key": self._key or ""},
-        )
+        data = await self._call("POST", f"/internal/incidents/{incident_id}/actions/{action_id}/{verb}", name=name)
         return data if isinstance(data, dict) else {}
+
+
+# ---- redaction -------------------------------------------------------------------------------------
+
+_ACTION_PRIVATE = ("draft", "args", "approved_by")
+
+
+def view_incident(inc: dict[str, Any], *, operator: bool) -> dict[str, Any]:
+    """Operators see everything; other scopes never see takedown drafts, action args or approver names."""
+    if operator:
+        return inc
+    out = dict(inc)
+    out["actions"] = [{k: v for k, v in a.items() if k not in _ACTION_PRIVATE} for a in inc.get("actions", [])]
+    return out
 
 
 # ---- cursor pagination ---------------------------------------------------------------------------
@@ -167,76 +182,10 @@ def is_campaign(inc: dict[str, Any]) -> bool:
 _NS = uuid.UUID("5d0c9a52-6f0e-4b86-9d0e-2f6b4a0c7a11")
 
 
-def _fallback_bundle(inc: dict[str, Any]) -> dict[str, Any]:
-    """Minimal STIX 2.1 bundle (identity + indicators + grouping); replaced by falcon_core.tools.stix once merged."""
-    iid = inc["incident_id"]
-
-    def sid(kind: str, *parts: str) -> str:
-        return f"{kind}--{uuid.uuid5(_NS, '|'.join(parts))}"
-
-    def ts(v: str) -> str:
-        return _dt(v).astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-
-    ident = sid("identity", "falcon-lens-sentinel")
-    created, modified = ts(inc["created_at"]), ts(inc["updated_at"])
-    objs: list[dict[str, Any]] = [
-        {
-            "type": "identity",
-            "spec_version": "2.1",
-            "id": ident,
-            "created": created,
-            "modified": created,
-            "name": "Falcon Lens Sentinel",
-            "identity_class": "system",
-        }
-    ]
-    refs: list[str] = []
-    for ind in inc.get("indicators", []):
-        val = str(ind["value_defanged"]).replace("[.]", ".").replace("\\", "\\\\").replace("'", "\\'")
-        pat = {"domain": "domain-name", "url": "url", "ip": "ipv4-addr"}.get(ind["kind"])
-        if pat is None:
-            continue
-        oid = sid("indicator", iid, ind["kind"], ind["value_defanged"])
-        refs.append(oid)
-        objs.append(
-            {
-                "type": "indicator",
-                "spec_version": "2.1",
-                "id": oid,
-                "created_by_ref": ident,
-                "created": ts(ind["first_seen"]),
-                "modified": modified,
-                "name": f"{ind['kind']} {ind['value_defanged']}",
-                "indicator_types": ["malicious-activity"],
-                "pattern": f"[{pat}:value = '{val}']",
-                "pattern_type": "stix",
-                "valid_from": ts(ind["first_seen"]),
-                "labels": [f"falcon-incident:{iid}", f"source:{inc['source']}"],
-            }
-        )
-    objs.append(
-        {
-            "type": "grouping",
-            "spec_version": "2.1",
-            "id": sid("grouping", iid),
-            "created_by_ref": ident,
-            "created": created,
-            "modified": modified,
-            "name": f"Falcon Lens incident {iid} ({inc['type']})",
-            "context": "suspicious-activity",
-            "object_refs": refs or [ident],
-        }
-    )
-    return {"type": "bundle", "id": sid("bundle", iid, modified), "objects": objs}
-
-
 def build_bundle(inc: dict[str, Any]) -> dict[str, Any]:
-    try:
-        from falcon_core.tools.stix import build_bundle as core_build  # type: ignore[import-not-found,unused-ignore]
-
-        return core_build(inc)  # type: ignore[no-any-return]
-    except ImportError:
-        return _fallback_bundle(inc)
+    """Valid STIX 2.1 (refanged patterns). Documented exception to CONTRACTS invariant 5: only /v1/intel/stix, only
+    for `intel`-scope callers. Everything else the API serves stays defanged."""
+    return core_build_bundle(inc, refang=True)
 
 
 def merge_bundles(incidents: list[dict[str, Any]]) -> dict[str, Any]:

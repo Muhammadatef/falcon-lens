@@ -12,6 +12,7 @@ import hmac
 import logging
 import secrets
 import time
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol
@@ -23,6 +24,8 @@ log = logging.getLogger("falcon.api.auth")
 
 SCOPES = ("check", "read", "operator", "intel")
 CACHE_TTL_S = 30.0
+NEG_CACHE_TTL_S = 5.0
+CACHE_MAX = 2048
 _HASHER = PasswordHasher()  # argon2id (RFC 9106 low-memory profile)
 
 
@@ -131,14 +134,15 @@ class Authenticator:
     def __init__(self, store: KeyStore, pepper: str) -> None:
         self.store = store
         self.pepper = pepper
-        self._cache: dict[str, tuple[float, Principal | None]] = {}
+        self._cache: OrderedDict[str, tuple[float, Principal | None]] = OrderedDict()
         self._lock = asyncio.Lock()
 
     async def authenticate(self, key: str) -> Principal | None:
         fp = fingerprint(self.pepper, key)
         hit = self._cache.get(fp)
         now = time.monotonic()
-        if hit and now - hit[0] < CACHE_TTL_S:
+        if hit and now - hit[0] < (CACHE_TTL_S if hit[1] else NEG_CACHE_TTL_S):
+            self._cache.move_to_end(fp)
             return hit[1]
         rec = await self.store.find(fp)
         principal: Principal | None = None
@@ -148,8 +152,9 @@ class Authenticator:
             if ok:
                 principal = Principal(rec.key_id, frozenset(rec.scopes), rec.rate_limit_per_min, rec.label)
         self._cache[fp] = (now, principal)
-        if len(self._cache) > 4096:
-            self._cache.clear()
+        self._cache.move_to_end(fp)
+        while len(self._cache) > CACHE_MAX:  # LRU: random bad keys cannot grow memory or evict everything at once
+            self._cache.popitem(last=False)
         return principal
 
     async def seed(self, key_id: str, key: str, scopes: list[str], rate: int, label: str) -> None:
@@ -176,3 +181,15 @@ class Authenticator:
         h = await asyncio.to_thread(hash_key, self.pepper, key)
         await self.store.put(KeyRecord(key_id, fingerprint(self.pepper, key), h, scopes, rate, label))
         return key_id, key
+
+
+DEFAULT_PREFIX = "change-me"
+
+
+def refuse_default_secrets(env: str, secrets_in_use: dict[str, str | None]) -> None:
+    """Outside FL_ENV=local, refuse to start while any secret still carries a `change-me*` placeholder."""
+    if env == "local":
+        return
+    bad = sorted(k for k, v in secrets_in_use.items() if v and v.lower().startswith(DEFAULT_PREFIX))
+    if bad:
+        raise RuntimeError(f"refusing to start with FL_ENV={env}: placeholder values still set for {', '.join(bad)}")

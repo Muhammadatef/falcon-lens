@@ -10,7 +10,7 @@ import fakeredis
 import httpx
 import httpx2
 import pytest
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from mcp import Client
 from mcp.client.streamable_http import streamable_http_client
 from pydantic import SecretStr
@@ -47,7 +47,18 @@ def make_incident(n: int) -> dict[str, Any]:
         "indicators": [{"kind": "domain", "value_defanged": f"demo-{n}[.]test", "first_seen": "2026-11-22T01:00:00Z"}],
         "linked_verdicts": [],
         "timeline": [],
-        "actions": [],
+        "actions": [
+            {
+                "action_id": "act_1",
+                "tool": "draft_takedown",
+                "mode": "external_draft",
+                "status": "awaiting_approval",
+                "args": {"k": "v"},
+                "draft": {"subject": "s"},
+                "evidence_ids": [],
+                "approved_by": "someone",
+            }
+        ],
         "source": "synthetic",
         "created_at": "2026-11-22T01:00:00Z",
         "updated_at": f"2026-11-22T0{n}:00:00Z",
@@ -55,7 +66,11 @@ def make_incident(n: int) -> dict[str, Any]:
 
 
 def fake_sentinel(incidents: list[dict[str, Any]]) -> FastAPI:
-    app = FastAPI()
+    def gate(x_operator_key: str | None = Header(None)) -> None:
+        if x_operator_key != "op-key":
+            raise HTTPException(401)
+
+    app = FastAPI(dependencies=[Depends(gate)])
 
     @app.get("/internal/incidents")
     async def lst() -> list[dict[str, Any]]:
@@ -84,7 +99,9 @@ def settings(**kw: Any) -> Settings:
 def api_app(monkeypatch: pytest.MonkeyPatch) -> Any:
     monkeypatch.setenv("FL_MCP_SERVICE_KEY", SERVICE_KEY)
     sentinel = SentinelClient(
-        "http://sentinel", None, transport=httpx.ASGITransport(app=fake_sentinel([make_incident(1), make_incident(2)]))
+        "http://sentinel",
+        "op-key",
+        transport=httpx.ASGITransport(app=fake_sentinel([make_incident(1), make_incident(2)])),
     )
     return build_api(
         settings(fl_rate_limit_per_ip_per_min=100),
@@ -116,6 +133,7 @@ async def test_tool_list_and_schemas(api_app: Any, monkeypatch: pytest.MonkeyPat
     assert by["check_url"].input_schema["required"] == ["url"]
     assert by["check_url"].input_schema["properties"]["url"]["maxLength"] == 4096
     assert by["get_verdict"].input_schema["properties"]["verdict_id"]["pattern"].startswith("^vd_")
+    assert by["check_url"].annotations and by["check_url"].annotations.read_only_hint is False
     assert by["list_incidents"].annotations and by["list_incidents"].annotations.read_only_hint is True
     assert by["submit_report"].annotations and by["submit_report"].annotations.read_only_hint is False
     assert {t.name for t in tools} == set(
@@ -132,6 +150,9 @@ async def test_call_list_incidents_and_submit_report(api_app: Any, monkeypatch: 
         rep = await c.call_tool("submit_report", {"kind": "message", "text": "demo text"})
         assert not rep.is_error
         assert (rep.structured_content or {})["report_id"].startswith("rpt_")
+        one = await c.call_tool("get_incident", {"incident_id": f"inc_{1:026d}"})
+        act = (one.structured_content or {})["actions"][0]
+        assert act["action_id"] == "act_1" and not {"draft", "args", "approved_by"} & set(act)  # no operator-only data
         bad = await c.call_tool("get_incident", {"incident_id": "inc_" + "9" * 26})
         assert bad.is_error and "Not found" in bad.content[0].text  # type: ignore[union-attr]
 

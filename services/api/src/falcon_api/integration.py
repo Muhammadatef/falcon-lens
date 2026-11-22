@@ -26,6 +26,7 @@ from falcon_api.intel import (
     merge_bundles,
     meta,
     paginate,
+    view_incident,
 )
 from falcon_api.problem import PROBLEM_RESPONSES, Problem
 from falcon_core.config import Settings
@@ -102,6 +103,74 @@ class Ctx:
     idem_save: Callable[[str | None, str, int, dict[str, Any]], Awaitable[None]]
     source_for: Callable[[Request], str]
     known_verdict: Callable[[str], Awaitable[bool]]
+    stream_acquire: Callable[[Request], None]
+    stream_release: Callable[[Request], None]
+
+
+def _idkey(sid: str) -> tuple[int, int]:
+    a, _, b = sid.partition("-")
+    return (int(a or 0), int(b or 0))
+
+
+Loaded = tuple[str, dict[str, Any], dict[str, Any] | None]  # (stream id, board card, full incident)
+
+
+class BoardHub:
+    """One shared reader of `fl:board`, fanned out in-process to every SSE subscriber.
+
+    The reader task exists only while somebody is subscribed, so N streams cost one Redis connection (blocking
+    XREAD) and one sentinel fetch per card, not N of each.
+    """
+
+    def __init__(self, get_redis: Callable[[], Redis | None], load: Callable[[dict[str, Any]], Awaitable[Any]]) -> None:
+        self._redis, self._load = get_redis, load
+        self._subs: set[asyncio.Queue[Loaded]] = set()
+        self._task: asyncio.Task[None] | None = None
+
+    @property
+    def subscribers(self) -> int:
+        return len(self._subs)
+
+    async def subscribe(self) -> asyncio.Queue[Loaded]:
+        r = self._redis()
+        if r is None:
+            raise Problem(503, "queue-unavailable", "Queue unavailable")
+        q: asyncio.Queue[Loaded] = asyncio.Queue(maxsize=200)
+        self._subs.add(q)
+        if self._task is None or self._task.done():
+            try:
+                tail: Any = await r.xrevrange(BOARD_STREAM, count=1)
+            except RedisError as exc:
+                self._subs.discard(q)
+                raise Problem(503, "queue-unavailable", "Queue unavailable") from exc
+            self._task = asyncio.create_task(self._run(r, tail[0][0] if tail else "0-0"))
+        return q
+
+    def unsubscribe(self, q: asyncio.Queue[Loaded]) -> None:
+        self._subs.discard(q)
+        if not self._subs and self._task is not None:
+            self._task.cancel()
+            self._task = None
+
+    async def _run(self, r: Redis, last: str) -> None:
+        while True:
+            try:
+                res: Any = await r.xread({BOARD_STREAM: last}, block=1000, count=50)
+            except RedisError:
+                await asyncio.sleep(1)
+                continue
+            for _name, entries in res or []:
+                for sid, fields in entries:
+                    last = sid
+                    try:
+                        card = json.loads(fields.get("data", "{}"))
+                        inc = await self._load(card)
+                    except (ValueError, TypeError, Problem):
+                        continue
+                    for q in list(self._subs):
+                        if q.full():
+                            q.get_nowait()  # slow consumer: drop its oldest entry rather than block the others
+                        q.put_nowait((sid, card, inc))
 
 
 def _event(kind: str, source: str, verdict_id: str | None, payload: dict[str, Any]) -> dict[str, Any]:
@@ -224,49 +293,77 @@ def register(app: FastAPI, c: Ctx) -> None:
         await c.idem_save(rk, idem_hash, 202, out)
         return JSONResponse(out, status_code=202)
 
-    # ---- streams (Redis stream fl:board) -------------------------------------------------------
-    async def board_stream(
-        request: Request,
-        last_event_id: str | None,
-        project: Callable[[dict[str, Any]], Awaitable[dict[str, Any] | None]],
-        event: str,
-    ) -> AsyncIterator[ServerSentEvent]:
-        r: Redis | None = redis_of()
-        if r is None:
-            raise Problem(503, "queue-unavailable", "Queue unavailable")
-        last = last_event_id if last_event_id and _is_stream_id(last_event_id) else "$"
-        started = last_hb = time.monotonic()
-        yield ServerSentEvent(comment="stream open", retry=3000)
-        while time.monotonic() - started < STREAM_MAX_S:
-            try:
-                res: Any = await r.xread({BOARD_STREAM: last}, block=1000, count=20)
-            except RedisError:
-                await asyncio.sleep(1)
-                continue
-            for _name, entries in res or []:
-                for sid, fields in entries:
-                    last = sid
-                    try:
-                        card = json.loads(fields.get("data", "{}"))
-                        doc = await project(card)
-                    except (ValueError, TypeError, Problem):
-                        continue
-                    if doc is not None:
-                        yield ServerSentEvent(data=doc, event=event, id=sid)
-                        last_hb = time.monotonic()
-            if time.monotonic() - last_hb >= STREAM_HEARTBEAT_S:
-                last_hb = time.monotonic()
-                yield ServerSentEvent(comment="heartbeat")
-
+    # ---- streams (Redis stream fl:board, one shared subscription) ------------------------------
     async def full_incident(card: dict[str, Any]) -> dict[str, Any] | None:
         iid = card.get("incident_id")
         if not isinstance(iid, str):
             return None
         return await c.sentinel().incident(iid)
 
-    async def project_campaign(card: dict[str, Any]) -> dict[str, Any] | None:
-        inc = await full_incident(card)
-        return campaign_of(inc) if inc and is_campaign(inc) else None
+    def hub() -> BoardHub:
+        h = c.state.get("hub")
+        if h is None:
+            h = c.state["hub"] = BoardHub(redis_of, full_incident)
+        return cast(BoardHub, h)
+
+    def stream_gate(request: Request) -> None:
+        c.stream_acquire(request)
+
+    StreamGate = Depends(stream_gate)
+
+    async def board_stream(
+        request: Request,
+        last_event_id: str | None,
+        project: Callable[[dict[str, Any]], dict[str, Any] | None],
+        event: str,
+    ) -> AsyncIterator[ServerSentEvent]:
+        h = hub()
+        try:
+            q = await h.subscribe()
+        except Problem:
+            c.stream_release(request)
+            raise
+        sent = (0, 0)
+        started = last_hb = time.monotonic()
+        try:
+            yield ServerSentEvent(comment="stream open", retry=3000)
+            r = redis_of()
+            if r is not None and last_event_id and _is_stream_id(last_event_id):
+                sent = _idkey(last_event_id)
+                try:
+                    back: Any = await r.xrange(BOARD_STREAM, min=f"({last_event_id}", max="+", count=200)
+                except RedisError:
+                    back = []
+                for sid, fields in back:
+                    sent = _idkey(sid)
+                    try:
+                        inc = await full_incident(json.loads(fields.get("data", "{}")))
+                    except (ValueError, TypeError, Problem):
+                        continue
+                    doc = project(inc) if inc else None
+                    if doc is not None:
+                        yield ServerSentEvent(data=doc, event=event, id=sid)
+            while time.monotonic() - started < STREAM_MAX_S:
+                try:
+                    sid, _card, inc = await asyncio.wait_for(q.get(), timeout=1.0)
+                except TimeoutError:
+                    if time.monotonic() - last_hb >= STREAM_HEARTBEAT_S:
+                        last_hb = time.monotonic()
+                        yield ServerSentEvent(comment="heartbeat")
+                    continue
+                if _idkey(sid) <= sent:
+                    continue
+                sent = _idkey(sid)
+                doc = project(inc) if inc else None
+                if doc is not None:
+                    yield ServerSentEvent(data=doc, event=event, id=sid)
+                    last_hb = time.monotonic()
+        finally:
+            h.unsubscribe(q)
+            c.stream_release(request)
+
+    def project_campaign(inc: dict[str, Any]) -> dict[str, Any] | None:
+        return campaign_of(inc) if is_campaign(inc) else None
 
     @app.get(
         "/v1/campaigns/stream", tags=["campaigns"], response_class=EventSourceResponse, responses=PROBLEM_RESPONSES
@@ -274,6 +371,7 @@ def register(app: FastAPI, c: Ctx) -> None:
     async def campaigns_stream(
         request: Request,
         _p: Annotated[Principal, Read],
+        _gate: Annotated[None, StreamGate],
         last_event_id: Annotated[str | None, Header()] = None,
     ) -> AsyncIterator[ServerSentEvent]:
         """SSE: `event: campaign`, data = one campaign object (contracts/campaign.schema.json)."""
@@ -285,11 +383,15 @@ def register(app: FastAPI, c: Ctx) -> None:
     )
     async def incidents_stream(
         request: Request,
-        _p: Annotated[Principal, Read],
+        p: Annotated[Principal, Read],
+        _gate: Annotated[None, StreamGate],
         last_event_id: Annotated[str | None, Header()] = None,
     ) -> AsyncIterator[ServerSentEvent]:
-        """SSE: `event: incident`, data = one Incident (contracts/incident.schema.json)."""
-        async for e in board_stream(request, last_event_id, full_incident, "incident"):
+        """SSE: `event: incident`, data = one Incident (contracts/incident.schema.json).
+
+        Non-operator keys never receive action drafts, args or approver names."""
+        operator = "operator" in p.scopes
+        async for e in board_stream(request, last_event_id, lambda i: view_incident(i, operator=operator), "incident"):
             yield e
 
     # ---- campaigns / incidents ----------------------------------------------------------------
@@ -303,7 +405,7 @@ def register(app: FastAPI, c: Ctx) -> None:
 
     @app.get("/v1/incidents", tags=["incidents"], response_model=Page, responses=PROBLEM_RESPONSES)
     async def list_incidents(
-        _p: Annotated[Principal, Read],
+        p: Annotated[Principal, Read],
         cursor: Cursor = None,
         limit: Limit = 25,
         status: Annotated[str | None, Query(max_length=32)] = None,
@@ -318,18 +420,20 @@ def register(app: FastAPI, c: Ctx) -> None:
             and severity in (None, i.get("severity"))
             and type in (None, i.get("type"))
         ]
-        return paginate(rows, id_key="incident_id", cursor=cursor, limit=limit)
+        page = paginate(rows, id_key="incident_id", cursor=cursor, limit=limit)
+        page["items"] = [view_incident(i, operator="operator" in p.scopes) for i in page["items"]]
+        return page
 
     IncidentId = Annotated[str, Path(pattern=INCIDENT_ID_RE)]
     ActionId = Annotated[str, Path(pattern=ACTION_ID_RE)]
 
     @app.get("/v1/incidents/{incident_id}", tags=["incidents"], responses=PROBLEM_RESPONSES)
-    async def get_incident(incident_id: IncidentId, _p: Annotated[Principal, Read]) -> dict[str, Any]:
-        """One incident (contracts/incident.schema.json)."""
-        return await c.sentinel().incident(incident_id)
+    async def get_incident(incident_id: IncidentId, p: Annotated[Principal, Read]) -> dict[str, Any]:
+        """One incident (contracts/incident.schema.json). Action drafts/args/approver only for operator scope."""
+        return view_incident(await c.sentinel().incident(incident_id), operator="operator" in p.scopes)
 
-    async def decide(incident_id: str, action_id: str, approve: bool) -> dict[str, Any]:
-        out = await c.sentinel().decide(incident_id, action_id, approve)
+    async def decide(incident_id: str, action_id: str, approve: bool, who: str) -> dict[str, Any]:
+        out = await c.sentinel().decide(incident_id, action_id, approve, who)
         return {
             "incident_id": incident_id,
             "action_id": action_id,
@@ -343,10 +447,10 @@ def register(app: FastAPI, c: Ctx) -> None:
         responses=PROBLEM_RESPONSES,
     )
     async def approve_action(
-        incident_id: IncidentId, action_id: ActionId, _p: Annotated[Principal, Operator]
+        incident_id: IncidentId, action_id: ActionId, p: Annotated[Principal, Operator]
     ) -> dict[str, Any]:
         """Approve a held external action (operator scope). The Sentinel never acts on its own."""
-        return await decide(incident_id, action_id, True)
+        return await decide(incident_id, action_id, True, p.key_id)
 
     @app.post(
         "/v1/incidents/{incident_id}/actions/{action_id}/reject",
@@ -355,10 +459,10 @@ def register(app: FastAPI, c: Ctx) -> None:
         responses=PROBLEM_RESPONSES,
     )
     async def reject_action(
-        incident_id: IncidentId, action_id: ActionId, _p: Annotated[Principal, Operator]
+        incident_id: IncidentId, action_id: ActionId, p: Annotated[Principal, Operator]
     ) -> dict[str, Any]:
         """Reject a held external action (operator scope)."""
-        return await decide(incident_id, action_id, False)
+        return await decide(incident_id, action_id, False, p.key_id)
 
     # ---- intel / meta -------------------------------------------------------------------------
     @app.get(

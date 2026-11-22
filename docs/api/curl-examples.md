@@ -3,7 +3,7 @@
 Defanged placeholders only. Set `B=https://localhost:8443` and `K=<your key>` (`-k` accepts the local CA).
 
 ```bash
-B=https://localhost:8443; K=fl_sandbox_demo_key
+B=https://localhost:8443; K=fl_sandbox_demo_key   # sandbox key = check only; mint a `read` key for campaigns/incidents
 
 # Check a URL and wait up to 8 s for the best verdict
 curl -sk -X POST "$B/v1/check/url?wait=8" -H "X-API-Key: $K" -H 'Content-Type: application/json' \
