@@ -36,7 +36,7 @@ x-app-env: &app-env
   FL_API_KEY_PEPPER: ${FL_API_KEY_PEPPER:-change-me}
   FL_SANDBOX_API_KEY: ${FL_SANDBOX_API_KEY:-fl_sandbox_demo_key}
   FL_SANDBOX_URL: ${FL_SANDBOX_URL:-http://sandbox:8000}
-  # Demo/test fixture hosts exempt from the SSRF internal-name check. Ignored when FL_ENV=production.
+  # Demo/test fixture hosts exempt from the SSRF internal-name check. Honoured only when FL_ENV is local, demo or ci.
   FL_SSRF_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test}
   FL_SMOKE_OFFICIAL_URL: ${FL_SMOKE_OFFICIAL_URL:-http://falcon-demo-bank.test/}
   FL_SMOKE_PHISH_URL: ${FL_SMOKE_PHISH_URL:-http://falcon-demo-bank-secure.test/login}
@@ -159,7 +159,7 @@ services:
       FL_SANDBOX_PROXY: http://egress-proxy:3128
       FL_SNAPSHOT_DIR: /data/snapshots
       # Internal Falcon Demo Bank fixture hosts (tools profile): bypass the proxy and are exempt from
-      # the internal-name check; ignored when FL_ENV=production. Extra *.test hosts (cloaked, injection,
+      # the internal-name check; honoured only when FL_ENV is local, demo or ci. Extra *.test hosts (cloaked, injection,
       # bot relay) are appended for the fixture tests.
       FL_SSRF_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test},falcon-demo-bank-cloak.test,falcon-demo-bank-injection.test,falcon-bot-relay.test
     volumes:

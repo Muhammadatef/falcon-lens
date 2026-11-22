@@ -7,6 +7,7 @@ DNS is resolved by the egress proxy, not here (the sandbox network has no DNS to
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 from falcon_core.security import GuardPolicy, SSRFBlocked, validate_url
@@ -59,6 +60,50 @@ class ByteBudget:
     def add(self, n: int) -> bool:
         self.total += max(0, n)
         return self.total > self.cap
+
+    def would_exceed(self, n: int) -> bool:
+        """Would adding ``n`` bytes pass the cap? Used BEFORE a body is read."""
+        return self.total + max(0, n) > self.cap
+
+
+def declared_length(headers: Mapping[str, str]) -> int | None:
+    """Content-Length from response headers, if present and numeric."""
+    for k, v in headers.items():
+        if k.lower() == "content-length":
+            try:
+                return int(v)
+            except ValueError:
+                return None
+    return None
+
+
+def classify_fetch_error(message: str) -> str:
+    """Map a transport failure to a stable sandbox ``error`` code (the cascade degrades on it)."""
+    m = message.lower()
+    if "enotfound" in m or "getaddrinfo" in m or "name_not_resolved" in m or "dns" in m:
+        return "dns_failure"
+    if "tunnel" in m or "proxy" in m or "407" in m or "403" in m:
+        return "egress_blocked"
+    if "econnrefused" in m or "connection refused" in m or "econnreset" in m:
+        return "connect_failed"
+    if "timeout" in m or "timed out" in m:
+        return "timeout"
+    if "certificate" in m or "ssl" in m or "tls" in m:
+        return "tls_error"
+    return "fetch_failed"
+
+
+_PROXY_STATUSES = {403: "egress_blocked", 405: "egress_blocked", 407: "egress_blocked", 502: "egress_error"}
+
+
+def proxy_refusal(status: int, headers: Mapping[str, str], body_len: int, via_proxy: bool) -> str | None:
+    """The egress proxy's own refusal (e.g. 403, or 405 for plain http on a CONNECT-only proxy):
+    an empty body with no content type. Reported as an error, never as an empty page."""
+    if not via_proxy or body_len:
+        return None
+    if status in _PROXY_STATUSES and "content-type" not in {k.lower() for k in headers}:
+        return _PROXY_STATUSES[status]
+    return None
 
 
 def check_target(url: str, guard: GuardPolicy) -> str | None:

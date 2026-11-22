@@ -30,6 +30,17 @@ def primary_profile(f: RenderFeatures) -> ProfileFeatures | None:
     return loaded[0]
 
 
+def _dedupe(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[tuple[str, str]] = set()
+    out: list[dict[str, Any]] = []
+    for i in items:
+        key = (str(i.get("origin")), str(i.get("category")))
+        if key not in seen:
+            seen.add(key)
+            out.append(i)
+    return out
+
+
 def to_flat(f: RenderFeatures, verdict_id: str | None = None) -> dict[str, Any]:
     p = primary_profile(f)
     out: dict[str, Any] = {"verdict_id": verdict_id}
@@ -53,7 +64,7 @@ def to_flat(f: RenderFeatures, verdict_id: str | None = None) -> dict[str, Any]:
             ],
             # origins only: a phisher's bot token in the path is never copied into our data
             post_targets=sorted({t.origin for t in p.script_post_targets}),
-            exfil_targets=exfil,
+            exfil_targets=_dedupe(exfil),
             hotlinked_origins=p.asset_origins,
             visible_text=p.visible_text,
             favicon_sha256=p.favicon.sha256,

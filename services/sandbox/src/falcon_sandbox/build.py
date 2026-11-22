@@ -6,15 +6,16 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 from urllib.parse import urlsplit
 
-from .classify import SENSITIVE_KINDS, FieldKind, classify_field
-from .exfil import classify_post_target
-from .features import (
+from falcon_core.signals.page.features import (
     MAX_VISIBLE_TEXT_BYTES,
     FormFeature,
     JsIndicators,
     PostTarget,
 )
-from .hosts import host_of, same_site
+from falcon_core.signals.page.hosts import host_of, same_site
+
+from .classify import SENSITIVE_KINDS, FieldKind, classify_field
+from .exfil import classify_post_target
 
 
 def origin_of(url: str) -> str | None:

@@ -24,13 +24,6 @@ from playwright.async_api import (
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import TimeoutError as PlaywrightTimeout
 
-from falcon_core.signals.page.build import (
-    build_dynamic_post_target,
-    build_forms,
-    build_js,
-    build_static_post_targets,
-    truncate_utf8,
-)
 from falcon_core.signals.page.features import (
     BlockedRequest,
     Favicon,
@@ -43,14 +36,31 @@ from falcon_core.signals.page.hosts import host_of, same_site
 from falcon_core.signals.page.simhash import dom_simhash
 from falcon_core.signals.visual.phash import phash_from_gray32
 
+from .build import (
+    build_dynamic_post_target,
+    build_forms,
+    build_js,
+    build_static_post_targets,
+    truncate_utf8,
+)
 from .extract_js import EXTRACT_JS
-from .policy import MAX_REDIRECTS, MAX_TOTAL_BYTES, TOTAL_TIMEOUT_S, ByteBudget, RequestPolicy
+from .policy import (
+    MAX_REDIRECTS,
+    MAX_TOTAL_BYTES,
+    TOTAL_TIMEOUT_S,
+    ByteBudget,
+    RequestPolicy,
+    classify_fetch_error,
+    declared_length,
+    proxy_refusal,
+)
 from .profiles import PROFILES
 from .settings import Settings
 
 log = logging.getLogger("falcon.sandbox")
 ASSET_TYPES = frozenset({"image", "stylesheet", "script", "font", "media"})
 FAVICON_MAX_BYTES = 256 * 1024
+HARD_TIMEOUT_GRACE_S = 3.0
 
 try:  # Pillow is a sandbox dependency; hashing degrades to sha256-only without it
     from PIL import Image
@@ -95,6 +105,7 @@ class _State:
     size_cap_hit: bool = False
     redirect_limit_hit: bool = False
     pending: str | None = None
+    nav_fail: str | None = None
     hops: list[Hop] = field(default_factory=list)
     nav: list[str] = field(default_factory=list)
     images: dict[str, Any] = field(default_factory=dict)
@@ -142,6 +153,9 @@ class SandboxBrowser:
         self._visits = 0
         return self._browser
 
+    def _via_proxy(self, host: str) -> bool:
+        return bool(self.settings.proxy) and host not in self.settings.allow_hosts
+
     def _proxy_opts(self) -> dict[str, Any]:
         s = self.settings
         if not s.proxy:
@@ -181,7 +195,7 @@ class SandboxBrowser:
                     permissions=[],
                 )
                 return await asyncio.wait_for(
-                    self._visit(ctx, url, profile, visual, keep_artifacts), TOTAL_TIMEOUT_S + 3
+                    self._visit(ctx, url, profile, visual, keep_artifacts), TOTAL_TIMEOUT_S + HARD_TIMEOUT_GRACE_S
                 )
             except TimeoutError:
                 return VisitResult(
@@ -255,6 +269,15 @@ class SandboxBrowser:
             try:
                 while True:
                     resp = await route.fetch(url=target, max_redirects=0, timeout=remaining_ms())
+                    declared = declared_length(resp.headers)
+                    if declared is not None and budget.would_exceed(declared):
+                        # refuse BEFORE the body is transferred out of the Playwright driver
+                        st.size_cap_hit = True
+                        if main_nav:
+                            st.nav_fail = "size_cap"
+                        with contextlib.suppress(PlaywrightError):
+                            await route.abort("blockedbyclient")
+                        return
                     body = await resp.body()
                     location = resp.headers.get("location")
                     if not (300 <= resp.status < 400 and location):
@@ -274,12 +297,23 @@ class SandboxBrowser:
                         with contextlib.suppress(PlaywrightError):
                             await route.abort("blockedbyclient")
                         return
-            except PlaywrightError:
+            except PlaywrightError as exc:
+                if main_nav:
+                    st.nav_fail = classify_fetch_error(str(exc))
                 with contextlib.suppress(PlaywrightError):
                     await route.abort("failed")
                 return
+            if main_nav:
+                refusal = proxy_refusal(resp.status, resp.headers, len(body), self._via_proxy(host_of(req.url)))
+                if refusal:
+                    st.nav_fail = refusal
+                    with contextlib.suppress(PlaywrightError):
+                        await route.abort("failed")
+                    return
             if budget.add(len(body)):
                 st.size_cap_hit = True
+                if main_nav:
+                    st.nav_fail = "size_cap"
                 with contextlib.suppress(PlaywrightError):
                     await route.abort("blockedbyclient")
                 return
@@ -359,8 +393,10 @@ class SandboxBrowser:
                 await page.wait_for_load_state("load", timeout=min(2000, remaining_ms()))
             await asyncio.sleep(min(0.3, max(0.0, deadline - loop.time())))
             await follow_redirects()  # redirects triggered by scripts/meta refresh
-        if nav_error and not feats.error and not st.pending:
-            feats.error = nav_error
+        if (st.nav_fail or nav_error) and not feats.error and not st.pending:
+            feats.error = st.nav_fail or nav_error
+        if response is None and not feats.error and not st.pending:
+            feats.error = "timeout" if feats.timed_out else "no_response"
         if response is not None and not feats.error:
             st.hops.append(Hop(url=response.request.url[:512], status=response.status))
         hops = st.hops

@@ -83,12 +83,12 @@ def build_app(settings: Settings | None = None, browser: SandboxBrowser | None =
         platform's ``protect=True``), sent as ``X-Sandbox-Key`` or ``Authorization: Bearer``."""
         if request.url.path in ("/healthz", "/readyz"):
             return await call_next(request)
-        if not cfg.api_key:
+        if not cfg.api_key.strip():
             return JSONResponse({"detail": "service token not configured"}, status_code=503)
         supplied = request.headers.get("x-sandbox-key") or request.headers.get("authorization", "").removeprefix(
             "Bearer "
         )
-        if not supplied or not hmac.compare_digest(supplied.encode(), cfg.api_key.encode()):
+        if not supplied or not hmac.compare_digest(supplied.encode(), cfg.api_key.strip().encode()):
             return JSONResponse({"detail": "invalid sandbox key"}, status_code=401)
         return await call_next(request)
 

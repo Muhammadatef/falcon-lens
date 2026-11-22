@@ -12,7 +12,7 @@ from collections.abc import Iterable, Mapping
 from enum import StrEnum
 from typing import Any
 
-from .text import normalize
+from falcon_core.signals.page.text import normalize
 
 
 class FieldKind(StrEnum):

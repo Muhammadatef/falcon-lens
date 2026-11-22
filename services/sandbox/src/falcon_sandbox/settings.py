@@ -8,6 +8,8 @@ from pathlib import Path
 
 from falcon_core.security import GuardPolicy
 
+ALLOWLIST_ENVS = frozenset({"local", "demo", "ci"})
+
 
 def _csv(value: str) -> frozenset[str]:
     return frozenset(v.strip().lower() for v in value.split(",") if v.strip())
@@ -31,16 +33,14 @@ class Settings:
     @classmethod
     def from_env(cls) -> Settings:
         e = os.environ
-        allow = (
-            ""
-            if e.get("FL_ENV") == "production"
-            else (e.get("FL_SSRF_ALLOW_HOSTS") or e.get("FL_SANDBOX_ALLOW_HOSTS", ""))
-        )
+        # Fail closed: only these environments honour the fixture allow-list; anything else
+        # (production, staging, unset, typos) ignores it.
+        allow = e.get("FL_SSRF_ALLOW_HOSTS", "") if e.get("FL_ENV") in ALLOWLIST_ENVS else ""
         return cls(
             proxy=e.get("FL_SANDBOX_PROXY", ""),
             allow_hosts=_csv(allow),
             snapshot_dir=Path(e.get("FL_SNAPSHOT_DIR", "/data/snapshots")),
-            api_key=e.get("FL_SANDBOX_TOKEN") or e.get("FL_SANDBOX_API_KEY", ""),
+            api_key=e.get("FL_SANDBOX_TOKEN", "").strip(),
             max_concurrent=int(e.get("FL_SANDBOX_CONCURRENCY", "3")),
             recycle_after=int(e.get("FL_SANDBOX_RECYCLE_AFTER", "150")),
         )
