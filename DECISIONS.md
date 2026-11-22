@@ -106,3 +106,42 @@
 - 2026-11-22 · builder-security · A body over max_bytes (hard cap 5 MB, after decoding) raises `SSRFBlocked(response_too_large)` instead of being truncated. Only gzip and deflate are requested and decoded, with bounded zlib output, and any other encoding gives `FetchFailed(unsupported_encoding)`.
 - 2026-11-22 · builder-security · The caller can lower max_bytes or max_redirects but not raise them: values are clamped to 5 MB and 10. Keep-alive is off, so every hop gets a freshly pinned socket.
 - 2026-11-22 · builder-security · The `on_block(reason)` hook is per-client, with a process-wide default set through `set_default_on_block`. Hook exceptions are logged and swallowed. T-014 wires it to `fl_ssrf_blocked_total{reason}` using `BlockReason` values as the labels.
+
+## T-024 / T-025 LLM router, tools, extractor, investigator, responder (builder-agent-core, feat/core-agent)
+- 2026-11-22 · agent-core · Versions used: anthropic 2.12.0 (pulls httpx2 2.16.2; its exception classes take `httpx2.Request`), httpx 0.28.1 for Ollama, pydantic 2.14.4, PyYAML 6.0.4, types-PyYAML 6.0.12.20261122. Shapes checked against the installed SDK and the platform.claude.com prompt-caching and effort docs (2026-11-22).
+- 2026-11-22 · agent-core · Branch is `feat/core-agent` (dispatcher). It covers the T-024 (`feat/llm-router`) and T-025 (`feat/agent-investigator`) cards plus the extractor and responder. Integration merge of keep/feat/core-arbiter + keep/feat/security-ssrf-egress: DECISIONS conflicts resolved by keeping both sides; arbiter (and two security) files reformatted to the workspace 100-column limit; pyyaml/httpx/httpcore/anthropic added to falcon-core deps.
+- 2026-11-22 · agent-core · Local calls use plain httpx against Ollama `/v1/chat/completions` (no openai SDK), with `temperature 0`, `seed 7` and no `response_format` (unsupported for inkling-2-mini-chat). Chat-template tokens `<|...|>` are stripped.
+- 2026-11-22 · agent-core · The router's default local model is `inkling-2-mini-chat` (from main's .env.example). `FL_LOCAL_LLM_TIMEOUT_S` defaults to 60 s, since a cold load takes about 50 s. The router reads `os.environ` only (`RouterConfig.from_env`), never a .env file; `config.Settings` still defaults to gemma3:27b.
+- 2026-11-22 · agent-core · Cloud requests: `output_config.effort="low"`; `thinking` is "disabled" on Haiku 5.5 and "between_tools" on Sonnet 5.5 (docs: "To have the model respond without thinking first"). No temperature, no tools or tool_choice, and `max_retries=0` because the router owns fallback. Only `text` blocks are read.
+- 2026-11-22 · agent-core · No provider structured-output mode is used. Both routes use prompt-level JSON plus pydantic, so cloud and local behave the same (ADR-001) and shadow agreement is comparable.
+- 2026-11-22 · agent-core · Prompt caching: the system prompt (base rules + role task + JSON schema + canary) is stable per (role, schema) and is sent as one text block with `cache_control: ephemeral`. Today's prompts are probably under the 512-token minimum, so no cache hits are expected yet. That fails silently, not with an error.
+- 2026-11-22 · agent-core · There is one canary per router instance (`FLC-<12 hex>`), which keeps the cached system prompt stable. A reply containing the canary or its hex part is discarded without a repair attempt, and `fl_canary_leak_total{role}` goes up.
+- 2026-11-22 · agent-core · Redaction runs on every LLM call, local too, not only cloud ones. The fallback then reuses the same redacted prompt and shadow comparisons see identical input. Toll-free and short official numbers (8002626, 999) are not phone-redacted.
+- 2026-11-22 · agent-core · Spotlighting also removes zero-width, bidi and control characters, and replaces `<<<`/`>>>` and the nonce inside untrusted text. The nonce explanation goes in the user turn, because the system prompt must stay cacheable.
+- 2026-11-22 · agent-core · Cloud-to-local fallback happens only on a provider error or timeout. A schema failure gets one repair retry on the same route, then the caller's template fallback. The request's overall `timeout_s` deadline covers both routes together.
+- 2026-11-22 · agent-core · Shadow sampling runs only when cloud is enabled (never in sovereign mode or without a key), as a background task. It records `fl_route_agreement_ratio` as 0/1 observations (exact equality of the parsed objects). It is off for the investigator, whose actions are stateful.
+- 2026-11-22 · agent-core · Metrics go through a `MetricsSink` protocol (`llm/metrics.py`) using the OBSERVABILITY names, because builder-observability's `telemetry/metrics.py` does not exist yet. The default sink is in-memory.
+- 2026-11-22 · agent-core · Cost uses the VERIFIED_VERSIONS §2 table. The Haiku tier switches above 100k prompt tokens (cache tokens included). Cache writes are priced at the 5 m rate, unknown cloud models at the Sonnet 5.5 rate, and local calls at 0.
+- 2026-11-22 · agent-core · The extractor enums (`requested_data`, `script_category`, `language`) are defined in `agent/extractor.py`. `claimed_brand_id` is checked against the data/brands.yaml ids through the pydantic validation context. Proposed to L1: a `contracts/extraction.schema.json`.
+- 2026-11-22 · agent-core · Extractor evidence:
+  - `llm.extraction`: weight 0, with the full extraction in `observed`.
+  - `injection.instruction_like_text`: confidence 0.7, `observed.detector=extractor`, emitted when `instruction_like` is true. If T-026's regex detector also fires, the cascade should keep only the higher-confidence item so it isn't counted twice.
+  - `brand.claimed_not_owned`: confidence 0.8 (H1 θ is 0.70), emitted when the cascade passes a registrable domain that isn't in the claimed brand's verified list.
+- 2026-11-22 · agent-core · Provenance:
+  - A URL arg must equal the canonical URL or a hop, after case-folding the scheme and host and dropping the default port and fragment.
+  - A domain arg must be an on-chain host, a registrable domain the cascade supplied, or a heuristic eTLD+1 of an on-chain host. The heuristic is used only when the cascade gives no PSL value, and it can only yield suffixes of on-chain hosts.
+  - Hops returned by `expand_redirects` (our own fetcher) are added to the context.
+- 2026-11-22 · agent-core · A provenance violation adds `injection.tool_provenance` evidence and counts `fl_tool_errors_total{reason=provenance}` and `fl_injection_detected_total{source=tool_provenance}`. Its weight stays 0 until L1 assigns one; proposed +1.5, like instruction_like_text. Fingerprint args must be in `ProvenanceContext.script_fingerprints`.
+- 2026-11-22 · agent-core · Tool output is re-stamped: new evidence id, tier T3, weight 0, hard_rule None, polarity neutral, observed strings capped at 512 chars, URL strings defanged. A backend can never pre-set arbiter fields.
+- 2026-11-22 · agent-core · Investigator:
+  - The model passes target refs (`u0`, `d1`, `f0`), which the investigator resolves to exact on-chain values, so the model never copies URLs. A literal value is still accepted and provenance-checked.
+  - Rejected and duplicate calls count toward the 6-call budget.
+  - max_tokens per plan step = min(700, what is left of 8000).
+  - The time budget bounds both the LLM and the tool timeouts.
+- 2026-11-22 · agent-core · Evidence view for the investigator and responder: observed values are reduced to bools, numbers and token-like strings (≤80 chars). Everything else becomes `"<text>"`, and URLs are defanged. This keeps "structured evidence only" even if a signal puts free text in `observed`.
+- 2026-11-22 · agent-core · Verifier rules beyond cited ids. Any failure rejects the whole LLM answer and uses the templates. Degraded verdicts always use templates.
+  - Cited evidence must exist and not be errored.
+  - On a warning verdict, each reason must cite at least one risk item (w>0 or a hard_rule). On no_warning_signs, reasons must cite no w>0 item.
+  - Text must not contain "safe"/«آمن», links or domains, `<>%`, or "score"/«نسبة».
+  - `ar` must contain Arabic script.
+- 2026-11-22 · agent-core · Agents get brand ids from `agent/brands.py`, which finds data/brands.yaml by walking up from the package or reads `FL_BRANDS_PATH`. Containers must set `FL_BRANDS_PATH`.
