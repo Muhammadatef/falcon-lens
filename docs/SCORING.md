@@ -37,7 +37,14 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | visual.favicon_match_brand | visual | +1.0 | only risk if domain not owned |
 | brand.claimed_not_owned | brand | +3.0 | see H1 |
 | message.script_match (nearest known scam, sim ≥ θ) | message | +2.5 | |
-| message.rule.{urgency,secrecy,otp_request,remote_access,payment,authority,prize,job,investment,delivery_fee,fine} | message | +0.6 each, cap +3.0 | |
+| message.rule.<name> for name ∈ urgency, secrecy, otp_request, remote_access, payment, authority, prize, job, investment, delivery_fee, fine | message | +0.6 each, cap +3.0 | evidence name is literally e.g. `message.rule.otp_request` |
+| message.brand_mention | message | +0.5 | |
+| message.brand_url_mismatch | message | +1.0 | brand named, link to unofficial domain |
+| message.contains_url / message.contains_phone | message | 0 (informational) | children go to the URL pipeline (H5) |
+| email.attachment | email | 0 (+1.5 if executable/script type) | type by magic bytes + sha256 only |
+| email.return_path_mismatch | email | 0 (informational) | |
+| email.invalid / image.invalid | email/image | 0 | sets degraded |
+| image.qr_decoded | image | 0 (informational) | decoded URL is a child input |
 | email.auth_fail (SPF/DKIM/DMARC fail) | email | +1.5 | |
 | email.display_name_impersonation | email | +2.0 | |
 | email.reply_to_mismatch | email | +1.0 | |

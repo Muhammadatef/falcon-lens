@@ -90,3 +90,8 @@
 - 2026-11-22 · L1 · Repo recreate in progress: the first public repo had a commit with defanged feed URLs (PR #1). The owner chose delete-and-recreate. Clean branches are backed up in `data/private/repo-backup/` (bundle plus keep/* branches).
 - 2026-11-22 · L1 · The supervisor role may run as up to two parallel instances, each on a separate PR set, for throughput before the deadline. Approval rules are unchanged.
 - 2026-11-22 · owner · Collaborator @Abdulrahman-alseiari invited with write access. Human task board is in docs/CONTRIBUTOR_TASKS.md (Arabic review, domain verification, data audits, device QA, iOS Shortcut).
+- 2026-11-22 · L1 · Message, email and image evidence names were added to SCORING §2 (PR feat/signals-message).
+- 2026-11-22 · L1 · CONTRACTS invariant 5 (defang) applies to attacker or input URLs. **Official reporting channels from config/reporting_channels.yaml are exempt**: they're shown as plain text and never auto-linked.
+- 2026-11-22 · L1 · Public OpenPhish manifest domain and URL hashes become **HMAC-SHA256 keyed** with a local secret `data/private/hash.key`, generated on first run and never committed. The same key gives stable grouping for splits.
+- 2026-11-22 · L1 · The synthetic batch qwen-msg-001 was REJECTED by the supervisor (31/32 wrong). The re-run uses `inkling-2-mini-chat` (not qwen3:4b), with script fixes: language verified by character-script detection, allowlist for links and phones. The demo brand Arabic name is «بنك الصقر التجريبي» everywhere.
+- 2026-11-22 · owner · The owner merged PRs #1, #2, #3 and #5 on GitHub before supervisor approval. The review findings in reviews/PR-4/5/6 are tracked as follow-up fix PRs.
