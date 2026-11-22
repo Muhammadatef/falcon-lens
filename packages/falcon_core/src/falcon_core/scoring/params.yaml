@@ -1,21 +1,28 @@
-# DRAFT, NOT FITTED. Fitted by `make fit-thresholds` on the validation split.
-# Every value below is the initial draft from docs/SCORING.md (§1 bands, §2 weights, §3 hard rules).
-# Values not given in SCORING.md are marked "draft (not in SCORING.md)" and logged in DECISIONS.md.
-# `make fit-thresholds` (builder-evals) overwrites this file using the validation split only and
-# fills `fit` with the dataset hash, git SHA and fit date. Do not hand-tune these numbers.
-draft: true
+# FITTED by `make fit-thresholds` (builder-evals) on the validation split only; do not hand-tune.
+# Fitted: bands (tau_*), cascade exits (eps_*) and the T1 classifier (scoring/model/).
+# NOT fitted: the evidence weights, hard-rule values and message-rule caps below remain the SCORING.md
+# draft values, as do the cascade t2 margins and the draft_classifier fallback intercept.
+draft: false  # thresholds fitted; weights are still the SCORING.md draft values
 fit:
-  dataset_hash: null
-  git_sha: null
-  fit_date: null
+  dataset_hash: "382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1"
+  fit_items_hash: "604dd99801e3055d56c8e0499b8b648f94977f5af1641fcb3f675aa7389774b3"
+  git_sha: "4415c0fa498b6b95155b09fdd43c26cff4d623d5"
+  fit_date: "2026-11-22"
+  seed: 20261122
+  n_train: 426
+  n_val: 144
+  fpr_target: 0.02
+  dangerous_fpr_target: 0.01
+  t3_share_val: 0.0417
+  notes: []
 
 bands:
-  tau_high: 0.80
-  tau_low: 0.35
+  tau_high: 0.8139
+  tau_low: 0.4727
 
 cascade:
-  eps_low: 0.05             # draft (not in SCORING.md)
-  eps_high: 0.98            # draft (not in SCORING.md)
+  eps_low: 0.0149
+  eps_high: 0.8639
   t2_margin_low: 0.10       # T2 exits if p < tau_low - 0.10
   t2_margin_high: 0.05      # ... or p > tau_high + 0.05
 
@@ -90,12 +97,14 @@ weights:
   email.reply_to_mismatch: 1.0
   email.link_text_mismatch: 2.0
   injection.instruction_like_text: 1.5
+  injection.tool_provenance: 1.5     # L1 2026-11-22: off-chain tool arg blocked (SCORING §2)
   registry.verified_official: -4.0
   # informational (weight 0), listed so SCORING §2 and this file stay in sync
   message.contains_url: 0.0
   message.contains_phone: 0.0
   message.link_verdict: 0.0
   email.link_verdict: 0.0
+  llm.extraction: 0.0            # quarantined extractor output, informational
   email.attachment: 0.0          # see email_attachment.risky_weight
   email.return_path_mismatch: 0.0
   email.invalid: 0.0

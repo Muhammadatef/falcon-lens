@@ -4,7 +4,7 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: help up down smoke openapi test eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
+.PHONY: eval-baseline fit-thresholds help up down smoke openapi test eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
 
 help:
 	@echo "Targets: up down smoke test eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard"
@@ -39,10 +39,14 @@ guard: ## defensive-only guard: no live URLs, no data/private in git
 # Merge gate for detection quality. Becomes real when builder-evals lands evals/baseline.json:
 # until then it says so loudly and does NOT claim a pass.
 eval-gate:
-	@if [ ! -f evals/baseline.json ]; then \
-	  echo "eval-gate: SKIPPED - evals/baseline.json does not exist yet (eval harness not landed). This is NOT a pass."; \
-	  echo "::notice title=eval-gate skipped::no evals/baseline.json yet; detection quality is not gated"; \
-	else $(MAKE) eval; fi
+	uv run python -m evals.gate --run
+
+eval-baseline: ## write evals/baseline.json from the latest result (review the diff in the PR)
+	uv run python -m evals.gate --make-baseline
+
+fit-thresholds: ## train T1 + calibrate + fit bands on train/val only; writes params.yaml and scoring/model/
+	uv run python -m evals.datasets.build
+	uv run python -m evals.train.fit
 
 scan: ## gitleaks, pip-audit, pnpm audit, trivy, syft (a missing tool only warns locally)
 	@rc=0; \
@@ -63,8 +67,8 @@ smoke: ## T-015 assertions against the running stack (starts it if needed). FL_S
 
 openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on drift)
 	uv run python scripts/gen_openapi.py
-eval:
-	$(NYI)
+eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/results/
+	uv run python -m evals.harness.run
 redteam:
 	$(NYI)
 submission:

