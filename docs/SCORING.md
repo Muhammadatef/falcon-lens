@@ -7,7 +7,7 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 ## 1. Pipeline
 1. **Hard rules** (§3) are evaluated first. A hard rule that fires sets the floor (or, for trust rules, the cap) of the verdict.
 2. **Classifier probability `p_clf`**: a gradient-boosted model (T1 numeric features), calibrated with isotonic or Platt scaling on validation.
-3. **Evidence log-odds adjustment.** Evidence from tiers above T1 (page, visual, brand, message, email, llm) has fixed weights `w_i` in log-odds points:
+3. **Evidence log-odds adjustment** (each weight is scaled by the evidence `confidence`). Evidence from tiers above T1 (page, visual, brand, message, email, llm) has fixed weights `w_i` in log-odds points:
    `logit(p) = logit(p_clf) + Σ w_i · confidence_i`, clipped to [-8, 8].
 4. `risk_score = round(100 · p)`. `calibrated_probability = p` after the final calibrator, fitted on validation over the full-cascade output.
 5. **Bands**: `dangerous` if p ≥ τ_high; `suspicious` if τ_low ≤ p < τ_high; otherwise `no_warning_signs`.
@@ -24,6 +24,7 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | url.brand_in_subdomain_or_path | url | +1.5 | |
 | url.userinfo_trick / url.bidi_or_zero_width | url | +3.0 | |
 | url.raw_ip_host | url | +1.5 | |
+| url.data_uri | url | +2.0 | data: URI used as a link target |
 | url.free_host_or_tunnel (PSL private section) | url | +1.0 | judged per subdomain |
 | url.open_redirect_abuse | url | +2.0 | |
 | domain.age_days < 30 | domain | +1.5 | <7 days: +2.5 |
@@ -41,6 +42,7 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | email.display_name_impersonation | email | +2.0 | |
 | email.reply_to_mismatch | email | +1.0 | |
 | email.link_text_mismatch | email | +2.0 | |
+| message.link_verdict / email.link_verdict | message/email | 0 (informational) | child URL verdict; drives H5 |
 | injection.instruction_like_text | injection | +1.5 | evidence of manipulation, **never obeyed** |
 | registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |
 | domain.age_days > 3650 + no other risk | domain | −1.0 | |
@@ -62,3 +64,8 @@ If any T1 signal errors or times out, the verdict sets `degraded=true` and lists
 
 ## 5. Explanations
 The responder picks at most three reasons, ordered by |w|. Each must cite existing evidence ids. A verifier rejects anything else and falls back to the templates in `i18n/{ar,en}.yaml`.
+
+## 6. Draft values (accepted 2026-11-22; refit on validation)
+ε_low 0.05 · ε_high 0.98 · H1 brand-claim θ 0.70 · H3 p cap 0.05 · draft intercept −2.2 (used only while `p_clf` is not yet fitted; flagged `p_clf_draft`).
+Precedence: **degraded beats H3** (an official URL with a failed check shows `suspicious`). **H3 beats H1, H4 and H6** on verified-official domains; the overridden rules are recorded in `suppressed_rules`. The registry trust weight (−4.0) applies only when H3 holds.
+Typosquat tiers (T-007): brand labels shorter than 5 characters get no edit-distance matching; 5–7 characters allow distance 1, or 2 if both edits are QWERTY-adjacent; 8 or more allow distance 2. The same label on a different TLD counts as `tld_swap` at confidence 0.8.
