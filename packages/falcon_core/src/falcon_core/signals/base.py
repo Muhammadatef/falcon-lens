@@ -90,9 +90,7 @@ class Evidence:
 
     def __post_init__(self) -> None:
         if not self.id:
-            blob = json.dumps(
-                [self.signal, self.observed], sort_keys=True, default=str, ensure_ascii=True
-            )
+            blob = json.dumps([self.signal, self.observed], sort_keys=True, default=str, ensure_ascii=True)
             self.id = "ev_" + hashlib.sha256(blob.encode()).hexdigest()[:16]
 
     def to_dict(self) -> dict[str, Any]:
@@ -132,6 +130,9 @@ def signal(spec: SignalSpec) -> Callable[[Callable[[SignalContext], list[Evidenc
             async def inner() -> list[Evidence]:
                 return body(ctx)
 
+            # NOTE: body() is synchronous and never awaits, so wait_for cannot interrupt it:
+            # timeout_ms is only enforced for awaiting bodies. T1 URL bodies are pure CPU, bounded
+            # by the input length cap (MAX_URL_LEN) and measured < 5 ms p95.
             try:
                 out = await asyncio.wait_for(inner(), timeout=spec.timeout_ms / 1000)
             except TimeoutError:

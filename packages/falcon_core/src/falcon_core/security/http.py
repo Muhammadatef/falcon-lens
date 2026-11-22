@@ -122,9 +122,7 @@ class Hop:
 class FetchResult:
     status: int
     final_url: str
-    redirect_chain: tuple[
-        Hop, ...
-    ]  #: every request made, first to last (final hop included)
+    redirect_chain: tuple[Hop, ...]  #: every request made, first to last (final hop included)
     headers: Mapping[str, str]  #: allow-listed subset, lower-case names
     body: bytes  #: decoded body, at most max_bytes
     resolved_ip: str  #: IP pinned for the final hop
@@ -180,9 +178,7 @@ class PinnedNetworkBackend(httpcore.AsyncNetworkBackend):
         try:
             ipaddress.ip_address(h)
         except ValueError as exc:
-            raise SSRFBlocked(
-                BlockReason.NOT_PINNED, "connect to hostname refused"
-            ) from exc
+            raise SSRFBlocked(BlockReason.NOT_PINNED, "connect to hostname refused") from exc
         if port not in self._policy.allowed_ports:
             raise SSRFBlocked(BlockReason.PORT, str(port))
         reason = ip_block_reason(h)
@@ -229,9 +225,7 @@ class ProxyOnlyNetworkBackend(httpcore.AsyncNetworkBackend):
         socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
     ) -> httpcore.AsyncNetworkStream:
         if (host.lower(), port) != self._target:
-            raise SSRFBlocked(
-                BlockReason.NOT_PINNED, "only the egress proxy may be dialled"
-            )
+            raise SSRFBlocked(BlockReason.NOT_PINNED, "only the egress proxy may be dialled")
         return await self._inner.connect_tcp(
             host,
             port,
@@ -252,9 +246,7 @@ class ProxyOnlyNetworkBackend(httpcore.AsyncNetworkBackend):
         await self._inner.sleep(seconds)
 
 
-def _build_transport(
-    policy: GuardPolicy, proxy: str | None
-) -> httpx.AsyncHTTPTransport:
+def _build_transport(policy: GuardPolicy, proxy: str | None) -> httpx.AsyncHTTPTransport:
     """An httpx transport whose httpcore pool uses our network backend.
 
     httpx 0.28.1 does not expose ``network_backend`` on AsyncHTTPTransport, so
@@ -277,9 +269,7 @@ def _build_transport(
         if purl.scheme != "http" or purl.port is None:
             raise ValueError("proxy must be http://host:port")
         transport._pool = httpcore.AsyncHTTPProxy(  # private: see docstring
-            proxy_url=httpcore.URL(
-                scheme=b"http", host=purl.raw_host, port=purl.port, target=b"/"
-            ),
+            proxy_url=httpcore.URL(scheme=b"http", host=purl.raw_host, port=purl.port, target=b"/"),
             ssl_context=ssl_context,
             network_backend=ProxyOnlyNetworkBackend(purl.host, purl.port),
             max_connections=20,
@@ -294,11 +284,7 @@ def _build_transport(
 
 async def _read_capped(resp: httpx.Response, max_bytes: int) -> bytes:
     declared = resp.headers.get("content-length")
-    if (
-        declared is not None
-        and declared.strip().isdigit()
-        and int(declared) > max_bytes
-    ):
+    if declared is not None and declared.strip().isdigit() and int(declared) > max_bytes:
         raise SSRFBlocked(BlockReason.RESPONSE_TOO_LARGE, f"content-length {declared}")
     encoding = resp.headers.get("content-encoding", "identity").strip().lower()
     decomp: typing.Any = None
@@ -416,17 +402,11 @@ class GuardedHTTPClient:
         except httpx.TimeoutException as exc:
             raise FetchFailed(FetchFailReason.TIMEOUT) from exc
         except (httpx.ConnectError, httpx.ProxyError) as exc:
-            raise FetchFailed(
-                FetchFailReason.CONNECT_ERROR, type(exc).__name__
-            ) from exc
+            raise FetchFailed(FetchFailReason.CONNECT_ERROR, type(exc).__name__) from exc
         except httpx.HTTPError as exc:
-            raise FetchFailed(
-                FetchFailReason.PROTOCOL_ERROR, type(exc).__name__
-            ) from exc
+            raise FetchFailed(FetchFailReason.PROTOCOL_ERROR, type(exc).__name__) from exc
 
-    async def _fetch(
-        self, url: str, method: str, max_bytes: int, timeout: float, max_redirects: int
-    ) -> FetchResult:
+    async def _fetch(self, url: str, method: str, max_bytes: int, timeout: float, max_redirects: int) -> FetchResult:
         hops: list[Hop] = []
         current = url
         while True:
@@ -437,28 +417,18 @@ class GuardedHTTPClient:
             try:
                 location = resp.headers.get("location")
                 if resp.status_code in _REDIRECT_STATUSES and location:
-                    hops.append(
-                        Hop(url=target.url, status=resp.status_code, ip=ip.compressed)
-                    )
+                    hops.append(Hop(url=target.url, status=resp.status_code, ip=ip.compressed))
                     if len(hops) > max_redirects:
-                        raise SSRFBlocked(
-                            BlockReason.TOO_MANY_REDIRECTS, str(len(hops))
-                        )
+                        raise SSRFBlocked(BlockReason.TOO_MANY_REDIRECTS, str(len(hops)))
                     try:
                         current = str(httpx.URL(target.url).join(location))
                     except (httpx.InvalidURL, ValueError, UnicodeError) as exc:
-                        raise SSRFBlocked(
-                            BlockReason.INVALID_URL, "bad Location"
-                        ) from exc
+                        raise SSRFBlocked(BlockReason.INVALID_URL, "bad Location") from exc
                     method = _next_method(method, resp.status_code)
                     continue
                 body = b"" if method == "HEAD" else await _read_capped(resp, max_bytes)
-                hops.append(
-                    Hop(url=target.url, status=resp.status_code, ip=ip.compressed)
-                )
-                headers = {
-                    k: resp.headers[k] for k in _HEADER_SUBSET if k in resp.headers
-                }
+                hops.append(Hop(url=target.url, status=resp.status_code, ip=ip.compressed))
+                headers = {k: resp.headers[k] for k in _HEADER_SUBSET if k in resp.headers}
                 return FetchResult(
                     status=resp.status_code,
                     final_url=target.url,
@@ -470,9 +440,7 @@ class GuardedHTTPClient:
             finally:
                 await resp.aclose()
 
-    async def _send(
-        self, method: str, target: CanonicalTarget, ip: IPAddress, timeout: float
-    ) -> httpx.Response:
+    async def _send(self, method: str, target: CanonicalTarget, ip: IPAddress, timeout: float) -> httpx.Response:
         headers = {
             "Host": target.host_header,
             "User-Agent": self._ua,

@@ -9,12 +9,13 @@ from pathlib import Path
 
 import pytest
 import yaml
-from conftest import Ctx, run_signal
 
 from falcon_core.signals import REGISTRY
 from falcon_core.signals.brands import BrandRegistry, default_registry
 from falcon_core.signals.url.lexical import FEATURE_NAMES, extract_features
 from falcon_core.signals.url.skeleton import skeleton, skeleton_ci
+
+from conftest import Ctx, run_signal
 
 BRAND = "falcon-demo-bank.test"
 SQUAT = ("url.homograph", "url.typosquat", "url.combosquat", "url.brand_in_subdomain_or_path")
@@ -30,14 +31,10 @@ def names(url: str, only=None) -> set[str]:
 
 def test_registry_specs_valid():
     schema = json.loads(
-        (Path(__file__).resolve().parents[4] / "contracts" / "signal.schema.json").read_text(
-            encoding="utf-8"
-        )
+        (Path(__file__).resolve().parents[4] / "contracts" / "signal.schema.json").read_text(encoding="utf-8")
     )
     pat = re.compile(schema["properties"]["name"]["pattern"])
-    scoring = (Path(__file__).resolve().parents[4] / "docs" / "SCORING.md").read_text(
-        encoding="utf-8"
-    )
+    scoring = (Path(__file__).resolve().parents[4] / "docs" / "SCORING.md").read_text(encoding="utf-8")
     for name, (spec, _fn) in REGISTRY.items():
         assert pat.match(name) and spec.network == "none" and 10 <= spec.timeout_ms <= 6000
         for e in spec.emits:
@@ -57,9 +54,7 @@ def test_registry_specs_valid():
 
 def test_evidence_shape():
     ev = run_signal("url.typosquat", "https://falcon-demo-bnak.test/")[0].to_dict()
-    assert (
-        re.match(r"^ev_[a-z0-9]{8,32}$", ev["id"]) and ev["family"] == "url" and ev["tier"] == "T1"
-    )
+    assert re.match(r"^ev_[a-z0-9]{8,32}$", ev["id"]) and ev["family"] == "url" and ev["tier"] == "T1"
     assert ev["weight"] == 0 and ev["source"] == "computed" and 0 <= ev["confidence"] <= 1
     assert ev["display"]["ar"] and ev["display"]["en"] and len(ev["display"]["en"]) <= 200
     assert len(json.dumps(ev["observed"])) < 1024
@@ -156,13 +151,9 @@ def test_arabic_idn_brand_in_label():
 
 
 def test_official_domain_as_subdomain_prefix():
-    ev = run_signal(
-        "url.brand_in_subdomain_or_path", "https://falcon-demo-bank.test.verify-fine.test/pay"
-    )
+    ev = run_signal("url.brand_in_subdomain_or_path", "https://falcon-demo-bank.test.verify-fine.test/pay")
     assert ev and ev[0].observed["official_domain_in_host"] is True
-    assert "url.brand_in_subdomain_or_path" in names(
-        "https://falcon-demo-bank.test.verify-fine.invalid/"
-    )
+    assert "url.brand_in_subdomain_or_path" in names("https://falcon-demo-bank.test.verify-fine.invalid/")
 
 
 def test_userinfo_trick():
@@ -183,14 +174,10 @@ def test_open_redirect():
         "https://example.test/redirect?url=https%3A%2F%2Fevil.example%2Fx",
     )
     assert ev and ev[0].observed["target_host"] == "evil[.]example"
-    assert run_signal(
-        "url.open_redirect_abuse", "https://falcon-demo-bank.test/out?next=//evil.example/"
-    )
+    assert run_signal("url.open_redirect_abuse", "https://falcon-demo-bank.test/out?next=//evil.example/")
     # same-site and relative targets are fine
     assert not run_signal("url.open_redirect_abuse", "https://example.test/login?next=/home")
-    assert not run_signal(
-        "url.open_redirect_abuse", "https://example.test/login?next=https://example.test/home"
-    )
+    assert not run_signal("url.open_redirect_abuse", "https://example.test/login?next=https://example.test/home")
 
 
 # ----- legitimate official domains: no squat/homograph evidence
@@ -283,9 +270,7 @@ def test_skeleton():
 
 def test_brand_registry_loads_all_yaml_entries():
     reg = default_registry()
-    raw = yaml.safe_load(
-        (Path(__file__).resolve().parents[4] / "data" / "brands.yaml").read_text(encoding="utf-8")
-    )
+    raw = yaml.safe_load((Path(__file__).resolve().parents[4] / "data" / "brands.yaml").read_text(encoding="utf-8"))
     assert len(reg.brands) == len(raw["brands"]) >= 20
     assert reg.is_official("adpolice.gov.ae") and reg.is_official("falcon-demo-bank.test")
     assert not reg.is_official("falcon-demo-bank.example")

@@ -175,9 +175,7 @@ def typosquat_match(c: CanonicalURL, reg: BrandRegistry) -> dict[str, object] | 
                     info = {"kind": "edit_distance", "distance": d}
                 if info is not None:
                     info["keyboard_adjacent"] = all_subs_adjacent(cand_n, label_n) or (
-                        d == 1
-                        and len(cand_n) == len(label_n)
-                        and all_subs_adjacent(cand_n, label_n)
+                        d == 1 and len(cand_n) == len(label_n) and all_subs_adjacent(cand_n, label_n)
                     )
                     d = d * 2
             if info is None:
@@ -232,9 +230,7 @@ def _label_parts(label: str) -> list[str]:
     return [p for p in label.split("-") if p]
 
 
-def combosquat_match(
-    c: CanonicalURL, reg: BrandRegistry
-) -> tuple[Brand, str, str, str | None] | None:
+def combosquat_match(c: CanonicalURL, reg: BrandRegistry) -> tuple[Brand, str, str, str | None] | None:
     label = c.domain_label
     if not label:
         return None
@@ -323,11 +319,7 @@ def run_bsp(ctx: SignalContext) -> list[Evidence]:
     # (a) a verified official domain written inside the host: adpolice.gov.ae.evil.test
     for b in reg.brands:
         for d in b.verified_domains:
-            if (
-                c.subdomain
-                and ("." + d + ".") in ("." + host_s + ".")
-                and not host_s.endswith("." + d)
-            ):
+            if c.subdomain and ("." + d + ".") in ("." + host_s + ".") and not host_s.endswith("." + d):
                 out.append(
                     url_evidence(
                         "url.brand_in_subdomain_or_path",
@@ -344,11 +336,7 @@ def run_bsp(ctx: SignalContext) -> list[Evidence]:
                 )
                 return out
     sub_labels = c.subdomain_labels + ([c.domain_label] if c.is_private_suffix else [])
-    hit = (
-        _find_token(".".join(sub_labels), [compact(x) for x in sub_labels], reg)
-        if sub_labels
-        else None
-    )
+    hit = _find_token(".".join(sub_labels), [compact(x) for x in sub_labels], reg) if sub_labels else None
     if hit:
         b, tok = hit
         out.append(

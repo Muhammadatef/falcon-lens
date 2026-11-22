@@ -70,12 +70,8 @@ def run_userinfo(ctx: SignalContext) -> list[Evidence]:
                 "real_host": defang(c.host_ascii)[:200],
                 "userinfo": defang(ui)[:100],
             },
-            "The address hides its real host behind an '@' (real site: "
-            + defang(c.host_ascii)[:80]
-            + ")",
-            "العنوان يخفي الموقع الحقيقي خلف علامة @ (الموقع الفعلي: "
-            + defang(c.host_ascii)[:80]
-            + ")",
+            "The address hides its real host behind an '@' (real site: " + defang(c.host_ascii)[:80] + ")",
+            "العنوان يخفي الموقع الحقيقي خلف علامة @ (الموقع الفعلي: " + defang(c.host_ascii)[:80] + ")",
             1.0 if strong else 0.5,
         )
     ]
@@ -89,9 +85,7 @@ def run_bidi(ctx: SignalContext) -> list[Evidence]:
     raw = ctx.url or ctx.text or ""
     from urllib.parse import unquote
 
-    seen = sorted(
-        {f"U+{ord(ch):04X}" for ch in unquote(raw) if ch in BIDI_CHARS or ch in ZERO_WIDTH_CHARS}
-    )[:8]
+    seen = sorted({f"U+{ord(ch):04X}" for ch in unquote(raw) if ch in BIDI_CHARS or ch in ZERO_WIDTH_CHARS})[:8]
     only_joiners = all(s in ("U+200C", "U+200D") for s in seen)
     conf = (
         1.0
@@ -129,8 +123,7 @@ def run_ip(ctx: SignalContext) -> list[Evidence]:
             },
             "The link points to a raw IP address instead of a website name"
             + (" (written in a disguised form)" if c.ip_obfuscated else ""),
-            "الرابط يشير إلى عنوان IP مباشر بدل اسم موقع"
-            + (" (مكتوب بصيغة مموّهة)" if c.ip_obfuscated else ""),
+            "الرابط يشير إلى عنوان IP مباشر بدل اسم موقع" + (" (مكتوب بصيغة مموّهة)" if c.ip_obfuscated else ""),
             1.0,
         )
     ]

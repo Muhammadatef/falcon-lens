@@ -1,4 +1,5 @@
 """Deterministic ULID helpers so replays reproduce the same ids."""
+
 from __future__ import annotations
 
 import hashlib

@@ -3,6 +3,7 @@
 Reads data/private/feeds/openphish/snapshot_queue.jsonl (written by openphish.py) and will send each
 entry to sandbox /capture for both profiles, recording live/dead/cloaked. Not implemented yet.
 """
+
 from __future__ import annotations
 
 import json

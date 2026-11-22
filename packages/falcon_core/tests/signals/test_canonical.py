@@ -81,11 +81,7 @@ def test_never_raises_on_garbage():
 
 def test_psl_private_per_subdomain():
     c = canonicalize("https://fl-fixture-0000.github.io/")
-    assert (
-        c.registrable == "fl-fixture-0000.github.io"
-        and c.is_private_suffix
-        and c.domain_label == "fl-fixture-0000"
-    )
+    assert c.registrable == "fl-fixture-0000.github.io" and c.is_private_suffix and c.domain_label == "fl-fixture-0000"
     assert free_host_suffix(c) == "github.io"
     assert free_host_suffix(canonicalize("https://falcon-demo-bank.test/")) is None
 

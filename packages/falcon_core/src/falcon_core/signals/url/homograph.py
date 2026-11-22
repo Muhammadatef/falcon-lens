@@ -23,9 +23,7 @@ SPEC = SignalSpec(
 
 def _raw_case_label(c: CanonicalURL) -> str:
     """Domain label as typed (case preserved): catches 'paypaI' (capital I) which hosts lowercase to 'paypai'."""
-    raw_labels = [
-        _punycode_decode_label(x) if x.startswith("xn--") else x for x in c.host_raw_case.split(".")
-    ]
+    raw_labels = [_punycode_decode_label(x) if x.startswith("xn--") else x for x in c.host_raw_case.split(".")]
     n_suffix = len([x for x in c.suffix.split(".") if x]) if c.suffix else 0
     idx = len(raw_labels) - n_suffix - 1
     return raw_labels[idx] if 0 <= idx < len(raw_labels) else c.domain_label
@@ -43,9 +41,7 @@ def run(ctx: SignalContext) -> list[Evidence]:
     candidates = {c.domain_label, _raw_case_label(c), *c.subdomain_labels}
     scripts = _scripts_in(c.domain_label)
     mixed = len(scripts) > 1
-    best: tuple[str, str, str, str, str] | None = (
-        None  # brand_id, name_en, name_ar, token, candidate
-    )
+    best: tuple[str, str, str, str, str] | None = None  # brand_id, name_en, name_ar, token, candidate
     for cand in candidates:
         cc = compact(cand) if cand.islower() else cand.replace("-", "")
         keys = {skeleton_ci(cand.replace("-", "")), skeleton_ci(cc)}

@@ -117,9 +117,7 @@ def extract_features(url: str, reg: BrandRegistry | None = None) -> dict[str, fl
     f["is_data_uri"] = float(c.is_data_uri)
     f["num_percent"] = float(raw.count("%"))
     f["has_bidi_or_zw"] = float(c.has_bidi or c.has_zero_width)
-    f["num_special_chars_url"] = float(
-        sum(1 for ch in raw if not ch.isalnum() and ch not in "/.:-_")
-    )
+    f["num_special_chars_url"] = float(sum(1 for ch in raw if not ch.isalnum() and ch not in "/.:-_"))
     if not c.ok:
         return f
     reg = reg or default_registry()
@@ -151,9 +149,7 @@ def extract_features(url: str, reg: BrandRegistry | None = None) -> dict[str, fl
     f["tld_len"] = float(len(c.suffix.split(".")[-1])) if c.suffix else 0.0
     f["risky_tld"] = float(c.suffix.split(".")[-1] in RISKY_TLDS) if c.suffix else 0.0
     f["has_at_in_path"] = float("@" in c.path)
-    f["has_embedded_url_in_query"] = float(
-        "http" in c.query_decoded.lower() and "//" in c.query_decoded
-    )
+    f["has_embedded_url_in_query"] = float("http" in c.query_decoded.lower() and "//" in c.query_decoded)
     off = reg.is_official(c.registrable)
     f["is_official"] = float(off)
     if not c.is_ip:
@@ -181,9 +177,7 @@ def run_free_host(ctx: SignalContext) -> list[Evidence]:
     suffix = free_host_suffix(c)
     if suffix is None:
         return []
-    tenant = (
-        c.domain_label if c.suffix == suffix else c.subdomain.split(".")[-1] if c.subdomain else ""
-    )
+    tenant = c.domain_label if c.suffix == suffix else c.subdomain.split(".")[-1] if c.subdomain else ""
     return [
         url_evidence(
             "url.free_host_or_tunnel",

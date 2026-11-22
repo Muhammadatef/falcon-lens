@@ -1,4 +1,5 @@
 """Rules engine: evaluates services/sentinel/rules.yaml over correlation features."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -124,7 +125,11 @@ def _flip_matches(rule: Rule, sel: Sequence[Features]) -> list[Match]:
         for i, cur in enumerate(fs):
             if cur.verdict not in rule.to_verdicts:
                 continue
-            prevs = [p for p in fs[:i] if p.verdict in rule.from_verdicts and cur.event.occurred_at - p.event.occurred_at <= rule.window]
+            prevs = [
+                p
+                for p in fs[:i]
+                if p.verdict in rule.from_verdicts and cur.event.occurred_at - p.event.occurred_at <= rule.window
+            ]
             if prevs:
                 if prevs[0].event.event_id in used:
                     continue

@@ -107,14 +107,10 @@ URL_SHORTENERS = frozenset(
     }
 )
 
-_EXTRACT = tldextract.TLDExtract(
-    suffix_list_urls=(), include_psl_private_domains=True, cache_dir=None
-)
+_EXTRACT = tldextract.TLDExtract(suffix_list_urls=(), include_psl_private_domains=True, cache_dir=None)
 _SCHEME_RE = re.compile(r"^([A-Za-z][A-Za-z0-9+.\-]*):")
 _DOT_VARIANTS = str.maketrans({"。": ".", "．": ".", "｡": "."})
-_UNRESERVED = re.compile(
-    r"%(?:2[dDeE]|3[0-9]|4[1-9A-Fa-f]|5[0-9Aa]|5[Ff]|6[1-9A-Fa-f]|7[0-9Aa]|7[Ee])"
-)
+_UNRESERVED = re.compile(r"%(?:2[dDeE]|3[0-9]|4[1-9A-Fa-f]|5[0-9Aa]|5[Ff]|6[1-9A-Fa-f]|7[0-9Aa]|7[Ee])")
 
 
 @dataclass(frozen=True)
@@ -142,9 +138,7 @@ class CanonicalURL:
     invalid_port: bool = False
     labels: tuple[str, ...] = ()
     subdomain: str = ""  # PSL subdomain part (may be "")
-    domain_label: str = (
-        ""  # first label of the registrable domain (tenant name for private suffixes)
-    )
+    domain_label: str = ""  # first label of the registrable domain (tenant name for private suffixes)
     suffix: str = ""
     registrable: str = ""  # domain_label + "." + suffix
     is_private_suffix: bool = False
@@ -216,9 +210,7 @@ def parse_ipv4(host: str) -> tuple[str, bool] | None:
         value = (value << 8) | n
     value = (value << (8 * (5 - len(ints)))) | ints[-1]
     quad = ".".join(str((value >> s) & 255) for s in (24, 16, 8, 0))
-    canonical_form = len(parts) == 4 and all(
-        p.isdigit() and (p == "0" or not p.startswith("0")) for p in parts
-    )
+    canonical_form = len(parts) == 4 and all(p.isdigit() and (p == "0" or not p.startswith("0")) for p in parts)
     return quad, not canonical_form
 
 
@@ -276,14 +268,10 @@ def _canonicalize(raw: str) -> CanonicalURL:
     s = (raw or "")[:MAX_URL_LEN].strip()
     decoded_for_flags = unquote(s)
     has_bidi = any(c in BIDI_CHARS for c in s) or any(c in BIDI_CHARS for c in decoded_for_flags)
-    has_zw = any(c in ZERO_WIDTH_CHARS for c in s) or any(
-        c in ZERO_WIDTH_CHARS for c in decoded_for_flags
-    )
+    has_zw = any(c in ZERO_WIDTH_CHARS for c in s) or any(c in ZERO_WIDTH_CHARS for c in decoded_for_flags)
 
     if s.lower().startswith("data:"):
-        return CanonicalURL(
-            raw=s[:512], scheme="data", is_data_uri=True, has_bidi=has_bidi, has_zero_width=has_zw
-        )
+        return CanonicalURL(raw=s[:512], scheme="data", is_data_uri=True, has_bidi=has_bidi, has_zero_width=has_zw)
 
     m = _SCHEME_RE.match(s)
     if m and not re.match(r"^[A-Za-z0-9.\-]+:\d+(/|$)", s):  # "host:8080/x" is not a scheme

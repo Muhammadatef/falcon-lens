@@ -1,4 +1,5 @@
 """Incident building (schema-valid, deterministic ids) and the idempotent Sentinel driver."""
+
 from __future__ import annotations
 
 import copy
@@ -115,7 +116,13 @@ def build_incident(
     old_ind = {(i["kind"], i["value_defanged"]): i for i in (existing or {}).get("indicators", [])}
     indicators = []
     for (kind, value), seen in sorted(first_seen.items()):
-        ind = {"kind": kind, "value_defanged": value, "sha256": _sha(value.replace("[.]", ".")), "first_seen": iso(seen), "blocked_until": None}
+        ind = {
+            "kind": kind,
+            "value_defanged": value,
+            "sha256": _sha(value.replace("[.]", ".")),
+            "first_seen": iso(seen),
+            "blocked_until": None,
+        }
         if (kind, value) in old_ind:
             ind["blocked_until"] = old_ind[(kind, value)].get("blocked_until")
         indicators.append(ind)
@@ -138,7 +145,11 @@ def build_incident(
     extra = [{"at": iso(created), "what": f"alias {a}"} for a in aliases]
     extra.append({"at": iso(triggered_at), "what": f"rule {rule.id} fired ({rule.type})"})
     events_tl = [
-        {"at": iso(f.event.occurred_at), "what": f"{f.event.type} {defang(f.domain) if f.domain else ''}".strip(), "event_id": f.event.event_id}
+        {
+            "at": iso(f.event.occurred_at),
+            "what": f"{f.event.type} {defang(f.domain) if f.domain else ''}".strip(),
+            "event_id": f.event.event_id,
+        }
         for f in fs
     ]
     seen_tl: set[tuple[str, str]] = set()

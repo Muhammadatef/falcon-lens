@@ -63,8 +63,6 @@ def test_data_dir_env(monkeypatch, tmp_path):
     assert op.data_dir() == tmp_path
 
 
-
-
 def _no_http(*a, **k):
     raise AssertionError("HTTP must not be called when the rate guard refuses")
 

@@ -9,9 +9,7 @@ import unicodedata
 from collections import Counter
 
 BIDI_CHARS = frozenset("\u061c\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069")
-ZERO_WIDTH_CHARS = frozenset(
-    "\u200b\u200c\u200d\u2060\u2061\u2062\u2063\u2064\ufeff\u00ad\u180e\u034f"
-)
+ZERO_WIDTH_CHARS = frozenset("\u200b\u200c\u200d\u2060\u2061\u2062\u2063\u2064\ufeff\u00ad\u180e\u034f")
 _ARABIC_DIACRITICS = re.compile("[ؐ-ًؚ-ٰٟۖ-ۭـ]")  # tashkeel, tatweel
 _SEP = re.compile(r"[\s\-_.\u200c\u200d]+")
 
