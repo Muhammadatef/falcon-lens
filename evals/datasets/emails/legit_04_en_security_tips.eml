@@ -1,0 +1,26 @@
+Return-Path: <bounce@falcon-demo-bank.test>
+Received: from mail.falcon-demo-bank.test ([192.0.2.39]) by mx.example.test
+ with ESMTPS; Tue, 24 Nov 2026 02:23:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank.test; dkim=pass
+ header.d=falcon-demo-bank.test; dmarc=pass header.from=falcon-demo-bank.test
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=falcon-demo-bank.test;
+ s=fixture; h=from:to:subject:date; bh=FIXTURE; b=FIXTURE-NOT-A-REAL-SIGNATURE
+From: "Falcon Demo Bank" <security@falcon-demo-bank.test>
+To: Customer <customer@example.test>
+Subject: Security reminder: we will never ask for your OTP
+Date: Tue, 24 Nov 2026 02:23:00 +0400
+Message-ID: <c05-29.fixture@falcon-demo-bank.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBjdXN0b21lciwKCkEgcmVtaW5kZXI6IEZh
+bGNvbiBEZW1vIEJhbmsgd2lsbCBuZXZlciBhc2sgZm9yIHlvdXIgT1RQLCBQSU4gb3IgcGFzc3dv
+cmQgYnkgZW1haWwsIFNNUyBvciBwaG9uZSBjYWxsLiBJZiBzb21lb25lIGFza3MsIGl0IGlzIG5v
+dCB1cy4gRG8gbm90IHJlcGx5OyBjYWxsIHRoZSBudW1iZXIgcHJpbnRlZCBvbiB0aGUgYmFjayBv
+ZiB5b3VyIGNhcmQuCgpLaW5kIHJlZ2FyZHMsCkZhbGNvbiBEZW1vIEJhbmsgU2VjdXJpdHkgQXdh
+cmVuZXNzIFRlYW0KClRFU1QgRklYVFVSRSwgbm90IGEgcmVhbCBtZXNzYWdlIC8g2LHYs9in2YTY
+qSDYp9iu2KrYqNin2LEg2YjZhNmK2LPYqiDYrdmC2YrZgtmK2KkK

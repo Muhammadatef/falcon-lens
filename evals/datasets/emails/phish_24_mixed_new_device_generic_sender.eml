@@ -1,0 +1,57 @@
+Return-Path: <bounce@example.test>
+Received: from mail.example.test ([192.0.2.34]) by mx.example.test with
+ ESMTPS; Mon, 23 Nov 2026 10:48:00 +0400
+Authentication-Results: mx.example.test; spf=pass smtp.mailfrom=example.test;
+ dkim=pass header.d=example.test; dmarc=pass header.from=example.test
+From: "Falcon Demo Bank Security" <no-reply@example.test>
+To: Customer <customer@example.test>
+Subject: New device login | =?utf-8?b?2KrYs9is2YrZhCDYr9iu2YjZhCDZhdmGINis?=
+ =?utf-8?b?2YfYp9iyINis2K/Zitiv?=
+Date: Mon, 23 Nov 2026 10:48:00 +0400
+Message-ID: <c05-24.fixture@example.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============4472448033103039023=="
+
+--===============4472448033103039023==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9
+
+A new device signed in to your account. If this wasn't you, review the sign-i=
+n now.
+=D8=AA=D9=85 =D8=AA=D8=B3=D8=AC=D9=8A=D9=84 =D8=A7=D9=84=D8=AF=D8=AE=D9=88=D9=
+=84 =D8=A5=D9=84=D9=89 =D8=AD=D8=B3=D8=A7=D8=A8=D9=83 =D9=85=D9=86 =D8=AC=D9=
+=87=D8=A7=D8=B2 =D8=AC=D8=AF=D9=8A=D8=AF. =D8=A5=D8=B0=D8=A7 =D9=84=D9=85 =D8=
+=AA=D9=83=D9=86 =D8=A3=D9=86=D8=AA=D8=8C =D8=B1=D8=A7=D8=AC=D8=B9 =D8=B9=D9=
+=85=D9=84=D9=8A=D8=A9 =D8=A7=D9=84=D8=AF=D8=AE=D9=88=D9=84 =D8=A7=D9=84=D8=A2=
+=D9=86.
+
+https://device-review.example.test/r
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9
+
+--===============4472448033103039023==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYt
+OCI+PHRpdGxlPkZhbGNvbiBEZW1vIEJhbms8L3RpdGxlPjwvaGVhZD4KPGJvZHk+CjxwPjxzdHJv
+bmc+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio
+2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqTwvc3Ryb25nPjwvcD4KPHA+QSBuZXcgZGV2aWNl
+IHNpZ25lZCBpbiB0byB5b3VyIGFjY291bnQuIElmIHRoaXMgd2Fzbid0IHlvdSwgcmV2aWV3IHRo
+ZSBzaWduLWluIG5vdy48L3A+PHAgZGlyPSJydGwiPtiq2YUg2KrYs9is2YrZhCDYp9mE2K/YrtmI
+2YQg2KXZhNmJINit2LPYp9io2YMg2YXZhiDYrNmH2KfYsiDYrNiv2YrYry4g2KXYsNinINmE2YUg
+2KrZg9mGINij2YbYqtiMINix2KfYrNi5INi52YXZhNmK2Kkg2KfZhNiv2K7ZiNmEINin2YTYotmG
+LjwvcD48cD48YSBocmVmPSJodHRwczovL2RldmljZS1yZXZpZXcuZXhhbXBsZS50ZXN0L3IiPmh0
+dHBzOi8vZmFsY29uLWRlbW8tYmFuay50ZXN0L2RldmljZXM8L2E+PC9wPgo8L2JvZHk+PC9odG1s
+Pgo=
+
+--===============4472448033103039023==--
