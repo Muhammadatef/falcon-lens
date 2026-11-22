@@ -1,0 +1,29 @@
+name: Bug report
+description: Something is broken or behaves differently from the docs
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Expected vs actual behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Commands, input and service. Use defanged URLs (hxxp, [.]); never paste live phishing links, keys or personal data.
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: OS, arch, Docker version, commit SHA.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant JSON log lines (redact secrets).
+      render: shell
