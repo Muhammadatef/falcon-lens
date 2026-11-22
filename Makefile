@@ -74,8 +74,10 @@ eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/result
 	uv run python -m evals.harness.run
 redteam:
 	$(NYI)
-submission:
-	$(NYI)
+submission: ## Build submission/ (form fields, deck, PDF, CHECKLIST) and trace every number. SUBMISSION_STRICT=1 fails when the MVP is not shipped
+	uv run --with-requirements scripts/submission/requirements.txt python scripts/submission/build.py
+	uv run --with-requirements scripts/submission/requirements.txt python scripts/submission/check_numbers.py
+	uv run python scripts/submission/descriptions.py --check submission/description_en.txt submission/description_ar.txt
 
 # ---- demo tooling (gate G6) ---------------------------------------------------------------------------
 seed: ## Push the corpus through the real API/worker as source=replay (idempotent; FORCE=1 resubmits)
