@@ -31,7 +31,13 @@ MAX_REASONS = 3
 
 _ARABIC_RE = re.compile(r"[\u0600-\u06ff]")
 _LATIN_RE = re.compile(r"[A-Za-z]")
-_LINK_RE = re.compile(r"(?i)(?:\b[a-z][a-z0-9+.-]*://|\bwww\.|\b[a-z0-9-]+\s*\.\s*[a-z]{2,24}\b)")
+_LINK_RE = re.compile(
+    r"(?i)(?:\b[a-z][a-z0-9+.-]*://|\bwww\.|\b[a-z0-9-]+\s*\.\s*[a-z]{2,24}\b"
+    # spelled-out or look-alike dots: "x dot example", "x (dot) example", "x [dot] example", "x⸳example"
+    r"|\b[a-z0-9-]+\s*[(\[{]?\s*(?:dot|d0t|point)\s*[)\]}]?\s*[a-z]{2,24}\b"
+    r"|\b[a-z0-9-]+\s*[\u2e33\u00b7\u2022\u2219\u22c5\u30fb\u2024\u2027]\s*[a-z]{2,24}\b"
+    r"|[a-z0-9-]+\s*(?:\u0646\u0642\u0637\u0629|\u0646\u0642\u0637\u0647)\s*[a-z]{2,24}\b)"
+)
 _FORBIDDEN_CHARS = set("<>%&[]{}`\\")
 _DIGIT_RE = re.compile(r"[0-9]")
 _SCORE_RE = re.compile(r"(?i)\b(?:score|probability|percent|out of)\b|نسبة|درجة الخطورة|من مئة|من مائة")
