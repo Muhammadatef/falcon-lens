@@ -90,6 +90,10 @@ files = ["packages/falcon_core/src", "services/api/src", "services/worker/src"]
 explicit_package_bases = true
 mypy_path = "packages/falcon_core/src:services/api/src:services/worker/src"
 
+[[tool.mypy.overrides]]
+module = ["joblib", "joblib.*"]
+ignore_missing_imports = true  # joblib ships no stubs; used only by the T1 model loader
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
