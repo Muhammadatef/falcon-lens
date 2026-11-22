@@ -30,7 +30,7 @@
       }
     },
     "linked_verdicts": { "type": "array", "items": { "type": "string" } },
-    "timeline": { "type": "array", "items": { "type": "object", "required": ["at", "what"], "properties": { "at": { "type": "string", "format": "date-time" }, "what": { "type": "string" }, "event_id": { "type": "string" } } } },
+    "timeline": { "type": "array", "items": { "type": "object", "required": ["at", "what"], "properties": { "at": { "type": "string", "format": "date-time" }, "what": { "type": "string", "description": "Kept for compatibility; prefer what_en / what_ar." }, "what_ar": { "type": "string" }, "what_en": { "type": "string" }, "event_id": { "type": "string" } } } },
     "summary": { "type": ["object", "null"], "properties": { "ar": { "type": "string" }, "en": { "type": "string" }, "claims": { "type": "array", "items": { "type": "object", "required": ["text_en", "evidence_ids"], "properties": { "text_en": { "type": "string" }, "evidence_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } } } } }, "generated_by": { "type": "string", "enum": ["llm", "template"] }, "model_route": { "type": "string", "enum": ["cloud", "local", "none"] } } },
     "actions": {
       "type": "array",
