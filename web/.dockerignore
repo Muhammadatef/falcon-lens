@@ -1,4 +1,7 @@
 node_modules
 .next
-.env*
-Dockerfile
+design/prototype
+tests
+test-results
+playwright-report
+shots
