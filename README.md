@@ -248,7 +248,52 @@ The method is in [`docs/EVALS.md`](docs/EVALS.md): a temporal split grouped by r
 The block below is written by [`scripts/readme_metrics.py`](scripts/readme_metrics.py), which copies values verbatim from the newest file in `evals/results/published/`. Nothing in it is typed by hand.
 
 <!-- metrics:start -->
-_No published eval artifact yet._ Numbers appear here only when `make eval` has written an artifact and a copy is in `evals/results/published/`.
+Source artifact: [`evals/results/published/20261122T182533Z.json`](evals/results/published/20261122T182533Z.json). Values are copied verbatim.
+
+| Provenance | Value |
+|---|---|
+| `created_at` | `2026-11-22T18:25:33Z` |
+| `git_sha` | `ac36c6a4ece9f814cebbc337eef685c0369deb01-dirty` |
+| `dataset_hash` | `382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1` |
+| `seeds` | `{"bootstrap": 20261122, "model": 20261122, "n_bootstrap": 1000, "split": 20261122}` |
+| `model_ids.llm_cloud` | `not_evaluated` |
+| `model_ids.llm_sovereign` | `not_evaluated` |
+| `model_ids.t1.fit_date` | `2026-11-22` |
+| `model_ids.t1.git_sha` | `4415c0fa498b6b95155b09fdd43c26cff4d623d5` |
+| `model_ids.t1.model_id` | `t1_hgb` |
+| `model_ids.t1.model_sha256` | `41db3ba644d5084d45c3ff0fa0a11ca258caa145d7d81856a0c4fe8b9b179ed3` |
+| `model_ids.t1.sklearn_version` | `1.9.1` |
+
+| Metric | Value |
+|---|---|
+| `test.ece` | 0.014249 |
+| `test.ece_ci95` | [0.013481, 0.048042] |
+| `test.f1` | 0.967213 |
+| `test.f1_ci95` | [0.93202, 0.992593] |
+| `test.fpr` | 0.0375 |
+| `test.fpr_ci95` | [0.0, 0.082377] |
+| `test.n` | 140 |
+| `test.official_false_dangerous` | 0 |
+| `test.pr_auc` | 0.986588 |
+| `test.pr_auc_ci95` | [0.96648, 0.999321] |
+| `test.precision` | 0.951613 |
+| `test.precision_ci95` | [0.888889, 1.0] |
+| `test.recall` | 0.983333 |
+| `test.recall_ci95` | [0.948253, 1.0] |
+| `val.ece` | 0.031541 |
+| `val.ece_ci95` | [0.019403, 0.060841] |
+| `val.f1` | 0.97479 |
+| `val.f1_ci95` | [0.938768, 1.0] |
+| `val.fpr` | 0.011905 |
+| `val.fpr_ci95` | [0.0, 0.0375] |
+| `val.n` | 144 |
+| `val.official_false_dangerous` | 0 |
+| `val.pr_auc` | 0.986559 |
+| `val.pr_auc_ci95` | [0.966758, 1.0] |
+| `val.precision` | 0.983051 |
+| `val.precision_ci95` | [0.943396, 1.0] |
+| `val.recall` | 0.966667 |
+| `val.recall_ci95` | [0.912251, 1.0] |
 <!-- metrics:end -->
 
 ## Status

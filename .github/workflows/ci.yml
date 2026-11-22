@@ -106,6 +106,41 @@ jobs:
         run: pnpm test
         working-directory: web
 
+  extension:
+    name: extension
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          package_json_file: extension/package.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: extension/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: extension
+      - name: typecheck + static rules (no innerHTML, no inline script, never "safe")
+        run: pnpm lint
+        working-directory: extension
+      - name: unit tests (on-device prefilter, response validation)
+        run: pnpm test
+        working-directory: extension
+      - name: build + zip (brand list generated from data/brands.yaml)
+        run: pnpm zip
+        working-directory: extension
+      - name: pnpm audit
+        run: pnpm audit
+        working-directory: extension
+      - name: install Chromium for Playwright
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: extension
+      - name: e2e (unpacked extension in Chromium, mock API on 127.0.0.1)
+        run: pnpm test:e2e
+        working-directory: extension
+
   contracts:
     name: contracts
     runs-on: ubuntu-24.04

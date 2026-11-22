@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
@@ -22,7 +23,9 @@ from scoring_helpers import DEMO_BRAND, make_evidence
 
 mk = make_evidence
 
-P = load_params()
+# Pinned to the SCORING.md draft values: the packaged params.yaml is refitted by `make fit-thresholds`.
+P = load_params(Path(__file__).with_name("params_draft.yaml"))
+DRAFT_CTX = ArbiterContext(params=P)
 
 
 def test_params_are_draft_and_match_scoring_md() -> None:
@@ -62,7 +65,7 @@ def test_band_edges(p: float, expected: str) -> None:
 
 @pytest.mark.parametrize(("p", "expected"), [(0.35, "suspicious"), (0.80, "dangerous"), (0.3499, "no_warning_signs")])
 def test_band_edges_through_score_are_exact(p: float, expected: str) -> None:
-    res = score([], p_clf=p)
+    res = score([], p_clf=p, ctx=DRAFT_CTX)
     assert res.calibrated_probability == p
     assert res.verdict == expected
 
@@ -311,7 +314,7 @@ def test_brand_conflict_detection() -> None:
 
 @pytest.mark.parametrize(("p", "exits"), [(0.24, True), (0.25, False), (0.5, False), (0.85, False), (0.86, True)])
 def test_t2_exit_band(p: float, exits: bool) -> None:
-    assert t2_should_exit(score([], p_clf=p), P) is exits
+    assert t2_should_exit(score([], p_clf=p, ctx=DRAFT_CTX), P) is exits
 
 
 def test_t2_exit_on_hard_rule() -> None:
