@@ -1,6 +1,6 @@
 """LLM agents: quarantined extractor (T2), investigator (T3), responder + verifier."""
 
-from falcon_core.agent.brands import BrandIndex, load_brand_index
+from falcon_core.agent.brands import BrandIndex, BrandRegistryError, load_brand_index
 from falcon_core.agent.evidence_view import evidence_json, safe_value
 from falcon_core.agent.extractor import (
     Extraction,
@@ -28,6 +28,7 @@ from falcon_core.agent.responder import (
 
 __all__ = [
     "BrandIndex",
+    "BrandRegistryError",
     "Extraction",
     "Extractor",
     "ExtractorInput",

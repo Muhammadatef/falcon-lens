@@ -149,6 +149,28 @@ async def test_redaction_applied_before_cloud_call() -> None:
     assert res.redactions == {"email": 1, "emirates_id": 1, "card": 1, "phone": 1}
 
 
+@pytest.mark.parametrize(
+    "secret",
+    [
+        "784-1990-123\u200b4567-1",
+        "٧٨٤-١٩٩٠-١٢٣٤٥٦٧-١",
+        "٤١١١ ١١١١ ١١١١ ١١١١",
+        "4111.1111.1111.1111",
+        "٠٥٠١٢٣٤٥٦٧",
+        "a.b＠exa\u200bmple.ae",
+    ],
+)
+async def test_normalised_redaction_on_the_cloud_request(secret: str) -> None:
+    cloud = ScriptedProvider("cloud", [GOOD])
+    router, _ = make(cloud_cfg(), cloud, ScriptedProvider("local", [GOOD]))
+    await router.complete_json(req(untrusted=[UntrustedText("message_body", f"pay: {secret}")], context=secret))
+    sent = cloud.requests[0].turns[-1].content
+    assert not any(c.isdigit() and not c.isascii() for c in sent)
+    assert "@" not in sent and "＠" not in sent and "\u200b" not in sent
+    body = sent.split("kind=message_body>>>", 1)[1]
+    assert not any(c.isdigit() for c in body.split("<<<END_UNTRUSTED", 1)[0])
+
+
 async def test_untrusted_text_is_spotlighted_and_system_is_stable() -> None:
     cloud = ScriptedProvider("cloud", [GOOD])
     router, _ = make(cloud_cfg(), cloud, ScriptedProvider("local", [GOOD]))

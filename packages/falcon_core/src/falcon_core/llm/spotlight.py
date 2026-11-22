@@ -8,21 +8,22 @@ Untrusted text is wrapped between random-nonce delimiters and every line is data
     <<<END_UNTRUSTED:{nonce}>>>
 
 Before wrapping, anything that could forge a delimiter (``<<<``, ``>>>``, the nonce itself) is
-neutralised, control / bidi / zero-width characters are removed, and the text is length-capped.
+neutralised, the text is normalised (``textnorm``: line separators folded, format / bidi /
+zero-width / tag characters removed) and control characters blanked, and it is length-capped.
 """
 
 from __future__ import annotations
 
 import re
 import secrets
-import unicodedata
 from dataclasses import dataclass
+
+from falcon_core.llm.textnorm import normalise_text
 
 DATAMARK = "^"
 DEFAULT_MAX_CHARS = 8000  # THREAT_MODEL §D: message 8 KB
 
-_INVISIBLE_RE = re.compile("[​-‏‪-‮⁠-⁩﻿­]")
-_CTRL_RE = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+_CTRL_RE = re.compile(r"[\x00-\x08\x0e-\x1f\x7f-\x9f\t]")
 
 
 def new_nonce() -> str:
@@ -38,11 +39,11 @@ class UntrustedText:
 
 
 def sanitise_untrusted(text: str, nonce: str, max_chars: int = DEFAULT_MAX_CHARS) -> str:
-    text = unicodedata.normalize("NFC", text)
-    text = _INVISIBLE_RE.sub("", text)
+    # normalise_text: NFKC, all line separators (U+0085/2028/2029, VT, FF, CR) -> "\n", every
+    # format character (zero-width, bidi, U+E0000 tag block) removed, Unicode digits -> ASCII.
+    text = normalise_text(text)
     text = _CTRL_RE.sub(" ", text)
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = text.replace("<<<", "‹‹‹").replace(">>>", "›››")
+    text = text.replace("<<<", "\u2039\u2039\u2039").replace(">>>", "\u203a\u203a\u203a")
     text = re.sub(re.escape(nonce), "[nonce]", text, flags=re.IGNORECASE)
     if len(text) > max_chars:
         text = text[:max_chars] + "\n[truncated]"
@@ -50,7 +51,8 @@ def sanitise_untrusted(text: str, nonce: str, max_chars: int = DEFAULT_MAX_CHARS
 
 
 def datamark(text: str) -> str:
-    return "\n".join(DATAMARK + line for line in text.split("\n"))
+    """Prefix every line with ``^``. Any line-break variant is folded to ``\\n`` first."""
+    return "\n".join(DATAMARK + line for line in normalise_text(text).split("\n"))
 
 
 def spotlight(item: UntrustedText, nonce: str, max_chars: int = DEFAULT_MAX_CHARS) -> str:

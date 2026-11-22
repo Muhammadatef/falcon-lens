@@ -54,7 +54,8 @@ Rules:
 - Each reason cites the ids of the evidence it is based on in evidence_ids (at least one, only \
 ids from the list).
 - Each text is one sentence, at most 200 characters, plain text: no links, no domains, no HTML, \
-no numbers you did not see in the evidence.
-- Never use the word "safe" / «آمن». The lowest verdict is "no warning signs found".
+no digits, no brackets.
+- Never call anything safe, secure, trustworthy, legitimate or guaranteed, and never use «آمن» \
+«أمان» «سليم» «مضمون» «موثوق». The lowest verdict is "no warning signs found" / «لم نجد علامات تحذير».
 - Never ask the user for personal, banking or ID details.
 - Do not mention scores or percentages."""
