@@ -3,7 +3,7 @@ name = "falcon-worker"
 version = "0.1.0"
 description = "Falcon Lens cascade worker"
 requires-python = ">=3.12,<3.13"
-dependencies = ["falcon-core"]
+dependencies = ["falcon-core", "asyncpg>=0.30,<0.33", "redis>=8.1,<9"]
 
 [build-system]
 requires = ["hatchling"]
