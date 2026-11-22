@@ -90,12 +90,14 @@ weights:
   email.reply_to_mismatch: 1.0
   email.link_text_mismatch: 2.0
   injection.instruction_like_text: 1.5
+  injection.tool_provenance: 1.5     # L1 2026-11-22: off-chain tool arg blocked (SCORING §2)
   registry.verified_official: -4.0
   # informational (weight 0), listed so SCORING §2 and this file stay in sync
   message.contains_url: 0.0
   message.contains_phone: 0.0
   message.link_verdict: 0.0
   email.link_verdict: 0.0
+  llm.extraction: 0.0            # quarantined extractor output, informational
   email.attachment: 0.0          # see email_attachment.risky_weight
   email.return_path_mismatch: 0.0
   email.invalid: 0.0
