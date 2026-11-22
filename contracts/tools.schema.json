@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/tools.schema.json",
+  "title": "ToolRegistry",
+  "description": "Typed tools shared by the T3 Investigator, the Sentinel graph and the MCP server. Implemented once in packages/falcon_core/tools. The LLM selects tools by emitting an Action object (below) validated against this registry; no free-form calls.",
+  "$defs": {
+    "Action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool", "args", "why_evidence_ids"],
+      "properties": {
+        "tool": { "type": "string" },
+        "args": { "type": "object" },
+        "why_evidence_ids": { "type": "array", "items": { "type": "string" }, "description": "Evidence ids that motivated the call (for the trace)." },
+        "stop": { "type": "boolean", "description": "true = evidence sufficient, end the loop." }
+      }
+    },
+    "ProvenanceRule": {
+      "description": "Every URL/domain argument MUST be the original canonical input, a hop in its observed redirect chain, or a registrable domain derived from those. Anything else is rejected (tool_errors_total{tool,reason='provenance'}) and counted as injection evidence."
+    }
+  },
+  "investigator_tools": {
+    "rdap_lookup": { "args": { "domain": "registrable domain (provenance-checked)" }, "returns": "Evidence[] domain.age, domain.registrar", "budget_ms": 2500 },
+    "cert_lookup": { "args": { "domain": "string" }, "returns": "Evidence[] domain.cert_age, domain.cert_issuer, domain.ct_siblings", "budget_ms": 2500 },
+    "render_page": { "args": { "url": "provenance-checked", "profile": "mobile_ar|desktop_en" }, "returns": "Evidence[] page.*, visual.* (never raw HTML)", "budget_ms": 6000 },
+    "compare_brand": { "args": { "brand_id": "registry id", "domain": "string" }, "returns": "Evidence[] brand.domain_owned, brand.visual_similarity", "budget_ms": 800 },
+    "search_similar_scripts": { "args": { "fingerprint": "script embedding id" }, "returns": "Evidence[] message.nearest_scripts (ids + labels only)", "budget_ms": 800 },
+    "check_reputation": { "args": { "url": "provenance-checked" }, "returns": "Evidence[] rep.*", "budget_ms": 1500 },
+    "expand_redirects": { "args": { "url": "provenance-checked" }, "returns": "Evidence[] url.redirect_chain", "budget_ms": 3000 }
+  },
+  "sentinel_tools": {
+    "search_verdicts": { "mode": "read", "args": { "brand_id": "?", "registrable_domain": "?", "since": "date-time", "limit": "int<=200" } },
+    "find_related_domains": { "mode": "read", "args": { "incident_id": "string", "keys": ["dom_simhash", "asn", "registrar", "cert_issuer"] } },
+    "get_past_incidents": { "mode": "read", "args": { "brand_id": "?", "type": "?", "limit": "int<=20" } },
+    "feed_status": { "mode": "read", "args": {} },
+    "requeue_check": { "mode": "internal_auto", "args": { "url": "indicator from incident" } },
+    "block_indicator": { "mode": "internal_auto", "args": { "indicator": "from incident", "ttl_hours": "1..168" }, "reversible": "make unblock ID=<action_id>" },
+    "upsert_incident": { "mode": "internal_auto", "args": { "incident_id": "string", "patch": "severity|severity_reason|summary|status" } },
+    "raise_alert": { "mode": "internal_auto", "args": { "incident_id": "string", "severity": "string" } },
+    "update_campaign_board": { "mode": "internal_auto", "args": { "incident_id": "string" } },
+    "export_stix": { "mode": "internal_auto", "args": { "incident_id": "string" } },
+    "draft_takedown": { "mode": "external_draft", "args": { "incident_id": "string", "recipient_kind": "registrar|host" }, "requires": "operator approval; never sent automatically" },
+    "draft_police_report": { "mode": "external_draft", "args": { "incident_id": "string" }, "requires": "operator approval; never sent automatically" }
+  },
+  "mcp_tools": ["check_url", "check_message", "check_email", "get_verdict", "list_campaigns", "list_incidents", "get_incident", "submit_report"]
+}

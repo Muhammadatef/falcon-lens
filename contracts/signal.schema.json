@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/signal.schema.json",
+  "title": "SignalSpec",
+  "description": "Registration record for a signal plugin (packages/falcon_core/signals/<family>/<name>.py). Python interface: `async def run(ctx: SignalContext) -> list[Evidence]`; must respect timeout_ms, must not raise (return Evidence with error set), must not do network I/O except through ctx.http (SSRF-guarded, egress proxy) and ctx.cache.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "family", "tier", "input_types", "timeout_ms", "network", "emits"],
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9_.]{2,63}$" },
+    "family": { "type": "string", "enum": ["url", "domain", "reputation", "page", "visual", "brand", "message", "email", "image", "injection"] },
+    "tier": { "type": "string", "enum": ["T0", "T1", "T2"] },
+    "input_types": { "type": "array", "items": { "type": "string", "enum": ["url", "message", "email", "image"] } },
+    "timeout_ms": { "type": "integer", "minimum": 10, "maximum": 6000 },
+    "network": { "type": "string", "enum": ["none", "egress_proxy", "local_mirror"] },
+    "cache_ttl_s": { "type": "integer", "minimum": 0 },
+    "emits": { "type": "array", "items": { "type": "string" }, "description": "Evidence signal names this plugin can emit; each must be listed in docs/SCORING.md." },
+    "feature_names": { "type": "array", "items": { "type": "string" }, "description": "Numeric features fed to the T1 classifier." }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/evidence.schema.json",
+  "title": "Evidence",
+  "description": "One observed fact emitted by a signal. Signals emit evidence, never verdicts. The arbiter turns evidence into a score.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "signal", "family", "observed", "weight", "source", "tier"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^ev_[a-z0-9]{8,32}$", "description": "Stable within one verdict; reasons cite these ids." },
+    "signal": { "type": "string", "pattern": "^[a-z][a-z0-9_.]{2,63}$", "description": "Registered signal name, e.g. url.homograph, page.cred_form, rep.openphish." },
+    "family": { "type": "string", "enum": ["url", "domain", "reputation", "page", "visual", "brand", "message", "email", "image", "injection", "llm"] },
+    "observed": { "description": "Machine-readable observed value (bool, number, string or small object). Never raw page HTML; strings max 512 chars, defanged if they are URLs.", "type": ["boolean", "number", "string", "object", "array", "null"] },
+    "display": {
+      "type": "object",
+      "description": "Short human text for the UI, already output-encoded by the renderer, never HTML.",
+      "additionalProperties": false,
+      "properties": { "ar": { "type": "string", "maxLength": 200 }, "en": { "type": "string", "maxLength": 200 } }
+    },
+    "weight": { "type": "number", "minimum": -100, "maximum": 100, "description": "Contribution the arbiter assigned (log-odds points). Filled by the arbiter, 0 if the signal is informational." },
+    "polarity": { "type": "string", "enum": ["risk", "trust", "neutral"], "default": "neutral" },
+    "hard_rule": { "type": ["string", "null"], "description": "Id of the hard rule this evidence triggered, if any (docs/SCORING.md)." },
+    "source": { "type": "string", "description": "Where it came from: computed | rdap | crt | openphish | gsb | urlhaus | sandbox | registry | llm:<role> | user." },
+    "tier": { "type": "string", "enum": ["T0", "T1", "T2", "T3"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 },
+    "latency_ms": { "type": "integer", "minimum": 0 },
+    "error": { "type": ["string", "null"], "description": "Set when the signal failed or timed out; the verdict is then degraded." }
+  }
+}

@@ -1,0 +1,38 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# private data: live phishing URLs, snapshots, brand logos (never public)
+data/private/
+data/raw/
+# local model / agent scratch
+work/
+# eval outputs (json summaries are committed via evals/results/published/)
+evals/results/*
+!evals/results/.gitkeep
+!evals/results/published/
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+# node
+node_modules/
+.next/
+out/
+.pnpm-store/
+# os / editors
+.DS_Store
+.idea/
+.vscode/
+# claude local
+.claude/settings.local.json

@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/verdict.schema.json",
+  "title": "Verdict",
+  "description": "The single output contract for every surface (web, extension, REST, MCP, Telegram). Progressive: the same verdict_id is re-emitted as tiers complete; `final` marks the last one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict_id", "input_type", "verdict", "risk_score", "calibrated_probability", "evidence", "reasons", "actions", "tier_reached", "model_route", "degraded", "final", "latency_ms", "created_at", "schema_version"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "verdict_id": { "type": "string", "pattern": "^vd_[0-9A-HJKMNP-TV-Z]{26}$", "description": "ULID; correlation id across logs, traces, LLM spans, events." },
+    "input_type": { "type": "string", "enum": ["url", "message", "email", "image"] },
+    "input_fingerprint": { "type": "string", "description": "sha256 of canonical input. The raw input is not stored unless the user opts into a report." },
+    "canonical_url": { "type": ["string", "null"], "description": "Defanged canonical URL (hxxp, [.]) for display." },
+    "verdict": { "type": "string", "enum": ["dangerous", "suspicious", "no_warning_signs"] },
+    "risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "calibrated_probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "impersonated_brand": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["brand_id", "name_ar", "name_en"],
+      "properties": {
+        "brand_id": { "type": "string" },
+        "name_ar": { "type": "string" },
+        "name_en": { "type": "string" },
+        "official_domains": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "evidence": { "type": "array", "items": { "$ref": "evidence.schema.json" } },
+    "reasons": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ar", "en", "evidence_ids"],
+        "properties": {
+          "ar": { "type": "string", "maxLength": 220 },
+          "en": { "type": "string", "maxLength": 220 },
+          "evidence_ids": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^ev_" } },
+          "generated_by": { "type": "string", "enum": ["llm", "template"] }
+        }
+      }
+    },
+    "actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["now", "if_already_acted", "report"],
+      "properties": {
+        "now": { "$ref": "#/$defs/bilingual_list" },
+        "if_already_acted": { "$ref": "#/$defs/bilingual_list" },
+        "report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ar", "en"],
+          "properties": {
+            "ar": { "type": "string" },
+            "en": { "type": "string" },
+            "channels": { "type": "array", "items": { "type": "object", "required": ["label_ar", "label_en", "value", "source_url", "retrieved_at"], "properties": { "label_ar": { "type": "string" }, "label_en": { "type": "string" }, "value": { "type": "string" }, "source_url": { "type": "string" }, "retrieved_at": { "type": "string", "format": "date" } } } }
+          }
+        },
+        "caution": { "$ref": "#/$defs/bilingual_list", "description": "Always present for no_warning_signs: what to stay careful about." }
+      }
+    },
+    "tier_reached": { "type": "string", "enum": ["T0", "T1", "T2", "T3"] },
+    "model_route": { "type": "string", "enum": ["cloud", "local", "none"] },
+    "degraded": { "type": "boolean" },
+    "degraded_reasons": { "type": "array", "items": { "type": "string" } },
+    "final": { "type": "boolean" },
+    "trace": {
+      "type": "array",
+      "description": "Sanitised investigation timeline. No raw reasoning text.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step", "kind", "summary"],
+        "properties": {
+          "step": { "type": "integer" },
+          "kind": { "type": "string", "enum": ["tier", "tool", "llm", "rule"] },
+          "name": { "type": "string" },
+          "summary": { "type": "string", "maxLength": 240 },
+          "evidence_added": { "type": "array", "items": { "type": "string" } },
+          "ms": { "type": "integer" }
+        }
+      }
+    },
+    "screenshot_url": { "type": ["string", "null"], "description": "Only for authenticated integration keys; never for anonymous callers." },
+    "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"], "default": "live" },
+    "latency_ms": { "type": "integer", "minimum": 0 },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "bilingual_list": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ar", "en"],
+      "properties": {
+        "ar": { "type": "array", "items": { "type": "string", "maxLength": 160 }, "maxItems": 6 },
+        "en": { "type": "array", "items": { "type": "string", "maxLength": 160 }, "maxItems": 6 }
+      }
+    }
+  }
+}

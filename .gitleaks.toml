@@ -1,0 +1,8 @@
+title = "falcon-lens gitleaks config"
+[extend]
+useDefault = true
+[[rules]]
+id = "anthropic-any-key"
+description = "Anthropic API keys (all prefixes, incl. sk-ant-usr / sk-ant-api / sk-ant-admin)"
+regex = '''sk-ant-[a-z]{2,6}\d{0,3}-[A-Za-z0-9_\-]{20,}'''
+keywords = ["sk-ant-"]

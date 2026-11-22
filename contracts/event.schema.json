@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/event.schema.json",
+  "title": "PlatformEvent",
+  "description": "Typed event on Redis Stream `fl:events`. At-least-once delivery; consumers must be idempotent on event_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "type", "occurred_at", "source", "payload", "schema_version"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "event_id": { "type": "string", "pattern": "^evt_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "type": { "type": "string", "enum": ["verdict.created", "verdict.upgraded", "report.submitted", "feedback.submitted", "feed.updated", "domain.observed", "incident.opened", "incident.updated", "action.executed", "action.requested"] },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"] },
+    "verdict_id": { "type": ["string", "null"] },
+    "payload": {
+      "type": "object",
+      "description": "Per type. verdict.*: {verdict, risk_score, input_type, registrable_domain, brand_id, fingerprints{dom_simhash, favicon_hash, script_embedding_id, asn, registrar, cert_issuer, registered_at}, top_signals[]}. report/feedback: {verdict_id?, kind, script_fingerprint?, signal?}. domain.observed: {domain_defanged, brand_candidates[], first_seen, source}. feed.updated: {feed, entries, age_s}. Never raw page or message text."
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/incident.schema.json",
+  "title": "Incident",
+  "description": "Created by Sentinel correlation + rules (deterministic). The LangGraph agent only enriches: severity_reason, summary, proposed actions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["incident_id", "type", "severity", "status", "rule_ids", "indicators", "linked_verdicts", "timeline", "actions", "created_at", "updated_at", "source"],
+  "properties": {
+    "incident_id": { "type": "string", "pattern": "^inc_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "type": { "type": "string", "enum": ["campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"] },
+    "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+    "severity_reason": { "type": "object", "properties": { "ar": { "type": "string" }, "en": { "type": "string" }, "evidence_ids": { "type": "array", "items": { "type": "string" } } } },
+    "status": { "type": "string", "enum": ["open", "triaging", "awaiting_approval", "mitigated", "closed", "false_positive"] },
+    "brand_id": { "type": ["string", "null"] },
+    "rule_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "correlation_keys": { "type": "object", "description": "Fingerprints that grouped the events: dom_simhash bucket, brand, domain pattern, asn, registrar, cert, script cluster, time window." },
+    "indicators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "value_defanged", "first_seen"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["domain", "url", "ip", "dom_hash", "favicon_hash", "phone", "script_cluster"] },
+          "value_defanged": { "type": "string" },
+          "sha256": { "type": "string" },
+          "first_seen": { "type": "string", "format": "date-time" },
+          "blocked_until": { "type": ["string", "null"], "format": "date-time" }
+        }
+      }
+    },
+    "linked_verdicts": { "type": "array", "items": { "type": "string" } },
+    "timeline": { "type": "array", "items": { "type": "object", "required": ["at", "what"], "properties": { "at": { "type": "string", "format": "date-time" }, "what": { "type": "string" }, "event_id": { "type": "string" } } } },
+    "summary": { "type": ["object", "null"], "properties": { "ar": { "type": "string" }, "en": { "type": "string" }, "claims": { "type": "array", "items": { "type": "object", "required": ["text_en", "evidence_ids"], "properties": { "text_en": { "type": "string" }, "evidence_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } } } } }, "generated_by": { "type": "string", "enum": ["llm", "template"] }, "model_route": { "type": "string", "enum": ["cloud", "local", "none"] } } },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action_id", "tool", "mode", "status", "evidence_ids"],
+        "properties": {
+          "action_id": { "type": "string", "pattern": "^act_" },
+          "tool": { "type": "string", "enum": ["requeue_check", "block_indicator", "unblock_indicator", "raise_alert", "update_campaign_board", "export_stix", "draft_takedown", "draft_police_report"] },
+          "mode": { "type": "string", "enum": ["internal_auto", "external_draft"] },
+          "status": { "type": "string", "enum": ["proposed", "executed", "awaiting_approval", "approved", "rejected", "reverted", "failed"] },
+          "args": { "type": "object" },
+          "draft": { "type": ["object", "null"], "description": "For external drafts: {recipient_kind, subject, body_ar, body_en}. Never sent by the Sentinel." },
+          "evidence_ids": { "type": "array", "items": { "type": "string" } },
+          "approved_by": { "type": ["string", "null"] },
+          "at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

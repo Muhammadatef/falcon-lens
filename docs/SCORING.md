@@ -1,0 +1,64 @@
+# SCORING: the deterministic arbiter
+
+The arbiter is the only component that sets `risk_score`, `calibrated_probability` and `verdict`.
+LLMs can add evidence through tools and can explain, but they cannot change the score.
+Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **initial draft**. `make fit-thresholds` fits the thresholds and bands **on the validation split only** and writes them to `packages/falcon_core/scoring/params.yaml`, with the dataset hash, git SHA and fit date.
+
+## 1. Pipeline
+1. **Hard rules** (§3) are evaluated first. A hard rule that fires sets the floor (or, for trust rules, the cap) of the verdict.
+2. **Classifier probability `p_clf`**: a gradient-boosted model (T1 numeric features), calibrated with isotonic or Platt scaling on validation.
+3. **Evidence log-odds adjustment.** Evidence from tiers above T1 (page, visual, brand, message, email, llm) has fixed weights `w_i` in log-odds points:
+   `logit(p) = logit(p_clf) + Σ w_i · confidence_i`, clipped to [-8, 8].
+4. `risk_score = round(100 · p)`. `calibrated_probability = p` after the final calibrator, fitted on validation over the full-cascade output.
+5. **Bands**: `dangerous` if p ≥ τ_high; `suspicious` if τ_low ≤ p < τ_high; otherwise `no_warning_signs`.
+   - Starting values: τ_high = 0.80, τ_low = 0.35. They are fitted so that FPR ≤ 2% and there are zero `dangerous` verdicts on the verified-official set (validation).
+6. **Cascade exits**: T1 exits if p_clf < ε_low or p_clf > ε_high and there is no brand conflict. T2 exits if a hard rule fired or p is outside [τ_low − 0.1, τ_high + 0.05]. Otherwise the input escalates to T3. ε values are fitted to keep T3 usage at 15% or less with no recall loss on validation.
+
+## 2. Evidence weights (draft log-odds points; positive = risk)
+| Signal | Family | w | Notes |
+|---|---|---|---|
+| rep.openphish / rep.gsb / rep.urlhaus hit | reputation | +6.0 | T0 exit when the mirror is fresh |
+| url.homograph (skeleton matches brand, mixed script) | url | +3.0 | |
+| url.typosquat (edit distance 1–2 to a brand domain) | url | +2.5 | |
+| url.combosquat (brand token + pay/secure/track/…) | url | +2.0 | |
+| url.brand_in_subdomain_or_path | url | +1.5 | |
+| url.userinfo_trick / url.bidi_or_zero_width | url | +3.0 | |
+| url.raw_ip_host | url | +1.5 | |
+| url.free_host_or_tunnel (PSL private section) | url | +1.0 | judged per subdomain |
+| url.open_redirect_abuse | url | +2.0 | |
+| domain.age_days < 30 | domain | +1.5 | <7 days: +2.5 |
+| domain.cert_age_days < 7 | domain | +0.8 | |
+| page.cred_form (password/card/CVV/OTP/EID/UAE Pass) | page | +1.5 | intent, not by itself proof |
+| page.cross_origin_post (bot API/webhook/form relay) | page | +3.0 | |
+| page.hotlinked_brand_assets | page | +2.0 | |
+| page.cloaking (mobile-AR vs desktop differ) | page | +2.5 | |
+| page.js_obfuscation / anti_inspection | page | +1.0 | |
+| visual.favicon_match_brand | visual | +1.0 | only risk if domain not owned |
+| brand.claimed_not_owned | brand | +3.0 | see H1 |
+| message.script_match (nearest known scam, sim ≥ θ) | message | +2.5 | |
+| message.rule.{urgency,secrecy,otp_request,remote_access,payment,authority,prize,job,investment,delivery_fee,fine} | message | +0.6 each, cap +3.0 | |
+| email.auth_fail (SPF/DKIM/DMARC fail) | email | +1.5 | |
+| email.display_name_impersonation | email | +2.0 | |
+| email.reply_to_mismatch | email | +1.0 | |
+| email.link_text_mismatch | email | +2.0 | |
+| injection.instruction_like_text | injection | +1.5 | evidence of manipulation, **never obeyed** |
+| registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |
+| domain.age_days > 3650 + no other risk | domain | −1.0 | |
+
+## 3. Hard rules
+| Id | Condition | Effect |
+|---|---|---|
+| **H1 brand-mismatch (zero-day)** | claimed brand X (text/title/logo/favicon ≥ θ) AND page.cred_form or payment request AND registrable domain ∉ X.verified_domains | verdict = `dangerous`, p ≥ 0.95 |
+| H2 known-bad | fresh feed hit (feed age < 6h) on the exact URL or host | `dangerous` |
+| H3 verified-official | registrable domain ∈ a brand's verified list AND no open-redirect abuse AND no feed hit | verdict capped at `no_warning_signs` (never `dangerous`). Open redirects are judged on their target. |
+| H4 exfil-to-bot | form or script posts credentials to a messaging-bot API or webhook relay | `dangerous` |
+| H5 message-with-dangerous-link | message/email contains a URL whose verdict is `dangerous` | message verdict ≥ `dangerous` |
+| H6 OTP/remote-access ask | message requests an OTP or a remote-access app install AND authority/bank impersonation | ≥ `suspicious` |
+
+Hard rules are evidence too: the triggering evidence carries `hard_rule: H1`, so the reasons can cite it.
+
+## 4. Degradation
+If any T1 signal errors or times out, the verdict sets `degraded=true` and lists the reasons. **A degraded verdict is never shown as `no_warning_signs`**: if p < τ_low and the input is degraded, show `suspicious` with "we couldn't complete every check" / «لم نتمكن من إكمال كل الفحوصات».
+
+## 5. Explanations
+The responder picks at most three reasons, ordered by |w|. Each must cite existing evidence ids. A verifier rejects anything else and falls back to the templates in `i18n/{ar,en}.yaml`.
