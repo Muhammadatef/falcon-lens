@@ -9,7 +9,8 @@
 **/__pycache__
 **/node_modules
 **/.next
-data
+data/*
+!data/brands.yaml
 work
 evals/results
 reviews

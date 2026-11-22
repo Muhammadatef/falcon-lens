@@ -16,6 +16,10 @@ FROM python:3.12.12-slim-trixie AS runtime
 RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app
 COPY --from=builder /opt/venv /opt/venv
+COPY services/sentinel/rules.yaml /app/rules.yaml
+COPY contracts /app/contracts
+COPY data/brands.yaml /app/brands.yaml
+ENV FL_SENTINEL_RULES=/app/rules.yaml FL_CONTRACTS_DIR=/app/contracts FALCON_BRANDS_YAML=/app/brands.yaml
 ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 USER 10001:10001
 EXPOSE 8000

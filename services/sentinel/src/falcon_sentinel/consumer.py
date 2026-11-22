@@ -65,7 +65,7 @@ class Consumer:
 
     @staticmethod
     def _decode(fields: dict[str, str]) -> dict[str, Any]:
-        raw = fields.get("event") or fields.get("data")
+        raw = fields.get("event")
         if raw is None:
             raise ValueError("stream entry has no 'event' field")
         obj = json.loads(raw)

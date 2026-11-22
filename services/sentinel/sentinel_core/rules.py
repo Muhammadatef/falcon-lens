@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -13,7 +14,9 @@ import yaml
 
 from .correlate import Features, group_label, sessions, window_trigger
 
-DEFAULT_RULES_PATH = Path(__file__).resolve().parents[1] / "rules.yaml"
+DEFAULT_RULES_PATH = Path(
+    os.environ.get("FL_SENTINEL_RULES") or Path(__file__).resolve().parents[1] / "rules.yaml"
+)
 INCIDENT_TYPES = {"campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"}
 SEVERITIES = ("low", "medium", "high", "critical")
 

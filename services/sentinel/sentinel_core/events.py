@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -12,8 +13,10 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-EVENT_SCHEMA_PATH = REPO_ROOT / "contracts" / "event.schema.json"
-INCIDENT_SCHEMA_PATH = REPO_ROOT / "contracts" / "incident.schema.json"
+# FL_CONTRACTS_DIR overrides the repo walk (container image copies contracts/ elsewhere)
+CONTRACTS_DIR = Path(os.environ.get("FL_CONTRACTS_DIR") or REPO_ROOT / "contracts")
+EVENT_SCHEMA_PATH = CONTRACTS_DIR / "event.schema.json"
+INCIDENT_SCHEMA_PATH = CONTRACTS_DIR / "incident.schema.json"
 
 # Payload keys that would carry raw page or message text. Never allowed (contract + PRIVACY).
 RAW_TEXT_KEYS = frozenset(

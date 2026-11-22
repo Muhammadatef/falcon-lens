@@ -240,7 +240,9 @@ services:
     image: falcon-lens/sentinel:0.1.0
     <<: [*hardened, *host-gateway]
     restart: always
-    environment: *app-env
+    environment:
+      <<: *app-env
+      ALERTMANAGER_URL: http://alertmanager:9093
     networks: [app, data, observability]
     depends_on:
       redis: { condition: service_healthy }

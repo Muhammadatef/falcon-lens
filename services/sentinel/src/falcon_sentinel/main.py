@@ -32,7 +32,10 @@ from .metrics import SentinelMetrics
 log = logging.getLogger("falcon.sentinel")
 settings = get_settings()
 CONSUMER = f"sentinel-{os.environ.get('HOSTNAME') or socket.gethostname()}"
-BRANDS = Path(__file__).resolve().parents[4] / "data" / "brands.yaml"
+BRANDS = Path(
+    os.environ.get("FALCON_BRANDS_YAML")
+    or Path(__file__).resolve().parents[4] / "data" / "brands.yaml"
+)
 
 
 def official_domains() -> list[str]:
@@ -57,6 +60,19 @@ class Runtime:
 
 
 rt = Runtime()
+
+
+RETRY_EVERY_S = 120
+
+
+async def retry_stuck_loop(runner: TriageRunner) -> None:
+    """Every 2 min, continue incidents stuck in `triaging` (e.g. LLM was down past the node retries)."""
+    while True:
+        await asyncio.sleep(RETRY_EVERY_S)
+        try:
+            await runner.resume_unfinished()
+        except Exception:  # noqa: BLE001
+            log.exception("retry of stuck incidents failed")
 
 
 async def triage_loop(consumer: Consumer, runner: TriageRunner, queue: asyncio.Queue[str]) -> None:
@@ -128,6 +144,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         tasks = [
             asyncio.create_task(consume_loop(consumer)),
             asyncio.create_task(triage_loop(consumer, runner, queue)),
+            asyncio.create_task(retry_stuck_loop(runner)),
         ]
         try:
             yield
