@@ -63,6 +63,7 @@ reasons:
   message.brand_url_mismatch: "The message names a known organisation, but its link goes to another site."
   email.attachment: "The email has an attachment that can run programs on your device."
   injection.instruction_like_text: "The content has hidden text that tries to trick checking tools."
+  injection.tool_provenance: "The content tried to steer our check toward a different address."
 
 actions:
   dangerous:

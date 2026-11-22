@@ -37,9 +37,10 @@ def test_registry_specs_valid():
     scoring = (Path(__file__).resolve().parents[4] / "docs" / "SCORING.md").read_text(encoding="utf-8")
     for name, (spec, _fn) in REGISTRY.items():
         assert pat.match(name) and 10 <= spec.timeout_ms <= 6000
-        if spec.family != "url":  # message/email/image specs are checked in tests/signals/message
+        if spec.family not in ("url", "domain", "reputation"):  # others: tests/signals/message etc.
             continue
-        assert spec.network == "none"
+        if spec.family == "url":
+            assert spec.network == "none"
         for e in spec.emits:
             assert e in scoring, e
     assert set(ALL_URL) >= {

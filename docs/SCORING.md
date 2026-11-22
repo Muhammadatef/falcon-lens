@@ -54,6 +54,8 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |
 | domain.age_days > 3650 + no other risk | domain | −1.0 | |
 
+Informational evidence with no weight (proposed by builder-signals; fingerprints for the Sentinel, not scored): `domain.cert_issuer` (latest CT cert issuer), `domain.ct_siblings` (other registrable domains on the same certs).
+
 ## 3. Hard rules
 | Id | Condition | Effect |
 |---|---|---|
