@@ -40,7 +40,7 @@
     "has_embedded_url_in_query"
   ],
   "fit_date": "2026-11-22",
-  "git_sha": "94bf1b58b35755cbc1a60df1c2746b84198fc482",
+  "git_sha": "89bca5f6939e3dc1b7b75f177290382977592cf0",
   "hyperparameters": {
     "early_stopping": false,
     "l2_regularization": 1.0,
