@@ -6,10 +6,16 @@ values, a brand id not in data/brands.yaml, long strings) is rejected, repaired 
 extraction is dropped. The output can only *add* evidence: an ``llm.extraction`` record (weight 0),
 ``injection.instruction_like_text`` when the text addresses an AI, and ``brand.claimed_not_owned``
 when the claimed brand does not own the input's registrable domain.
+
+Residual risk, accepted by design: an LLM-sourced ``brand.claimed_not_owned`` (confidence 0.8, above
+H1's 0.70 threshold) combined with any ``page.cred_form`` fires H1 (``dangerous``). This can only
+raise risk; H3 still caps verified official domains. Legitimate third-party login pages that name
+a brand are the false-positive case to track in evals (hard negatives).
 """
 
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -20,10 +26,13 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 
 from falcon_core.agent.brands import load_brand_index
 from falcon_core.contracts.evidence import Evidence
+from falcon_core.llm import metrics as m
 from falcon_core.llm.router import JsonRequest, LLMRouter
 from falcon_core.llm.spotlight import UntrustedText
 from falcon_core.prompts import EXTRACTOR_TASK
 from falcon_core.tools.util import IdFactory, new_evidence_id
+
+log = logging.getLogger("falcon_core.agent.extractor")
 
 
 class RequestedData(StrEnum):
@@ -141,6 +150,10 @@ class Extractor:
             idx = load_brand_index()
             verified_domains = verified_domains if verified_domains is not None else idx.verified_domains
             brand_ids = brand_ids if brand_ids is not None else idx.ids
+        if not brand_ids:
+            # No brand ids => every claim fails validation and H1 can never fire: a silent recall loss.
+            log.error("extractor has an empty brand registry")
+            router.metrics.inc(m.TOOL_ERRORS, tool="extractor", reason="empty_brand_registry")
         self.router = router
         self.brand_ids = brand_ids
         self.verified_domains = verified_domains

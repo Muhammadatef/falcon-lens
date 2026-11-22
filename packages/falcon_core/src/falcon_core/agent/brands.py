@@ -6,6 +6,7 @@ full brand registry; this module avoids depending on it.
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -15,6 +16,11 @@ from pathlib import Path
 import yaml
 
 BRANDS_ENV = "FL_BRANDS_PATH"
+log = logging.getLogger("falcon_core.agent.brands")
+
+
+class BrandRegistryError(RuntimeError):
+    """FL_BRANDS_PATH is set but unusable, or the registry is empty. Fail loudly, not silently."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,9 +33,14 @@ class BrandIndex:
 
 
 def _find_brands_yaml() -> Path | None:
-    env = os.environ.get(BRANDS_ENV)
+    env = (os.environ.get(BRANDS_ENV) or "").strip()
     if env:
-        return Path(env)
+        p = Path(env)
+        if env.startswith("#") or not p.is_file():
+            # e.g. an inline .env comment read as the value: never fall back silently.
+            log.error("brand registry path unusable", extra={"env": BRANDS_ENV, "path": env[:200]})
+            raise BrandRegistryError(f"{BRANDS_ENV} points to a missing file: {env[:200]!r}")
+        return p
     for parent in Path(__file__).resolve().parents:
         cand = parent / "data" / "brands.yaml"
         if cand.is_file():
@@ -51,8 +62,14 @@ def parse_brands(raw: object) -> BrandIndex:
 
 @lru_cache(maxsize=4)
 def load_brand_index(path: str | None = None) -> BrandIndex:
+    """Load brand ids + verified domains. Raises ``BrandRegistryError`` if none can be loaded."""
     p = Path(path) if path else _find_brands_yaml()
     if p is None or not p.is_file():
-        return BrandIndex({})
+        log.error("brand registry not found", extra={"path": str(p) if p else None})
+        raise BrandRegistryError("data/brands.yaml not found; set FL_BRANDS_PATH")
     with p.open(encoding="utf-8") as fh:
-        return parse_brands(yaml.safe_load(fh))
+        idx = parse_brands(yaml.safe_load(fh))
+    if not idx.verified_domains:
+        log.error("brand registry is empty", extra={"path": str(p)})
+        raise BrandRegistryError(f"brand registry {p} has no brands")
+    return idx

@@ -24,7 +24,7 @@ from falcon_core.contracts.verdict import TraceStep
 from falcon_core.llm import metrics as m
 from falcon_core.llm.router import JsonRequest, LLMRouter
 from falcon_core.prompts import INVESTIGATOR_TASK
-from falcon_core.tools.provenance import ProvenanceContext, host_of, normalise_url
+from falcon_core.tools.provenance import ProvenanceContext
 from falcon_core.tools.registry import SPECS, Action, ToolOutcome, ToolRegistry
 from falcon_core.tools.util import defang
 
@@ -100,17 +100,9 @@ class Investigator:
     def targets(ctx: ProvenanceContext) -> dict[str, str]:
         """ref -> exact allowed value (u* urls, d* domains, f* fingerprints). Ordered, stable."""
         out: dict[str, str] = {}
-        urls: list[str] = []
-        raw = ([ctx.canonical_url] if ctx.canonical_url else []) + list(ctx.redirect_chain)
-        for u in raw:
-            n = normalise_url(u)
-            if n and n not in urls:
-                urls.append(n)
-        for i, u in enumerate(urls):
+        for i, u in enumerate(ctx.url_list):
             out[f"u{i}"] = u
-        hosts = [h for h in (host_of(u) for u in urls) if h]
-        doms = list(dict.fromkeys(hosts + sorted(ctx.domains - set(hosts))))
-        for i, d in enumerate(doms):
+        for i, d in enumerate(ctx.domain_list):
             out[f"d{i}"] = d
         for i, fp in enumerate(sorted(ctx.script_fingerprints)):
             out[f"f{i}"] = fp
@@ -181,12 +173,14 @@ class Investigator:
                     state, stop = State.DONE, "tokens"
                     continue
                 targets = self.targets(ctx)
+                # A plan step can make two provider calls (one repair), so each gets half of what is left.
+                call_cap = min(self.per_call_max_tokens, max(1, tokens_left // 2))
                 req: JsonRequest[Action] = JsonRequest(
                     role="investigator",
                     task=INVESTIGATOR_TASK,
                     schema=Action,
                     context=self._context(case, known, targets, history, self.max_tool_calls - calls),
-                    max_output_tokens=min(self.per_call_max_tokens, tokens_left),
+                    max_output_tokens=call_cap,
                     timeout_s=remaining(),
                     fallback=_stop_action,
                     verdict_id=case.verdict_id,
@@ -194,7 +188,10 @@ class Investigator:
                 )
                 t0 = self._clock()
                 res = await self.router.complete_json(req)
-                out_tokens += res.usage.output_tokens
+                # If a provider reports no usage (some Ollama builds), charge the cap per answered call.
+                answered = sum(1 for c in res.calls if c.error is None)
+                reported = res.usage.output_tokens
+                out_tokens += reported if reported > 0 or answered == 0 else answered * call_cap
                 cost += res.cost_usd
                 route = res.route if res.route != "none" else route
                 step += 1

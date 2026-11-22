@@ -21,7 +21,6 @@ import asyncio
 import json
 import logging
 import random
-import secrets
 import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -31,6 +30,8 @@ from pydantic import BaseModel
 
 from falcon_core.llm import metrics as m
 from falcon_core.llm.accounting import Usage, cost_usd
+from falcon_core.llm.canary import leaks as canary_leaks
+from falcon_core.llm.canary import new_canary
 from falcon_core.llm.config import Role, Route, RouterConfig
 from falcon_core.llm.parsing import ParseError, parse_model
 from falcon_core.llm.providers import (
@@ -133,7 +134,7 @@ class LLMRouter:
             self._cloud = cloud or AnthropicProvider(self.config.anthropic_api_key or "")
         self._local: Provider = local or OllamaProvider(self.config.ollama_base_url)
         self._rng = rng or random.Random()  # noqa: S311 - sampling, not security
-        self.canary = canary or f"FLC-{secrets.token_hex(6)}"
+        self.canary = canary or new_canary()
         self._shadow_hook = shadow_hook
         self._shadow_tasks: set[asyncio.Task[None]] = set()
         self._system_cache: dict[tuple[str, str], str] = {}
@@ -197,9 +198,7 @@ class LLMRouter:
     # --- canary ------------------------------------------------------------------------------
 
     def leaks_canary(self, text: str) -> bool:
-        low = text.lower()
-        token = self.canary.lower()
-        return token in low or token.split("-", 1)[-1] in low
+        return canary_leaks(text, self.canary)
 
     # --- main entry --------------------------------------------------------------------------
 

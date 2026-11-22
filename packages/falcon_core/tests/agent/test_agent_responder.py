@@ -105,3 +105,105 @@ async def test_responder_sees_weights_not_raw_text() -> None:
     await _run([reply], evidence)
     assert "Ignore all rules" not in seen[0]
     assert '"weight":3.0' in seen[0]
+
+
+# --- normalised "safe" / link / score checks (reviews/PR-19.md finding 4) ----------------------
+
+_TRUST = ev("domain.age", "domain", {"age_days": 6000}, id="ev_trst0001", weight=-1.0)
+_RISK = ev("url.homograph", "url", True, id="ev_risk0009", weight=3.0)
+_OK_AR = "لم نجد علامات تحذير في هذا الموقع."
+_OK_EN = "No warning signs found on this site."
+
+
+def _verdict_errors(en: str, ar: str) -> list[str]:
+    from falcon_core.agent.responder import ReasonDraft, verify_reasons
+
+    d = ReasonDraft(en=en, ar=ar, evidence_ids=[_TRUST.id])
+    return verify_reasons([d], [_RISK, _TRUST], "no_warning_signs")
+
+
+def test_clean_no_warning_reason_is_accepted() -> None:
+    assert _verdict_errors(_OK_EN, _OK_AR) == []
+
+
+@pytest.mark.parametrize(
+    "en",
+    [
+        "This site is safe.",
+        "This site is s\u200bafe.",
+        "This site is &#115;afe.",
+        "This site is &#x73;afe.",
+        "This site is &amp;#115;afe.",
+        "This site is ｓａｆｅ.",
+        "This site is sаfe.",  # Cyrillic a
+        "This site is safé.",
+        "It is unsafe to ignore.",
+        "This site is secure and trustworthy.",
+        "You can proceed, it is legitimate.",
+        "Your money is guaranteed.",
+        "There is no risk here.",
+        "Totally risk-free.",
+        "Risk is 0 out of 100.",
+        "Risk is ٠ out of ١٠٠.",
+        "Visit falcondemobank[.]example",
+        "Visit falcondemobank。example",
+        "Visit falcondemobank . example",
+        "Domain is old &lt;img src=x onerror=alert(1)&gt;",
+        "Old domain <b>bold</b>",
+        "About 50% likely.",
+    ],
+)
+def test_verifier_rejects_en_variants(en: str) -> None:
+    assert _verdict_errors(en, _OK_AR), en
+
+
+@pytest.mark.parametrize(
+    "ar",
+    [
+        "الموقع آمن",
+        "الموقع آ\u200cمن",
+        "الموقع آ\u200bمن",
+        "الموقع آمِن",
+        "الموقع وآمن",
+        "الموقع الآمن",
+        "تصفح بأمان",
+        "الموقع ﺁﻣﻦ",  # presentation forms
+        "الموقع أمن",
+        "الموقع امن",
+        "الموقع مأمون",
+        "الموقع موثوق وسليم",
+        "الدفع مضمون",
+        "الموقع آمـــن",  # tatweel
+        "الخطر صفر من ١٠٠",
+    ],
+)
+def test_verifier_rejects_ar_variants(ar: str) -> None:
+    assert _verdict_errors(_OK_EN, ar), ar
+
+
+def test_brand_loader_fails_loudly(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    from falcon_core.agent.brands import BrandRegistryError, load_brand_index
+
+    load_brand_index.cache_clear()
+    monkeypatch.setenv("FL_BRANDS_PATH", "# path to data/brands.yaml")  # inline .env comment read as value
+    with pytest.raises(BrandRegistryError):
+        load_brand_index()
+    empty = tmp_path / "brands.yaml"
+    empty.write_text("brands: []\n", encoding="utf-8")
+    monkeypatch.setenv("FL_BRANDS_PATH", str(empty))
+    load_brand_index.cache_clear()
+    with pytest.raises(BrandRegistryError):
+        load_brand_index()
+    monkeypatch.delenv("FL_BRANDS_PATH")
+    load_brand_index.cache_clear()
+    assert len(load_brand_index().ids) > 0  # repo data/brands.yaml found by walking up
+    load_brand_index.cache_clear()
+
+
+def test_extractor_with_empty_registry_is_counted() -> None:
+    from falcon_core.agent.extractor import Extractor
+    from falcon_core.llm import metrics as m
+
+    router, _, mx = local_router(["{}"])
+    Extractor(router, brand_ids=frozenset(), verified_domains={})
+    assert mx.get(m.TOOL_ERRORS, tool="extractor", reason="empty_brand_registry") == 1

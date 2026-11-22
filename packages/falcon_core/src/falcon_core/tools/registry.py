@@ -235,14 +235,22 @@ class ToolRegistry:
             args = spec.args_model.model_validate(action.args)
         except ValidationError:
             return self._reject(spec.name, "bad_args")
+        # Only the on-chain canonical value that was checked is forwarded, never the model's string.
+        resolved: dict[str, str] = {}
         for a in spec.url_args:
             value = getattr(args, a)
-            if not ctx.allows_url(value):
+            url = ctx.resolve_url(value)
+            if url is None:
                 return self._reject(spec.name, "provenance", [self._violation(spec.name, a, value)])
+            resolved[a] = url
         for a in spec.domain_args:
             value = getattr(args, a)
-            if not ctx.allows_domain(value):
+            dom = ctx.resolve_domain(value)
+            if dom is None:
                 return self._reject(spec.name, "provenance", [self._violation(spec.name, a, value)])
+            resolved[a] = dom
+        if resolved:
+            args = args.model_copy(update=resolved)
         if isinstance(args, CompareBrandArgs) and args.brand_id not in self.brand_ids:
             return self._reject(spec.name, "unknown_brand")
         if isinstance(args, FingerprintArgs) and not ctx.allows_fingerprint(args.fingerprint):
