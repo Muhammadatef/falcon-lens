@@ -1,10 +1,11 @@
-"""Falcon Lens MCP server (skeleton: health only; tools arrive with contracts/tools.schema.json)."""
+"""Falcon Lens MCP server entrypoint."""
 
 from __future__ import annotations
 
-from falcon_core.service import create_app, run
+from falcon_core.service import run
+from falcon_mcp.app import build_app
 
-app = create_app("mcp", title="Falcon Lens MCP")
+app = build_app()
 
 if __name__ == "__main__":
     run(app)

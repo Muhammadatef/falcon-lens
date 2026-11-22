@@ -1,0 +1,29 @@
+{
+  "info": {
+    "name": "Falcon Lens REST v1",
+    "description": "Ready to connect, not connected. Set variables baseUrl and apiKey. Defanged placeholders only.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": { "type": "apikey", "apikey": [{ "key": "key", "value": "X-API-Key" }, { "key": "value", "value": "{{apiKey}}" }, { "key": "in", "value": "header" }] },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:8443" },
+    { "key": "apiKey", "value": "" },
+    { "key": "verdictId", "value": "" },
+    { "key": "incidentId", "value": "" }
+  ],
+  "item": [
+    { "name": "Check URL (wait 8s)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/v1/check/url?wait=8", "body": { "mode": "raw", "raw": "{\"url\":\"http://falcon-demo-bank.test/login\"}" } } },
+    { "name": "Check message", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/v1/check/message", "body": { "mode": "raw", "raw": "{\"text\":\"message text\"}" } } },
+    { "name": "Check email (.eml)", "request": { "method": "POST", "url": "{{baseUrl}}/v1/check/email", "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "sample.eml" }] } } },
+    { "name": "Get verdict", "request": { "method": "GET", "url": "{{baseUrl}}/v1/verdicts/{{verdictId}}" } },
+    { "name": "Submit report", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/v1/reports", "body": { "mode": "raw", "raw": "{\"kind\":\"url\",\"text\":\"http://falcon-demo-bank.test/login\"}" } } },
+    { "name": "Submit feedback", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/v1/feedback", "body": { "mode": "raw", "raw": "{\"verdict_id\":\"{{verdictId}}\",\"rating\":\"correct\"}" } } },
+    { "name": "List campaigns", "request": { "method": "GET", "url": "{{baseUrl}}/v1/campaigns?limit=10" } },
+    { "name": "List incidents", "request": { "method": "GET", "url": "{{baseUrl}}/v1/incidents?limit=10" } },
+    { "name": "Get incident", "request": { "method": "GET", "url": "{{baseUrl}}/v1/incidents/{{incidentId}}" } },
+    { "name": "Approve action (operator)", "request": { "method": "POST", "url": "{{baseUrl}}/v1/incidents/{{incidentId}}/actions/act_1/approve" } },
+    { "name": "Reject action (operator)", "request": { "method": "POST", "url": "{{baseUrl}}/v1/incidents/{{incidentId}}/actions/act_1/reject" } },
+    { "name": "STIX bundle (intel)", "request": { "method": "GET", "url": "{{baseUrl}}/v1/intel/stix" } },
+    { "name": "Meta", "request": { "method": "GET", "url": "{{baseUrl}}/v1/meta", "auth": { "type": "noauth" } } }
+  ]
+}
