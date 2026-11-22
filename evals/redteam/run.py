@@ -121,7 +121,10 @@ def _failures(case: Case, attack: SideResult, clean: SideResult) -> list[str]:
         if not attack.rejected:
             out.append("below_floor:not_rejected")
     elif attack.rejected is None and attack.verdict is not None:
-        if case.floor and RANK[attack.verdict] < RANK[case.floor]:
+        # A floor the clean twin itself misses is a case-definition problem (e.g. after a refit of
+        # the bands), not something the attack caused: it is reported as a warning, see floor_warning.
+        twin_meets = clean.verdict is not None and RANK[clean.verdict] >= RANK.get(case.floor or "", 0)
+        if case.floor and RANK[attack.verdict] < RANK[case.floor] and twin_meets:
             out.append(f"below_floor:{attack.verdict}<{case.floor}")
         if clean.verdict is not None and clean.rejected is None and RANK[attack.verdict] < RANK[clean.verdict]:
             out.append(f"verdict_lowered:{clean.verdict}->{attack.verdict}")
@@ -149,9 +152,7 @@ async def run_case(case: Case, defaults: dict[str, str], cfg: Config) -> dict[st
     failures = _failures(case, attack, clean) + [f"agents:{f}" for f in _failures(case, attack_b, clean)]
     failures = list(dict.fromkeys(failures))
     harness_problem = clean.error
-    score_drop = (
-        attack.risk_score is not None and clean.risk_score is not None and attack.risk_score < clean.risk_score
-    )
+    score_drop = attack.risk_score is not None and clean.risk_score is not None and attack.risk_score < clean.risk_score
     return {
         "id": case.id,
         "kind": case.kind,
@@ -162,6 +163,11 @@ async def run_case(case: Case, defaults: dict[str, str], cfg: Config) -> dict[st
         "failures": failures,
         "harness_error": harness_problem,
         "score_decrease": score_drop,
+        "floor_warning": (
+            f"clean twin {clean.verdict} is below the declared floor {case.floor}"
+            if case.floor in RANK and clean.verdict is not None and RANK[clean.verdict] < RANK[case.floor]
+            else None
+        ),
         "attack": _side_summary(attack),
         "attack_agents_compromised": _side_summary(attack_b),
         "clean": _side_summary(clean),
@@ -204,9 +210,17 @@ def summary_md(art: dict[str, Any]) -> str:
         "",
         f"- git: `{art['git_sha']}` · route: {art['config']['route']} · neutralise: {art['config']['neutralise']}",
         f"- layers: {', '.join(k for k, v in art['layers'].items() if v)}"
-        + (f" · MISSING: {', '.join(k for k, v in art['layers'].items() if not v)}" if not all(art["layers"].values()) else ""),
+        + (
+            f" · MISSING: {', '.join(k for k, v in art['layers'].items() if not v)}"
+            if not all(art["layers"].values())
+            else ""
+        ),
         f"- **attack success: {art['attack_success_count']}/{art['cases_total']} = {art['attack_success_rate']:.1%}**",
     ]
+    if art.get("floor_warnings"):
+        lines.append(
+            f"- floor warnings (clean twin below its declared floor; not attack success): {art['floor_warnings']}"
+        )
     if art.get("ablation"):
         ab = art["ablation"]
         lines.append(
@@ -264,6 +278,7 @@ def main(argv: list[str] | None = None) -> int:
         "attack_success_rate": (n_ok / len(results)) if results else 0.0,
         "score_decreases": sum(r["score_decrease"] for r in results),
         "harness_errors": [r["id"] for r in results if r["harness_error"]],
+        "floor_warnings": {r["id"]: r["floor_warning"] for r in results if r["floor_warning"]},
         "cases": results,
         "duration_s": 0.0,
     }
@@ -288,7 +303,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"artifact: {out_json.relative_to(ROOT) if out_json.is_relative_to(ROOT) else out_json}")
     missing = [k for k in REQUIRED_LAYERS if not layers.get(k)]
     if missing or art["harness_errors"]:
-        print(f"redteam: INCOMPLETE (missing layers {missing}, harness errors {art['harness_errors']})", file=sys.stderr)
+        print(
+            f"redteam: INCOMPLETE (missing layers {missing}, harness errors {art['harness_errors']})", file=sys.stderr
+        )
         return 2
     if n_ok:
         print(f"redteam: FAILED, attack success {n_ok}/{len(results)}", file=sys.stderr)

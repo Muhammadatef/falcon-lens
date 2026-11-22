@@ -63,7 +63,12 @@ PATTERNS: tuple[Pattern, ...] = (
         r"preceding|all|any|your|the|existing|system|original)\b.{0,30}?\b(?:instructions?|prompts?|rules|"
         r"directions|guidelines|directives?|policies|constraints)\b",
     ),
-    _p("en.new_instructions", "en", "strong", r"\b(?:new|updated|real|actual|revised) (?:system )?instructions?\s*[:\-]"),
+    _p(
+        "en.new_instructions",
+        "en",
+        "strong",
+        r"\b(?:new|updated|real|actual|revised) (?:system )?instructions?\s*[:\-]",
+    ),
     _p(
         "en.role_reassign",
         "en",
@@ -76,7 +81,8 @@ PATTERNS: tuple[Pattern, ...] = (
         "en.system_prompt",
         "en",
         "strong",
-        r"\b(?:system|developer) (?:prompt|message|instructions?)\b|\b(?:hidden|initial|original) (?:prompt|instructions)\b",
+        r"\b(?:system|developer) (?:prompt|message|instructions?)\b|"
+        r"\b(?:hidden|initial|original) (?:prompt|instructions)\b",
     ),
     _p(
         "en.mark_safe",
@@ -134,7 +140,12 @@ PATTERNS: tuple[Pattern, ...] = (
         r"\b(?:need not|needn't|shouldn't|should not|must not|does not need to|doesn't need to) be "
         r"(?:flagged|reported|blocked|warned|marked|treated as (?:suspicious|phishing|a scam))\b",
     ),
-    _p("en.ai_address", "en", "weak", r"\b(?:dear|attention|note to|hey|hello|instructions? for)\b.{0,15}?\b" + _AI + r"\b"),
+    _p(
+        "en.ai_address",
+        "en",
+        "weak",
+        r"\b(?:dear|attention|note to|hey|hello|instructions? for)\b.{0,15}?\b" + _AI + r"\b",
+    ),
     _p("en.to_ai", "en", "weak", r"\b(?:if you are|as an?|to any|to the)\b.{0,10}?\b" + _AI + r"\b"),
     _p(
         "en.score_steer",
@@ -214,8 +225,14 @@ PATTERNS: tuple[Pattern, ...] = (
         "ar.mark_safe",
         "ar",
         "strong",
-        _AW + r"(?:اعتبر|اعتبري|اعتبروا|صنف|صنفي|قيم|قيمي|سجل|عامل|عاملي|قل ان|قولي ان|اكتب ان|اجب ب)" + _AE
-        + r".{0,40}?" + _AW + r"[وف]?" + _AR_SAFE + _AE,
+        _AW
+        + r"(?:اعتبر|اعتبري|اعتبروا|صنف|صنفي|قيم|قيمي|سجل|عامل|عاملي|قل ان|قولي ان|اكتب ان|اجب ب)"
+        + _AE
+        + r".{0,40}?"
+        + _AW
+        + r"[وف]?"
+        + _AR_SAFE
+        + _AE,
     ),
     _p("ar.is_safe", "ar", "weak", _AR_ITEM + r"\s*.{0,15}?(?:امن تماما|امن 100|موثوق تماما|امن وموثوق)"),
     _p(

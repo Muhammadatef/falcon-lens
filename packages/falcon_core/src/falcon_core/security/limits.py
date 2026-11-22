@@ -71,9 +71,9 @@ def check_mime(raw: bytes) -> LimitResult:
         return size
     boundaries: list[bytes] = []
     for m in _CT_RE.finditer(raw):
-        b = _BOUNDARY_RE.search(m.group())
-        if b:
-            boundaries.append(b.group(1) or b.group(2))
+        bm = _BOUNDARY_RE.search(m.group())
+        if bm:
+            boundaries.append(bm.group(1) or bm.group(2))
             if len(boundaries) > MAX_MIME_PARTS:
                 return LimitResult(False, "mime_too_many_parts", {"multipart_containers": len(boundaries)})
     parts = 0

@@ -34,16 +34,16 @@ VERDICT_ID = "vd_redteamxss0001"
 
 PROBES = [
     "<script>window.__flxss=1</script>",
-    "<img src=x onerror=\"window.__flxss=1\">",
-    "<svg onload=\"window.__flxss=1\"></svg>",
-    "\"><img src=x onerror=window.__flxss=1>",
+    '<img src=x onerror="window.__flxss=1">',
+    '<svg onload="window.__flxss=1"></svg>',
+    '"><img src=x onerror=window.__flxss=1>',
     "'><script>window.__flxss=1</script>",
-    "<a href=\"javascript:window.__flxss=1\">tap</a>",
-    "<iframe srcdoc=\"<script>parent.__flxss=1</script>\"></iframe>",
-    "<details open ontoggle=\"window.__flxss=1\">",
+    '<a href="javascript:window.__flxss=1">tap</a>',
+    '<iframe srcdoc="<script>parent.__flxss=1</script>"></iframe>',
+    '<details open ontoggle="window.__flxss=1">',
     "{{constructor.constructor('window.__flxss=1')()}}",
     "<style>@import 'hxxp://attacker-demo[.]example/x.css';</style>",
-    "‮<img src=x onerror=window.__flxss=1>",
+    "\u202e<img src=x onerror=window.__flxss=1>",
     "<math><mtext></mtext><mglyph><svg><mtext><style><img src=x onerror=window.__flxss=1>",
 ]
 
@@ -59,7 +59,8 @@ DOM_CHECK = """() => {
       if (/^on/i.test(a.name)) bad.push(el.tagName + '[' + a.name + ']');
       if (/^\\s*javascript:/i.test(a.value)) bad.push(el.tagName + '[' + a.name + '=javascript:]');
     }
-    if (el.tagName === 'SCRIPT' && /^\\s*(window|parent)\\.__flxss/.test(el.textContent || '')) bad.push('SCRIPT(payload)');
+    const code = el.tagName === 'SCRIPT' ? (el.textContent || '') : '';
+    if (/^\\s*(window|parent)\\.__flxss/.test(code)) bad.push('SCRIPT(payload)');
     if (el.tagName === 'IFRAME' && el.getAttribute('srcdoc')) bad.push('IFRAME[srcdoc]');
   }
   return bad;

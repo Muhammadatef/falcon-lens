@@ -32,7 +32,9 @@ def prepare_untrusted(text: str) -> PreparedText:
     return PreparedText(cleaned, report, cleaned != text)
 
 
-def page_report(segments: Sequence[Segment], hidden_chars: int | None = None, visible_chars: int | None = None) -> InjectionReport:
+def page_report(
+    segments: Sequence[Segment], hidden_chars: int | None = None, visible_chars: int | None = None
+) -> InjectionReport:
     return detect(segments, hidden_text_chars=hidden_chars, visible_text_chars=visible_chars)
 
 

@@ -18,7 +18,13 @@ def _jpeg(w: int, h: int) -> bytes:
 
 
 def _webp_vp8x(w: int, h: int) -> bytes:
-    body = b"VP8X" + struct.pack("<I", 10) + b"\x00\x00\x00\x00" + (w - 1).to_bytes(3, "little") + (h - 1).to_bytes(3, "little")
+    body = (
+        b"VP8X"
+        + struct.pack("<I", 10)
+        + b"\x00\x00\x00\x00"
+        + (w - 1).to_bytes(3, "little")
+        + (h - 1).to_bytes(3, "little")
+    )
     return b"RIFF" + struct.pack("<I", len(body) + 4) + b"WEBP" + body
 
 

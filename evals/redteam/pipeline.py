@@ -262,7 +262,8 @@ async def _run_side(inp: Inputs, llm: CompromisedLLM, cfg: Config) -> SideResult
 
     # 1. limits
     if inp.kind == "url":
-        assert inp.url is not None
+        if inp.url is None:
+            raise ValueError("url input without url")
         lr = limits.check_size("url", inp.url)
         if not lr.ok:
             res.rejected = lr.reason
@@ -300,7 +301,8 @@ async def _run_side(inp: Inputs, llm: CompromisedLLM, cfg: Config) -> SideResult
         registrable = sender_domain or (_registrable(links[0]) if links else None)
         input_type = "email"
     elif inp.kind == "page":
-        assert inp.url is not None and inp.html is not None
+        if inp.url is None or inp.html is None:
+            raise ValueError("page input needs url and html")
         feats = page_features(inp.html)
         segments = feats.segments
         text = feats.visible_text
@@ -396,7 +398,9 @@ async def _run_side(inp: Inputs, llm: CompromisedLLM, cfg: Config) -> SideResult
         def backend(tool: str):  # type: ignore[no-untyped-def]
             async def fn(*args: str) -> list[Any]:
                 # compare_brand(brand_id, domain): the provenance-checked value is the domain.
-                calls.append((tool, args[1] if tool == "compare_brand" and len(args) > 1 else (args[0] if args else "")))
+                calls.append(
+                    (tool, args[1] if tool == "compare_brand" and len(args) > 1 else (args[0] if args else ""))
+                )
                 return []
 
             return fn
