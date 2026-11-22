@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1880" width="720" height="1880" role="img" aria-labelledby="t d">
+<title id="t">How Falcon Lens works, in four steps</title>
+<desc id="d">Step one: you paste or share a link, message, email or picture that looks suspicious. Step two: we look at the address, checking known scam lists and whether it imitates a real name. Step three: we open the page in a sealed browser, away from your phone, without typing or submitting anything, and compare what the page claims with who really owns the address. Step four: you get a clear answer in Arabic and English: dangerous, suspicious, or no warning signs found, with the reasons and what to do now. The product never calls a link safe.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
+.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.h1{font-size:36px;font-weight:700}
+.t{font-size:30px;font-weight:600}
+.a{font-size:28px;font-weight:600;fill:#e7d7b6}
+.b{font-size:23px;fill:#aeb8cc}
+.k{font-size:21px}
+.tag{font-size:17px;fill:#8794ae;letter-spacing:.06em}
+.n{font-size:28px;font-weight:700;fill:#04211d}
+.card{fill:#0e1626;stroke:#2a3757;stroke-width:1.5}
+.in{fill:#16203a;stroke:#2a3757;stroke-width:1.2}
+.w{fill:none;stroke:#3a4a70;stroke-width:3;stroke-linecap:round}
+.f{fill:none;stroke:#3fe0c5;stroke-width:3;stroke-dasharray:2 12;stroke-linecap:round;opacity:.7;animation:dash 1.4s linear infinite}
+.glow{fill:#3fe0c5;fill-opacity:.06;stroke:#3fe0c5;stroke-width:2.5;opacity:0}
+.glow.dg{fill:#ff8589;fill-opacity:.12;stroke:#ff8589}
+.on{animation:lit 12s linear infinite}
+.pk{opacity:0;offset-rotate:0deg;fill:#3fe0c5}
+.pk circle:first-child{opacity:.22}
+.pk{animation:go 12s cubic-bezier(.65,0,.35,1) infinite}
+.beam{animation:beam 12s ease-in-out infinite;opacity:0}
+.ne{transform-box:fill-box;transform-origin:center;animation:pulse 2.4s ease-in-out infinite}
+.sweep{transform-origin:62px 66px;animation:spin 9s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-28}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes lit{0%,24%,100%{opacity:0}2%,20%{opacity:1}}
+@keyframes go{0%{offset-distance:0%;opacity:0}1%{opacity:1}6%{offset-distance:100%;opacity:1}7%,100%{offset-distance:100%;opacity:0}}
+@keyframes beam{0%,25%,52%,100%{opacity:0;transform:translateX(0)}28%{opacity:.9;transform:translateX(0)}48%{opacity:.9;transform:translateX(520px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+@supports not (offset-path:path("M0 0H1")){.pk{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.pk,.beam{display:none}}
+</style>
+<defs>
+<pattern id="lat" width="48" height="48" patternUnits="userSpaceOnUse">
+<path d="M24 4l6 14 14 6-14 6-6 14-6-14-14-6 14-6z" fill="none" stroke="#16203a" stroke-width="1"/>
+</pattern>
+<radialGradient id="halo" cx="50%" cy="0%" r="80%">
+<stop offset="0" stop-color="#3fe0c5" stop-opacity=".12"/><stop offset="1" stop-color="#3fe0c5" stop-opacity="0"/>
+</radialGradient>
+<clipPath id="bar"><rect x="60" y="720" width="600" height="60" rx="30"/></clipPath>
+</defs>
+
+<rect width="720" height="1880" rx="28" fill="#070b14"/>
+<rect width="720" height="1880" rx="28" fill="url(#lat)" opacity=".55"/>
+<rect width="720" height="520" rx="28" fill="url(#halo)"/>
+
+<!-- header -->
+<g>
+<circle cx="62" cy="66" r="24" fill="#0e1626" stroke="#3fe0c5" stroke-width="3.4"/>
+<path class="sweep" d="M62 66L62 42A24 24 0 0 1 84 56.400z" fill="#3fe0c5" opacity=".22"/>
+<circle cx="62" cy="66" r="8.500" fill="#3fe0c5"/>
+<path d="M34 45q28-19 60 0" fill="none" stroke="#e7d7b6" stroke-width="3.600" stroke-linecap="round"/>
+<path d="M48 89q-3 13-13 20" fill="none" stroke="#e7d7b6" stroke-width="4.600" stroke-linecap="round"/>
+<text x="112" y="62" class="h1">How Falcon Lens works</text>
+<text x="112" y="104" class="a">كيف تعمل عدسة الصقر</text>
+</g>
+
+<!-- connectors -->
+<g class="w"><path d="M360 450V494"/><path d="M360 806V850"/><path d="M360 1260V1304"/></g>
+<g class="f"><path d="M360 450V494"/><path d="M360 806V850"/><path d="M360 1260V1304"/></g>
+
+<!-- step 1 -->
+<g>
+<rect class="card" x="32" y="150" width="656" height="300" rx="22"/><rect class="glow on" x="32" y="150" width="656" height="300" rx="22"/>
+<circle cx="84" cy="206" r="28" fill="#3fe0c5"/><text x="84" y="216" text-anchor="middle" class="n">1</text>
+<text x="130" y="216" class="t">You paste or share it</text>
+<text x="660" y="264" text-anchor="end" class="a">تلصق أو تشارك ما تشكّ فيه</text>
+<text x="60" y="318" class="b">A link, a message, an email or a picture</text>
+<text x="60" y="350" class="b">that looks suspicious.</text>
+<g>
+<rect class="in" x="60" y="376" width="90" height="46" rx="23"/><rect class="in" x="162" y="376" width="126" height="46" rx="23"/><rect class="in" x="300" y="376" width="100" height="46" rx="23"/><rect class="in" x="412" y="376" width="170" height="46" rx="23"/>
+<g class="k" text-anchor="middle"><text x="105" y="406">Link</text><text x="225" y="406">Message</text><text x="350" y="406">Email</text><text x="497" y="406">Picture or QR</text></g>
+</g>
+</g>
+
+<!-- step 2 -->
+<g>
+<rect class="card" x="32" y="494" width="656" height="312" rx="22"/><rect class="glow on" style="animation-delay:3s" x="32" y="494" width="656" height="312" rx="22"/>
+<circle cx="84" cy="550" r="28" fill="#3fe0c5"/><text x="84" y="560" text-anchor="middle" class="n">2</text>
+<text x="130" y="560" class="t">We look at the address</text>
+<text x="660" y="608" text-anchor="end" class="a">نفحص العنوان</text>
+<text x="60" y="662" class="b">Is it on a list of known scams?</text>
+<text x="60" y="694" class="b">Is it dressed up to look like a real name?</text>
+<rect class="in" x="60" y="720" width="600" height="60" rx="30"/>
+<circle cx="94" cy="750" r="11" fill="none" stroke="#8794ae" stroke-width="2.4"/><path d="M83 750h22M94 739q-7 11 0 22M94 739q7 11 0 22" fill="none" stroke="#8794ae" stroke-width="1.800"/>
+<text x="120" y="757" class="m" font-size="20" fill="#ffc55c">falcon-demo-bank-pay[.]example</text>
+<text x="640" y="756" text-anchor="end" class="tag">TEST EXAMPLE</text>
+<g clip-path="url(#bar)"><rect class="beam" x="70" y="720" width="14" height="60" fill="#3fe0c5"/></g>
+</g>
+
+<!-- step 3 -->
+<g>
+<rect class="card" x="32" y="850" width="656" height="410" rx="22"/><rect class="glow on" style="animation-delay:6s" x="32" y="850" width="656" height="410" rx="22"/>
+<circle cx="84" cy="906" r="28" fill="#3fe0c5"/><text x="84" y="916" text-anchor="middle" class="n">3</text>
+<text x="130" y="916" class="t">We open it in a sealed browser</text>
+<text x="660" y="964" text-anchor="end" class="a">نفتحه في متصفح معزول</text>
+<text x="60" y="1018" class="b">Away from your phone. We only look:</text>
+<text x="60" y="1050" class="b">we never type or submit anything.</text>
+<rect class="in" x="60" y="1076" width="270" height="96" rx="16"/>
+<rect x="390" y="1076" width="270" height="96" rx="16" fill="#2b0f15" stroke="#8c2630" stroke-width="1.2"/>
+<text x="78" y="1108" class="tag">THE PAGE SAYS</text><text x="78" y="1146" font-size="23" font-weight="600">Falcon Demo Bank</text>
+<text x="408" y="1108" class="tag">THE ADDRESS BELONGS TO</text><text x="408" y="1146" font-size="23" font-weight="600" fill="#ff8589">someone else</text>
+<g class="ne"><circle cx="360" cy="1124" r="24" fill="#d42a38"/><path d="M349 1117h22M349 1131h22M367 1110l-14 28" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+<text x="60" y="1210" class="b">A bank's name on someone else's address is</text>
+<text x="60" y="1242" class="b">flagged, even when the page is brand new.</text>
+</g>
+
+<!-- step 4 -->
+<g>
+<rect class="card" x="32" y="1304" width="656" height="444" rx="22"/><rect class="glow on" style="animation-delay:9s" x="32" y="1304" width="656" height="444" rx="22"/>
+<circle cx="84" cy="1360" r="28" fill="#3fe0c5"/><text x="84" y="1370" text-anchor="middle" class="n">4</text>
+<text x="130" y="1370" class="t">You get a clear answer</text>
+<text x="660" y="1418" text-anchor="end" class="a">تحصل على جواب واضح</text>
+<text x="60" y="1466" class="b">What we found, why, and what to do now.</text>
+<rect x="60" y="1486" width="600" height="60" rx="16" fill="#2b0f15" stroke="#8c2630" stroke-width="1.4"/><rect class="glow dg on" style="animation-delay:9.600s" x="60" y="1486" width="600" height="60" rx="16"/>
+<rect x="60" y="1556" width="600" height="60" rx="16" fill="#2a1d07" stroke="#8a6416" stroke-width="1.4"/>
+<rect x="60" y="1626" width="600" height="60" rx="16" fill="#111c3d" stroke="#34488c" stroke-width="1.4"/>
+<g font-size="24" font-weight="600">
+<text x="82" y="1524" fill="#ff8589">Dangerous</text><text x="638" y="1525" text-anchor="end" fill="#ff8589">خطير</text>
+<text x="82" y="1594" fill="#ffc55c">Suspicious</text><text x="638" y="1595" text-anchor="end" fill="#ffc55c">مشبوه</text>
+<text x="82" y="1664" fill="#a9c0ff">No warning signs found</text><text x="638" y="1665" text-anchor="end" fill="#a9c0ff">لم نجد علامات تحذير</text>
+</g>
+<text x="60" y="1724" class="b" fill="#8794ae">We never call a link "safe". We say what we saw.</text>
+</g>
+
+<!-- footer -->
+<text x="360" y="1798" text-anchor="middle" class="b">Clear cases are settled by fixed rules.</text>
+<text x="360" y="1830" text-anchor="middle" class="b">Only unclear cases get a closer look by AI.</text>
+<text x="360" y="1860" text-anchor="middle" class="tag">THE EXAMPLE USES AN INVENTED BANK</text>
+
+<!-- packets -->
+<g>
+<g class="pk" style="offset-path:path('M360 440V504');animation-delay:2.300s"><circle r="16"/><circle r="7"/></g>
+<g class="pk" style="offset-path:path('M360 796V860');animation-delay:5.300s"><circle r="16"/><circle r="7"/></g>
+<g class="pk" style="offset-path:path('M360 1250V1314');animation-delay:8.300s"><circle r="16"/><circle r="7"/></g>
+</g>
+</svg>

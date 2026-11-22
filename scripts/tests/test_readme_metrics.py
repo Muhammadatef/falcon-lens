@@ -96,3 +96,30 @@ def test_main_writes_then_check_passes_and_detects_staleness(tmp_path: Path) -> 
 def test_repo_readme_block_is_current() -> None:
     """The committed README must match what the script would write."""
     assert rm.main(["--check"]) == 0
+
+
+def test_known_metrics_get_a_plain_sentence_without_digits(tmp_path: Path) -> None:
+    published = tmp_path / "published"
+    _write(
+        published / "a.json",
+        {"metrics": {"test": {"recall": 0.9, "recall_ci95": [0.8, 1.0], "custom": 3}}},
+    )
+    block = rm.render(published, root=tmp_path)
+    assert f"| `test.recall` | 0.9 | {rm.PLAIN['recall']} |" in block
+    assert f"| `test.recall_ci95` | [0.8, 1.0] | {rm.PLAIN_CI} |" in block
+    assert "| `test.custom` | 3 |  |" in block
+    for sentence in (*rm.PLAIN.values(), rm.PLAIN_CI):
+        assert not any(ch.isdigit() for ch in sentence)
+        assert "%" not in sentence
+
+
+def test_scope_and_not_evaluated_are_shown_verbatim(tmp_path: Path) -> None:
+    published = tmp_path / "published"
+    _write(
+        published / "a.json",
+        {"scope": "first stage only", "not_evaluated": ["zero_day", "llm"], "metrics": {"n": 5}},
+    )
+    block = rm.render(published, root=tmp_path)
+    assert "| `scope` | `first stage only` |" in block
+    assert "Not evaluated in this artifact" in block
+    assert "`zero_day`, `llm`" in block
