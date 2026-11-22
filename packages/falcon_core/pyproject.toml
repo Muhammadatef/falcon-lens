@@ -15,6 +15,7 @@ dependencies = [
   "pyyaml>=6",
   "pillow>=11",
   "zxing-cpp>=2.3",
+  "python-ulid>=3",
   "opentelemetry-sdk>=1.45,<2",
   "opentelemetry-exporter-otlp-proto-grpc>=1.45,<2",
 ]

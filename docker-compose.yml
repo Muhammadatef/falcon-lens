@@ -247,7 +247,11 @@ services:
     image: falcon-lens/sentinel:0.1.0
     <<: [*hardened, *host-gateway]
     restart: always
-    environment: *app-env
+    environment:
+      <<: *app-env
+      ALERTMANAGER_URL: http://alertmanager:9093
+      LANGSMITH_TRACING: "false"  # langsmith ships transitively with langgraph: never export incident data
+      LANGCHAIN_TRACING_V2: "false"
     networks: [app, data, observability]
     depends_on:
       redis: { condition: service_healthy }
