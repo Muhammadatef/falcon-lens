@@ -54,9 +54,7 @@ async def resolver(host: str) -> Sequence[str]:
         (PUBLIC_V4, 22, BlockReason.PORT),
     ],
 )
-async def test_pinned_backend_refuses(
-    host: str, port: int, reason: BlockReason
-) -> None:
+async def test_pinned_backend_refuses(host: str, port: int, reason: BlockReason) -> None:
     backend = PinnedNetworkBackend()
     with pytest.raises(SSRFBlocked) as ei:
         await backend.connect_tcp(host, port)
@@ -150,9 +148,7 @@ async def test_deflate_body_decoded() -> None:
 
 @pytest.mark.asyncio
 async def test_gzip_bomb_blocked() -> None:
-    bomb = gzip.compress(
-        b"\0" * (50 * 1024 * 1024)
-    )  # ~50 KB on the wire, 50 MB decoded
+    bomb = gzip.compress(b"\0" * (50 * 1024 * 1024))  # ~50 KB on the wire, 50 MB decoded
     assert len(bomb) < 1024 * 1024
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -233,7 +229,7 @@ async def test_non_get_methods_blocked(method: str) -> None:
             resolver=resolver,
             transport=httpx.MockTransport(lambda r: httpx.Response(200)),
         )
-    assert ei.value.reason is BlockReason.METHOD
+    assert ei.value.reason is BlockReason.METHOD_NOT_ALLOWED
 
 
 @pytest.mark.asyncio
