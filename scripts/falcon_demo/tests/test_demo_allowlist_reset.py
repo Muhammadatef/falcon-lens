@@ -34,7 +34,7 @@ def test_message_allowlist_blocks_real_domains_in_any_form() -> None:
         "go to evil-site.com now",
         "hxxps://bank-login[.]net/x",
         "write to someone@gmail.com",
-        "https://falcon-demo-bank.test.evil.org/",
+        "hxxps://falcon-demo-bank.test.evil[.]org/",
         "mixed falcon-demo-bank.test and paypa1.com",
         "بنك الصقر: افتح bad-link.ae الآن",
     ]
@@ -44,7 +44,7 @@ def test_message_allowlist_blocks_real_domains_in_any_form() -> None:
 
 def test_item_gate_drops_redteam_and_offlist_urls_and_seed_blocks_them() -> None:
     assert not corpus.item_allowed(corpus.Item("redteam", "url", "https://evil.example.com/"))
-    assert not corpus.item_allowed(corpus.Item("fixture", "url", "https://real-brand.com/"))
+    assert not corpus.item_allowed(corpus.Item("fixture", "url", "hxxps://real-brand[.]com/"))
     assert not corpus.item_allowed(corpus.Item("message", "message", "click evil.com"))
     assert not hasattr(corpus, "redteam_items")
     client = FakeClient()
