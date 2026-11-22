@@ -1,0 +1,283 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 870" width="1200" height="870" role="img" aria-labelledby="t d">
+<title id="t">Falcon Lens system architecture</title>
+<desc id="d">A check enters from the PWA, the Chrome extension or a police app through the Caddy gateway to the API. The API puts a job on a Redis stream. The worker runs the tiers T0 to T3 with an exit after each tier, and a deterministic arbiter sets the verdict, which returns to the user over SSE. The sandbox sits on an isolated network behind the egress proxy. A model router sends LLM calls to a local Ollama model in sovereign mode or to the Anthropic API in cloud mode. The Sentinel consumes verdict events. Postgres with pgvector and Redis hold the data, and an observability stack collects metrics, logs and traces.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
+.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.t1{font-size:22px;font-weight:600}
+.h{font-size:14.5px;font-weight:600}
+.b{font-size:13px;fill:#aeb8cc}
+.c{font-size:12.5px;fill:#8794ae}
+.tag{font-size:11.5px;fill:#8794ae;letter-spacing:.08em}
+.tl{fill:#3fe0c5}.sd{fill:#e7d7b6}
+.card{fill:#0e1626;stroke:#2a3757;stroke-width:1.2}
+.ext{fill:#0e1626;stroke:#e7d7b6;stroke-opacity:.5;stroke-width:1.2;stroke-dasharray:4 4}
+.zone{fill:#0a101d;fill-opacity:.55;stroke:#2a3757;stroke-width:1.2;stroke-dasharray:5 6}
+.w{fill:none;stroke:#3a4a70;stroke-width:1.5}
+.f{fill:none;stroke:#3fe0c5;stroke-width:1.5;stroke-dasharray:2 10;stroke-linecap:round;opacity:.5;animation:dash 1.6s linear infinite}
+.glow{fill:#3fe0c5;fill-opacity:.1;stroke:#3fe0c5;stroke-width:1.8;opacity:0}
+.glow.dg{fill:#ff8589;stroke:#ff8589}
+.lamp{fill:#16203a;stroke:#5a6c92;stroke-width:1.4}
+.pk{opacity:0;offset-rotate:0deg}
+.pk circle:first-child{opacity:.22}
+.rq{fill:#3fe0c5}.vd{fill:#e7d7b6}.ev{fill:#a9c0ff}
+.on{animation:lit 18s linear infinite}
+.onl{animation:litl 18s linear infinite}
+.on2{animation:lit2 36s linear infinite}
+.lamp.go{animation:lamp 18s linear infinite}
+.pk.s{animation:go 18s cubic-bezier(.65,0,.35,1) infinite}
+.pk.l{animation:gol 18s cubic-bezier(.65,0,.35,1) infinite}
+.pk.r{animation-direction:reverse}
+.sweep{transform-origin:46px 42px;animation:spin 9s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-24}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes lit{0%,13%,100%{opacity:0}1.5%,9%{opacity:1}}
+@keyframes litl{0%,22%,100%{opacity:0}1.5%,18%{opacity:1}}
+@keyframes lit2{0%,8%,100%{opacity:0}.8%,6%{opacity:1}}
+@keyframes lamp{0%,16%,100%{fill:#16203a;stroke:#5a6c92}1.5%,12%{fill:#3fe0c5;stroke:#7df0dc}}
+@keyframes go{0%{offset-distance:0%;opacity:0}.5%{opacity:1}6.2%{offset-distance:100%;opacity:1}6.9%,100%{offset-distance:100%;opacity:0}}
+@keyframes gol{0%{offset-distance:0%;opacity:0}.5%{opacity:1}10.6%{offset-distance:100%;opacity:1}11.3%,100%{offset-distance:100%;opacity:0}}
+@supports not (offset-path:path("M0 0H1")){.pk{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.pk{display:none}}
+</style>
+<defs>
+<pattern id="lat" width="48" height="48" patternUnits="userSpaceOnUse">
+<path d="M24 4l6 14 14 6-14 6-6 14-6-14-14-6 14-6z" fill="none" stroke="#16203a" stroke-width="1"/>
+</pattern>
+<radialGradient id="halo" cx="50%" cy="0%" r="75%">
+<stop offset="0" stop-color="#3fe0c5" stop-opacity=".1"/><stop offset="1" stop-color="#3fe0c5" stop-opacity="0"/>
+</radialGradient>
+<marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0 .8L7 4 0 7.2z" fill="#5a6c92"/>
+</marker>
+</defs>
+
+<rect width="1200" height="870" rx="22" fill="#070b14"/>
+<rect width="1200" height="870" rx="22" fill="url(#lat)" opacity=".55"/>
+<rect width="1200" height="420" rx="22" fill="url(#halo)"/>
+
+<!-- header -->
+<g>
+<circle cx="46" cy="42" r="17" fill="#0e1626" stroke="#3fe0c5" stroke-width="2.4"/>
+<path class="sweep" d="M46 42L46 25A17 17 0 0 1 61.6 35.2z" fill="#3fe0c5" opacity=".22"/>
+<circle cx="46" cy="42" r="6" fill="#3fe0c5"/>
+<path d="M26 27q20-13 42 0" fill="none" stroke="#e7d7b6" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M36 58q-2 9-9 14" fill="none" stroke="#e7d7b6" stroke-width="3.2" stroke-linecap="round"/>
+<text x="84" y="40" class="t1">Falcon Lens <tspan fill="#8794ae" font-weight="400">/</tspan> system architecture</text>
+<text x="84" y="62" class="b">One check end to end: request in, tiered cascade, deterministic verdict back over SSE. Target design; build status is in the README.</text>
+<text x="1176" y="42" text-anchor="end" class="t1 sd">عدسة الصقر</text>
+</g>
+
+<!-- zones -->
+<rect class="zone" x="224" y="88" width="144" height="254" rx="16"/>
+<rect class="zone" x="388" y="88" width="788" height="472" rx="16"/>
+<rect class="zone" x="388" y="590" width="296" height="114" rx="16"/>
+<rect class="zone" x="700" y="590" width="356" height="114" rx="16"/>
+<rect class="zone" x="24" y="734" width="1152" height="112" rx="16"/>
+<g class="m tag">
+<rect x="240" y="80" width="78" height="16" fill="#070b14"/><text x="246" y="92">EDGE NET</text>
+<rect x="404" y="80" width="70" height="16" fill="#070b14"/><text x="410" y="92">APP NET</text>
+<rect x="404" y="582" width="78" height="16" fill="#070b14"/><text x="410" y="594">DATA NET</text>
+<rect x="716" y="696" width="178" height="16" fill="#070b14"/><text x="722" y="708">SANDBOX NET · ISOLATED</text>
+<rect x="40" y="726" width="150" height="16" fill="#070b14"/><text x="46" y="738">OBSERVABILITY NET</text>
+<text x="24" y="92">SURFACES</text>
+</g>
+
+<!-- wires -->
+<g class="w" marker-end="url(#a)">
+<path d="M200 134H236"/><path d="M200 214H236"/><path d="M200 294H236"/>
+<path d="M356 130H408"/><path d="M356 216H408"/><path d="M356 302H408"/>
+<path d="M538 194H712"/>
+<path d="M712 300H564V240H538"/>
+<path d="M712 330H622V440H700"/>
+<path d="M700 510H552V256H538"/>
+<path d="M930 366V575H803V612"/>
+<path d="M930 575H978V612"/>
+<path d="M1048 366V404"/>
+<path d="M916 432H940"/>
+<path d="M990 460V484"/><path d="M1106 460V484"/>
+<path d="M890 650H914"/><path d="M1042 650H1072"/>
+<path d="M622 540V612"/><path d="M477 560V612"/>
+<path d="M473 276V256"/>
+<path d="M812 187H824"/><path d="M924 187H936"/><path d="M1036 187H1048"/>
+</g>
+<path class="w" d="M240 790H1016"/>
+<g class="f">
+<path d="M538 194H712"/><path d="M712 300H564V240H538"/><path d="M712 330H622V440H700"/>
+<path d="M930 366V575H803V612"/><path d="M890 650H1072"/><path d="M240 790H1016"/>
+</g>
+
+<!-- surfaces -->
+<g>
+<rect class="card" x="24" y="104" width="176" height="60" rx="12"/><rect class="glow on" x="24" y="104" width="176" height="60" rx="12"/>
+<rect class="glow dg onl" style="animation-delay:14.8s" x="24" y="104" width="176" height="60" rx="12"/>
+<text x="38" y="129" class="h">PWA</text><text x="38" y="149" class="c">Arabic-first web app</text>
+<rect class="card" x="24" y="184" width="176" height="60" rx="12"/>
+<text x="38" y="209" class="h">Chrome extension</text><text x="38" y="229" class="c">MV3 · sends the URL only</text>
+<rect class="ext" x="24" y="264" width="176" height="60" rx="12"/>
+<text x="38" y="289" class="h">Police app or agent</text><text x="38" y="309" class="c">REST v1 · MCP</text>
+<text x="24" y="346" class="c">ready to connect, not connected</text>
+</g>
+
+<!-- gateway -->
+<g>
+<rect class="card" x="236" y="104" width="120" height="224" rx="12"/><rect class="glow on" style="animation-delay:.6s" x="236" y="104" width="120" height="224" rx="12"/>
+<text x="296" y="254" text-anchor="middle" class="h">gateway</text>
+<text x="296" y="273" text-anchor="middle" class="c">Caddy · TLS · CSP</text>
+<g class="m c" text-anchor="end"><text x="346" y="134">/</text><text x="346" y="220">/v1</text><text x="346" y="306">/mcp</text></g>
+</g>
+
+<!-- app services -->
+<g>
+<rect class="card" x="408" y="104" width="130" height="52" rx="12"/>
+<text x="422" y="127" class="h">web</text><text x="422" y="145" class="c">Next.js PWA</text>
+<rect class="card" x="408" y="176" width="130" height="80" rx="12"/>
+<rect class="glow on" style="animation-delay:2s" x="408" y="176" width="130" height="80" rx="12"/>
+<rect class="glow on" style="animation-delay:12.8s" x="408" y="176" width="130" height="80" rx="12"/>
+<text x="422" y="200" class="h">api</text><text x="422" y="219" class="c">FastAPI · REST v1</text><text x="422" y="236" class="c">SSE · rate limits</text>
+<rect class="card" x="408" y="276" width="130" height="52" rx="12"/>
+<text x="422" y="299" class="h">mcp</text><text x="422" y="317" class="c">streamable HTTP</text>
+<rect class="card" x="400" y="372" width="146" height="150" rx="12"/>
+<text x="412" y="396" class="h">Contracts are law</text>
+<g class="m c"><text x="412" y="418">verdict</text><text x="412" y="436">evidence</text><text x="412" y="454">event</text><text x="412" y="472">incident</text><text x="412" y="490">tools</text></g>
+<text x="412" y="510" class="c">JSON Schema</text>
+</g>
+
+<!-- bus -->
+<g>
+<rect x="580" y="104" width="84" height="436" rx="18" fill="#111a2e" stroke="#34488c" stroke-width="1.2"/>
+<text x="622" y="128" text-anchor="middle" class="h">Redis</text><text x="622" y="146" text-anchor="middle" class="h">Streams</text>
+<g class="m c" text-anchor="middle"><text x="622" y="184">fl:jobs</text><text x="622" y="290">fl:verdict</text><text x="622" y="462">fl:events</text><text x="622" y="500">fl:board</text></g>
+</g>
+
+<!-- worker -->
+<g>
+<rect class="card" x="700" y="104" width="460" height="262" rx="14"/>
+<text x="716" y="129" class="h">worker <tspan class="b" font-weight="400">· Investigator cascade</tspan></text>
+<text x="1146" y="129" text-anchor="end" class="c">exit after any tier</text>
+<g>
+<rect class="card" x="712" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow on" style="animation-delay:3.2s" x="712" y="142" width="100" height="90" rx="10"/>
+<rect class="card" x="824" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow on" style="animation-delay:4.2s" x="824" y="142" width="100" height="90" rx="10"/>
+<rect class="card" x="936" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow onl" style="animation-delay:5.4s" x="936" y="142" width="100" height="90" rx="10"/>
+<rect class="card" x="1048" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow on" style="animation-delay:9s" x="1048" y="142" width="100" height="90" rx="10"/>
+<g class="m h tl"><text x="722" y="164">T0</text><text x="834" y="164">T1</text><text x="946" y="164">T2</text><text x="1058" y="164">T3</text></g>
+<g class="m c" text-anchor="end"><text x="802" y="164">50 ms</text><text x="914" y="164">1 s</text><text x="1026" y="164">6 s</text><text x="1138" y="164">15 s</text></g>
+<g class="c">
+<text x="722" y="186">cache</text><text x="722" y="203">official list</text><text x="722" y="220">feed mirror</text>
+<text x="834" y="186">URL + domain</text><text x="834" y="203">reputation</text><text x="834" y="220">GBM score</text>
+<text x="946" y="186">sandbox page</text><text x="946" y="203">brand check</text><text x="946" y="220">extractor</text>
+<text x="1058" y="186">investigator</text><text x="1058" y="203">≤ 6 tool calls</text><text x="1058" y="220">if uncertain</text>
+</g>
+</g>
+<g class="w"><path d="M762 232V268"/><path d="M874 232V268"/><path d="M986 232V268"/><path d="M1098 232V268"/></g>
+<circle class="lamp go" style="animation-delay:4s" cx="762" cy="250" r="5.5"/>
+<circle class="lamp go" style="animation-delay:5.1s" cx="874" cy="250" r="5.5"/>
+<circle class="lamp go" style="animation-delay:8.6s" cx="986" cy="250" r="5.5"/>
+<circle class="lamp go" style="animation-delay:10.5s" cx="1098" cy="250" r="5.5"/>
+<g class="m tag"><text x="774" y="254">EXIT</text><text x="886" y="254">EXIT</text><text x="998" y="254">EXIT</text><text x="1110" y="254">EXIT</text></g>
+<rect x="712" y="268" width="436" height="86" rx="10" fill="#111c3d" stroke="#34488c" stroke-width="1.2"/>
+<rect class="glow onl" style="animation-delay:11s" x="712" y="268" width="436" height="86" rx="10"/>
+<text x="726" y="291" class="h">Deterministic arbiter</text><text x="1136" y="291" text-anchor="end" class="m c">code, not a model</text>
+<text x="726" y="310" class="c">hard rules H1–H6 · calibrated score · bands</text>
+<g>
+<rect x="726" y="322" width="96" height="22" rx="11" fill="#2b0f15" stroke="#8c2630"/><rect class="glow dg onl" style="animation-delay:11.2s" x="726" y="322" width="96" height="22" rx="11"/>
+<rect x="830" y="322" width="96" height="22" rx="11" fill="#2a1d07" stroke="#8a6416"/>
+<rect x="934" y="322" width="140" height="22" rx="11" fill="#111c3d" stroke="#34488c"/>
+<g font-size="12.5" text-anchor="middle"><text x="774" y="337.5" fill="#ff8589">dangerous</text><text x="878" y="337.5" fill="#ffc55c">suspicious</text><text x="1004" y="337.5" fill="#a9c0ff">no warning signs</text></g>
+</g>
+</g>
+
+<!-- sentinel -->
+<g>
+<rect class="card" x="700" y="396" width="216" height="144" rx="14"/><rect class="glow onl" style="animation-delay:12.8s" x="700" y="396" width="216" height="144" rx="14"/>
+<text x="716" y="421" class="h">sentinel <tspan class="b" font-weight="400">· LangGraph</tspan></text>
+<text x="716" y="443" class="b">listen → correlate → trigger</text>
+<text x="716" y="461" class="b">→ triage → act</text>
+<text x="716" y="485" class="c">Rules decide what an incident is.</text>
+<text x="716" y="502" class="c">External drafts wait for a human.</text>
+<text x="716" y="526" class="m c">→ incident board (SSE)</text>
+</g>
+
+<!-- model router -->
+<g>
+<rect class="card" x="940" y="404" width="216" height="56" rx="12"/><rect class="glow on" style="animation-delay:9.6s" x="940" y="404" width="216" height="56" rx="12"/>
+<text x="954" y="427" class="h">model router</text><text x="954" y="446" class="c">redact → spotlight → validate</text>
+<rect class="ext" x="940" y="484" width="104" height="56" rx="12"/><rect class="glow on2" style="animation-delay:28.1s" x="940" y="484" width="104" height="56" rx="12"/>
+<text x="952" y="507" class="h">Ollama</text><text x="952" y="526" class="c">sovereign</text>
+<rect class="ext" x="1052" y="484" width="104" height="56" rx="12"/><rect class="glow on2" style="animation-delay:10.1s" x="1052" y="484" width="104" height="56" rx="12"/>
+<text x="1064" y="507" class="h">Anthropic</text><text x="1064" y="526" class="c">cloud API</text>
+</g>
+
+<!-- what the resident sees -->
+<g>
+<text x="24" y="402" class="m tag">RESIDENT VIEW · TEST FIXTURE EXAMPLE</text>
+<rect class="card" x="24" y="414" width="332" height="146" rx="14"/>
+<rect class="glow dg onl" style="animation-delay:14.8s" x="24" y="414" width="332" height="146" rx="14"/>
+<rect x="38" y="428" width="304" height="44" rx="10" fill="#2b0f15" stroke="#8c2630"/>
+<path d="M60 439l11 20h-22z" fill="none" stroke="#ff8589" stroke-width="2" stroke-linejoin="round"/><path d="M60 446v6M60 455v.5" stroke="#ff8589" stroke-width="2" stroke-linecap="round"/>
+<text x="82" y="456" font-size="17" font-weight="600" fill="#ff8589">Dangerous</text>
+<text x="330" y="457" text-anchor="end" font-size="19" font-weight="600" fill="#ff8589">خطير</text>
+<text x="38" y="496" class="b">Claims Falcon Demo Bank, domain is not theirs</text>
+<text x="38" y="516" class="b">Asks for a card number and an OTP</text>
+<g class="m c"><rect x="38" y="528" width="34" height="20" rx="6" fill="#16203a" stroke="#2a3757"/><text x="45" y="542">e3</text><rect x="78" y="528" width="34" height="20" rx="6" fill="#16203a" stroke="#2a3757"/><text x="85" y="542">e7</text><text x="122" y="542">every reason cites evidence ids</text></g>
+</g>
+
+<!-- legend -->
+<g>
+<text x="24" y="606" class="m tag">LEGEND</text>
+<circle cx="32" cy="630" r="5" class="rq"/><text x="48" y="634.5" class="b">request and job</text>
+<circle cx="32" cy="654" r="5" class="vd"/><text x="48" y="658.5" class="b">verdict over SSE</text>
+<circle cx="32" cy="678" r="5" class="ev"/><text x="48" y="682.5" class="b">event for the Sentinel</text>
+<circle cx="32" cy="702" r="5" fill="#16203a" stroke="#5a6c92" stroke-width="1.4"/><text x="48" y="706.5" class="b">tier exit: partial verdict re-emitted</text>
+<rect x="204" y="621" width="20" height="14" rx="4" class="zone"/><text x="232" y="634.5" class="b">Docker network</text>
+<rect x="204" y="645" width="20" height="14" rx="4" class="ext"/><text x="232" y="658.5" class="b">outside the stack</text>
+</g>
+
+<!-- data -->
+<g>
+<rect class="card" x="398" y="612" width="160" height="76" rx="12"/>
+<text x="410" y="636" class="h">Postgres + pgvector</text><text x="410" y="655" class="c">verdicts · evidence</text><text x="410" y="672" class="c">incidents · audit_log</text>
+<rect class="card" x="568" y="612" width="104" height="76" rx="12"/>
+<text x="579" y="636" class="h">Redis</text><text x="579" y="655" class="c">cache · locks</text><text x="579" y="672" class="c">limits · streams</text>
+</g>
+
+<!-- sandbox -->
+<g>
+<rect class="card" x="716" y="612" width="174" height="76" rx="12"/><rect class="glow on" style="animation-delay:6.6s" x="716" y="612" width="174" height="76" rx="12"/>
+<text x="728" y="636" class="h">sandbox <tspan class="b" font-weight="400">· Playwright</tspan></text><text x="728" y="655" class="c">fresh context per visit</text><text x="728" y="672" class="c">returns features only</text>
+<rect class="card" x="914" y="612" width="128" height="76" rx="12"/><rect class="glow on" style="animation-delay:7.2s" x="914" y="612" width="128" height="76" rx="12"/>
+<text x="926" y="636" class="h">egress proxy</text><text x="926" y="655" class="c">ports 80 and 443</text><text x="926" y="672" class="c">blocks private IPs</text>
+<rect class="ext" x="1072" y="612" width="104" height="76" rx="12"/>
+<text x="1084" y="636" class="h">internet</text><text x="1084" y="655" class="c">RDAP · crt.sh</text><text x="1084" y="672" class="c">feeds · pages</text>
+</g>
+
+<!-- observability -->
+<g>
+<text x="44" y="774" class="b">Every service exposes</text>
+<text x="44" y="793" class="m c">/healthz /readyz /metrics</text>
+<text x="44" y="812" class="c">logs carry verdict_id</text>
+<g>
+<rect class="card" x="262" y="758" width="136" height="64" rx="12"/><text x="276" y="784" class="h">otel-collector</text><text x="276" y="804" class="c">traces · metrics</text>
+<rect class="card" x="426" y="758" width="120" height="64" rx="12"/><text x="440" y="784" class="h">Prometheus</text><text x="440" y="804" class="c">fl_ metrics</text>
+<rect class="card" x="566" y="758" width="110" height="64" rx="12"/><text x="580" y="784" class="h">Loki</text><text x="580" y="804" class="c">logs via Alloy</text>
+<rect class="card" x="696" y="758" width="120" height="64" rx="12"/><text x="710" y="784" class="h">Phoenix</text><text x="710" y="804" class="c">LLM traces</text>
+<rect class="card" x="856" y="758" width="130" height="64" rx="12"/><text x="870" y="784" class="h">Grafana</text><text x="870" y="804" class="c">6 dashboards</text>
+<rect class="card" x="1016" y="758" width="140" height="64" rx="12"/><text x="1030" y="784" class="h">Alertmanager</text><text x="1030" y="804" class="c">runbook per alert</text>
+</g>
+</g>
+
+<!-- packets (CSS motion path; hidden where unsupported or when motion is reduced) -->
+<g>
+<g class="pk l rq" style="offset-path:path('M200 134H296V216H408')"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk s rq" style="offset-path:path('M538 194H712');animation-delay:2s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk s rq" style="offset-path:path('M930 366V575H978V612');animation-delay:4.4s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk s rq" style="offset-path:path('M930 366V575H803V612');animation-delay:5.5s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk s rq" style="offset-path:path('M890 650H1072');animation-delay:6.7s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk s r rq" style="offset-path:path('M930 366V575H803V612');animation-delay:-10.4s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk s rq" style="offset-path:path('M1048 340V404');animation-delay:9.1s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk s vd" style="offset-path:path('M712 300H564V240H538');animation-delay:11.6s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk l vd" style="offset-path:path('M408 216H296V134H200');animation-delay:12.8s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk s ev" style="offset-path:path('M712 330H622V440H700');animation-delay:11.6s"><circle r="10"/><circle r="4.5"/></g>
+<g class="pk l ev" style="offset-path:path('M700 510H552V256H538');animation-delay:14.4s"><circle r="10"/><circle r="4.5"/></g>
+</g>
+</svg>
