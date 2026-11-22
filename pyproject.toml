@@ -83,9 +83,9 @@ strict = true
 plugins = ["pydantic.mypy"]
 # Strict applies to falcon_core itself (CLAUDE.md). Tests are linted by ruff but not type-checked:
 # several test dirs ship a `conftest.py` and mypy reports them as duplicate modules.
-files = ["packages/falcon_core/src", "services/api/src"]
+files = ["packages/falcon_core/src", "services/api/src", "services/worker/src"]
 explicit_package_bases = true
-mypy_path = "packages/falcon_core/src:services/api/src"
+mypy_path = "packages/falcon_core/src:services/api/src:services/worker/src"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
