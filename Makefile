@@ -104,3 +104,27 @@ demo-reset: ## Reset Postgres+Redis volumes and seed state (names resolved from 
 	@YES=$(YES) $(DEMO) reset
 	$(MAKE) demo
 
+# ---- local worker (Ollama only, no hosted models): docs/LOCAL_WORKER.md
+LW_LABEL := ae.falconlens.localworker
+LW_PLIST := $(HOME)/Library/LaunchAgents/$(LW_LABEL).plist
+
+.PHONY: local-worker-install local-worker-uninstall local-worker-status local-worker-enqueue local-worker-run
+local-worker-run: ## run the local worker in the foreground (Ctrl-C to stop)
+	uv run python -m scripts.local_worker run
+local-worker-install: ## render + load the launchd agent (macOS): runs 24/7, survives reboots
+	@mkdir -p work/queue "$(HOME)/Library/LaunchAgents"
+	@sed -e "s|@REPO@|$(CURDIR)|g" -e "s|@UV@|$$(command -v uv)|g" -e "s|@HOME@|$(HOME)|g" infra/local_worker/$(LW_LABEL).plist > "$(LW_PLIST)"
+	@plutil -lint "$(LW_PLIST)"
+	-@launchctl bootout gui/$$(id -u)/$(LW_LABEL) 2>/dev/null
+	launchctl bootstrap gui/$$(id -u) "$(LW_PLIST)"
+	@echo "installed $(LW_LABEL); check with: make local-worker-status"
+local-worker-uninstall: ## stop and unload the launchd agent, then delete its plist
+	-launchctl bootout gui/$$(id -u)/$(LW_LABEL)
+	@test -n "$(LW_PLIST)" && rm -f "$(LW_PLIST)"
+local-worker-status: ## queue counts, heartbeat, last results
+	@uv run python -m scripts.local_worker status
+	@launchctl print gui/$$(id -u)/$(LW_LABEL) 2>/dev/null | grep -E "state|pid" | head -3 || echo "launchd: agent not loaded"
+local-worker-enqueue: ## make local-worker-enqueue KIND=summarize INPUT=path [PARAMS='{"k":1}']
+	@test -n "$(KIND)" || { echo "usage: make local-worker-enqueue KIND=<kind> INPUT=<repo path>" >&2; exit 2; }
+	uv run python -m scripts.local_worker enqueue --kind $(KIND) $(if $(INPUT),--input $(INPUT)) $(if $(PARAMS),--params '$(PARAMS)')
+
