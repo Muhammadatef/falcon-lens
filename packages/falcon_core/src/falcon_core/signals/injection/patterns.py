@@ -1,7 +1,7 @@
 """Instruction-like phrase patterns (EN / AR / Arabizi), matched on ``normalise()``d text.
 
 Normalised text is lowercase, has no zero-width or bidi characters, folds Latin homoglyphs, and
-folds Arabic letter variants (أ إ آ -> ا, ة -> ه, ى -> ي) with diacritics and tatweel removed, so the
+folds Arabic letter variants (أ إ آ -> ا, ة -> ه, ي -> ي) with diacritics and tatweel removed, so the
 Arabic patterns below are written in the folded form.
 
 ``strong`` patterns address an AI or a checker, or forge our own markers, and fire on their own.
@@ -32,10 +32,11 @@ def _p(pid: str, lang: Lang, strength: Strength, rx: str) -> Pattern:
     return Pattern(pid, lang, strength, re.compile(rx))
 
 
-_AR_ITEM = r"(?:الموقع|الرابط|الرساله|الصفحه|البريد|المحتوى|هذا|هذه)"
+_AR_ITEM = r"(?:الموقع|الرابط|الرساله|الصفحه|البريد|المحتوي|هذا|هذه)"
 _AR_SAFE = r"(?:امن|امنه|امنا|موثوق|موثوقه|سليم|سليمه|شرعي|غير ضار|ليس احتيال|بدون خطر)"
 _EN_SAFE = (
-    r"(?:safe|legit(?:imate)?|trusted|trustworthy|benign|harmless|clean|verified|"
+    r"(?:safe|legit(?:imate)?|trusted|trustworthy|benign|harmless|clean|verified|genuine|authentic|"
+    r"approved|authori[sz]ed|official|whitelisted|allowlisted|pre-approved|cleared|"
     r"not (?:a )?(?:phishing|scam|fraud|malicious)|no warning signs|low risk)"
 )
 _EN_ITEM = r"(?:site|page|link|url|message|sms|email|e-mail|content|domain|website|text)"
@@ -81,8 +82,9 @@ PATTERNS: tuple[Pattern, ...] = (
         "en.mark_safe",
         "en",
         "strong",
-        r"\b(?:mark|classify|label|rate|treat|consider|flag|tag|categori[sz]e|judge|whitelist|allowlist)\b"
-        r"(?: it| this| the| that| our| these)?.{0,40}?\b(?:as|is|to be)?\s*" + _EN_SAFE + r"\b",
+        r"\b(?:mark|classify|label|rate|treat|consider|flag|tag|categori[sz]e|judge|whitelist|allowlist|"
+        r"describe|present|portray|summari[sz]e|refer to)\b"
+        r"(?: it| this| the| that| our| these)?.{0,40}?\b(?:as|is|to be)\s+(?:\w+\s+)?" + _EN_SAFE + r"\b",
     ),
     _p(
         "en.say_safe",
@@ -98,6 +100,39 @@ PATTERNS: tuple[Pattern, ...] = (
         "strong",
         r"\b(?:do not|don't|never|must not)\b.{0,20}?\b(?:warn|flag|alert)\b.{0,30}?\b"
         r"(?:the user|users|this (?:site|page|link|message|email)|it as|anyone)\b",
+    ),
+    _p(
+        "en.if_you_are_ai",
+        "en",
+        "strong",
+        r"\b(?:if|when|in case) you(?:'re| are)\b.{0,12}?\b(?:an? )?(?:ai|a\.i\.|llm|language model|bot|"
+        r"chatbot|assistant|automated|scanner|crawler|classifier)\b",
+    ),
+    _p(
+        "en.addressed_to_ai",
+        "en",
+        "strong",
+        r"\b(?:any|all|every|dear|attention|to the|to any|for any|note for|note to|message for|message to)\s+"
+        r"(?:ai|a\.i\.|llms?|bots?|crawlers?|automated \w+|scanners?|checkers?|reviewers?|classifiers?|"
+        r"moderators?|filters?|language models?|assistants?|security (?:tools?|systems?|software))\b"
+        r"(?:\s+\w+){0,2}?\s*(?:reading|scanning|reviewing|processing|checking|analy[sz]ing|parsing|"
+        r"should|must|:|,)",
+    ),
+    _p(
+        "en.vocative_ai",
+        "en",
+        "strong",
+        r"(?:^|[.!?;\n]\s*|\(\s*)(?:automated (?:systems?|tools?|reviewers?|readers?|filters?|scanners?|checkers?)|"
+        r"ai(?: models?| systems?| assistants?)?|llms?|bots?|crawlers?|scanners?|checkers?|classifiers?|"
+        r"(?:content |security )?(?:moderators?|reviewers?)|language models?)\s*[:,]",
+    ),
+    _p(
+        "en.no_need_warn",
+        "en",
+        "strong",
+        r"\bno (?:need|reason) to (?:warn|flag|alert|report|block|caution|worry the)\b|"
+        r"\b(?:need not|needn't|shouldn't|should not|must not|does not need to|doesn't need to) be "
+        r"(?:flagged|reported|blocked|warned|marked|treated as (?:suspicious|phishing|a scam))\b",
     ),
     _p("en.ai_address", "en", "weak", r"\b(?:dear|attention|note to|hey|hello|instructions? for)\b.{0,15}?\b" + _AI + r"\b"),
     _p("en.to_ai", "en", "weak", r"\b(?:if you are|as an?|to any|to the)\b.{0,10}?\b" + _AI + r"\b"),
@@ -172,7 +207,7 @@ PATTERNS: tuple[Pattern, ...] = (
         "ar.ignore_previous",
         "ar",
         "strong",
-        _AW + r"(?:تجاهل|تجاهلي|تجاهلوا|اتجاهل|انس|انسي|انسى|اهمل|اهملي|تخط|تخطي|الغ|الغي)" + _AE + r".{0,25}?"
+        _AW + r"(?:تجاهل|تجاهلي|تجاهلوا|اتجاهل|انس|انسي|انسي|اهمل|اهملي|تخط|تخطي|الغ|الغي)" + _AE + r".{0,25}?"
         r"(?:التعليمات|الاوامر|التوجيهات|القواعد|الارشادات|ما سبق|كل ما قيل)",
     ),
     _p(
@@ -213,8 +248,30 @@ PATTERNS: tuple[Pattern, ...] = (
         "ar.ai_address",
         "ar",
         "weak",
-        r"(?:الذكاء الاصطناعي|المساعد الذكي|نظام الفحص|اداه الفحص|المدقق الالي|الفاحص الالي|نموذج اللغه|"
-        r"ايها النموذج|ايها المساعد|الى النظام الالي)",
+        r"(?:الذكاء الاصطناعي|المساعد الذكي|نظام الفحص|انظمه الفحص|اداه الفحص|ادوات الفحص|ادوات التحقق|"
+        r"برامج الفحص|المدقق الالي|الفاحص الالي|الفاحص|نموذج اللغه|ايها النموذج|ايها المساعد|الي النظام الالي|"
+        r"الانظمه الاليه|البوت|الروبوت)",
+    ),
+    _p(
+        "ar.addressed_to_ai",
+        "ar",
+        "strong",
+        r"(?:الي|ملاحظه لـ?|ملاحظه الي|رساله الي|رساله لـ?|تنبيه الي|يا|ايها|عزيزي)\s*"
+        r"(?:الذكاء الاصطناعي|المساعد الذكي|انظمه الفحص|نظام الفحص|ادوات الفحص|ادوات التحقق|اداه الفحص|"
+        r"برامج الفحص|المدقق|الفاحص|النموذج|البوت|الروبوت|الانظمه الاليه|المراجع الالي)",
+    ),
+    _p(
+        "ar.no_classify",
+        "ar",
+        "strong",
+        r"(?:الرجاء|رجاء|يرجي|نرجو|ارجو)?\s*عدم\s*(?:تصنيف|التصنيف|التحذير|تحذير|الابلاغ|التبليغ|حظر|وضع علامه)",
+    ),
+    _p(
+        "ar.no_need_warn",
+        "ar",
+        "strong",
+        r"(?:لا داعي|لا حاجه|لا يلزم|لا يجب|غير ضروري)\s*(?:لل|الي ال|ل)?(?:تحذير|تنبيه|الابلاغ|التبليغ|حظر|"
+        r"تصنيف)",
     ),
     # ---------------------------------------------------------------- Arabizi (Latin, digits as letters)
     _p(
@@ -231,6 +288,14 @@ PATTERNS: tuple[Pattern, ...] = (
         r"\b(?:e3tabir|e3tber|e3tebr|i3tabir|3tabir|e3teber|sanef|sannif|qool enno|gool enno|qol enno)\w{0,3}\b"
         r".{0,40}?\b(?:amen|aamen|a2men|amin|amina|safe|mawthooq|mawthoq|mawthuq|saleem|salim)\b",
     ),
+    _p(
+        "arabizi.dont_warn",
+        "arabizi",
+        "strong",
+        r"\b(?:la|ma|mat|matt)\s*(?:t7azer|t7azir|t7athir|t7atheer|tballegh|tbalegh|tballigh|tsanef|tsannif|"
+        r"tnabeh|tnabbih)\w*\b",
+    ),
+    _p("arabizi.ya_bot", "arabizi", "strong", r"\bya\s*(?:bot|ai|robot|model|scanner|checker|assistant)\b"),
     _p(
         "arabizi.you_are_now",
         "arabizi",

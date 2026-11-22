@@ -97,9 +97,12 @@ class Config:
 
 
 class _Ctx:
-    def __init__(self, *, url: str | None = None, text: str | None = None, input_type: str = "url") -> None:
+    def __init__(
+        self, *, url: str | None = None, text: str | None = None, data: bytes | None = None, input_type: str = "url"
+    ) -> None:
         self.url = url
         self.text = text
+        self.data = data
         self.input_type = input_type
         self.http = None
         self.cache = None
@@ -135,15 +138,15 @@ def _host(url: str) -> str:
 async def _run_signals(inp: Inputs, text: str | None, links: Sequence[str]) -> list[SignalEvidence]:
     out: list[SignalEvidence] = []
     for name, (spec, fn) in REGISTRY.items():
-        if name == INJ_SIGNAL:
-            continue
+        if name == INJ_SIGNAL or spec.network != "none":
+            continue  # offline run: signals that need Ollama / feeds / the mirror are not exercised
         if spec.family == "url":
             if "url" not in spec.input_types:
                 continue
             for link in links:
                 out.extend(await fn(_Ctx(url=link, input_type="url")))  # type: ignore[arg-type]
-        elif text is not None and inp.kind in spec.input_types:
-            out.extend(await fn(_Ctx(text=text, input_type=inp.kind)))  # type: ignore[arg-type]
+        elif inp.kind in spec.input_types and (text is not None or inp.data is not None):
+            out.extend(await fn(_Ctx(text=text, data=inp.data, input_type=inp.kind)))  # type: ignore[arg-type]
     return out
 
 
@@ -158,6 +161,19 @@ def _contract(evs: Sequence[SignalEvidence]) -> list[Any]:
         seen.add(e.id)
         out.append(Evidence.model_validate(e.to_dict()))
     return out
+
+
+def _cascade_page_evidence(url: str, feats: PageFeatures, registrable: str | None) -> list[Any]:
+    """T2 page evidence from the shipped cascade code (page.cred_form, deterministic brand claim, ...)."""
+    from falcon_core.cascade.models import SandboxFeatures, SandboxForm
+    from falcon_core.cascade.page import page_evidence
+    from falcon_core.contracts.evidence import Evidence
+    from falcon_core.scoring import to_contract
+    from falcon_core.signals.brands.registry import default_registry
+
+    forms = [SandboxForm(fields=["password"] * feats.password_fields)] if feats.password_fields else []
+    sf = SandboxFeatures(final_url=url, title=feats.title, visible_text=feats.visible_text, forms=forms)
+    return [Evidence.model_validate(to_contract(e)) for e in page_evidence(sf, registrable or "", default_registry())]
 
 
 def _email_parts(raw: bytes) -> tuple[str, str, list[Segment], PageFeatures | None, str | None]:
@@ -242,6 +258,7 @@ async def _run_side(inp: Inputs, llm: CompromisedLLM, cfg: Config) -> SideResult
     registrable: str | None = None
     hidden_chars = visible_chars = None
     input_type = "url"
+    page_t2: list[Any] = []
 
     # 1. limits
     if inp.kind == "url":
@@ -295,28 +312,17 @@ async def _run_side(inp: Inputs, llm: CompromisedLLM, cfg: Config) -> SideResult
         links = [inp.url]
         registrable = _registrable(inp.url)
         hidden_chars, visible_chars = feats.hidden_chars, feats.visible_chars
-        if feats.password_fields:
-            base.append(
-                SignalEvidence(
-                    signal="page.cred_form",
-                    family="page",
-                    observed={"fields": ["password"], "count": feats.password_fields},
-                    source="sandbox",
-                    tier="T2",
-                )
-            )
-    if feats is not None and inp.kind == "email" and feats.password_fields:
-        base.append(SignalEvidence(signal="page.cred_form", family="page", observed={"fields": ["password"]}, tier="T2"))
+        page_t2 = _cascade_page_evidence(inp.url, feats, registrable)
 
     # 2. T1 signals + detector
-    sig_kind = Inputs(kind="message" if inp.kind == "message" else inp.kind)
-    base.extend(await _run_signals(sig_kind, text if inp.kind in ("message", "email") else None, links))
+    sig_in = Inputs(kind=inp.kind, data=inp.data if inp.kind in ("email", "image") else None)
+    base.extend(await _run_signals(sig_in, text if inp.kind == "message" else None, links))
     if segments:
         report = detect(segments, hidden_text_chars=hidden_chars, visible_text_chars=visible_chars)
         res.detector_fired = report.fired
         res.detector_patterns = report.pattern_ids
         base.extend(report.evidence("T2" if inp.kind == "page" else "T1"))
-    evidence = _contract(base)
+    evidence = _contract(base) + page_t2
 
     layers = available_layers()
     if not layers["arbiter"]:
