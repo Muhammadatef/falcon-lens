@@ -121,6 +121,8 @@ jobs:
         run: uv run pytest -q packages/falcon_core/tests/contracts
       - name: openapi drift (code must not implement undeclared routes)
         run: uv run python scripts/check_openapi_drift.py
+      - name: openapi exact match (generated from code)
+        run: uv run python scripts/gen_openapi.py --check
 
   security:
     name: security
