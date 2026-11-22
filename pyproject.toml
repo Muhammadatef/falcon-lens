@@ -68,6 +68,7 @@ known-first-party = [
 "**/tests/**" = ["S101", "S105", "S106", "S311", "S324", "E501"]
 "evals/**" = ["S603", "S607"]
 "**/fixtures.py" = ["S311"]
+"scripts/falcon_demo/**" = ["S311", "S603", "S607"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -82,4 +83,5 @@ mypy_path = "packages/falcon_core/src"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["packages/falcon_core/tests", "services"]
+testpaths = ["packages/falcon_core/tests", "services", "scripts"]
+pythonpath = ["scripts"]
