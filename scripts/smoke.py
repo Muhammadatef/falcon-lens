@@ -133,14 +133,25 @@ def main() -> int:
         host = "synthetic-openphish.test"
         # feed:openphish stores sha256 hex of the canonical URL and of the host, never plaintext
         hashes = [sha256_hex(canonicalize_url(url)), sha256_hex(host)]
-        compose("exec", "-T", "redis", "redis-cli", "SADD", "feed:openphish", *hashes)
-        # H2 needs a fresh mirror (< 6 h). Synthetic entry: mark the mirror as just refreshed. The worker's
-        # refresh job (if the private feed dir is mounted) restores the real state on its next tick.
-        compose("exec", "-T", "redis", "redis-cli", "SET", "feed:openphish:updated_at", str(time.time()))
-        d = final_verdict(c, url)
-        assert d["verdict"] == "dangerous", d["verdict"]
-        assert has_rule(d, "H2"), "H2 not cited"
-        assert any(e["tier"] == "T0" for e in d["evidence"]), "not decided at T0"
+        rc = ("exec", "-T", "redis", "redis-cli")
+        prior_ts = compose(*rc, "GET", "feed:openphish:updated_at").strip()
+        prior_members = set(compose(*rc, "SMEMBERS", "feed:openphish").split())
+        added = [h for h in hashes if h not in prior_members]
+        try:
+            compose(*rc, "SADD", "feed:openphish", *hashes)
+            # H2 needs a fresh mirror (< 6 h): mark the mirror as just refreshed for the duration of this step.
+            compose(*rc, "SET", "feed:openphish:updated_at", str(time.time()))
+            d = final_verdict(c, url)
+            assert d["verdict"] == "dangerous", d["verdict"]
+            assert has_rule(d, "H2"), "H2 not cited"
+            assert any(e["tier"] == "T0" for e in d["evidence"]), "not decided at T0"
+        finally:  # restore the mirror exactly as found
+            if added:
+                compose(*rc, "SREM", "feed:openphish", *added)
+            if prior_ts:
+                compose(*rc, "SET", "feed:openphish:updated_at", prior_ts)
+            else:
+                compose(*rc, "DEL", "feed:openphish:updated_at")
         return d["verdict_id"]
 
     def t_ssrf() -> str:

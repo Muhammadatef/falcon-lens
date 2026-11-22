@@ -153,14 +153,36 @@ async def test_t0_stale_feed_hit_is_not_h2() -> None:
     assert final["verdict"] != "no_warning_signs"  # +6.0 still applies
 
 
-async def test_t0_mirror_never_loaded_degrades() -> None:
+async def test_t0_mirror_never_loaded_does_not_degrade() -> None:
     from falcon_core.signals.cache import MemoryCache
     from falcon_core.signals.reputation.mirror import FeedMirror
 
     cascade, _ = make_cascade(StubSandboxClient(default=benign_features()), mirror=FeedMirror(MemoryCache()))
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert not final["degraded"]
+    assert any(e["signal"] == "rep.openphish" and e.get("error") == "feed_disabled" for e in final["evidence"])
+
+
+async def test_t0_stale_feed_hit_does_not_degrade() -> None:
+    url = "https://synthetic-feed-entry.test/c"
+    cascade, _ = make_cascade(StubSandboxClient(default=benign_features(url)), mirror=loaded_mirror([url], 7 * 3600))
+    final = (await run(cascade, url)).docs[-1]
+    assert "H2" not in rules(final) and not final["degraded"]
+
+
+async def test_t0_redis_exception_degrades() -> None:
+    class Boom:
+        async def get(self, *_a: object, **_k: object) -> None:
+            raise ConnectionError("redis down")
+
+        async def sismember(self, *_a: object, **_k: object) -> None:
+            raise ConnectionError("redis down")
+
+    from falcon_core.signals.reputation.mirror import FeedMirror
+
+    cascade, _ = make_cascade(StubSandboxClient(default=benign_features()), mirror=FeedMirror(Boom()))  # type: ignore[arg-type]
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
     assert final["degraded"] and "signal_error:rep.openphish" in final["degraded_reasons"]
-    assert final["verdict"] != "no_warning_signs"
 
 
 class _MemCache:

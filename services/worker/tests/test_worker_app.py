@@ -36,6 +36,11 @@ def test_guard_policy_allow_hosts(monkeypatch: pytest.MonkeyPatch) -> None:
     for env in ("production", "staging", ""):  # fail closed outside local/demo/ci
         monkeypatch.setenv("FL_ENV", env)
         assert guard_policy().allow_hosts == frozenset()
+    monkeypatch.delenv("FL_ENV")  # unset: fail closed, no default
+    assert guard_policy().allow_hosts == frozenset()
+    for env in ("demo", "ci"):
+        monkeypatch.setenv("FL_ENV", env)
+        assert guard_policy().allow_hosts == frozenset({"fixtures", "falcon-demo-bank.test"})
     monkeypatch.setenv("FL_ENV", "local")
     monkeypatch.delenv("FL_SSRF_ALLOW_HOSTS")
     assert guard_policy().allow_hosts == frozenset()

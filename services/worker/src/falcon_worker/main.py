@@ -51,7 +51,7 @@ def guard_policy() -> GuardPolicy:
     """
     raw = os.environ.get("FL_SSRF_ALLOW_HOSTS", "")
     hosts = frozenset(h.strip().lower() for h in raw.split(",") if h.strip())
-    if hosts and os.environ.get("FL_ENV", settings.fl_env) not in ALLOWLIST_ENVS:
+    if hosts and os.environ.get("FL_ENV") not in ALLOWLIST_ENVS:
         log.error("FL_SSRF_ALLOW_HOSTS ignored outside local/demo/ci")
         hosts = frozenset()
     return GuardPolicy(allow_hosts=hosts)
