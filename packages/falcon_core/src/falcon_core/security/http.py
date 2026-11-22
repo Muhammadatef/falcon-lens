@@ -406,9 +406,7 @@ class GuardedHTTPClient:
         except httpx.HTTPError as exc:
             raise FetchFailed(FetchFailReason.PROTOCOL_ERROR, type(exc).__name__) from exc
 
-    async def _fetch(
-        self, url: str, method: str, max_bytes: int, timeout: float, max_redirects: int
-    ) -> FetchResult:
+    async def _fetch(self, url: str, method: str, max_bytes: int, timeout: float, max_redirects: int) -> FetchResult:
         hops: list[Hop] = []
         current = url
         while True:
@@ -442,9 +440,7 @@ class GuardedHTTPClient:
             finally:
                 await resp.aclose()
 
-    async def _send(
-        self, method: str, target: CanonicalTarget, ip: IPAddress, timeout: float
-    ) -> httpx.Response:
+    async def _send(self, method: str, target: CanonicalTarget, ip: IPAddress, timeout: float) -> httpx.Response:
         headers = {
             "Host": target.host_header,
             "User-Agent": self._ua,

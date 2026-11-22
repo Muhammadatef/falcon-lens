@@ -9,7 +9,9 @@
 **/__pycache__
 **/node_modules
 **/.next
-data
+# data/private (live URLs, snapshots, logos) must NEVER enter an image or build context
+data/*
+!data/brands.yaml
 work
 evals/results
 reviews
