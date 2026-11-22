@@ -44,6 +44,8 @@ dev = [
   "ruff>=0.9",
   "mypy>=1.14",
   "types-jsonschema",
+  "qrcode>=8",
+  "types-pyyaml>=6.0.12.20261122",
 ]
 
 [tool.ruff]
