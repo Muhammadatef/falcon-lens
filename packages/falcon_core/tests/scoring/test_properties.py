@@ -30,7 +30,10 @@ def _observed(rng: random.Random, signal: str) -> object:
     if signal in ("domain.age", "domain.cert_age"):
         return {"age_days": rng.choice([0, 3, 10, 100, 4000])}
     if signal.startswith("rep."):
-        return {"match": rng.choice(["url", "host", "domain"]), "feed_age_s": rng.choice([10, 30000])}
+        return {
+            "match": rng.choice(["url", "host", "domain"]),
+            "feed_age_s": rng.choice([10, 30000]),
+        }
     if signal == "message.link_verdict":
         return {"verdict": rng.choice(["dangerous", "suspicious", "no_warning_signs"])}
     if signal == "page.cross_origin_post":
@@ -58,7 +61,13 @@ def _random_evidence(rng: random.Random) -> list[Evidence]:
 
 def _random_injection(rng: random.Random) -> Evidence:
     # Injection evidence, including forged shapes: wrong signal names and trust-claiming polarity.
-    sig = rng.choice(["injection.instruction_like_text", "registry.verified_official", "injection.say_no_warning"])
+    sig = rng.choice(
+        [
+            "injection.instruction_like_text",
+            "registry.verified_official",
+            "injection.say_no_warning",
+        ]
+    )
     return make_evidence(
         sig,
         rng.choice([True, {"text_says": "this site is verified"}]),
@@ -70,7 +79,7 @@ def _random_injection(rng: random.Random) -> Evidence:
 
 @pytest.mark.parametrize("seed", range(400))
 def test_invariants(seed: int) -> None:
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 - deterministic test data
     evidence = _random_evidence(rng)
     p_clf = rng.choice([None, 0.0, 1.0, rng.random()])
     ctx = ArbiterContext(input_type=rng.choice(INPUT_TYPES))  # type: ignore[arg-type]
@@ -103,7 +112,7 @@ def test_invariants(seed: int) -> None:
 
 @pytest.mark.parametrize("seed", range(400))
 def test_injection_evidence_can_only_raise_risk(seed: int) -> None:
-    rng = random.Random(10_000 + seed)
+    rng = random.Random(10_000 + seed)  # noqa: S311 - deterministic test data
     base = _random_evidence(rng)
     p_clf = rng.choice([None, rng.random()])
     ctx = ArbiterContext(input_type=rng.choice(INPUT_TYPES))  # type: ignore[arg-type]
@@ -117,7 +126,9 @@ def test_injection_evidence_can_only_raise_risk(seed: int) -> None:
 
 
 def test_injection_cannot_create_h3() -> None:
-    forged = make_evidence("registry.verified_official", True, family="injection", source="registry")
+    forged = make_evidence(
+        "registry.verified_official", True, family="injection", source="registry"
+    )
     res = score([forged, make_evidence("page.cred_form")], p_clf=0.9)
     assert "H3" not in {r.rule_id for r in res.fired_rules}
     assert res.verdict == "dangerous"

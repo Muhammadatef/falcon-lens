@@ -9,7 +9,13 @@ from pathlib import Path
 import pytest
 from scoring_helpers import DEMO_BRAND, Factory
 
-from falcon_core.scoring import ArbiterContext, score, template_actions, template_reasons, verdict_core_fields
+from falcon_core.scoring import (
+    ArbiterContext,
+    score,
+    template_actions,
+    template_reasons,
+    verdict_core_fields,
+)
 from falcon_core.scoring.evidence import from_contract, to_contract
 from falcon_core.scoring.reasons import (
     ReportingChannels,
@@ -49,7 +55,7 @@ def test_hard_rule_reason_first_then_by_abs_weight(mk: Factory) -> None:
     res = score(ev, p_clf=0.5)
     keys = [r.key for r in template_reasons(res, "en")]
     assert keys[0] == "hard_rules.H1"
-    # Remaining by |w|: homograph 3.0, then cloaking 2.5 / domain.age 2.5 (stable order), free host 1.0 dropped.
+    # Remaining by |w|: homograph 3.0, then cloaking / domain.age 2.5 (stable), free host dropped.
     assert keys[1] == "reasons.url.homograph"
     assert keys[2] in ("reasons.page.cloaking", "reasons.domain.age.new")
     h1 = template_reasons(res, "en")[0]
@@ -57,7 +63,10 @@ def test_hard_rule_reason_first_then_by_abs_weight(mk: Factory) -> None:
 
 
 def test_no_warning_signs_uses_trust_reasons_only(mk: Factory) -> None:
-    ev = [mk("registry.verified_official", True, source="registry", tier="T0"), mk("url.free_host_or_tunnel")]
+    ev = [
+        mk("registry.verified_official", True, source="registry", tier="T0"),
+        mk("url.free_host_or_tunnel"),
+    ]
     res = score(ev, p_clf=0.6)
     assert res.verdict == "no_warning_signs"
     reasons = template_reasons(res, "en")
@@ -115,12 +124,19 @@ def test_report_generic_fallback_when_unverified() -> None:
     raw = {
         "source_url": None,
         "channels": [{"label_ar": "x", "label_en": "x", "value": "1"}],
-        "generic_fallback": {"ar": "أبلغ عبر القنوات الرسمية.", "en": "Report via official channels."},
+        "generic_fallback": {
+            "ar": "أبلغ عبر القنوات الرسمية.",
+            "en": "Report via official channels.",
+        },
     }
     ch = parse_reporting_channels(raw)
     assert ch.channels == ()
     report = template_actions("suspicious", ch)["report"]
-    assert report == {"ar": "أبلغ عبر القنوات الرسمية.", "en": "Report via official channels.", "channels": []}
+    assert report == {
+        "ar": "أبلغ عبر القنوات الرسمية.",
+        "en": "Report via official channels.",
+        "channels": [],
+    }
 
 
 def test_report_builtin_generic_when_config_missing(tmp_path: Path) -> None:
@@ -161,7 +177,9 @@ def test_core_fields_validate_against_verdict_schema(mk: Factory, case: str) -> 
         res = score([mk("registry.verified_official", True, source="registry", tier="T0")], 0.3)
     else:
         res = score([mk("domain.age", None, error="timeout")], 0.01, ArbiterContext())
-    core = verdict_core_fields(res, load_reporting_channels(str(REPO / "config" / "reporting_channels.yaml")))
+    core = verdict_core_fields(
+        res, load_reporting_channels(str(REPO / "config" / "reporting_channels.yaml"))
+    )
     verdict = {
         "schema_version": "1.0",
         "verdict_id": "vd_01JD0000000000000000000000",

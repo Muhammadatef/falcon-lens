@@ -108,9 +108,7 @@ DEFAULT_POLICY = GuardPolicy()
 class CanonicalTarget:
     """A validated, canonicalised fetch target (one hop)."""
 
-    url: (
-        str  #: canonical URL (lower-case scheme/host, default port elided, no fragment)
-    )
+    url: str  #: canonical URL (lower-case scheme/host, default port elided, no fragment)
     scheme: str  #: "http" | "https"
     host: str  #: ASCII (IDNA) lower-case host without brackets or trailing dot
     port: int  #: effective port
@@ -119,11 +117,7 @@ class CanonicalTarget:
 
     @property
     def host_header(self) -> str:
-        h = (
-            f"[{self.host}]"
-            if self.ip is not None and self.ip.version == 6
-            else self.host
-        )
+        h = f"[{self.host}]" if self.ip is not None and self.ip.version == 6 else self.host
         default = 443 if self.scheme == "https" else 80
         return h if self.port == default else f"{h}:{self.port}"
 
@@ -298,9 +292,7 @@ def _reject_numeric_host(host: str) -> None:
     if _CANONICAL_V4_RE.match(host):
         return
     labels = host.split(".")
-    if all(_NUMERIC_PART_RE.match(p) for p in labels) or _NUMERIC_PART_RE.match(
-        labels[-1]
-    ):
+    if all(_NUMERIC_PART_RE.match(p) for p in labels) or _NUMERIC_PART_RE.match(labels[-1]):
         raise SSRFBlocked(BlockReason.OBFUSCATED_IP, host)
 
 
@@ -344,9 +336,7 @@ def _check_host(host: str, policy: GuardPolicy) -> IPAddress | None:
     return None
 
 
-def check_host_port(
-    host: str, port: int, policy: GuardPolicy = DEFAULT_POLICY
-) -> IPAddress | None:
+def check_host_port(host: str, port: int, policy: GuardPolicy = DEFAULT_POLICY) -> IPAddress | None:
     """Host + port check for the egress proxy's CONNECT ``host:port``.
 
     Returns the IP for IP-literal hosts, ``None`` for names (which the caller
@@ -453,9 +443,7 @@ def validate_url(url: str, policy: GuardPolicy = DEFAULT_POLICY) -> CanonicalTar
 async def system_resolver(host: str) -> list[str]:
     """Resolve via the OS resolver on the running loop (A + AAAA)."""
     loop = asyncio.get_running_loop()
-    infos = await loop.getaddrinfo(
-        host, None, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP
-    )
+    infos = await loop.getaddrinfo(host, None, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP)
     out: list[str] = []
     for _family, _type, _proto, _canon, sockaddr in infos:
         addr = str(sockaddr[0])

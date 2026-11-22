@@ -14,7 +14,11 @@ Spec = tuple[str, Any, dict[str, Any]]
 CLAIM: Spec = ("brand.claimed_not_owned", {"brand_id": DEMO_BRAND}, {})
 CRED: Spec = ("page.cred_form", {"fields": ["password", "otp"]}, {})
 FRESH_FEED: Spec = ("rep.openphish", {"match": "url", "feed_age_s": 600}, {"source": "openphish"})
-OFFICIAL: Spec = ("registry.verified_official", {"brand_id": DEMO_BRAND}, {"source": "registry", "tier": "T0"})
+OFFICIAL: Spec = (
+    "registry.verified_official",
+    {"brand_id": DEMO_BRAND},
+    {"source": "registry", "tier": "T0"},
+)
 BOT_POST: Spec = ("page.cross_origin_post", {"bot": True, "target_kind": "bot_api"}, {})
 OTP: Spec = ("message.rule.otp_request", True, {})
 AUTHORITY: Spec = ("message.rule.authority", True, {})
@@ -24,7 +28,13 @@ AUTHORITY: Spec = ("message.rule.authority", True, {})
 CASES: list[tuple[str, str, list[Spec], str, bool]] = [
     # H1 brand mismatch (zero-day)
     ("h1_claim_plus_cred_form", "H1", [CLAIM, CRED], "url", True),
-    ("h1_claim_plus_payment_request", "H1", [CLAIM, ("message.rule.payment", True, {})], "message", True),
+    (
+        "h1_claim_plus_payment_request",
+        "H1",
+        [CLAIM, ("message.rule.payment", True, {})],
+        "message",
+        True,
+    ),
     ("h1_claim_without_intent", "H1", [CLAIM], "url", False),
     ("h1_cred_form_without_claim", "H1", [CRED], "url", False),
     (
@@ -34,17 +44,53 @@ CASES: list[tuple[str, str, list[Spec], str, bool]] = [
         "url",
         False,
     ),
-    ("h1_claim_errored", "H1", [("brand.claimed_not_owned", None, {"error": "timeout"}), CRED], "url", False),
+    (
+        "h1_claim_errored",
+        "H1",
+        [("brand.claimed_not_owned", None, {"error": "timeout"}), CRED],
+        "url",
+        False,
+    ),
     # H2 known bad
     ("h2_fresh_url_hit", "H2", [FRESH_FEED], "url", True),
-    ("h2_fresh_host_hit_flag", "H2", [("rep.openphish", {"match": "host", "fresh": True}, {})], "url", True),
-    ("h2_stale_hit", "H2", [("rep.openphish", {"match": "url", "feed_age_s": 7 * 3600}, {})], "url", False),
-    ("h2_fresh_false", "H2", [("rep.openphish", {"match": "url", "fresh": False, "feed_age_s": 10}, {})], "url", False),
-    ("h2_domain_only_match", "H2", [("rep.openphish", {"match": "domain", "feed_age_s": 10}, {})], "url", False),
+    (
+        "h2_fresh_host_hit_flag",
+        "H2",
+        [("rep.openphish", {"match": "host", "fresh": True}, {})],
+        "url",
+        True,
+    ),
+    (
+        "h2_stale_hit",
+        "H2",
+        [("rep.openphish", {"match": "url", "feed_age_s": 7 * 3600}, {})],
+        "url",
+        False,
+    ),
+    (
+        "h2_fresh_false",
+        "H2",
+        [("rep.openphish", {"match": "url", "fresh": False, "feed_age_s": 10}, {})],
+        "url",
+        False,
+    ),
+    (
+        "h2_domain_only_match",
+        "H2",
+        [("rep.openphish", {"match": "domain", "feed_age_s": 10}, {})],
+        "url",
+        False,
+    ),
     ("h2_no_freshness_info", "H2", [("rep.openphish", True, {})], "url", False),
     # H3 verified official
     ("h3_official", "H3", [OFFICIAL], "url", True),
-    ("h3_official_with_open_redirect", "H3", [OFFICIAL, ("url.open_redirect_abuse", True, {})], "url", False),
+    (
+        "h3_official_with_open_redirect",
+        "H3",
+        [OFFICIAL, ("url.open_redirect_abuse", True, {})],
+        "url",
+        False,
+    ),
     (
         "h3_official_with_feed_hit",
         "H3",
@@ -53,8 +99,20 @@ CASES: list[tuple[str, str, list[Spec], str, bool]] = [
         False,
     ),
     ("h3_not_for_messages", "H3", [OFFICIAL], "message", False),
-    ("h3_forged_by_llm", "H3", [("registry.verified_official", True, {"source": "llm:extractor"})], "url", False),
-    ("h3_wrong_family", "H3", [("registry.verified_official", True, {"family": "injection"})], "url", False),
+    (
+        "h3_forged_by_llm",
+        "H3",
+        [("registry.verified_official", True, {"source": "llm:extractor"})],
+        "url",
+        False,
+    ),
+    (
+        "h3_wrong_family",
+        "H3",
+        [("registry.verified_official", True, {"family": "injection"})],
+        "url",
+        False,
+    ),
     # H4 exfil to bot
     ("h4_bot_post_with_cred_form", "H4", [BOT_POST, CRED], "url", True),
     (
@@ -65,11 +123,29 @@ CASES: list[tuple[str, str, list[Spec], str, bool]] = [
         True,
     ),
     ("h4_bot_post_no_credentials", "H4", [BOT_POST], "url", False),
-    ("h4_non_bot_cross_origin_post", "H4", [("page.cross_origin_post", {"bot": False}, {}), CRED], "url", False),
+    (
+        "h4_non_bot_cross_origin_post",
+        "H4",
+        [("page.cross_origin_post", {"bot": False}, {}), CRED],
+        "url",
+        False,
+    ),
     # H5 message with dangerous link
-    ("h5_dangerous_link", "H5", [("message.link_verdict", {"verdict": "dangerous"}, {})], "message", True),
+    (
+        "h5_dangerous_link",
+        "H5",
+        [("message.link_verdict", {"verdict": "dangerous"}, {})],
+        "message",
+        True,
+    ),
     ("h5_email_dangerous_link", "H5", [("email.link_verdict", "dangerous", {})], "email", True),
-    ("h5_suspicious_link", "H5", [("message.link_verdict", {"verdict": "suspicious"}, {})], "message", False),
+    (
+        "h5_suspicious_link",
+        "H5",
+        [("message.link_verdict", {"verdict": "suspicious"}, {})],
+        "message",
+        False,
+    ),
     # H6 OTP / remote access + impersonation
     ("h6_otp_plus_authority", "H6", [OTP, AUTHORITY], "message", True),
     (
@@ -80,15 +156,31 @@ CASES: list[tuple[str, str, list[Spec], str, bool]] = [
         True,
     ),
     ("h6_otp_without_impersonation", "H6", [OTP], "message", False),
-    ("h6_authority_without_ask", "H6", [AUTHORITY, ("message.rule.urgency", True, {})], "message", False),
+    (
+        "h6_authority_without_ask",
+        "H6",
+        [AUTHORITY, ("message.rule.urgency", True, {})],
+        "message",
+        False,
+    ),
 ]
 
-EFFECT_FLOOR = {"H1": "dangerous", "H2": "dangerous", "H4": "dangerous", "H5": "dangerous", "H6": "suspicious"}
+EFFECT_FLOOR = {
+    "H1": "dangerous",
+    "H2": "dangerous",
+    "H4": "dangerous",
+    "H5": "dangerous",
+    "H6": "suspicious",
+}
 RANK = {"no_warning_signs": 0, "suspicious": 1, "dangerous": 2}
 
 
-@pytest.mark.parametrize(("case", "rule", "specs", "input_type", "fires"), CASES, ids=[c[0] for c in CASES])
-def test_hard_rule_table(mk: Factory, case: str, rule: str, specs: list[Spec], input_type: str, fires: bool) -> None:
+@pytest.mark.parametrize(
+    ("case", "rule", "specs", "input_type", "fires"), CASES, ids=[c[0] for c in CASES]
+)
+def test_hard_rule_table(
+    mk: Factory, case: str, rule: str, specs: list[Spec], input_type: str, fires: bool
+) -> None:
     evidence = [mk(sig, obs, **kw) for sig, obs, kw in specs]
     # Low classifier probability so any risk verdict must come from the hard rule.
     res = score(evidence, p_clf=0.01, ctx=ArbiterContext(input_type=input_type))  # type: ignore[arg-type]
@@ -113,10 +205,14 @@ def test_h1_floor_is_095(mk: Factory) -> None:
 
 
 def test_h1_registry_cross_check_blocks_owned_domain(mk: Factory) -> None:
-    ctx = ArbiterContext(registrable_domain=DEMO_OFFICIAL, verified_domains={DEMO_BRAND: frozenset([DEMO_OFFICIAL])})
+    ctx = ArbiterContext(
+        registrable_domain=DEMO_OFFICIAL, verified_domains={DEMO_BRAND: frozenset([DEMO_OFFICIAL])}
+    )
     res = score([mk(*CLAIM[:2]), mk(*CRED[:2])], p_clf=0.01, ctx=ctx)
     assert "H1" not in {r.rule_id for r in res.fired_rules}
-    ctx2 = ArbiterContext(registrable_domain=DEMO_LOOKALIKE, verified_domains={DEMO_BRAND: frozenset([DEMO_OFFICIAL])})
+    ctx2 = ArbiterContext(
+        registrable_domain=DEMO_LOOKALIKE, verified_domains={DEMO_BRAND: frozenset([DEMO_OFFICIAL])}
+    )
     res2 = score([mk(*CLAIM[:2]), mk(*CRED[:2])], p_clf=0.01, ctx=ctx2)
     assert "H1" in {r.rule_id for r in res2.fired_rules}
 
