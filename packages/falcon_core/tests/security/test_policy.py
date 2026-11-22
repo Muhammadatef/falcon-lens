@@ -49,9 +49,7 @@ class RecordingBackend(httpcore.AsyncMockBackend):
         super().__init__(buffer)
         self.dialled: list[tuple[str, int]] = []
 
-    async def connect_tcp(
-        self, host: str, port: int, *args: object, **kwargs: object
-    ) -> httpcore.AsyncNetworkStream:
+    async def connect_tcp(self, host: str, port: int, *args: object, **kwargs: object) -> httpcore.AsyncNetworkStream:
         self.dialled.append((host, port))
         return await super().connect_tcp(host, port)
 
@@ -123,9 +121,7 @@ async def test_socket_layer_uses_logical_host_only() -> None:
     ("ip", "reason"),
     [("169.254.169.254", BlockReason.METADATA), ("127.0.0.1", BlockReason.LOOPBACK)],
 )
-async def test_listed_host_resolving_to_metadata_or_loopback_blocked(
-    ip: str, reason: BlockReason
-) -> None:
+async def test_listed_host_resolving_to_metadata_or_loopback_blocked(ip: str, reason: BlockReason) -> None:
     with pytest.raises(SSRFBlocked) as ei:
         await safe_fetch(
             f"http://{FIXTURE}/",
@@ -160,18 +156,14 @@ def test_default_policy_lists_nothing() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "location", ["http:127.0.0.1/", "http:evil.org", "https:foo", "http://[::1", "http://a b/"]
-)
+@pytest.mark.parametrize("location", ["http:127.0.0.1/", "http:evil.org", "https:foo", "http://[::1", "http://a b/"])
 async def test_malformed_location_is_typed_error(location: str) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(302, headers={"location": location})
 
     res = table({"public.example.com": [PUBLIC_V4]})
     with pytest.raises((SSRFBlocked, FetchFailed)):
-        await safe_fetch(
-            "http://public.example.com/", resolver=res, transport=httpx.MockTransport(handler)
-        )
+        await safe_fetch("http://public.example.com/", resolver=res, transport=httpx.MockTransport(handler))
 
 
 @pytest.mark.asyncio

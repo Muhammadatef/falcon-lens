@@ -86,9 +86,7 @@ async def _pipe(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> N
 
 
 async def _reply(writer: asyncio.StreamWriter, status: str, extra: str = "") -> None:
-    writer.write(
-        f"HTTP/1.1 {status}\r\n{extra}Connection: close\r\nContent-Length: 0\r\n\r\n".encode()
-    )
+    writer.write(f"HTTP/1.1 {status}\r\n{extra}Connection: close\r\nContent-Length: 0\r\n\r\n".encode())
     with contextlib.suppress(OSError):
         await writer.drain()
     writer.close()
@@ -162,9 +160,7 @@ def make_proxy_handler(
         else:
             await _reply(writer, "400 Bad Request")  # origin-form: not a proxy request
 
-    async def _connect(
-        reader: asyncio.StreamReader, writer: asyncio.StreamWriter, target: str
-    ) -> None:
+    async def _connect(reader: asyncio.StreamReader, writer: asyncio.StreamWriter, target: str) -> None:
         host, _, port_s = target.rpartition(":")
         if not host or not port_s.isdigit():
             await _reply(writer, "400 Bad Request")
@@ -187,9 +183,7 @@ def make_proxy_handler(
         await writer.drain()
         await asyncio.gather(_pipe(reader, up_writer), _pipe(up_reader, writer))
 
-    async def _forward(
-        writer: asyncio.StreamWriter, method: str, url: str, header_lines: list[bytes]
-    ) -> None:
+    async def _forward(writer: asyncio.StreamWriter, method: str, url: str, header_lines: list[bytes]) -> None:
         if method not in SAFE_METHODS:
             COUNTERS["denied"] += 1
             BLOCKED["method_not_allowed"] = BLOCKED.get("method_not_allowed", 0) + 1
@@ -222,8 +216,7 @@ def make_proxy_handler(
         COUNTERS["allowed"] += 1
         _log(logging.INFO, "http allowed", host=decision.host_header, ip=ip)
         out = (
-            f"{method} {decision.request_target} HTTP/1.1\r\n"
-            f"Host: {decision.host_header}\r\n".encode("ascii")
+            f"{method} {decision.request_target} HTTP/1.1\r\nHost: {decision.host_header}\r\n".encode("ascii")
             + b"".join(line + b"\r\n" for line in kept)
             + b"Connection: close\r\n\r\n"
         )
@@ -273,9 +266,7 @@ async def handle_health(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
 
 
 async def serve() -> None:
-    proxy = await asyncio.start_server(
-        make_proxy_handler(), "0.0.0.0", PROXY_PORT, limit=MAX_HEADER_BYTES * 2
-    )
+    proxy = await asyncio.start_server(make_proxy_handler(), "0.0.0.0", PROXY_PORT, limit=MAX_HEADER_BYTES * 2)
     health = await asyncio.start_server(handle_health, "0.0.0.0", HEALTH_PORT)
     _log(logging.INFO, "egress proxy started", proxy_port=PROXY_PORT, health_port=HEALTH_PORT)
     async with proxy, health:

@@ -152,9 +152,7 @@ async def test_gzip_bomb_blocked() -> None:
     assert len(bomb) < 1024 * 1024
 
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            200, headers={"content-encoding": "gzip"}, stream=httpx.ByteStream(bomb)
-        )
+        return httpx.Response(200, headers={"content-encoding": "gzip"}, stream=httpx.ByteStream(bomb))
 
     with pytest.raises(SSRFBlocked) as ei:
         await safe_fetch(
@@ -182,9 +180,7 @@ async def test_custom_smaller_cap() -> None:
 @pytest.mark.asyncio
 async def test_unsupported_encoding_fails() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            200, headers={"content-encoding": "br"}, stream=httpx.ByteStream(b"???")
-        )
+        return httpx.Response(200, headers={"content-encoding": "br"}, stream=httpx.ByteStream(b"???"))
 
     with pytest.raises(FetchFailed) as ei:
         await safe_fetch(
@@ -238,9 +234,7 @@ async def test_head_has_empty_body() -> None:
         "http://m.example.com/",
         method="HEAD",
         resolver=resolver,
-        transport=httpx.MockTransport(
-            lambda r: httpx.Response(200, stream=httpx.ByteStream(b"zzz"))
-        ),
+        transport=httpx.MockTransport(lambda r: httpx.Response(200, stream=httpx.ByteStream(b"zzz"))),
     )
     assert r.body == b""
 

@@ -33,16 +33,12 @@ def check(name: str, ok: bool, detail: str) -> None:
         failures.append(name)
 
 
-opener = urllib.request.build_opener(
-    urllib.request.ProxyHandler({"http": "http://egress-proxy:3128"})
-)
+opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": "http://egress-proxy:3128"}))
 try:
     opener.open("http://169.254.169.254/latest/meta-data/", timeout=10)
     check("proxy http metadata", False, "got a response")
 except urllib.error.HTTPError as e:
-    check(
-        "proxy http metadata", e.code == 403, f"{e.code} {e.headers.get('X-Falcon-Block-Reason')}"
-    )
+    check("proxy http metadata", e.code == 403, f"{e.code} {e.headers.get('X-Falcon-Block-Reason')}")
 
 for target in (b"169.254.169.254:80", b"127.0.0.1:443", b"redis:6379"):
     resp = raw(b"CONNECT " + target + b" HTTP/1.1\r\n\r\n")

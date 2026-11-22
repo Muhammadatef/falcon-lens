@@ -4,6 +4,7 @@ Keys: dom_simhash (Hamming <= 6), brand, registrable-domain pattern (brand skele
 ASN, registrar, cert issuer, script embedding cluster (cosine >= 0.88), time window.
 No randomness, no LLM; same input gives the same buckets.
 """
+
 from __future__ import annotations
 
 import math
@@ -65,7 +66,9 @@ def _levenshtein(a: str, b: str, cap: int = 3) -> int:
     return prev[-1]
 
 
-def domain_pattern(domain: str, brand_id: str | None, official: frozenset[str] = frozenset()) -> tuple[bool, str | None]:
+def domain_pattern(
+    domain: str, brand_id: str | None, official: frozenset[str] = frozenset()
+) -> tuple[bool, str | None]:
     """(is_lookalike, affix). Lookalike = brand skeleton + affix inside the registrable label,
     or a label within edit distance 1 of the skeleton (typosquat). Official domains are excluded."""
     if not brand_id:

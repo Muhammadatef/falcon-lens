@@ -268,9 +268,7 @@ def is_ip_allowed(ip: str | IPAddress) -> bool:
 _LISTED_HOST_OVERRIDABLE = frozenset({BlockReason.PRIVATE, BlockReason.IPV6_ULA, BlockReason.CGNAT})
 
 
-def ip_reason_for_host(
-    host: str, ip: str | IPAddress, policy: GuardPolicy = DEFAULT_POLICY
-) -> BlockReason | None:
+def ip_reason_for_host(host: str, ip: str | IPAddress, policy: GuardPolicy = DEFAULT_POLICY) -> BlockReason | None:
     """Like ``ip_block_reason`` but honours ``policy.allow_hosts`` for ``host``.
 
     This is the one function every layer (URL, socket, proxy) uses to decide
@@ -320,9 +318,7 @@ _INTERNAL_SUFFIXES: tuple[str, ...] = (
 _LABEL_RE = re.compile(r"^[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9_])?$")
 # inet_aton() accepts each part as decimal, 0-prefixed octal or 0x hex.
 _NUMERIC_PART_RE = re.compile(r"^(?:0x[0-9a-f]*|[0-9]+)$")
-_CANONICAL_V4_RE = re.compile(
-    r"^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$"
-)
+_CANONICAL_V4_RE = re.compile(r"^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$")
 
 
 def _is_internal_name(host: str) -> bool:

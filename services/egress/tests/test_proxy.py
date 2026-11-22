@@ -226,9 +226,7 @@ async def test_guarded_client_through_proxy(rig: Rig) -> None:
     async def client_resolver(host: str) -> Sequence[str]:
         return [PUBLIC]
 
-    async with GuardedHTTPClient(
-        resolver=client_resolver, proxy=f"http://127.0.0.1:{rig.port}"
-    ) as c:
+    async with GuardedHTTPClient(resolver=client_resolver, proxy=f"http://127.0.0.1:{rig.port}") as c:
         r = await c.fetch("http://public.example.com/x")
         assert r.status == 200
         assert r.body == b"hello"

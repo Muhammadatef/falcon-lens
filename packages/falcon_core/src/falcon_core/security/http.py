@@ -173,9 +173,7 @@ def _emit(hook: OnBlock | None, reason: BlockReason) -> None:
 #: Logical hostname of the request that GuardedHTTPClient is currently sending.
 #: httpcore dials inside the caller's task, so the backend sees this value.
 #: It is only used to honour exact ``allow_hosts`` entries; ``None`` means strict.
-_DIAL_HOST: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "falcon_security_dial_host", default=None
-)
+_DIAL_HOST: contextvars.ContextVar[str | None] = contextvars.ContextVar("falcon_security_dial_host", default=None)
 
 
 class PinnedNetworkBackend(httpcore.AsyncNetworkBackend):
@@ -524,9 +522,7 @@ class GuardedHTTPClient:
         finally:
             await resp.aclose()
 
-    async def _fetch(
-        self, url: str, method: str, max_bytes: int, timeout: float, max_redirects: int
-    ) -> FetchResult:
+    async def _fetch(self, url: str, method: str, max_bytes: int, timeout: float, max_redirects: int) -> FetchResult:
         hops: list[Hop] = []
         current = url
         while True:
@@ -598,9 +594,7 @@ class GuardedHTTPClient:
                 extensions["sni_hostname"] = target.host
         else:
             req_url = target.url  # the egress proxy re-resolves, re-checks and pins
-        request = httpx.Request(
-            method, req_url, headers=headers, content=content, extensions=extensions
-        )
+        request = httpx.Request(method, req_url, headers=headers, content=content, extensions=extensions)
         token = _DIAL_HOST.set(target.host)
         try:
             # Straight to the transport: this skips httpx.AsyncClient's redirect

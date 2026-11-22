@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+
 from falcon_core.signals import REGISTRY
 
 

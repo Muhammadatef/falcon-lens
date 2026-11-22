@@ -42,3 +42,4 @@ out/
 
 # private owner notes
 REMOTE_ACCESS.md
+*.tsbuildinfo
