@@ -207,3 +207,17 @@ def test_extractor_with_empty_registry_is_counted() -> None:
     router, _, mx = local_router(["{}"])
     Extractor(router, brand_ids=frozenset(), verified_domains={})
     assert mx.get(m.TOOL_ERRORS, tool="extractor", reason="empty_brand_registry") == 1
+
+
+def test_link_regex_catches_spelled_out_dots() -> None:
+    from falcon_core.agent.responder import _LINK_RE
+
+    for text in [
+        "falcon-demo-bank-help dot example",
+        "falcon-demo-bank-help (dot) example",
+        "falcon-demo-bank-help [dot] example",
+        "falcon-demo-bank-help⸳example",
+        "falcon-demo-bank-help.example",
+    ]:
+        assert _LINK_RE.search(text), text
+    assert not _LINK_RE.search("The site name adds words like pay to a known name")

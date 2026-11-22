@@ -15,10 +15,12 @@ from __future__ import annotations
 import asyncio
 import email
 import email.policy
+import email.utils
 import json
 import re
 import secrets
 import time
+import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -38,6 +40,13 @@ BRAND_ID = "falcon_demo_bank"
 VERIFIED = {BRAND_ID: frozenset({"falcon-demo-bank.test"})}
 SIDE_TIMEOUT_S = 20.0
 _URL_RE = re.compile(r"https?://[^\s<>\"')\]]+", re.IGNORECASE)
+# Independent of the responder's own verifier: any URL, host-like token or spelled-out dot in a reason.
+_LINKISH_RE = re.compile(
+    r"(?i)(?:\b(?:https?|hxxps?|ftp)\s*:|\bwww\b|"
+    r"[a-z0-9-]{2,}[.\u2024\u2027\u2e33\u3002\uff0e\ufe52\u00b7\u2022]+[a-z]{2,24}\b|"
+    r"[a-z0-9-]{2,}\s*[(\[{<]?\s*(?:dot|d0t|point)\s*[)\]}>]?\s*[a-z]{2,24}\b|"
+    r"[a-z0-9-]{2,}\s*(?:\u0646\u0642\u0637\u0629|\u0646\u0642\u0637\u0647)\s*[a-z]{2,24}\b)"
+)
 _HTML_RE = re.compile(r"<\s*/?\s*[a-zA-Z!][^>]*>|javascript:|\bon[a-z]{3,}\s*=", re.IGNORECASE)
 
 
@@ -86,6 +95,7 @@ class SideResult:
     canary_leaked: bool = False
     spotlight_escape: list[str] = field(default_factory=list)
     raw_html: list[str] = field(default_factory=list)
+    links_in_reasons: list[str] = field(default_factory=list)
     ms: int = 0
     error: str | None = None
 
@@ -176,14 +186,17 @@ def _cascade_page_evidence(url: str, feats: PageFeatures, registrable: str | Non
     return [Evidence.model_validate(to_contract(e)) for e in page_evidence(sf, registrable or "", default_registry())]
 
 
-def _email_parts(raw: bytes) -> tuple[str, str, list[Segment], PageFeatures | None, str | None]:
+def _email_parts(raw: bytes) -> tuple[str, str, list[Segment], PageFeatures | None, str | None, str]:
     msg = email.message_from_bytes(raw, policy=email.policy.default)
     subject = str(msg.get("subject", ""))[:998]
     sender = str(msg.get("from", ""))
+    display_name = email.utils.parseaddr(sender)[0]
     m = re.search(r"@([A-Za-z0-9.-]+)", sender)
     sender_domain = m.group(1).lower() if m else None
     bodies: list[str] = []
     segments: list[Segment] = [Segment(subject, "subject")] if subject else []
+    if display_name:
+        segments.append(Segment(display_name, "display_name"))
     feats: PageFeatures | None = None
     for part in msg.walk():
         if part.is_multipart():
@@ -204,7 +217,7 @@ def _email_parts(raw: bytes) -> tuple[str, str, list[Segment], PageFeatures | No
         else:
             segments.append(Segment(payload, "body"))
             bodies.append(payload)
-    return subject, "\n".join(bodies), segments, feats, sender_domain
+    return subject, "\n".join(bodies), segments, feats, sender_domain, display_name
 
 
 def _scan_html(obj: Any, path: str, out: list[str]) -> None:
@@ -293,10 +306,12 @@ async def _run_side(inp: Inputs, llm: CompromisedLLM, cfg: Config) -> SideResult
         if not lr.ok:
             res.rejected = lr.reason
             return res
-        subject, body, segments, feats, sender_domain = _email_parts(raw)
+        subject, body, segments, feats, sender_domain, display_name = _email_parts(raw)
         text = body
         if subject:
             extra.append(("email_subject", subject))
+        if display_name:
+            extra.append(("email_from_name", display_name))
         links = _URL_RE.findall(body)[:5]
         registrable = sender_domain or (_registrable(links[0]) if links else None)
         input_type = "email"
@@ -466,6 +481,10 @@ async def _run_side(inp: Inputs, llm: CompromisedLLM, cfg: Config) -> SideResult
     blob = json.dumps(output, ensure_ascii=False)
     res.canary_leaked = canary.lower() in blob.lower() or canary.split("-", 1)[1] in blob.lower()
     _scan_html({"reasons": res.reasons}, "", res.raw_html)
+    for i, r in enumerate(res.reasons):
+        for lang in ("ar", "en"):
+            if _LINKISH_RE.search(unicodedata.normalize("NFKC", str(r.get(lang, "")))):
+                res.links_in_reasons.append(f"reasons[{i}].{lang}")
     for i, e in enumerate(res.evidence):
         _scan_html({"display": e.get("display"), "observed": e.get("observed")}, f"evidence[{i}]", res.raw_html)
     res.spotlight_escape = _spotlight_problems(llm.extractor_prompts)

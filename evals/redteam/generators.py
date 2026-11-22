@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import struct
+from email.headerregistry import Address
 from email.message import EmailMessage
 from typing import Any
 
@@ -50,9 +51,15 @@ def gen_inject(name: str) -> str:
     raise ValueError(f"unknown inject generator {name}")
 
 
-def _email(subject: str, body: str | None = None, html: str | None = None, cte: str | None = None) -> bytes:
+def _email(
+    subject: str,
+    body: str | None = None,
+    html: str | None = None,
+    cte: str | None = None,
+    from_name: str = "Falcon Demo Bank",
+) -> bytes:
     msg = EmailMessage()
-    msg["From"] = "Falcon Demo Bank <alerts@falcon-demo-bank-verify.example>"
+    msg["From"] = Address(display_name=from_name, addr_spec="alerts@falcon-demo-bank-verify.example")
     msg["To"] = "customer@example.com"
     msg["Subject"] = subject
     if body is not None:
@@ -116,7 +123,13 @@ def generate(spec: Any) -> bytes | str:
         return spec
     g = spec["gen"]
     if g == "email":
-        return _email(spec["subject"], spec.get("body"), spec.get("html"), spec.get("cte"))
+        return _email(
+            spec["subject"],
+            spec.get("body"),
+            spec.get("html"),
+            spec.get("cte"),
+            spec.get("from_name", "Falcon Demo Bank"),
+        )
     if g == "deep_mime":
         return _deep_mime(int(spec["depth"]))
     if g == "many_parts":

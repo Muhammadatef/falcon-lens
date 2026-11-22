@@ -46,6 +46,17 @@ _AI = (
     r"falcon lens|model)"
 )
 
+# "disregard any previous instructions you received about your card" is ordinary customer-service
+# wording: the same phrase followed by a recipient/subject qualifier is weak (counts only with
+# another finding), not strong.
+_EN_BENIGN_TAIL = (
+    r"\s+(?:you|we|they)\s+(?:received|got|were sent|have received|sent|gave|issued|had)\b|"
+    r"\s+(?:sent|given|provided|issued|emailed|texted)\s+(?:to|by)\s+(?:you|us|the bank)\b|"
+    r"\s+(?:about|regarding|concerning|related to|relating to|for)\s+(?:your|the|this|my)\s+"
+    r"(?:card|account|pin|password|payment|order|statement|transaction|delivery|parcel|loan|bill|booking)\b"
+)
+_AR_BENIGN_TAIL = r"\s*(?:المرسله|المستلمه|الواصله|التي (?:ارسلناها|وصلتك|ارسلت)|المتعلقه ب|بخصوص|الخاصه ب)"
+
 _SCHEMA_KEYS = (
     r"claimed_brand_id|instruction_like|script_category|requested_data|risk_score|verdict|"
     r"calibrated_probability|why_evidence_ids|evidence_ids|hard_rule|polarity|generated_by|tool|args"
@@ -53,16 +64,25 @@ _SCHEMA_KEYS = (
 _AW = r"(?<!\w)"  # Arabic-aware word start (\w covers Arabic letters)
 _AE = r"(?!\w)"
 
+_EN_IGNORE = (
+    r"\b(?:ignore|disregard|forget|override|bypass|skip|drop)\b.{0,40}?\b(?:previous|prior|above|earlier|"
+    r"preceding|all|any|your|the|existing|system|original)\b.{0,30}?\b(?:instructions?|prompts?|rules|"
+    r"directions|guidelines|directives?|policies|constraints)\b"
+)
+_AR_IGNORE = (
+    _AW + r"(?:تجاهل|تجاهلي|تجاهلوا|اتجاهل|انس|انسي|انسي|اهمل|اهملي|تخط|تخطي|الغ|الغي)" + _AE + r".{0,25}?"
+    r"(?:التعليمات|الاوامر|التوجيهات|القواعد|الارشادات|ما سبق|كل ما قيل)"
+)
+
 PATTERNS: tuple[Pattern, ...] = (
     # ---------------------------------------------------------------- English
     _p(
         "en.ignore_previous",
         "en",
         "strong",
-        r"\b(?:ignore|disregard|forget|override|bypass|skip|drop)\b.{0,40}?\b(?:previous|prior|above|earlier|"
-        r"preceding|all|any|your|the|existing|system|original)\b.{0,30}?\b(?:instructions?|prompts?|rules|"
-        r"directions|guidelines|directives?|policies|constraints)\b",
+        _EN_IGNORE + r"(?!" + _EN_BENIGN_TAIL + r")",
     ),
+    _p("en.ignore_previous_benign_ctx", "en", "weak", _EN_IGNORE + r"(?=" + _EN_BENIGN_TAIL + r")"),
     _p(
         "en.new_instructions",
         "en",
@@ -93,6 +113,13 @@ PATTERNS: tuple[Pattern, ...] = (
         r"(?: it| this| the| that| our| these)?.{0,40}?\b(?:as|is|to be)\s+(?:\w+\s+)?" + _EN_SAFE + r"\b",
     ),
     _p(
+        "en.call_safe",
+        "en",
+        "strong",
+        r"\b(?:call|deem|declare|pronounce|name|term|describe|call out)\s+(?:it|this|that|the \w+|them)\s+"
+        r"(?:as\s+)?(?:\w+\s+)?" + _EN_SAFE + r"\b",
+    ),
+    _p(
         "en.say_safe",
         "en",
         "strong",
@@ -111,18 +138,36 @@ PATTERNS: tuple[Pattern, ...] = (
         "en.if_you_are_ai",
         "en",
         "strong",
-        r"\b(?:if|when|in case) you(?:'re| are)\b.{0,12}?\b(?:an? )?(?:ai|a\.i\.|llm|language model|bot|"
-        r"chatbot|assistant|automated|scanner|crawler|classifier)\b",
+        r"\b(?:if|when|in case) you(?:'re| are)\s+(?:(?:also|really|actually|currently|now|just|indeed)\s+)?"
+        r"(?:an? |the )?(?:ai|a\.i\.|llm|language model|bot|chatbot|assistant|scanner|crawler|classifier|"
+        r"automated (?:system|reviewer|scanner|checker|tool|agent|process|reader|filter)s?)\b",
     ),
     _p(
         "en.addressed_to_ai",
         "en",
         "strong",
         r"\b(?:any|all|every|dear|attention|to the|to any|for any|note for|note to|message for|message to)\s+"
-        r"(?:ai|a\.i\.|llms?|bots?|crawlers?|automated \w+|scanners?|checkers?|reviewers?|classifiers?|"
-        r"moderators?|filters?|language models?|assistants?|security (?:tools?|systems?|software))\b"
+        r"(?:ai|a\.i\.|llms?|bots?|crawlers?|automated \w+|scanners?|checkers?|classifiers?|"
+        r"filters?|language models?|assistants?|security (?:tools?|systems?|software))\b"
         r"(?:\s+\w+){0,2}?\s*(?:reading|scanning|reviewing|processing|checking|analy[sz]ing|parsing|"
         r"should|must|:|,)",
+    ),
+    _p(
+        "en.addressed_to_reviewer",
+        "en",
+        "weak",
+        r"\b(?:note (?:for|to)|message (?:for|to)|attention|dear|to the|to any|for any|any|all)\s+"
+        r"(?:(?:content|security|safety|trust) )?(?:reviewers?|moderators?)\b",
+    ),
+    _p(
+        "en.checker_directive",
+        "en",
+        "strong",
+        r"\b(?:ai|bots?|llms?|crawlers?|scanners?|checkers?|classifiers?|"
+        r"(?:content |security |safety |trust )?(?:moderators?|reviewers?)|automated (?:systems?|reviewers?|tools?)|"
+        r"language models?|security (?:tools?|systems?|software))\s+(?:can|may|could|should|need to|must|will|"
+        r"don'?t need to|do not need to|are (?:asked|requested|advised|instructed) to)\s+"
+        r"(?:skip|ignore|pass|approve|allow|whitelist|trust|accept|clear|exempt|stop|not|safely)\b",
     ),
     _p(
         "en.vocative_ai",
@@ -130,7 +175,8 @@ PATTERNS: tuple[Pattern, ...] = (
         "strong",
         r"(?:^|[.!?;\n]\s*|\(\s*)(?:automated (?:systems?|tools?|reviewers?|readers?|filters?|scanners?|checkers?)|"
         r"ai(?: models?| systems?| assistants?)?|llms?|bots?|crawlers?|scanners?|checkers?|classifiers?|"
-        r"(?:content |security )?(?:moderators?|reviewers?)|language models?)\s*[:,]",
+        r"(?:content |security )?(?:moderators?|reviewers?)|language models?|responders?|summari[sz]ers?|"
+        r"investigators?|extractors?|agents?|explainers?|auditors?|analysts?)\s*[:,]",
     ),
     _p(
         "en.no_need_warn",
@@ -158,7 +204,60 @@ PATTERNS: tuple[Pattern, ...] = (
         "en.set_score",
         "en",
         "strong",
-        r"\b(?:set|lower|change|override|force|zero)\b.{0,20}?\b(?:risk[_ ]score|score|verdict|risk level)\b",
+        r"\b(?:set|lower|change|override|force|zero|reduce|downgrade)\b.{0,20}?\b(?:risk[_ ]score|verdict)\b|"
+        r"\b(?:set|lower|change|override|force|zero|reduce|downgrade)\b.{0,20}?\b(?:this|its|the "
+        r"(?:site|page|link|message|email|url|domain|sender)(?:'s)?)\s+(?:risk\s+)?(?:score|level|rating)\b",
+    ),
+    _p(
+        "en.set_score_loose",
+        "en",
+        "weak",
+        r"\b(?:set|lower|change|override|force|zero)\b.{0,20}?\b(?:score|risk level)\b",
+    ),
+    _p(
+        "en.suppress_alerts",
+        "en",
+        "strong",
+        r"\b(?:downgrade|suppress|dismiss|silence|disable|clear|remove|hide|mute|ignore)\b.{0,20}?"
+        r"\b(?:alerts?|warnings?|flags?|detections?|alarms?)\b",
+    ),
+    _p(
+        "en.say_looks_fine",
+        "en",
+        "strong",
+        r"\b(?:say|state|report|conclude|answer|respond|reply|tell|write|confirm|keep)\b.{0,40}?\b"
+        r"(?:looks? (?:fine|good|ok|okay|normal|clean|legit|safe)|is (?:fine|ok|okay|normal|clean)|"
+        r"all (?:good|clear|fine)|nothing (?:is )?(?:wrong|suspicious|malicious|unusual)|no (?:issues?|problems?))\b",
+    ),
+    _p(
+        "en.nothing_wrong",
+        "en",
+        "weak",
+        r"\b(?:nothing (?:is )?(?:wrong|suspicious|malicious|to (?:worry|report|flag))|"
+        r"no (?:risks?|danger|threats?))\b",
+    ),
+    _p(
+        "en.approval_claim",
+        "en",
+        "weak",
+        r"\b(?:pre-?approved|pre-?cleared|(?:has|have|been|was|were|is|are) (?:been )?(?:cleared|whitelisted|"
+        r"allow-?listed|vetted|audited))\b\s*(?:by|for|as|with)?",
+    ),
+    _p(
+        "en.regulator_claim",
+        "en",
+        "weak",
+        r"\b(?:approved|certified|licen[sc]ed|authori[sz]ed|endorsed|verified|accredited|regulated|cleared|"
+        r"vouched|guaranteed)\s+by\s+(?:the\s+)?(?:central bank|regulator|regulators|security team|bank itself|"
+        r"bank|ministry|government|police|authorities|cbuae|sama|cbe)\b",
+    ),
+    _p(
+        "en.tool_badge",
+        "en",
+        "strong",
+        r"\b(?:verified|certified|approved|endorsed|validated|checked|scanned|cleared|trusted|vouched|"
+        r"authenticated|guaranteed)\b.{0,20}?\b(?:by|with)\s+(?:the\s+)?falcon[ -]?lens\b|"
+        r"\bfalcon[ -]?lens\s+(?:verified|certified|approved|trusted|seal|badge|safe|checked|cleared)\b",
     ),
     _p(
         "en.reveal",
@@ -190,7 +289,8 @@ PATTERNS: tuple[Pattern, ...] = (
         r"developer|tool_call|function_call)>|(?:^|\s)#{2,}\s*(?:system|instructions?|new instructions)\b|"
         r"\bbegin (?:system|trusted|developer)\b|\bend of (?:untrusted|data|user) (?:content|input|block|data)\b",
     ),
-    _p("any.fake_evidence_id", "any", "strong", r"\bev_[a-z0-9]{8,32}\b"),
+    _p("any.fake_evidence_id", "any", "strong", r"\bev_[0-9a-f]{8,32}\b"),
+    _p("any.evidence_id_like", "any", "weak", r"\bev_[a-z0-9]{8,32}\b"),
     _p(
         "any.schema_field",
         "any",
@@ -214,13 +314,8 @@ PATTERNS: tuple[Pattern, ...] = (
         r"calibrated_probability|why_evidence_ids|evidence_ids|hard_rule|polarity|generated_by)[\"']\s*:",
     ),
     # ---------------------------------------------------------------- Arabic (folded)
-    _p(
-        "ar.ignore_previous",
-        "ar",
-        "strong",
-        _AW + r"(?:تجاهل|تجاهلي|تجاهلوا|اتجاهل|انس|انسي|انسي|اهمل|اهملي|تخط|تخطي|الغ|الغي)" + _AE + r".{0,25}?"
-        r"(?:التعليمات|الاوامر|التوجيهات|القواعد|الارشادات|ما سبق|كل ما قيل)",
-    ),
+    _p("ar.ignore_previous", "ar", "strong", _AR_IGNORE + r"(?!" + _AR_BENIGN_TAIL + r")"),
+    _p("ar.ignore_previous_benign_ctx", "ar", "weak", _AR_IGNORE + r"(?=" + _AR_BENIGN_TAIL + r")"),
     _p(
         "ar.mark_safe",
         "ar",
@@ -290,6 +385,50 @@ PATTERNS: tuple[Pattern, ...] = (
         r"(?:لا داعي|لا حاجه|لا يلزم|لا يجب|غير ضروري)\s*(?:لل|الي ال|ل)?(?:تحذير|تنبيه|الابلاغ|التبليغ|حظر|"
         r"تصنيف)",
     ),
+    _p(
+        "ar.gulf_addressee",
+        "ar",
+        "strong",
+        _AW + r"(?:يا ?اللي|ياللي|يالي|يا من|يا الي)\s*(?:تفحص|تقرا|تقرء|تراجع|تدقق|تحلل|تشوف|تصنف|تتحقق|تقيم|تلخص)",
+    ),
+    _p(
+        "ar.gulf_no_issue",
+        "ar",
+        "weak",
+        _AW + r"و?(?:ما|مافي|لا يوجد|لا توجد|ماكو|مافيه|ما في)\s*(?:فيها|فيه|فيهم|في|عليها|عليه)?\s*(?:اي\s*)?"
+        r"(?:شي|شيء|خطر|مخاطر|مشكله|احتيال|خطا|مشاكل)" + _AE,
+    ),
+    _p(
+        "ar.from_bank_itself",
+        "ar",
+        "weak",
+        _AW + r"(?:هذي|هذه|هاذي|هاي|هذا|هادي)\s*(?:الرساله|الصفحه|الرابط|الموقع|الايميل)?\s*"
+        r"(?:جايه |جاي |صادره |صادر )?من\s*(?:البنك|المصرف|الجهه)\s*(?:نفسه|ذاته|الرسمي|الرسميه)",
+    ),
+    _p(
+        "ar.regulator_claim",
+        "ar",
+        "weak",
+        r"(?:معتمد|معتمده|مرخص|مرخصه|موثق|موثقه|مصادق|مصادقه|مسجل|مسجله|مضمون|مضمونه)\s*(?:رسميا\s*)?"
+        r"(?:من|لدي|عند|بواسطه)\s*(?:ال)?(?:بنك المركزي|مصرف المركزي|البنك المركزي|المصرف المركزي|"
+        r"الجهات الرقابيه|الجهات الرسميه|فريق الامن|الحكومه)",
+    ),
+    _p(
+        "ar.tool_badge",
+        "ar",
+        "strong",
+        r"(?:موثق|معتمد|مصادق عليه|مفحوص|مضمون|مفحوصه|معتمده|موثقه)\s*(?:رسميا\s*)?(?:من|بواسطه|لدي|عبر)\s*"
+        r"(?:ال)?عدسه الصقر|عدسه الصقر\s*(?:تؤكد|تضمن|توثق|تعتمد|مصادق)",
+    ),
+    _p(
+        "ar.suppress_alerts",
+        "ar",
+        "strong",
+        _AW
+        + r"(?:خفض|اخفض|قلل|الغ|الغي|اخف|اسكت|عطل|تجاهل)"
+        + _AE
+        + r".{0,15}?(?:التحذير|التحذيرات|التنبيه|التنبيهات|الانذار)",
+    ),
     # ---------------------------------------------------------------- Arabizi (Latin, digits as letters)
     _p(
         "arabizi.ignore_previous",
@@ -310,7 +449,9 @@ PATTERNS: tuple[Pattern, ...] = (
         "arabizi",
         "strong",
         r"\b(?:la|ma|mat|matt)\s*(?:t7azer|t7azir|t7athir|t7atheer|tballegh|tbalegh|tballigh|tsanef|tsannif|"
-        r"tnabeh|tnabbih)\w*\b",
+        r"tnabeh|tnabbih)\w*\b(?=.{0,25}?\b(?:7ad|a7ad|ay\s*7ad|ahad|anyone|(?:el|al)\s*(?:user|3ame+l|3emil|"
+        r"mostakhdem|zaboun|zabon|client|customer)|(?:el|al)(?:3ame+l|3emil|zaboun|client)|hada|had)\b)|"
+        r"\bya\s*(?:bot|ai|robot|model|scanner|checker)\b.{0,30}?\b(?:la|ma|mat|matt)\s*t7azer\w*",
     ),
     _p("arabizi.ya_bot", "arabizi", "strong", r"\bya\s*(?:bot|ai|robot|model|scanner|checker|assistant)\b"),
     _p(
