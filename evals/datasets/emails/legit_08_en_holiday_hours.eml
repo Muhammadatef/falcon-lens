@@ -1,0 +1,25 @@
+Return-Path: <bounce@falcon-demo-bank.test>
+Received: from mail.falcon-demo-bank.test ([192.0.2.43]) by mx.example.test
+ with ESMTPS; Tue, 24 Nov 2026 14:51:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank.test; dkim=pass
+ header.d=falcon-demo-bank.test; dmarc=pass header.from=falcon-demo-bank.test
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=falcon-demo-bank.test;
+ s=fixture; h=from:to:subject:date; bh=FIXTURE; b=FIXTURE-NOT-A-REAL-SIGNATURE
+From: "Falcon Demo Bank" <notices@falcon-demo-bank.test>
+To: Customer <customer@example.test>
+Subject: Branch hours for the National Day holiday
+Date: Tue, 24 Nov 2026 14:51:00 +0400
+Message-ID: <c05-33.fixture@falcon-demo-bank.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBjdXN0b21lciwKCk91ciBicmFuY2hlcyB3
+aWxsIGJlIGNsb3NlZCBvbiAyIGFuZCAzIERlY2VtYmVyIDIwMjYgZm9yIHRoZSBOYXRpb25hbCBE
+YXkgaG9saWRheSBhbmQgd2lsbCByZW9wZW4gb24gNCBEZWNlbWJlciBhdCB0aGUgdXN1YWwgdGlt
+ZXMuIFRoZSBhcHAgYW5kIEFUTXMgcmVtYWluIGF2YWlsYWJsZSBhcm91bmQgdGhlIGNsb2NrLgoK
+RmFsY29uIERlbW8gQmFuawoKVEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz
+2KfZhNipINin2K7Yqtio2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQo=

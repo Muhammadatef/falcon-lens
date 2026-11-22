@@ -1,0 +1,46 @@
+Return-Path: <bounce@falcon-demo-bnak.test>
+Received: from mail.falcon-demo-bnak.test ([192.0.2.11]) by mx.example.test
+ with ESMTPS; Fri, 20 Nov 2026 11:07:00 +0400
+Authentication-Results: mx.example.test; spf=fail
+ smtp.mailfrom=falcon-demo-bnak.test; dkim=none
+ header.d=falcon-demo-bnak.test; dmarc=fail header.from=falcon-demo-bnak.test
+From: "Falcon Demo Bank Security" <security@falcon-demo-bnak.test>
+To: Customer <customer@example.test>
+Subject: Action required: your account will be suspended within 24 hours
+Date: Fri, 20 Nov 2026 11:07:00 +0400
+Message-ID: <c05-01.fixture@falcon-demo-bnak.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============8560014770454634882=="
+
+--===============8560014770454634882==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBjdXN0b21lciwKCldlIGRldGVjdGVkIHVu
+dXN1YWwgYWN0aXZpdHkgb24geW91ciBGYWxjb24gRGVtbyBCYW5rIGFjY291bnQuIFlvdXIgYWNj
+b3VudCB3aWxsIGJlIHN1c3BlbmRlZCB3aXRoaW4gMjQgaG91cnMgdW5sZXNzIHlvdSBjb25maXJt
+IHlvdXIgZGV0YWlscy4KCkNvbmZpcm0gbm93OiBodHRwczovL2ZhbGNvbi1kZW1vLWJuYWsudGVz
+dC9zZWN1cmUtbG9naW4KCkZhbGNvbiBEZW1vIEJhbmsgU2VjdXJpdHkgVGVhbQoKVEVTVCBGSVhU
+VVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfYsSDZiNmE2YrY
+s9iqINit2YLZitmC2YrYqQo=
+
+--===============8560014770454634882==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYt
+OCI+PHRpdGxlPkZhbGNvbiBEZW1vIEJhbms8L3RpdGxlPjwvaGVhZD4KPGJvZHk+CjxwPjxzdHJv
+bmc+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio
+2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqTwvc3Ryb25nPjwvcD4KPHA+RGVhciBjdXN0b21l
+ciw8L3A+PHA+V2UgZGV0ZWN0ZWQgdW51c3VhbCBhY3Rpdml0eSBvbiB5b3VyIEZhbGNvbiBEZW1v
+IEJhbmsgYWNjb3VudC4gWW91ciBhY2NvdW50IHdpbGwgYmUgc3VzcGVuZGVkIHdpdGhpbiAyNCBo
+b3VycyB1bmxlc3MgeW91IGNvbmZpcm0geW91ciBkZXRhaWxzLjwvcD48cD5Db25maXJtIG5vdzog
+PGEgaHJlZj0iaHR0cHM6Ly9mYWxjb24tZGVtby1ibmFrLnRlc3Qvc2VjdXJlLWxvZ2luIj5odHRw
+czovL2ZhbGNvbi1kZW1vLWJhbmsudGVzdC9zZWN1cmUtbG9naW48L2E+PC9wPjxwPkZhbGNvbiBE
+ZW1vIEJhbmsgU2VjdXJpdHkgVGVhbTwvcD4KPC9ib2R5PjwvaHRtbD4K
+
+--===============8560014770454634882==--

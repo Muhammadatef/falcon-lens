@@ -1,0 +1,50 @@
+Return-Path: <bounce@falcon-demo-bank.test>
+Received: from mail.falcon-demo-bank.test ([192.0.2.45]) by mx.example.test
+ with ESMTPS; Tue, 24 Nov 2026 21:05:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank.test; dkim=pass
+ header.d=falcon-demo-bank.test; dmarc=pass header.from=falcon-demo-bank.test
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=falcon-demo-bank.test;
+ s=fixture; h=from:to:subject:date; bh=FIXTURE; b=FIXTURE-NOT-A-REAL-SIGNATURE
+From: "Falcon Demo Bank" <app@falcon-demo-bank.test>
+To: Customer <customer@example.test>
+Subject: New app version available | =?utf-8?b?2KXYtdiv2KfYsSDYrNiv2YrYryA=?=
+ =?utf-8?b?2YXZhiDYp9mE2KrYt9io2YrZgg==?=
+Date: Tue, 24 Nov 2026 21:05:00 +0400
+Message-ID: <c05-35.fixture@falcon-demo-bank.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============5643716127489414632=="
+
+--===============5643716127489414632==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKQSBuZXcgdmVyc2lvbiBvZiB0aGUgRmFsY29uIERl
+bW8gQmFuayBhcHAgaXMgYXZhaWxhYmxlIGluIHlvdXIgYXBwIHN0b3JlLgrZitiq2YjZgdixINin
+2YTYotmGINil2LXYr9in2LEg2KzYr9mK2K8g2YXZhiDYqti32KjZitmCINio2YbZgyDYp9mE2LXZ
+gtixINin2YTYqtis2LHZitio2Yog2YHZiiDZhdiq2KzYsSDYp9mE2KrYt9io2YrZgtin2Kog2LnZ
+hNmJINis2YfYp9iy2YMuCgpXaGF0J3MgbmV3IC8g2YXYpyDYp9mE2KzYr9mK2K86IGh0dHBzOi8v
+ZmFsY29uLWRlbW8tYmFuay50ZXN0L2FwcAoKVEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3Nh
+Z2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQo=
+
+--===============5643716127489414632==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYt
+OCI+PHRpdGxlPkZhbGNvbiBEZW1vIEJhbms8L3RpdGxlPjwvaGVhZD4KPGJvZHk+CjxwPjxzdHJv
+bmc+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio
+2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqTwvc3Ryb25nPjwvcD4KPHA+QSBuZXcgdmVyc2lv
+biBvZiB0aGUgRmFsY29uIERlbW8gQmFuayBhcHAgaXMgYXZhaWxhYmxlIGluIHlvdXIgYXBwIHN0
+b3JlLjwvcD48cCBkaXI9InJ0bCI+2YrYqtmI2YHYsSDYp9mE2KLZhiDYpdi12K/Yp9ixINis2K/Z
+itivINmF2YYg2KrYt9io2YrZgiDYqNmG2YMg2KfZhNi12YLYsSDYp9mE2KrYrNix2YrYqNmKINmB
+2Yog2YXYqtis2LEg2KfZhNiq2LfYqNmK2YLYp9iqINi52YTZiSDYrNmH2KfYstmDLjwvcD48cD5X
+aGF0J3MgbmV3IC8g2YXYpyDYp9mE2KzYr9mK2K86IDxhIGhyZWY9Imh0dHBzOi8vZmFsY29uLWRl
+bW8tYmFuay50ZXN0L2FwcCI+aHR0cHM6Ly9mYWxjb24tZGVtby1iYW5rLnRlc3QvYXBwPC9hPjwv
+cD4KPC9ib2R5PjwvaHRtbD4K
+
+--===============5643716127489414632==--
