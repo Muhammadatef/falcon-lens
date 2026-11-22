@@ -50,7 +50,7 @@ def test_no_forbidden_words_anywhere_in_file(path: Path) -> None:
 
 @pytest.mark.parametrize("lang", ["ar", "en"])
 def test_lengths_fit_contract_and_phone(lang: str) -> None:
-    cat = load_catalog(lang)  # type: ignore[arg-type]
+    cat = load_catalog(lang)
     for s in [*cat.hard_rules.values(), *cat.reasons.values(), cat.degraded]:
         assert 0 < len(s) <= 120, s  # contract allows 220; phone screen wants short
     for block in cat.actions.values():
@@ -83,9 +83,17 @@ def test_required_wording() -> None:
 
 def test_every_weighted_signal_has_a_template() -> None:
     p = load_params()
-    signals = [*p.weights, *(f"message.rule.{n}" for n in p.message_rule_names), "domain.age", "domain.cert_age"]
+    # Informational (weight 0) signals never become reasons, so they need no template;
+    # email.attachment carries a conditional weight (risky attachments).
+    signals = [
+        *(s for s, w in p.weights.items() if w != 0.0),
+        "email.attachment",
+        *(f"message.rule.{n}" for n in p.message_rule_names),
+        "domain.age",
+        "domain.cert_age",
+    ]
     for lang in ("ar", "en"):
-        cat = load_catalog(lang)  # type: ignore[arg-type]
+        cat = load_catalog(lang)
         missing = [k for k in all_template_keys(signals) if k not in cat.reasons]
         assert not missing, (lang, missing)
 

@@ -1,4 +1,4 @@
-"""Arbiter parameters loaded from ``params.yaml`` (draft until fitted by ``make fit-thresholds``)."""
+"""Arbiter parameters from ``params.yaml`` (draft until fitted by ``make fit-thresholds``)."""
 
 from __future__ import annotations
 
@@ -40,6 +40,10 @@ class ScoringParams:
     message_rule_cap: float
     message_rule_names: frozenset[str]
     weights: dict[str, float]
+    attachment_risky_weight: float = 1.5
+    attachment_executable_types: frozenset[str] = frozenset()
+    informational_errors: frozenset[str] = frozenset()
+    degrading_signals: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
         if not 0.0 < self.tau_low < self.tau_high < 1.0:
@@ -71,6 +75,13 @@ def _num(section: dict[str, object], key: str) -> float:
     return float(value)
 
 
+def _str_set(raw: dict[str, object], key: str) -> frozenset[str]:
+    value = raw.get(key, [])
+    if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+        raise ParamsError(f"params.yaml: '{key}' must be a list of strings")
+    return frozenset(cast(list[str], value))
+
+
 def params_from_mapping(raw: dict[str, object]) -> ScoringParams:
     bands = _section(raw, "bands")
     cascade = _section(raw, "cascade")
@@ -81,6 +92,7 @@ def params_from_mapping(raw: dict[str, object]) -> ScoringParams:
     cage = _section(raw, "cert_age")
     mrules = _section(raw, "message_rules")
     weights_raw = _section(raw, "weights")
+    attach = _section(raw, "email_attachment")
     names = mrules.get("names")
     if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
         raise ParamsError("params.yaml: message_rules.names must be a list of strings")
@@ -110,6 +122,10 @@ def params_from_mapping(raw: dict[str, object]) -> ScoringParams:
         message_rule_cap=_num(mrules, "cap"),
         message_rule_names=frozenset(cast(list[str], names)),
         weights={str(k): _num(weights_raw, str(k)) for k in weights_raw},
+        attachment_risky_weight=_num(attach, "risky_weight"),
+        attachment_executable_types=_str_set(attach, "executable_types"),
+        informational_errors=_str_set(raw, "informational_errors"),
+        degrading_signals=_str_set(raw, "degrading_signals"),
     )
 
 
