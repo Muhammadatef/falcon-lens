@@ -1,0 +1,76 @@
+[project]
+name = "falcon-lens"
+version = "0.1.0"
+description = "Falcon Lens | عدسة الصقر — workspace root"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+  "packages/falcon_core",
+  "services/api",
+  "services/worker",
+  "services/sentinel",
+  "services/mcp",
+  "services/egress",
+  "services/sandbox",
+]
+
+[tool.uv.sources]
+falcon-core = { workspace = true }
+falcon-api = { workspace = true }
+falcon-worker = { workspace = true }
+falcon-sentinel = { workspace = true }
+falcon-mcp-service = { workspace = true }
+falcon-egress = { workspace = true }
+falcon-sandbox = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "falcon-core",
+  "falcon-api",
+  "falcon-worker",
+  "falcon-sentinel",
+  "falcon-mcp-service",
+  "falcon-egress",
+  "falcon-sandbox",
+  "pytest>=8.3",
+  "pytest-asyncio>=0.25",
+  "httpx>=0.28",
+  "jsonschema>=4.23",
+  "ruff>=0.9",
+  "mypy>=1.14",
+  "types-jsonschema",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["web", ".venv", "docs", "*.md"]  # ruff 0.17 would reformat code blocks in docs
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "S"]
+ignore = ["S104"]  # services bind 0.0.0.0 inside containers by design
+
+[tool.ruff.lint.isort]
+known-first-party = [
+  "falcon_core", "falcon_api", "falcon_worker", "falcon_sentinel",
+  "falcon_mcp", "falcon_egress", "falcon_sandbox",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["packages/falcon_core/src", "packages/falcon_core/tests"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["packages/falcon_core/tests", "services"]

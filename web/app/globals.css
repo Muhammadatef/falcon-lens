@@ -1,0 +1,56 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f7f9;
+  --fg: #14213d;
+  --card: #ffffff;
+  --accent: #0b5cad;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1522;
+    --fg: #e8ecf3;
+    --card: #17202f;
+    --accent: #6cb2f2;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, "Segoe UI", Tahoma, "Noto Naskh Arabic", sans-serif;
+  line-height: 1.7;
+}
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+.check-form {
+  display: grid;
+  gap: 0.75rem;
+  background: var(--card);
+  padding: 1rem;
+  border-radius: 0.75rem;
+}
+textarea {
+  width: 100%;
+  font: inherit;
+  padding: 0.5rem;
+}
+button {
+  font: inherit;
+  padding: 0.6rem 1rem;
+  background: var(--accent);
+  color: var(--bg);
+  border: 0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.caution,
+.notice {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
