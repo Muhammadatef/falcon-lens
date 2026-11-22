@@ -1,0 +1,1585 @@
+<!doctype html>
+<!--
+  Falcon Lens | عدسة الصقر — high-fidelity design prototype (Phase A).
+  A design artefact, not app code: inline CSS/JS and the Google Fonts link are allowed
+  here only. The app self-hosts everything under a strict CSP (docs/DESIGN.md §9).
+  ALL DATA IS FAKE. Fixtures use only the invented brand "Falcon Demo Bank" and
+  defanged .test addresses. Nothing here performs a real check or sends anything.
+  URL parameters: ?lang=ar|en  &theme=dark|light  &scene=danger|nws  &instant=1
+-->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>عدسة الصقر | Falcon Lens — design prototype (DEMO DATA)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400..7&family=Readex+Pro:wght@300..7&display=swap">
+<style>
+/* tokens:start (generated from ../tokens.css by scripts/sync-prototype-tokens.mjs) */
+/*
+ * Falcon Lens | عدسة الصقر — design tokens (source of truth for web/ and extension/).
+ * Spec: docs/DESIGN.md. Contrast is enforced by web/design/scripts/check-contrast.mjs.
+ *
+ * Themes: dark ("night") is the default; light ("sand") applies with
+ * <html data-theme="light"> or, when no data-theme is set, with prefers-color-scheme: light.
+ * Every colour below is a 6-digit hex so the contrast script can parse it.
+ * No verdict colour is ever used without its icon and its word (see DESIGN.md §4).
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ── Night theme: surfaces ─────────────────────────────────────────── */
+  --fl-bg: #070b14;            /* page: desert night */
+  --fl-surface-1: #0e1626;     /* cards */
+  --fl-surface-2: #16203a;     /* raised: inputs, chips, nested rows */
+  --fl-surface-3: #1f2c4c;     /* hover / pressed */
+  --fl-border: #2a3757;        /* hairlines (decorative) */
+  --fl-border-strong: #5a6c92; /* control outlines (>= 3:1 on surfaces) */
+
+  /* ── Night theme: text ─────────────────────────────────────────────── */
+  --fl-text: #f2eee6;          /* warm white, sand-tinted */
+  --fl-text-muted: #aeb8cc;
+  --fl-text-faint: #8794ae;    /* captions, ids; still AA on surface-1/2 */
+
+  /* ── Brand: the lens ───────────────────────────────────────────────── */
+  --fl-brand: #3fe0c5;         /* lens glass / scan beam / primary action */
+  --fl-brand-strong: #7df0dc;  /* hover on dark */
+  --fl-brand-ink: #04211d;     /* text on brand fills */
+  --fl-sand: #e7d7b6;          /* warm accent: wordmark, feather strokes */
+  --fl-focus: #7df0dc;         /* focus ring */
+
+  /* ── Verdicts (fg = text/icon on surfaces, solid = filled plate,
+        on = text on solid, tint = card wash, line = border) ─────────── */
+  --fl-dangerous-fg: #ff8589;
+  --fl-dangerous-solid: #d42a38;
+  --fl-dangerous-on: #ffffff;
+  --fl-dangerous-tint: #2b0f15;
+  --fl-dangerous-line: #8c2630;
+
+  --fl-suspicious-fg: #ffc55c;
+  --fl-suspicious-solid: #f4b23a;
+  --fl-suspicious-on: #2a1a00;
+  --fl-suspicious-tint: #2a1d07;
+  --fl-suspicious-line: #8a6416;
+
+  /* Deliberately NOT green: green reads as "safe", which the product never says. */
+  --fl-nws-fg: #a9c0ff;
+  --fl-nws-solid: #3a5bd0;
+  --fl-nws-on: #ffffff;
+  --fl-nws-tint: #111c3d;
+  --fl-nws-line: #34488c;
+
+  /* Evidence polarity (reuses verdict hues; shape carries the meaning) */
+  --fl-risk: var(--fl-dangerous-fg);
+  --fl-trust: var(--fl-nws-fg);
+  --fl-neutral: var(--fl-text-faint);
+
+  /* Incident severity (operator board): shape + label always shown */
+  --fl-sev-critical: var(--fl-dangerous-fg);
+  --fl-sev-high: #ff9f6b;
+  --fl-sev-medium: var(--fl-suspicious-fg);
+  --fl-sev-low: var(--fl-text-muted);
+
+  /* Effects */
+  --fl-shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.28);
+  --fl-shadow-2: 0 2px 4px rgb(0 0 0 / 0.5), 0 24px 64px rgb(0 0 0 / 0.45);
+  --fl-glow-brand: 0 0 0 1px rgb(63 224 197 / 0.35), 0 0 32px rgb(63 224 197 / 0.18);
+  --fl-scrim: rgb(7 11 20 / 0.72);
+
+  /* ── Typography ────────────────────────────────────────────────────── */
+  --fl-font-ui: "Readex Pro", "Readex Pro Variable", "Noto Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --fl-font-mono: "JetBrains Mono", "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Sizes are rem on a 16 px root; body never goes under 1.0625rem (17 px). */
+  --fl-text-xs: 0.8125rem;   /* 13: ids, legal; never for instructions */
+  --fl-text-sm: 0.9375rem;   /* 15: captions, chips */
+  --fl-text-md: 1.0625rem;   /* 17: body */
+  --fl-text-lg: 1.25rem;     /* 20: reasons, actions, input */
+  --fl-text-xl: 1.5rem;      /* 24: section titles */
+  --fl-text-2xl: 2rem;       /* 32: verdict word (phone) */
+  --fl-text-3xl: clamp(2.25rem, 1.4rem + 3.6vw, 4rem);  /* hero headline */
+  --fl-leading-ar: 1.75;     /* Arabic needs room for marks and descenders */
+  --fl-leading-en: 1.55;
+  --fl-leading-tight-ar: 1.35;
+  --fl-leading-tight-en: 1.15;
+  --fl-leading: var(--fl-leading-ar);
+  --fl-leading-tight: var(--fl-leading-tight-ar);
+  --fl-weight-regular: 400;
+  --fl-weight-medium: 500;
+  --fl-weight-bold: 650;
+
+  /* ── Space, radius, layout (4 px base) ─────────────────────────────── */
+  --fl-space-1: 0.25rem;
+  --fl-space-2: 0.5rem;
+  --fl-space-3: 0.75rem;
+  --fl-space-4: 1rem;
+  --fl-space-5: 1.5rem;
+  --fl-space-6: 2rem;
+  --fl-space-7: 3rem;
+  --fl-space-8: 4rem;
+  --fl-space-9: 6rem;
+  --fl-radius-sm: 8px;
+  --fl-radius-md: 14px;
+  --fl-radius-lg: 22px;
+  --fl-radius-pill: 999px;
+  --fl-tap: 48px;                 /* minimum touch target */
+  --fl-gutter: 1rem;              /* 390: 4 columns */
+  --fl-content-max: 76rem;        /* 1216 px, 12 columns at >= 1024 */
+  --fl-read-max: 38rem;           /* longest text measure */
+
+  /* ── Motion (mirrors web/design/motion.ts; keep both in sync) ──────── */
+  --fl-dur-instant: 90ms;
+  --fl-dur-fast: 160ms;
+  --fl-dur-base: 260ms;
+  --fl-dur-slow: 420ms;
+  --fl-dur-reveal: 640ms;
+  --fl-dur-ambient: 9s;
+  --fl-stagger: 70ms;
+  --fl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);        /* enter: fast start, long settle */
+  --fl-ease-in: cubic-bezier(0.5, 0, 0.9, 0.3);         /* exit */
+  --fl-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);     /* move, morph */
+  --fl-ease-linear: linear;                             /* sweeps, progress */
+  /* Critically-leaning spring (one soft overshoot) for the verdict plate and lens lock. */
+  --fl-ease-spring: linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 19.4%,
+      1.077 22.2%, 1.11 24.9%, 1.121 27.5%, 1.115 30.3%, 1.066 37.6%, 1.021 44.5%, 0.996 51.3%,
+      0.989 58.2%, 1.001 78.6%, 1);
+}
+
+/* ── Sand theme (light) ──────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --fl-bg: #f7f3ea;
+  --fl-surface-1: #ffffff;
+  --fl-surface-2: #efe8d8;
+  --fl-surface-3: #e4dbc6;
+  --fl-border: #ddd3bf;
+  --fl-border-strong: #8c8168;
+
+  --fl-text: #121826;
+  --fl-text-muted: #475066;
+  --fl-text-faint: #5c667c;
+
+  --fl-brand: #0a6e61;
+  --fl-brand-strong: #075a4f;
+  --fl-brand-ink: #ffffff;
+  --fl-sand: #7a6535;
+  --fl-focus: #0a6e61;
+
+  --fl-dangerous-fg: #a80f45;
+  --fl-dangerous-solid: #c01f3f;
+  --fl-dangerous-on: #ffffff;
+  --fl-dangerous-tint: #fce9ea;
+  --fl-dangerous-line: #e3a3a8;
+
+  --fl-suspicious-fg: #6a5600;
+  --fl-suspicious-solid: #f4b23a;
+  --fl-suspicious-on: #2a1a00;
+  --fl-suspicious-tint: #fff1cf;
+  --fl-suspicious-line: #dcb25a;
+
+  --fl-nws-fg: #2a4bb0;
+  --fl-nws-solid: #3353c4;
+  --fl-nws-on: #ffffff;
+  --fl-nws-tint: #e8eeff;
+  --fl-nws-line: #a9b9ea;
+
+  --fl-sev-high: #a8400a;
+
+  --fl-shadow-1: 0 1px 2px rgb(18 24 38 / 0.06), 0 8px 24px rgb(18 24 38 / 0.08);
+  --fl-shadow-2: 0 2px 4px rgb(18 24 38 / 0.08), 0 24px 64px rgb(18 24 38 / 0.14);
+  --fl-glow-brand: 0 0 0 1px rgb(10 110 97 / 0.35), 0 0 32px rgb(10 110 97 / 0.12);
+  --fl-scrim: rgb(247 243 234 / 0.8);
+}
+
+/* System preference, used only when the user has not chosen a theme. Keep this block
+   identical to the [data-theme="light"] block above (the contrast script checks parity). */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+
+    --fl-bg: #f7f3ea;
+    --fl-surface-1: #ffffff;
+    --fl-surface-2: #efe8d8;
+    --fl-surface-3: #e4dbc6;
+    --fl-border: #ddd3bf;
+    --fl-border-strong: #8c8168;
+
+    --fl-text: #121826;
+    --fl-text-muted: #475066;
+    --fl-text-faint: #5c667c;
+
+    --fl-brand: #0a6e61;
+    --fl-brand-strong: #075a4f;
+    --fl-brand-ink: #ffffff;
+    --fl-sand: #7a6535;
+    --fl-focus: #0a6e61;
+
+    --fl-dangerous-fg: #a80f45;
+    --fl-dangerous-solid: #c01f3f;
+    --fl-dangerous-on: #ffffff;
+    --fl-dangerous-tint: #fce9ea;
+    --fl-dangerous-line: #e3a3a8;
+
+    --fl-suspicious-fg: #6a5600;
+    --fl-suspicious-solid: #f4b23a;
+    --fl-suspicious-on: #2a1a00;
+    --fl-suspicious-tint: #fff1cf;
+    --fl-suspicious-line: #dcb25a;
+
+    --fl-nws-fg: #2a4bb0;
+    --fl-nws-solid: #3353c4;
+    --fl-nws-on: #ffffff;
+    --fl-nws-tint: #e8eeff;
+    --fl-nws-line: #a9b9ea;
+
+    --fl-sev-high: #a8400a;
+
+    --fl-shadow-1: 0 1px 2px rgb(18 24 38 / 0.06), 0 8px 24px rgb(18 24 38 / 0.08);
+    --fl-shadow-2: 0 2px 4px rgb(18 24 38 / 0.08), 0 24px 64px rgb(18 24 38 / 0.14);
+    --fl-glow-brand: 0 0 0 1px rgb(10 110 97 / 0.35), 0 0 32px rgb(10 110 97 / 0.12);
+    --fl-scrim: rgb(247 243 234 / 0.8);
+  }
+}
+
+/* Latin text gets tighter leading than Arabic. */
+:root:lang(en) {
+  --fl-leading: var(--fl-leading-en);
+  --fl-leading-tight: var(--fl-leading-tight-en);
+}
+
+/* Reduced motion: movement collapses to short fades; ambient loops stop.
+   Components must also honour this in JS (see motion.ts `reduced`). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fl-dur-fast: 1ms;
+    --fl-dur-base: 120ms;
+    --fl-dur-slow: 120ms;
+    --fl-dur-reveal: 160ms;
+    --fl-dur-ambient: 0s;
+    --fl-stagger: 0ms;
+    --fl-ease-spring: linear;
+  }
+}
+/* tokens:end */
+
+/* ── Base ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 6.5rem; }
+html[dir="rtl"] { --sign: -1; }
+html[dir="ltr"] { --sign: 1; }
+body {
+  margin: 0; background: var(--fl-bg); color: var(--fl-text);
+  font-family: var(--fl-font-ui); font-size: var(--fl-text-md); line-height: var(--fl-leading);
+  font-weight: var(--fl-weight-regular); overflow-x: hidden; text-rendering: optimizeLegibility;
+}
+h1, h2, h3, p, ul, ol { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+button, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--fl-focus); outline-offset: 3px; border-radius: 6px; }
+.wrap { width: 100%; max-width: var(--fl-content-max); margin-inline: auto; padding-inline: var(--fl-gutter); }
+.mono { font-family: var(--fl-font-mono); direction: ltr; unicode-bidi: isolate; font-variant-ligatures: none; }
+.muted { color: var(--fl-text-muted); }
+.faint { color: var(--fl-text-faint); }
+.icon { flex: none; display: block; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* verdict / severity colour scopes: colour is always paired with a shape and a word */
+[data-verdict="dangerous"] { --v-fg: var(--fl-dangerous-fg); --v-solid: var(--fl-dangerous-solid); --v-on: var(--fl-dangerous-on); --v-tint: var(--fl-dangerous-tint); --v-line: var(--fl-dangerous-line); }
+[data-verdict="suspicious"] { --v-fg: var(--fl-suspicious-fg); --v-solid: var(--fl-suspicious-solid); --v-on: var(--fl-suspicious-on); --v-tint: var(--fl-suspicious-tint); --v-line: var(--fl-suspicious-line); }
+[data-verdict="no_warning_signs"] { --v-fg: var(--fl-nws-fg); --v-solid: var(--fl-nws-solid); --v-on: var(--fl-nws-on); --v-tint: var(--fl-nws-tint); --v-line: var(--fl-nws-line); }
+[data-sev="critical"] { --s-fg: var(--fl-sev-critical); }
+[data-sev="high"] { --s-fg: var(--fl-sev-high); }
+[data-sev="medium"] { --s-fg: var(--fl-sev-medium); }
+[data-sev="low"] { --s-fg: var(--fl-sev-low); }
+
+/* ── Atmosphere ─────────────────────────────────────────────────────── */
+.bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.bg-glow {
+  background:
+    radial-gradient(52rem 34rem at 82% -8%, color-mix(in srgb, var(--fl-brand) 15%, transparent), transparent 62%),
+    radial-gradient(44rem 30rem at 4% 28%, color-mix(in srgb, var(--fl-nws-solid) 13%, transparent), transparent 62%);
+}
+.bg-lattice {
+  background: var(--fl-text); opacity: 0.045;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' fill='none' stroke='black' stroke-width='1'%3E%3Crect x='22' y='22' width='28' height='28'/%3E%3Crect x='22' y='22' width='28' height='28' transform='rotate(45 36 36)'/%3E%3Cpath d='M36 0v16M36 56v16M0 36h16M56 36h16'/%3E%3C/svg%3E"), linear-gradient(to bottom, black 0, transparent 46rem);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' fill='none' stroke='black' stroke-width='1'%3E%3Crect x='22' y='22' width='28' height='28'/%3E%3Crect x='22' y='22' width='28' height='28' transform='rotate(45 36 36)'/%3E%3Cpath d='M36 0v16M36 56v16M0 36h16M56 36h16'/%3E%3C/svg%3E"), linear-gradient(to bottom, black 0, transparent 46rem);
+  -webkit-mask-size: 72px 72px, 100% 100%; mask-size: 72px 72px, 100% 100%;
+  -webkit-mask-composite: source-in; mask-composite: intersect;
+}
+
+/* ── Demo ribbon + header ───────────────────────────────────────────── */
+.ribbon {
+  background: var(--fl-suspicious-solid); color: var(--fl-suspicious-on);
+  font-size: var(--fl-text-sm); font-weight: var(--fl-weight-medium); text-align: center;
+  padding: 0.35rem var(--fl-gutter); line-height: 1.5;
+}
+.ribbon b { font-family: var(--fl-font-mono); letter-spacing: 0.06em; font-weight: 700; }
+.top { position: sticky; top: 0; z-index: 20; background: var(--fl-bg); border-block-end: 1px solid var(--fl-border); }
+.top-in { display: flex; align-items: center; gap: var(--fl-space-3); min-height: 4rem; }
+.brand { display: flex; align-items: center; gap: 0.6rem; color: inherit; text-decoration: none; font-weight: var(--fl-weight-bold); font-size: 1.2rem; line-height: 1.2; }
+.brand small { display: block; font-size: 0.7rem; letter-spacing: 0.14em; color: var(--fl-text-faint); font-weight: 500; font-family: var(--fl-font-mono); }
+.nav { display: none; gap: var(--fl-space-2); margin-inline-start: var(--fl-space-5); }
+.nav a { color: var(--fl-text-muted); text-decoration: none; padding: 0.5rem 0.75rem; border-radius: var(--fl-radius-sm); font-size: var(--fl-text-sm); }
+.nav a:hover { color: var(--fl-text); background: var(--fl-surface-2); }
+.top-tools { margin-inline-start: auto; display: flex; gap: var(--fl-space-2); }
+.tool {
+  min-width: var(--fl-tap); min-height: var(--fl-tap); padding-inline: 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+  background: var(--fl-surface-1); border: 1px solid var(--fl-border-strong); border-radius: var(--fl-radius-md); font-size: var(--fl-text-sm); font-weight: var(--fl-weight-medium);
+  transition: background var(--fl-dur-fast) var(--fl-ease-out), transform var(--fl-dur-instant) var(--fl-ease-out);
+}
+.tool:hover { background: var(--fl-surface-2); }
+.tool:active { transform: scale(0.97); }
+
+.badge-demo {
+  display: inline-flex; align-items: center; gap: 0.35rem; font-family: var(--fl-font-mono); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--fl-suspicious-fg); border: 1.5px dashed var(--fl-suspicious-fg); border-radius: var(--fl-radius-sm); padding: 0.15rem 0.5rem; line-height: 1.5; white-space: nowrap;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────── */
+.btn {
+  min-height: var(--fl-tap); padding: 0.6rem 1.2rem; border-radius: var(--fl-radius-md); border: 1.5px solid var(--fl-border-strong);
+  background: var(--fl-surface-1); font-weight: var(--fl-weight-medium); display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  transition: background var(--fl-dur-fast) var(--fl-ease-out), transform var(--fl-dur-instant) var(--fl-ease-out), box-shadow var(--fl-dur-fast) var(--fl-ease-out);
+}
+.btn:hover { background: var(--fl-surface-2); }
+.btn:active { transform: scale(0.97); }
+.btn--primary { background: var(--fl-brand); border-color: var(--fl-brand); color: var(--fl-brand-ink); font-weight: var(--fl-weight-bold); font-size: var(--fl-text-lg); min-height: 3.5rem; }
+.btn--primary:hover { background: var(--fl-brand-strong); box-shadow: var(--fl-glow-brand); }
+.btn--sm { min-height: 2.75rem; padding: 0.35rem 0.9rem; font-size: var(--fl-text-sm); }
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+.hero { padding-block: var(--fl-space-4) var(--fl-space-7); }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--fl-space-3); align-items: center; }
+.eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--fl-brand); font-weight: var(--fl-weight-medium); font-size: var(--fl-text-sm); }
+.eyebrow::before { content: ""; width: 1.5rem; height: 2px; background: currentColor; }
+.hero h1 { font-size: var(--fl-text-3xl); line-height: var(--fl-leading-tight); font-weight: var(--fl-weight-bold); margin-block: var(--fl-space-3) var(--fl-space-4); text-wrap: balance; }
+.hero-sub { font-size: var(--fl-text-md); color: var(--fl-text-muted); max-width: var(--fl-read-max); }
+
+.paste {
+  margin-block-start: var(--fl-space-4); background: var(--fl-surface-1); border: 1px solid var(--fl-border); border-radius: var(--fl-radius-lg);
+  box-shadow: var(--fl-shadow-2); padding: var(--fl-space-4); transition: box-shadow var(--fl-dur-base) var(--fl-ease-out), border-color var(--fl-dur-base) var(--fl-ease-out);
+}
+.paste:focus-within { border-color: var(--fl-brand); box-shadow: var(--fl-shadow-2), var(--fl-glow-brand); }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem; background: var(--fl-surface-2); border-radius: var(--fl-radius-md); padding: 0.25rem; }
+.seg button { min-height: 2.5rem; padding-inline: 0.8rem; border: 0; background: transparent; border-radius: 10px; color: var(--fl-text-muted); font-size: var(--fl-text-sm); display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; white-space: nowrap; }
+.seg button[aria-selected="true"] { background: var(--fl-surface-1); color: var(--fl-text); font-weight: var(--fl-weight-medium); box-shadow: 0 0 0 1px var(--fl-border-strong); }
+.paste label { display: block; margin-block: var(--fl-space-3) var(--fl-space-2); font-weight: var(--fl-weight-medium); font-size: var(--fl-text-lg); }
+.paste textarea {
+  width: 100%; min-height: 4.5rem; resize: vertical; background: var(--fl-surface-2); border: 1.5px solid var(--fl-border-strong); border-radius: var(--fl-radius-md);
+  padding: 0.85rem 1rem; font-family: var(--fl-font-mono); font-size: 1.05rem; line-height: 1.6; direction: ltr; text-align: left; overflow-wrap: anywhere;
+}
+.paste textarea::placeholder { color: var(--fl-text-faint); }
+.paste textarea:focus { outline: none; border-color: var(--fl-brand); }
+.paste-hint { font-size: var(--fl-text-sm); color: var(--fl-text-muted); margin-block: var(--fl-space-2) var(--fl-space-3); }
+.paste .btn--primary { width: 100%; }
+.demos { display: flex; flex-wrap: wrap; align-items: center; gap: var(--fl-space-2); margin-block-start: var(--fl-space-4); font-size: var(--fl-text-sm); }
+.promise { display: flex; gap: 0.6rem; align-items: flex-start; margin-block-start: var(--fl-space-4); color: var(--fl-text-muted); font-size: var(--fl-text-sm); }
+.promise .icon { color: var(--fl-brand); margin-block-start: 0.3rem; }
+
+/* ── The lens ───────────────────────────────────────────────────────── */
+/* Phone: the lens is a small instrument beside the headline so the paste box stays above the fold. */
+.lens-stage { position: relative; width: min(100%, 30rem); aspect-ratio: 1; margin-inline: 0 auto; order: -1; max-width: 6rem; }
+.lens { position: absolute; inset: 0; --lens-c: var(--fl-brand); --sweep: var(--fl-dur-ambient); }
+.lens[data-state="scanning"] { --sweep: 1.6s; }
+.lens[data-state="locked"] { --lens-c: var(--v-fg); }
+.lens-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.lens-halo { fill: var(--lens-c); opacity: 0.1; transition: fill var(--fl-dur-slow) var(--fl-ease-out), opacity var(--fl-dur-slow) var(--fl-ease-out); }
+.lens[data-state="scanning"] .lens-halo { opacity: 0.16; }
+.lens[data-state="locked"] .lens-halo { opacity: 0.22; }
+.lens-ticks, .lens-majors { fill: none; stroke: var(--fl-text-faint); transform-origin: 200px 200px; }
+.lens-ticks { stroke-width: 5; stroke-dasharray: 1.5 8.448; opacity: 0.55; animation: spin 120s linear infinite; }
+.lens-majors { stroke-width: 10; stroke-dasharray: 3 146.226; stroke: var(--fl-sand); animation: spin 120s linear infinite; }
+.lens-ring { fill: none; stroke: var(--fl-border-strong); stroke-width: 1.5; }
+.lens-arc { fill: none; stroke-width: 7; stroke-linecap: round; }
+.lens-arc--base { stroke: var(--fl-border); }
+.lens-arc--fill { stroke: var(--lens-c); stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset var(--fl-dur-slow) var(--fl-ease-out), stroke var(--fl-dur-slow) var(--fl-ease-out); }
+.lens-arc--fill[data-status="done"] { stroke-dashoffset: 0; }
+.lens-arc--fill[data-status="running"] { stroke-dashoffset: 0; opacity: 0.35; animation: breathe 1.1s var(--fl-ease-in-out) infinite alternate; }
+.lens-arc--base[data-status="skipped"] { stroke-dasharray: 2 12; }
+.lens-pupil { fill: url(#fl-pupil); }
+.lens-pupil-tint { fill: var(--lens-c); opacity: 0; transition: opacity var(--fl-dur-reveal) var(--fl-ease-out); }
+.lens[data-state="locked"] .lens-pupil-tint { opacity: 0.32; }
+.lens-blade { fill: var(--fl-surface-2); stroke: var(--fl-border-strong); stroke-width: 1.2; stroke-linejoin: round; }
+.lens-blade:nth-child(odd) { fill: var(--fl-surface-1); }
+.lens-glint { fill: var(--fl-text); opacity: 0.5; }
+.lens-brow { fill: none; stroke: var(--fl-sand); stroke-width: 9; stroke-linecap: round; opacity: 0.85; }
+.lens-sweep {
+  position: absolute; inset: 15%; border-radius: 50%; mix-blend-mode: screen; opacity: 0.9;
+  background: conic-gradient(from 0deg, transparent 0deg 285deg, color-mix(in srgb, var(--lens-c) 60%, transparent) 358deg, transparent 360deg);
+  animation: spin var(--sweep) linear infinite;
+}
+:root[data-theme="light"] .lens-sweep { mix-blend-mode: multiply; }
+.lens[data-state="locked"] .lens-sweep { opacity: 0; transition: opacity var(--fl-dur-base) var(--fl-ease-in); }
+.lens-core {
+  position: absolute; inset: 36%; display: grid; place-items: center; color: var(--v-fg); opacity: 0; transform: scale(0.6);
+  transition: opacity var(--fl-dur-base) var(--fl-ease-out), transform var(--fl-dur-reveal) var(--fl-ease-spring);
+}
+.lens-core .icon { width: 100%; height: 100%; }
+.lens[data-state="locked"] .lens-core { opacity: 1; transform: none; }
+.lens--mini { position: relative; inset: auto; width: 4.5rem; height: 4.5rem; flex: none; }
+.lens--mini .lens-ticks, .lens--mini .lens-majors, .lens--mini .lens-brow, .lens--mini .lens-glint { display: none; }
+.lens--mini .lens-arc { stroke-width: 16; }
+
+.specimen {
+  position: absolute; z-index: 1; font-family: var(--fl-font-mono); font-size: 0.75rem; direction: ltr; white-space: nowrap;
+  background: var(--fl-surface-1); border: 1px solid var(--fl-border-strong); color: var(--fl-text-muted); border-radius: var(--fl-radius-pill); padding: 0.15rem 0.6rem;
+  box-shadow: var(--fl-shadow-1); animation: drift var(--d, 9s) var(--fl-ease-in-out) infinite alternate; transition: opacity var(--fl-dur-slow) var(--fl-ease-in), transform var(--fl-dur-slow) var(--fl-ease-in);
+}
+.specimen[lang="ar"] { font-family: var(--fl-font-ui); direction: rtl; }
+.lens-stage[data-state="scanning"] .specimen, .lens-stage[data-state="locked"] .specimen { animation: none; opacity: 0; transform: translate(var(--px), var(--py)) scale(0.5); }
+.specimen { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes breathe { from { opacity: 0.25; } to { opacity: 0.8; } }
+@keyframes drift { from { transform: translate(0, 0); } to { transform: translate(var(--dx, 6px), var(--dy, -10px)); } }
+@keyframes shimmer { to { transform: translateX(calc(var(--sign) * 260%)); } }
+@keyframes ping { from { transform: scale(1); opacity: 0.6; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+
+/* ── Sections ───────────────────────────────────────────────────────── */
+section { padding-block: var(--fl-space-7); }
+.sec-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--fl-space-3); margin-block-end: var(--fl-space-2); }
+.sec-head h2 { font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem); line-height: var(--fl-leading-tight); font-weight: var(--fl-weight-bold); }
+.sec-sub { color: var(--fl-text-muted); max-width: var(--fl-read-max); margin-block-end: var(--fl-space-5); }
+.card { background: var(--fl-surface-1); border: 1px solid var(--fl-border); border-radius: var(--fl-radius-lg); box-shadow: var(--fl-shadow-1); }
+.reveal { opacity: 0; transform: translateY(12px); transition: opacity var(--fl-dur-base) var(--fl-ease-out), transform var(--fl-dur-slow) var(--fl-ease-out); transition-delay: calc(var(--i, 0) * var(--fl-stagger)); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* how it works */
+.how-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--fl-space-3); }
+.how-card { padding: var(--fl-space-4) var(--fl-space-5); position: relative; }
+.how-card .code { font-family: var(--fl-font-mono); font-size: var(--fl-text-xs); color: var(--fl-text-faint); border: 1px solid var(--fl-border-strong); border-radius: 6px; padding: 0 0.4rem; }
+.how-card h3 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); margin-block: var(--fl-space-2) var(--fl-space-1); display: flex; align-items: center; gap: 0.6rem; }
+.how-card h3 .icon { color: var(--fl-brand); }
+.how-card p { color: var(--fl-text-muted); }
+.how-foot { margin-block-start: var(--fl-space-4); display: flex; gap: 0.6rem; align-items: flex-start; font-weight: var(--fl-weight-medium); }
+.how-foot .icon { color: var(--fl-brand); margin-block-start: 0.35rem; }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    html:not(.instant) .how-card { animation: rise-in linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+  }
+}
+
+/* ── Check result ───────────────────────────────────────────────────── */
+.case { display: flex; align-items: center; gap: var(--fl-space-4); padding: var(--fl-space-4); margin-block-end: var(--fl-space-4); flex-wrap: wrap; }
+.case-main { flex: 1 1 14rem; min-width: 0; }
+.case-status { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.url {
+  display: block; margin-block-start: var(--fl-space-2); background: var(--fl-surface-2); border: 1px solid var(--fl-border-strong); border-radius: var(--fl-radius-sm);
+  padding: 0.5rem 0.75rem; font-size: 1rem; line-height: 1.6; overflow-wrap: anywhere; text-align: left; color: var(--fl-text-muted);
+}
+.url strong { color: var(--fl-text); font-weight: 700; }
+.url-note { font-size: var(--fl-text-xs); color: var(--fl-text-faint); margin-block-start: 0.3rem; }
+.chip-prov {
+  display: inline-flex; align-items: center; gap: 0.4rem; font-size: var(--fl-text-sm); font-weight: var(--fl-weight-medium); color: var(--v-fg, var(--fl-text-muted));
+  border: 1.5px solid currentColor; border-radius: var(--fl-radius-pill); padding: 0.1rem 0.7rem; background: var(--v-tint, transparent);
+}
+.check-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--fl-space-4); align-items: start; }
+
+.verdict { overflow: hidden; }
+.verdict[data-verdict] { border-color: var(--v-line); }
+.pending { padding: var(--fl-space-5); display: grid; gap: var(--fl-space-3); }
+.pending p { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-medium); display: flex; gap: 0.6rem; align-items: flex-start; }
+.pending .icon { margin-block-start: 0.4rem; color: var(--fl-suspicious-fg); }
+.sk { height: 1.1rem; border-radius: 6px; background: var(--fl-surface-2); position: relative; overflow: hidden; }
+.sk::after { content: ""; position: absolute; inset-block: 0; inset-inline-start: -60%; width: 60%; background: linear-gradient(90deg, transparent, var(--fl-surface-3), transparent); animation: shimmer 1.3s linear infinite; }
+.sk:nth-child(3) { width: 82%; } .sk:nth-child(4) { width: 64%; }
+
+.plate {
+  display: flex; align-items: center; gap: var(--fl-space-4); padding: var(--fl-space-5); background: var(--v-solid); color: var(--v-on);
+  border-block-end: 3px solid var(--v-fg); clip-path: circle(0% at 50% 0%); opacity: 0; transform: scale(0.97); transform-origin: 50% 0;
+}
+.plate.in { clip-path: circle(150% at 50% 0%); opacity: 1; transform: none; transition: clip-path var(--fl-dur-reveal) var(--fl-ease-out), opacity var(--fl-dur-fast) var(--fl-ease-out), transform var(--fl-dur-reveal) var(--fl-ease-spring); }
+.plate .icon { width: 3.5rem; height: 3.5rem; }
+.plate h3 { font-size: var(--fl-text-2xl); line-height: var(--fl-leading-tight); font-weight: var(--fl-weight-bold); }
+.plate p { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-medium); }
+.vbody { padding: var(--fl-space-5); display: grid; gap: var(--fl-space-5); background: linear-gradient(to bottom, var(--v-tint), transparent 14rem); }
+.imp { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: var(--fl-weight-medium); color: var(--v-fg); }
+
+.risk-top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--fl-space-3); font-size: var(--fl-text-sm); color: var(--fl-text-muted); }
+.risk-top b { font-family: var(--fl-font-mono); font-size: 1.35rem; color: var(--fl-text); direction: ltr; unicode-bidi: isolate; }
+.band { position: relative; display: flex; height: 0.75rem; border-radius: var(--fl-radius-pill); overflow: visible; margin-block: 0.6rem 0.4rem; gap: 3px; }
+.band i { display: block; height: 100%; border-radius: 3px; opacity: 0.35; }
+.band i[data-on="true"] { opacity: 1; }
+.band i:nth-child(1) { flex: 35; background: var(--fl-nws-fg); border-start-start-radius: 99px; border-end-start-radius: 99px; }
+.band i:nth-child(2) { flex: 45; background: repeating-linear-gradient(135deg, var(--fl-suspicious-fg) 0 6px, color-mix(in srgb, var(--fl-suspicious-fg) 55%, transparent) 6px 10px); }
+.band i:nth-child(3) { flex: 20; background: var(--fl-dangerous-fg); border-start-end-radius: 99px; border-end-end-radius: 99px; }
+.band-mark { position: absolute; inset-block: -0.4rem; inset-inline-start: 0%; width: 4px; margin-inline-start: -2px; background: var(--fl-text); border-radius: 2px; box-shadow: 0 0 0 3px var(--fl-surface-1); transition: inset-inline-start 0.9s var(--fl-ease-spring); }
+.band-legend { display: flex; font-size: var(--fl-text-xs); color: var(--fl-text-faint); gap: 3px; }
+.band-legend span:nth-child(1) { flex: 35; } .band-legend span:nth-child(2) { flex: 45; text-align: center; } .band-legend span:nth-child(3) { flex: 20; text-align: end; }
+
+.h3 { font-size: var(--fl-text-xl); font-weight: var(--fl-weight-bold); line-height: var(--fl-leading-tight); display: flex; align-items: center; gap: 0.6rem; margin-block-end: var(--fl-space-3); }
+.reasons { display: grid; gap: var(--fl-space-3); counter-reset: r; }
+.reasons li { counter-increment: r; display: grid; grid-template-columns: 2.25rem 1fr; gap: var(--fl-space-3); padding: var(--fl-space-3) var(--fl-space-4); background: var(--fl-surface-1); border: 1px solid var(--fl-border); border-radius: var(--fl-radius-md); }
+.reasons li::before { content: counter(r); width: 2.25rem; height: 2.25rem; border-radius: 50%; display: grid; place-items: center; font-family: var(--fl-font-mono); font-weight: 700; background: var(--v-tint); color: var(--v-fg); border: 1.5px solid var(--v-fg); }
+.reasons p { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-medium); }
+.cites { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-block-start: 0.4rem; font-size: var(--fl-text-xs); color: var(--fl-text-faint); }
+.cite { font-family: var(--fl-font-mono); font-size: var(--fl-text-xs); direction: ltr; background: var(--fl-surface-2); border: 1px solid var(--fl-border-strong); color: var(--fl-text-muted); border-radius: 6px; padding: 0.3rem 0.5rem; min-height: 2rem; }
+.cite:hover { color: var(--fl-text); border-color: var(--fl-brand); }
+.tag-rule { font-family: var(--fl-font-mono); font-size: var(--fl-text-xs); font-weight: 700; color: var(--fl-dangerous-fg); border: 1px solid currentColor; border-radius: 6px; padding: 0.05rem 0.4rem; white-space: nowrap; }
+.tag-rule[data-polarity="trust"] { color: var(--fl-nws-fg); }
+
+.acts { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--fl-space-3); }
+.act { padding: var(--fl-space-4); border-radius: var(--fl-radius-md); background: var(--fl-surface-1); border: 1px solid var(--fl-border); }
+.act--now { border-inline-start: 5px solid var(--fl-brand); }
+.act--caution { border-inline-start: 5px solid var(--fl-suspicious-fg); }
+.act h4 { margin: 0 0 var(--fl-space-2); font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); display: flex; align-items: center; gap: 0.6rem; line-height: var(--fl-leading-tight); }
+.act--now h4 .icon { color: var(--fl-brand); }
+.act--caution h4 .icon { color: var(--fl-suspicious-fg); }
+.act li { position: relative; padding-inline-start: 1.5rem; font-size: var(--fl-text-lg); margin-block: 0.35rem; }
+.act li::before { content: ""; position: absolute; inset-inline-start: 0.2rem; inset-block-start: 0.85em; width: 0.5rem; height: 0.5rem; border-radius: 2px; background: var(--fl-text-faint); transform: rotate(45deg); }
+.channels { display: grid; gap: var(--fl-space-2); margin-block: var(--fl-space-3) var(--fl-space-2); }
+.channel { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.3rem 1rem; padding: 0.6rem 0.9rem; background: var(--fl-surface-2); border-radius: var(--fl-radius-sm); }
+.channel b { font-family: var(--fl-font-mono); font-size: 1.1rem; direction: ltr; unicode-bidi: isolate; user-select: all; overflow-wrap: anywhere; }
+.small { font-size: var(--fl-text-xs); color: var(--fl-text-faint); line-height: 1.6; }
+.meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; padding: var(--fl-space-3) var(--fl-space-5); border-block-start: 1px solid var(--fl-border); font-size: var(--fl-text-xs); color: var(--fl-text-faint); }
+.meta b { color: var(--fl-text-muted); font-weight: 500; }
+
+/* investigation timeline */
+.trail { padding: var(--fl-space-4) var(--fl-space-5) var(--fl-space-5); }
+.trail-head { display: flex; justify-content: space-between; align-items: center; gap: var(--fl-space-3); flex-wrap: wrap; margin-block-end: var(--fl-space-3); }
+.trail-head .h3 { margin: 0; }
+.switch { display: inline-flex; align-items: center; gap: 0.5rem; font-size: var(--fl-text-sm); color: var(--fl-text-muted); min-height: var(--fl-tap); cursor: pointer; }
+.switch input { appearance: none; width: 2.6rem; height: 1.5rem; border-radius: 99px; background: var(--fl-surface-3); border: 1.5px solid var(--fl-border-strong); position: relative; margin: 0; cursor: pointer; transition: background var(--fl-dur-fast) var(--fl-ease-out); }
+.switch input::after { content: ""; position: absolute; inset-block-start: 2px; inset-inline-start: 2px; width: 1rem; height: 1rem; border-radius: 50%; background: var(--fl-text-muted); transition: inset-inline-start var(--fl-dur-fast) var(--fl-ease-out), background var(--fl-dur-fast); }
+.switch input:checked { background: var(--fl-brand); border-color: var(--fl-brand); }
+.switch input:checked::after { inset-inline-start: calc(100% - 1rem - 2px); background: var(--fl-brand-ink); }
+.tier { position: relative; padding-inline-start: 2rem; padding-block-end: var(--fl-space-4); }
+.tier::before { content: ""; position: absolute; inset-inline-start: 0.5rem; inset-block: 1.6rem 0; width: 2px; background: var(--fl-border); }
+.tier:last-child::before { display: none; }
+.tier-dot { position: absolute; inset-inline-start: 0; inset-block-start: 0.45rem; width: 1.125rem; height: 1.125rem; border-radius: 50%; border: 2px solid var(--fl-border-strong); background: var(--fl-surface-1); transition: background var(--fl-dur-base) var(--fl-ease-out), border-color var(--fl-dur-base) var(--fl-ease-out); }
+.tier[data-status="running"] .tier-dot { border-color: var(--fl-brand); }
+.tier[data-status="running"] .tier-dot::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--fl-brand); animation: ping 1.2s var(--fl-ease-out) infinite; }
+.tier[data-status="done"] .tier-dot { background: var(--fl-brand); border-color: var(--fl-brand); }
+.tier[data-status="skipped"] .tier-dot { border-style: dashed; }
+.tier-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.6rem; }
+.tier-head h4 { margin: 0; font-size: var(--fl-text-md); font-weight: var(--fl-weight-bold); }
+.tier[data-status="pending"] .tier-head h4, .tier[data-status="skipped"] .tier-head h4 { color: var(--fl-text-muted); font-weight: var(--fl-weight-medium); }
+.tier-code { font-family: var(--fl-font-mono); font-size: var(--fl-text-xs); color: var(--fl-text-faint); }
+.tier-state { font-size: var(--fl-text-sm); color: var(--fl-text-faint); margin-inline-start: auto; }
+.tier[data-status="running"] .tier-state { color: var(--fl-brand); }
+.tier-body { display: grid; gap: var(--fl-space-2); margin-block-start: var(--fl-space-2); }
+.tier-note { font-size: var(--fl-text-sm); color: var(--fl-text-muted); }
+.ev {
+  display: grid; grid-template-columns: 1.25rem 1fr; gap: 0.6rem; padding: 0.6rem 0.75rem; background: var(--fl-surface-2); border-radius: var(--fl-radius-sm); border: 1px solid transparent;
+  opacity: 0; transform: translateX(calc(var(--sign) * -16px));
+}
+.ev.in { opacity: 1; transform: none; transition: opacity var(--fl-dur-base) var(--fl-ease-out), transform var(--fl-dur-base) var(--fl-ease-out), border-color var(--fl-dur-base), box-shadow var(--fl-dur-base); transition-delay: calc(var(--i, 0) * var(--fl-stagger)), calc(var(--i, 0) * var(--fl-stagger)), 0s, 0s; }
+.ev.hit { border-color: var(--fl-brand); box-shadow: var(--fl-glow-brand); }
+.ev-mark { margin-block-start: 0.4rem; }
+.ev[data-polarity="risk"] .ev-mark { color: var(--fl-risk); }
+.ev[data-polarity="trust"] .ev-mark { color: var(--fl-trust); }
+.ev[data-polarity="neutral"] .ev-mark { color: var(--fl-neutral); }
+.ev p { font-size: var(--fl-text-md); line-height: 1.6; }
+.ev-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin-block-start: 0.25rem; font-family: var(--fl-font-mono); font-size: var(--fl-text-xs); color: var(--fl-text-faint); direction: ltr; justify-content: flex-end; }
+html[dir="ltr"] .ev-meta { justify-content: flex-start; }
+.ev-tech { display: none; }
+.trail.tech .ev-tech { display: inline; }
+
+/* ── Board ──────────────────────────────────────────────────────────── */
+.board-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--fl-space-4); align-items: start; }
+.radar { padding: var(--fl-space-4); }
+.radar-box { position: relative; aspect-ratio: 1; max-width: 26rem; margin-inline: auto; }
+.radar svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.radar-ring { fill: none; stroke: var(--fl-border); stroke-width: 1; }
+.radar-ring--outer { stroke: var(--fl-border-strong); stroke-width: 1.5; }
+.radar-axis { stroke: var(--fl-border); stroke-width: 1; stroke-dasharray: 2 6; }
+.radar-clip { position: absolute; inset: 5%; border-radius: 50%; overflow: hidden; pointer-events: none; }
+.radar-sweep { position: absolute; inset: 0; border-radius: 50%; opacity: 0.55; background: conic-gradient(from 0deg, transparent 0deg 300deg, color-mix(in srgb, var(--fl-brand) 45%, transparent) 359deg, transparent 360deg); animation: spin 7s linear infinite; mix-blend-mode: screen; }
+:root[data-theme="light"] .radar-sweep { mix-blend-mode: multiply; }
+.node-shape { fill: var(--s-fg); stroke: var(--fl-surface-1); stroke-width: 1.5; }
+.node-ping { fill: none; stroke: var(--s-fg); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.node.new .node-ping { animation: ping 1.4s var(--fl-ease-out) 3; }
+.node.new .node-shape { animation: rise-in var(--fl-dur-base) var(--fl-ease-out); }
+.cluster-label circle { fill: var(--fl-surface-1); stroke: var(--s-fg); stroke-width: 1.5; }
+.cluster-label text { fill: var(--fl-text); font-family: var(--fl-font-mono); font-size: 15px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.radar g[data-dim="true"] { opacity: 0.25; transition: opacity var(--fl-dur-fast); }
+.radar-cap { text-align: center; margin-block-start: var(--fl-space-3); }
+.camps { display: grid; gap: var(--fl-space-3); }
+.camp { padding: var(--fl-space-4); display: grid; grid-template-columns: 2.25rem 1fr; gap: var(--fl-space-3); transition: border-color var(--fl-dur-fast), transform var(--fl-dur-fast) var(--fl-ease-out); }
+.camp:hover { border-color: var(--s-fg); }
+.camp.bump { animation: bump var(--fl-dur-slow) var(--fl-ease-out); }
+@keyframes bump { 30% { box-shadow: 0 0 0 2px var(--s-fg), var(--fl-shadow-1); } }
+.camp-n { width: 2.25rem; height: 2.25rem; border-radius: 50%; display: grid; place-items: center; font-family: var(--fl-font-mono); font-weight: 700; border: 1.5px solid var(--s-fg); }
+.camp h3 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); line-height: 1.45; }
+.sev { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--s-fg); font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); }
+.camp-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 1rem; margin-block: 0.35rem; font-size: var(--fl-text-sm); color: var(--fl-text-muted); }
+.camp-stats b { font-family: var(--fl-font-mono); font-size: 1.25rem; color: var(--fl-text); }
+.spark { display: flex; align-items: flex-end; gap: 3px; height: 2rem; margin-block: 0.4rem; direction: ltr; }
+.spark i { flex: 1; max-width: 0.6rem; min-height: 2px; height: calc(var(--h) * 1%); background: var(--s-fg); opacity: 0.55; border-radius: 2px 2px 0 0; transition: height var(--fl-dur-slow) var(--fl-ease-out); }
+.spark i:last-child { opacity: 1; }
+.camp-advice { font-weight: var(--fl-weight-medium); display: flex; gap: 0.5rem; align-items: flex-start; }
+.camp-advice .icon { color: var(--fl-brand); margin-block-start: 0.35rem; }
+
+/* incident card */
+.incident { margin-block-start: var(--fl-space-4); overflow: hidden; }
+.inc-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: var(--fl-space-4) var(--fl-space-5); border-block-end: 1px solid var(--fl-border); background: var(--fl-surface-2); }
+.inc-head h3 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); flex: 1 1 16rem; line-height: 1.45; }
+.pill { display: inline-flex; align-items: center; gap: 0.4rem; font-size: var(--fl-text-sm); font-weight: var(--fl-weight-medium); border: 1.5px solid var(--fl-border-strong); border-radius: var(--fl-radius-pill); padding: 0.1rem 0.75rem; white-space: nowrap; }
+.pill--wait { border-color: var(--fl-suspicious-fg); color: var(--fl-suspicious-fg); }
+.pill--live::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: currentColor; }
+.inc-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--fl-space-5); padding: var(--fl-space-5); }
+.inc-grid h4 { margin: 0 0 var(--fl-space-2); font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); color: var(--fl-text-muted); letter-spacing: 0.02em; }
+.kv { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-block: var(--fl-space-2) var(--fl-space-4); }
+.kv span { font-family: var(--fl-font-mono); font-size: var(--fl-text-xs); background: var(--fl-surface-2); border-radius: 6px; padding: 0.2rem 0.5rem; color: var(--fl-text-muted); direction: ltr; }
+.ind { display: grid; gap: var(--fl-space-2); }
+.ind li { display: grid; gap: 0.15rem; padding: 0.6rem 0.75rem; background: var(--fl-surface-2); border-radius: var(--fl-radius-sm); }
+.ind .mono { font-size: 0.95rem; overflow-wrap: anywhere; text-align: left; }
+.ind small { font-size: var(--fl-text-xs); color: var(--fl-text-faint); }
+.tl { position: relative; display: grid; gap: var(--fl-space-3); padding-inline-start: 1.75rem; margin-block-end: var(--fl-space-5); }
+.tl::before { content: ""; position: absolute; inset-inline-start: 0.4rem; inset-block: 0.6rem 0.6rem; width: 2px; background: var(--fl-border); }
+.tl li { position: relative; }
+.tl li::before { content: ""; position: absolute; inset-inline-start: -1.75rem; inset-block-start: 0.5rem; width: 0.95rem; height: 0.95rem; border-radius: 50%; background: var(--fl-surface-1); border: 2px solid var(--fl-border-strong); }
+.tl li:last-child::before { background: var(--fl-sev-high); border-color: var(--fl-sev-high); }
+.tl li:last-child::after { content: ""; position: absolute; inset-inline-start: -1.75rem; inset-block-start: 0.5rem; width: 0.95rem; height: 0.95rem; border-radius: 50%; border: 2px solid var(--fl-sev-high); animation: ping 1.8s var(--fl-ease-out) infinite; }
+.tl time { font-family: var(--fl-font-mono); font-size: var(--fl-text-xs); color: var(--fl-text-faint); display: block; direction: ltr; text-align: end; }
+html[dir="ltr"] .tl time { text-align: start; }
+.tl li.new { animation: rise-in var(--fl-dur-slow) var(--fl-ease-out); }
+.op { padding: var(--fl-space-3) var(--fl-space-4); border: 1px solid var(--fl-border); border-radius: var(--fl-radius-md); margin-block-end: var(--fl-space-2); display: grid; gap: 0.4rem; }
+.op[data-status="awaiting_approval"] { border-color: var(--fl-suspicious-fg); background: var(--fl-suspicious-tint); }
+.op-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.3rem 1rem; }
+.op-top b { font-weight: var(--fl-weight-bold); }
+.op-mode { font-size: var(--fl-text-sm); color: var(--fl-text-muted); }
+.op-btns { display: flex; gap: var(--fl-space-2); flex-wrap: wrap; }
+.op-draft { font-size: var(--fl-text-sm); color: var(--fl-text-muted); background: var(--fl-surface-1); border-radius: var(--fl-radius-sm); padding: 0.5rem 0.75rem; border: 1px dashed var(--fl-border-strong); }
+
+footer { border-block-start: 1px solid var(--fl-border); padding-block: var(--fl-space-6); color: var(--fl-text-muted); font-size: var(--fl-text-sm); }
+footer p + p { margin-block-start: var(--fl-space-2); }
+
+/* ── Larger screens ─────────────────────────────────────────────────── */
+@media (min-width: 720px) {
+  :root { --fl-gutter: 2rem; }
+  .nav { display: flex; }
+  .paste { padding: var(--fl-space-5); }
+  .hero { padding-block-start: var(--fl-space-6); }
+  .hero-grid { gap: var(--fl-space-5); }
+  .seg { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .paste .btn--primary { width: auto; min-width: 14rem; }
+  .how-grid { grid-template-columns: repeat(2, 1fr); }
+  .specimen { display: block; }
+  .specimen:nth-child(n+7) { display: none; }
+  .lens-stage { margin-inline: auto; }
+  .hero-sub { font-size: var(--fl-text-lg); }
+  .specimen { font-size: 0.8125rem; }
+  .lens-stage { max-width: 24rem; }
+}
+@media (min-width: 1024px) {
+  .hero { padding-block: var(--fl-space-8) var(--fl-space-9); }
+  .hero-grid { grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr); gap: var(--fl-space-7); }
+  .lens-stage { order: 0; max-width: 30rem; }
+  .specimen:nth-child(n+7) { display: block; }
+  .how-grid { grid-template-columns: repeat(4, 1fr); }
+  .check-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); }
+  .trail-card { position: sticky; top: 5.5rem; }
+  .acts { grid-template-columns: 1fr 1fr; }
+  .act--report, .act--caution { grid-column: 1 / -1; }
+  .board-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
+  .inc-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .plate h3 { font-size: 2.5rem; }
+}
+
+/* ── Reduced motion / instant (screenshots) ─────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .lens-ticks, .lens-majors, .lens-sweep, .radar-sweep, .specimen, .sk::after, .node.new .node-ping, .tl li:last-child::after,
+  .tier[data-status="running"] .tier-dot::after, .lens-arc--fill[data-status="running"], .camp.bump, .tl li.new, .node.new .node-shape { animation: none !important; }
+  .lens-sweep, .radar-sweep { display: none; }
+  .reveal, .ev, .plate, .lens-core { transform: none !important; }
+  .plate { clip-path: none; }
+  .lens-stage[data-state] .specimen { transform: none; }
+  .band-mark { transition: none; }
+}
+html.instant { scroll-behavior: auto; }
+html.instant .top, html.instant .trail-card { position: static; }
+html.instant *, html.instant *::before, html.instant *::after { transition: none !important; animation-duration: 0.001s !important; animation-iteration-count: 1 !important; }
+html.instant .lens-sweep, html.instant .radar-sweep { animation: none !important; transform: rotate(48deg); }
+html.instant .reveal { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+<div class="bg bg-glow"></div>
+<div class="bg bg-lattice"></div>
+
+<div class="ribbon" role="note"><b>DEMO DATA</b> · <span data-i18n="ribbon"></span></div>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#top" aria-label="Falcon Lens">
+      <svg class="icon" width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+        <path d="M5 10.5c5-5.5 16-7 26-2.5" stroke="var(--fl-sand)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="18" cy="18" r="9" stroke="var(--fl-brand)" stroke-width="3"/>
+        <circle cx="18" cy="18" r="3.6" fill="var(--fl-text)"/>
+        <path d="M14.5 28.5c-.6 2.6-2 4.6-4 6" stroke="var(--fl-sand)" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span><span data-i18n="brand"></span><small>FALCON LENS</small></span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#how" data-i18n="nav.how"></a>
+      <a href="#board" data-i18n="nav.board"></a>
+      <a href="#ops" data-i18n="nav.ops"></a>
+    </nav>
+    <div class="top-tools">
+      <button class="tool" id="btn-lang" type="button"></button>
+      <button class="tool" id="btn-theme" type="button" aria-label="Theme"></button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- (a) Hero -->
+  <div class="hero wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow" data-i18n="hero.eyebrow"></span>
+        <h1 data-i18n="hero.title"></h1>
+        <p class="hero-sub" data-i18n="hero.sub"></p>
+
+        <form class="paste" id="paste" novalidate>
+          <div class="seg" role="tablist" id="seg"></div>
+          <label for="input" id="input-label"></label>
+          <textarea id="input" rows="2" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="hxxps://…"></textarea>
+          <p class="paste-hint" data-i18n="input.hint"></p>
+          <button class="btn btn--primary" type="submit" id="btn-check"></button>
+          <div class="demos">
+            <span class="badge-demo">DEMO DATA</span>
+            <span class="muted" data-i18n="demo.try"></span>
+            <button class="btn btn--sm" type="button" data-scene="danger" data-i18n="demo.danger"></button>
+            <button class="btn btn--sm" type="button" data-scene="nws" data-i18n="demo.nws"></button>
+          </div>
+          <p class="small" style="margin-block-start:0.5rem" data-i18n="proto.note"></p>
+        </form>
+        <p class="promise" id="promise"></p>
+      </div>
+      <div class="lens-stage" id="lens-stage" data-state="idle"></div>
+    </div>
+  </div>
+
+  <!-- (b)/(c) Check result -->
+  <section id="check" hidden aria-labelledby="check-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="check-title" data-i18n="check.title"></h2>
+        <span class="badge-demo">DEMO DATA · fixture</span>
+      </div>
+      <div class="card case" id="case"></div>
+      <div class="check-grid">
+        <article class="card verdict" id="verdict" aria-live="polite"></article>
+        <aside class="card trail-card"><div class="trail" id="trail"></div></aside>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="sec-head"><h2 id="how-title" data-i18n="how.title"></h2></div>
+      <p class="sec-sub" data-i18n="how.sub"></p>
+      <div class="how-grid" id="how-grid"></div>
+      <p class="how-foot" id="how-foot"></p>
+    </div>
+  </section>
+
+  <!-- (d) Campaign board + operator incident -->
+  <section id="board" aria-labelledby="board-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="board-title" data-i18n="board.title"></h2>
+        <span class="badge-demo">DEMO DATA · synthetic</span>
+        <span class="pill pill--live" style="color:var(--fl-brand)" data-i18n="board.live"></span>
+      </div>
+      <p class="sec-sub" data-i18n="board.sub"></p>
+      <div class="board-grid">
+        <div class="card radar reveal">
+          <div class="radar-box" id="radar"></div>
+          <p class="small radar-cap" data-i18n="radar.cap"></p>
+        </div>
+        <div class="camps" id="camps"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ops" aria-labelledby="ops-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="ops-title" data-i18n="ops.title"></h2>
+        <span class="badge-demo">DEMO DATA · synthetic</span>
+      </div>
+      <p class="sec-sub" data-i18n="ops.sub"></p>
+      <article class="card incident reveal" id="incident"></article>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p data-i18n="foot.1"></p>
+    <p data-i18n="foot.2"></p>
+  </div>
+</footer>
+
+<!-- Fixtures. Verdicts follow contracts/verdict.schema.json and the incident follows
+     contracts/incident.schema.json (checked by web/design/scripts/validate_fixtures.py).
+     "stream" drives the simulated SSE: one partial verdict per completed tier. -->
+<script type="application/json" id="fl-fixtures">
+{
+  "channels": {
+    "source_url": "https://www.adpolice.gov.ae/en/",
+    "retrieved_at": "2026-11-22",
+    "items": [
+      { "label_ar": "الطوارئ", "label_en": "Emergency", "value": "999", "source_url": "https://www.adpolice.gov.ae/en/", "retrieved_at": "2026-11-22" },
+      { "label_ar": "خدمة أمان (شرطة أبوظبي)", "label_en": "Aman service (Abu Dhabi Police)", "value": "8002626 · aman.adpolice.gov.ae", "source_url": "https://www.adpolice.gov.ae/en/", "retrieved_at": "2026-11-22" },
+      { "label_ar": "بوابة البلاغات لشرطة أبوظبي", "label_en": "Abu Dhabi Police complaints portal", "value": "cas.adpolice.gov.ae", "source_url": "https://www.adpolice.gov.ae/en/", "retrieved_at": "2026-11-22" }
+    ]
+  },
+  "scenes": {
+    "danger": {
+      "url_parts": ["hxxps://", "falcon-demo-bank-secure[.]test", "/login"],
+      "stream": [
+        { "tier": "T0", "delay": 700, "verdict": "no_warning_signs", "risk_score": 22, "calibrated_probability": 0.22, "latency_ms": 40 },
+        { "tier": "T1", "delay": 1300, "verdict": "suspicious", "risk_score": 68, "calibrated_probability": 0.68, "latency_ms": 610 },
+        { "tier": "T2", "delay": 2100, "verdict": "dangerous", "risk_score": 97, "calibrated_probability": 0.97, "latency_ms": 2840 }
+      ],
+      "skipped_note": "skip.rule",
+      "final": {
+        "schema_version": "1.0",
+        "verdict_id": "vd_01KB0DEM0DATA0000000000001",
+        "input_type": "url",
+        "canonical_url": "hxxps://falcon-demo-bank-secure[.]test/login",
+        "verdict": "dangerous",
+        "risk_score": 97,
+        "calibrated_probability": 0.97,
+        "impersonated_brand": { "brand_id": "falcon_demo_bank", "name_ar": "بنك فالكون التجريبي", "name_en": "Falcon Demo Bank", "official_domains": ["falcon-demo-bank[.]test"] },
+        "evidence": [
+          { "id": "ev_rep0feed01", "signal": "rep.openphish", "family": "reputation", "observed": false, "display": { "ar": "غير مدرج في قوائم الحظر المعروفة حتى الآن", "en": "Not on known blocklists yet" }, "weight": 0, "polarity": "neutral", "hard_rule": null, "source": "openphish", "tier": "T0" },
+          { "id": "ev_url0combo1", "signal": "url.combosquat", "family": "url", "observed": { "brand_id": "falcon_demo_bank", "token": "secure" }, "display": { "ar": "العنوان يضيف كلمة «secure» إلى اسم البنك", "en": "The address adds the word “secure” to the bank's name" }, "weight": 2.0, "polarity": "risk", "hard_rule": null, "source": "computed", "tier": "T1" },
+          { "id": "ev_dom0age001", "signal": "domain.age_days", "family": "domain", "observed": 2, "display": { "ar": "النطاق مسجّل قبل يومين فقط", "en": "The domain was registered only 2 days ago" }, "weight": 2.5, "polarity": "risk", "hard_rule": null, "source": "rdap", "tier": "T1" },
+          { "id": "ev_dom0cert01", "signal": "domain.cert_age_days", "family": "domain", "observed": 1, "display": { "ar": "شهادة الموقع صدرت أمس", "en": "The site certificate was issued yesterday" }, "weight": 0.8, "polarity": "risk", "hard_rule": null, "source": "crt", "tier": "T1" },
+          { "id": "ev_page0form1", "signal": "page.cred_form", "family": "page", "observed": { "fields": ["password", "otp"] }, "display": { "ar": "الصفحة تطلب كلمة المرور ورمز التحقق (OTP)", "en": "The page asks for a password and a one-time code (OTP)" }, "weight": 1.5, "polarity": "risk", "hard_rule": null, "source": "sandbox", "tier": "T2" },
+          { "id": "ev_page0post1", "signal": "page.cross_origin_post", "family": "page", "observed": "hxxps://collector[.]invalid/hook", "display": { "ar": "ما تكتبه يُرسل إلى خادم لا علاقة له بالبنك", "en": "What you type is sent to a server unrelated to the bank" }, "weight": 3.0, "polarity": "risk", "hard_rule": null, "source": "sandbox", "tier": "T2" },
+          { "id": "ev_brand0own1", "signal": "brand.claimed_not_owned", "family": "brand", "observed": { "brand_id": "falcon_demo_bank", "registrable_domain": "falcon-demo-bank-secure[.]test" }, "display": { "ar": "تدّعي أنها «بنك فالكون التجريبي» لكن النطاق ليس من نطاقات البنك الرسمية", "en": "It claims to be Falcon Demo Bank, but the domain is not one of the bank's official domains" }, "weight": 3.0, "polarity": "risk", "hard_rule": "H1", "source": "registry", "tier": "T2" }
+        ],
+        "reasons": [
+          { "ar": "الصفحة تنتحل اسم «بنك فالكون التجريبي» وعنوانها ليس من عناوين البنك الرسمية.", "en": "The page poses as Falcon Demo Bank, but its address is not one of the bank's official addresses.", "evidence_ids": ["ev_brand0own1"], "generated_by": "template" },
+          { "ar": "تطلب كلمة المرور ورمز التحقق وترسلهما إلى خادم آخر.", "en": "It asks for your password and one-time code and sends them to another server.", "evidence_ids": ["ev_page0form1", "ev_page0post1"], "generated_by": "template" },
+          { "ar": "العنوان جديد جداً: سُجّل قبل يومين.", "en": "The address is brand new: registered 2 days ago.", "evidence_ids": ["ev_dom0age001"], "generated_by": "template" }
+        ],
+        "actions": {
+          "now": {
+            "ar": ["لا تفتح الرابط ولا تُدخل أي بيانات.", "احذف الرسالة واحظر المرسل.", "ادخل إلى حسابك من تطبيق البنك الرسمي فقط."],
+            "en": ["Don't open the link or enter any details.", "Delete the message and block the sender.", "Reach your account only through the bank's official app."]
+          },
+          "if_already_acted": {
+            "ar": ["اتصل ببنكك فوراً على الرقم المطبوع على بطاقتك واطلب إيقافها.", "غيّر كلمة المرور من التطبيق الرسمي.", "راقب حسابك وبلّغ البنك عن أي عملية لا تعرفها."],
+            "en": ["Call your bank now on the number printed on your card and ask to block it.", "Change your password from the official app.", "Watch your account and tell the bank about any transaction you don't recognise."]
+          },
+          "report": { "ar": "أبلغ عبر القنوات الرسمية لشرطة أبوظبي.", "en": "Report it through Abu Dhabi Police official channels.", "channels": "@channels" }
+        },
+        "tier_reached": "T2",
+        "model_route": "none",
+        "degraded": false,
+        "final": true,
+        "source": "fixture",
+        "latency_ms": 2840,
+        "created_at": "2026-11-22T10:02:00Z"
+      }
+    },
+    "nws": {
+      "url_parts": ["hxxps://", "falcon-demo-bank[.]test", "/"],
+      "stream": [
+        { "tier": "T0", "delay": 700, "verdict": "no_warning_signs", "risk_score": 20, "calibrated_probability": 0.2, "latency_ms": 38 },
+        { "tier": "T1", "delay": 1500, "verdict": "no_warning_signs", "risk_score": 3, "calibrated_probability": 0.03, "latency_ms": 540 }
+      ],
+      "skipped_note": "skip.clear",
+      "final": {
+        "schema_version": "1.0",
+        "verdict_id": "vd_01KB0DEM0DATA0000000000003",
+        "input_type": "url",
+        "canonical_url": "hxxps://falcon-demo-bank[.]test/",
+        "verdict": "no_warning_signs",
+        "risk_score": 3,
+        "calibrated_probability": 0.03,
+        "impersonated_brand": null,
+        "evidence": [
+          { "id": "ev_rep0feed02", "signal": "rep.openphish", "family": "reputation", "observed": false, "display": { "ar": "غير مدرج في قوائم الحظر المعروفة", "en": "Not on known blocklists" }, "weight": 0, "polarity": "neutral", "hard_rule": null, "source": "openphish", "tier": "T0" },
+          { "id": "ev_reg0off001", "signal": "registry.verified_official", "family": "brand", "observed": { "brand_id": "falcon_demo_bank" }, "display": { "ar": "النطاق ضمن النطاقات الرسمية الموثّقة لبنك فالكون التجريبي", "en": "The domain is on Falcon Demo Bank's verified official list" }, "weight": -4.0, "polarity": "trust", "hard_rule": "H3", "source": "registry", "tier": "T1" },
+          { "id": "ev_dom0age002", "signal": "domain.age_days", "family": "domain", "observed": 4100, "display": { "ar": "النطاق مسجّل منذ أكثر من عشر سنوات", "en": "The domain was registered more than ten years ago" }, "weight": -1.0, "polarity": "trust", "hard_rule": null, "source": "rdap", "tier": "T1" }
+        ],
+        "reasons": [
+          { "ar": "العنوان ضمن النطاقات الرسمية الموثّقة لبنك فالكون التجريبي.", "en": "The address is on Falcon Demo Bank's verified official domain list.", "evidence_ids": ["ev_reg0off001"], "generated_by": "template" },
+          { "ar": "النطاق قديم وليس في قوائم الحظر المعروفة.", "en": "The domain is old and is not on known blocklists.", "evidence_ids": ["ev_dom0age002", "ev_rep0feed02"], "generated_by": "template" }
+        ],
+        "actions": {
+          "now": {
+            "ar": ["تأكد أن العنوان في متصفحك يطابق هذا العنوان حرفاً بحرف."],
+            "en": ["Make sure the address in your browser matches this one, character for character."]
+          },
+          "if_already_acted": {
+            "ar": ["إذا طُلب منك شيء غير معتاد بعد الدخول، توقّف واتصل بالبنك."],
+            "en": ["If you were asked for anything unusual after signing in, stop and call the bank."]
+          },
+          "report": { "ar": "أبلغ عبر القنوات الرسمية لشرطة أبوظبي.", "en": "Report it through Abu Dhabi Police official channels.", "channels": "@channels" },
+          "caution": {
+            "ar": ["عدم وجود علامات تحذير ليس ضماناً.", "لا تشارك رمز التحقق (OTP) مع أي شخص، مهما كان السبب.", "إذا استعجلك أحد أو طلب تحويل مال، توقّف وتحقق."],
+            "en": ["Finding no warning signs is not a guarantee.", "Never share a one-time code (OTP) with anyone, for any reason.", "If someone rushes you or asks for a money transfer, stop and verify."]
+          }
+        },
+        "tier_reached": "T1",
+        "model_route": "none",
+        "degraded": false,
+        "final": true,
+        "source": "fixture",
+        "latency_ms": 540,
+        "created_at": "2026-11-22T10:20:00Z"
+      }
+    }
+  },
+  "campaigns": [
+    { "n": 1, "severity": "high", "count": 3, "series": [0, 0, 0, 0, 0, 0, 0, 0, 20, 45, 70, 100],
+      "title": { "ar": "صفحات دخول مزيّفة باسم «بنك فالكون التجريبي»", "en": "Fake sign-in pages using the Falcon Demo Bank name" },
+      "advice": { "ar": "لا تدخل إلى حسابك من رابط وصلك في رسالة.", "en": "Never sign in from a link that arrived in a message." } },
+    { "n": 2, "severity": "medium", "count": 7, "series": [10, 25, 20, 40, 35, 55, 30, 45, 60, 40, 50, 35],
+      "title": { "ar": "رسائل «رسوم توصيل» بروابط مختصرة", "en": "“Delivery fee” messages with shortened links" },
+      "advice": { "ar": "تتبّع شحنتك من تطبيق شركة التوصيل نفسه.", "en": "Track your parcel in the courier's own app." } },
+    { "n": 3, "severity": "low", "count": 4, "series": [30, 20, 35, 15, 25, 10, 20, 15, 10, 20, 10, 15],
+      "title": { "ar": "رسائل «حدّث بياناتك» تطلب رمز التحقق", "en": "“Update your details” messages asking for a one-time code" },
+      "advice": { "ar": "رمز التحقق لك وحدك. لا تعطه لأحد.", "en": "A one-time code is yours alone. Give it to no one." } }
+  ],
+  "incident": {
+    "incident_id": "inc_01KB0DEM0DATA0000000000002",
+    "type": "campaign",
+    "severity": "high",
+    "severity_reason": { "ar": "ثلاثة نطاقات بالبصمة نفسها خلال ربع ساعة، وكلها تطلب بيانات الدخول.", "en": "Three domains with the same page fingerprint within 15 minutes, all asking for sign-in details.", "evidence_ids": ["ev_brand0own1", "ev_page0form1"] },
+    "status": "awaiting_approval",
+    "brand_id": "falcon_demo_bank",
+    "rule_ids": ["R1"],
+    "correlation_keys": { "brand": "falcon_demo_bank", "dom_simhash_bucket": "9f3a", "window": "15m", "registrar": "demo-registrar" },
+    "indicators": [
+      { "kind": "domain", "value_defanged": "falcon-demo-bank-secure[.]test", "first_seen": "2026-11-22T10:02:00Z", "blocked_until": "2026-11-23T10:11:00Z" },
+      { "kind": "domain", "value_defanged": "falcon-demo-bank-login[.]test", "first_seen": "2026-11-22T10:09:00Z", "blocked_until": "2026-11-23T10:11:00Z" },
+      { "kind": "domain", "value_defanged": "falcondemobank-verify[.]test", "first_seen": "2026-11-22T10:11:00Z", "blocked_until": "2026-11-23T10:11:00Z" },
+      { "kind": "dom_hash", "value_defanged": "simhash:9f3a…c21e", "first_seen": "2026-11-22T10:02:00Z", "blocked_until": null }
+    ],
+    "linked_verdicts": ["vd_01KB0DEM0DATA0000000000001", "vd_01KB0DEM0DATA0000000000004", "vd_01KB0DEM0DATA0000000000005"],
+    "timeline": [
+      { "at": "2026-11-22T10:02:00Z", "what": "First dangerous verdict (hard rule H1: brand mismatch)" },
+      { "at": "2026-11-22T10:09:00Z", "what": "Second domain with the same page fingerprint" },
+      { "at": "2026-11-22T10:11:00Z", "what": "Rule R1 fired: 3 linked checks in 15 minutes" },
+      { "at": "2026-11-22T10:11:20Z", "what": "Indicators blocked internally (automatic, reversible)" },
+      { "at": "2026-11-22T10:12:00Z", "what": "Takedown draft ready, waiting for human approval" }
+    ],
+    "summary": { "ar": "حملة تنتحل اسم «بنك فالكون التجريبي» عبر ثلاثة نطاقات متشابهة تستضيف الصفحة نفسها.", "en": "A campaign posing as Falcon Demo Bank across three lookalike domains hosting the same page.", "claims": [ { "text_en": "All three pages share one DOM fingerprint bucket.", "evidence_ids": ["ev_brand0own1"] } ], "generated_by": "template", "model_route": "none" },
+    "actions": [
+      { "action_id": "act_block_001", "tool": "block_indicator", "mode": "internal_auto", "status": "executed", "evidence_ids": ["ev_brand0own1"], "approved_by": null, "at": "2026-11-22T10:11:20Z" },
+      { "action_id": "act_board_001", "tool": "update_campaign_board", "mode": "internal_auto", "status": "executed", "evidence_ids": ["ev_brand0own1"], "approved_by": null, "at": "2026-11-22T10:11:25Z" },
+      { "action_id": "act_takedown_001", "tool": "draft_takedown", "mode": "external_draft", "status": "awaiting_approval", "draft": { "recipient_kind": "registrar", "subject": "Takedown request: 3 lookalike domains (DEMO)", "body_ar": "مسودة تجريبية: طلب إيقاف ثلاثة نطاقات تنتحل اسم بنك فالكون التجريبي، مع الأدلة المرفقة.", "body_en": "Demo draft: request to suspend three domains posing as Falcon Demo Bank, with the attached evidence." }, "evidence_ids": ["ev_brand0own1", "ev_page0post1"], "approved_by": null, "at": "2026-11-22T10:12:00Z" }
+    ],
+    "source": "synthetic",
+    "created_at": "2026-11-22T10:11:00Z",
+    "updated_at": "2026-11-22T10:12:00Z"
+  }
+}
+</script>
+
+<script>
+"use strict";
+/* Prototype logic. Rendering uses createElement + textContent only: untrusted strings
+   are never parsed as HTML, the same rule the app follows. */
+(() => {
+  const params = new URLSearchParams(location.search);
+  const root = document.documentElement;
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const instant = params.get("instant") === "1";
+  if (instant) root.classList.add("instant");
+  const still = reduced || instant;
+
+  const FX = JSON.parse(document.getElementById("fl-fixtures").textContent);
+  for (const s of Object.values(FX.scenes)) s.final.actions.report.channels = FX.channels.items;
+
+  const state = { lang: params.get("lang") === "en" ? "en" : "ar", scene: null, run: 0, view: null, tech: false, kind: "url" };
+  if (params.get("theme")) root.dataset.theme = params.get("theme") === "light" ? "light" : "dark";
+
+  /* ── Strings ──────────────────────────────────────────────────────── */
+  const STR = {
+    ar: {
+      "brand": "عدسة الصقر", "ribbon": "بيانات تجريبية · نموذج تصميم لا يُجري فحصاً حقيقياً",
+      "nav.how": "كيف تعمل", "nav.board": "الحملات", "nav.ops": "لوحة الحوادث",
+      "lang": "English", "theme.dark": "داكن", "theme.light": "فاتح",
+      "hero.eyebrow": "افحص قبل أن تضغط", "hero.title": "وصلتك رسالة مريبة؟ الصقها هنا.",
+      "hero.sub": "نفحص الرابط أو الرسالة ونقول لك بوضوح: ماذا وجدنا، ولماذا، وماذا تفعل الآن.",
+      "kind.url": "رابط", "kind.message": "رسالة", "kind.email": "بريد إلكتروني", "kind.image": "صورة أو QR",
+      "input.url": "الصق الرابط المريب", "input.message": "الصق نص الرسالة", "input.email": "الصق نص البريد", "input.image": "أرفق لقطة شاشة أو رمز QR",
+      "input.hint": "لا تفتح الرابط. انسخه والصقه هنا فقط.",
+      "btn.check": "افحص الآن", "demo.try": "أمثلة:", "demo.danger": "رابط بنك مزيّف", "demo.nws": "موقع البنك الرسمي",
+      "proto.note": "في هذا النموذج، أي إدخال يشغّل المثال التجريبي ولا يُرسَل إلى أي مكان.",
+      "promise": "لن نطلب منك أبداً بيانات شخصية أو مصرفية أو رقم هوية.",
+      "how.title": "أربع طبقات فحص، وحُكم واحد واضح", "how.sub": "تبدأ العدسة بالأسرع، ولا تنتقل إلى الطبقة التالية إلا عند الحاجة.",
+      "tier.T0": "القوائم المعروفة", "tier.T1": "العنوان والنطاق", "tier.T2": "زيارة معزولة للصفحة", "tier.T3": "محقّق الذكاء الاصطناعي",
+      "how.T0": "هل سبق الإبلاغ عن هذا العنوان؟", "how.T1": "هل يقلّد اسماً معروفاً؟ ومتى سُجّل؟",
+      "how.T2": "نفتح الصفحة في متصفح معزول بدلاً منك، ولا نكتب فيها شيئاً.", "how.T3": "للحالات الغامضة فقط. يجمع أدلة إضافية ولا يغيّر الدرجة.",
+      "how.foot": "الحكم يصدره محكّم حتمي من الأدلة، لا نموذج لغوي.",
+      "check.title": "نتيجة الفحص", "status.checking": "جارٍ الفحص…", "status.done": "اكتمل الفحص",
+      "url.note": "عنوان معطَّل للعرض فقط، لا يمكن الضغط عليه",
+      "prov.suspicious": "علامات مريبة حتى الآن · نواصل الفحص", "prov.wait": "لا تضغط على الرابط إلى أن يكتمل الفحص.",
+      "v.dangerous": "خطِر", "v.dangerous.sub": "لا تفتح هذا الرابط",
+      "v.suspicious": "مريب", "v.suspicious.sub": "توقّف وتحقق قبل أي خطوة",
+      "v.no_warning_signs": "لم نجد علامات تحذير", "v.no_warning_signs.sub": "هذا ليس ضماناً. ابقَ حذراً.",
+      "band.no_warning_signs": "لا علامات تحذير", "band.suspicious": "مريب", "band.dangerous": "خطِر",
+      "imp": "ينتحل اسم:", "risk": "درجة الخطورة", "why": "لماذا؟", "cite": "الدليل:",
+      "act.now": "ماذا تفعل الآن", "act.acted": "إذا ضغطت على الرابط أو أدخلت بياناتك", "act.report": "بلّغ", "act.caution": "ابقَ حذراً",
+      "ch.source": "المصدر: adpolice.gov.ae · تاريخ التحقق", "indep": "عدسة الصقر مشروع مستقل، غير تابع لشرطة أبوظبي ولا يمثّلها.",
+      "trail": "مسار التحقيق", "tech": "تفاصيل تقنية",
+      "st.pending": "بالانتظار", "st.running": "قيد الفحص…", "st.done": "اكتملت", "st.skipped": "لم تكن لازمة",
+      "skip.rule": "قاعدة حاسمة حسمت النتيجة، فلم نحتج إلى نموذج الذكاء الاصطناعي.", "skip.clear": "النتيجة واضحة من الطبقات الأولى، فلم نحتج إلى فحص أعمق.",
+      "rule": "قاعدة حاسمة",
+      "m.id": "رقم الفحص", "m.tier": "أعلى طبقة", "m.route": "المسار", "m.source": "المصدر", "m.none": "بدون نموذج لغوي", "m.fixture": "بيانات تجريبية",
+      "board.title": "حملات احتيال نشطة الآن", "board.live": "مباشر (محاكاة)", "board.sub": "عندما تتشابه عدة فحوص، يربطها «الحارس» في حملة واحدة ويحذّر الجميع مبكراً.",
+      "radar.cap": "ليست خريطة جغرافية: كل نقطة مؤشّر، والتقارب يعني التشابه.",
+      "linked": "فحوص مرتبطة", "seen": "آخر ظهور:", "now": "الآن", "earlier": "قبل دقائق",
+      "sev.critical": "حرجة", "sev.high": "عالية", "sev.medium": "متوسطة", "sev.low": "منخفضة", "sev": "الشدة",
+      "ops.title": "لوحة الحوادث للمشغّلين", "ops.sub": "الحارس يقترح والإنسان يوافق. لا يُرسَل أي شيء إلى الخارج دون موافقة بشرية.",
+      "type.campaign": "حملة", "s.awaiting_approval": "بانتظار الموافقة", "s.executed": "نُفّذ", "s.approved": "تمت الموافقة · نموذج: لم يُرسَل شيء", "s.rejected": "رُفض",
+      "i.rules": "القواعد", "i.keys": "مفاتيح الربط", "i.ind": "المؤشرات", "i.tl": "الخط الزمني", "i.act": "الإجراءات", "i.first": "أول ظهور", "i.blocked": "محظور داخلياً حتى",
+      "mode.internal_auto": "داخلي · تلقائي · قابل للتراجع", "mode.external_draft": "مسودة خارجية · تحتاج موافقة بشرية",
+      "tool.block_indicator": "حظر المؤشرات داخلياً", "tool.update_campaign_board": "تحديث لوحة الحملات", "tool.draft_takedown": "مسودة طلب إزالة",
+      "approve": "وافق", "reject": "ارفض", "tl.new": "فحص جديد مرتبط بالحملة (محاكاة)",
+      "foot.1": "عدسة الصقر مشروع مستقل لمسابقة، غير تابع لشرطة أبوظبي ولا يمثّلها. جاهز للربط عبر REST و MCP.",
+      "foot.2": "نموذج تصميم: كل البيانات هنا تجريبية، والعلامة «بنك فالكون التجريبي» مختلَقة."
+    },
+    en: {
+      "brand": "Falcon Lens", "ribbon": "design prototype, no real check is performed",
+      "nav.how": "How it works", "nav.board": "Campaigns", "nav.ops": "Incident board",
+      "lang": "العربية", "theme.dark": "Dark", "theme.light": "Light",
+      "hero.eyebrow": "Check before you tap", "hero.title": "Got a suspicious message? Paste it here.",
+      "hero.sub": "We check the link or message and tell you plainly: what we found, why, and what to do now.",
+      "kind.url": "Link", "kind.message": "Message", "kind.email": "Email", "kind.image": "Image or QR",
+      "input.url": "Paste the suspicious link", "input.message": "Paste the message text", "input.email": "Paste the email text", "input.image": "Attach a screenshot or QR code",
+      "input.hint": "Don't open the link. Just copy it and paste it here.",
+      "btn.check": "Check now", "demo.try": "Examples:", "demo.danger": "Fake bank link", "demo.nws": "The bank's official site",
+      "proto.note": "In this prototype, any input runs the demo example and is sent nowhere.",
+      "promise": "We will never ask you for personal, banking or ID details.",
+      "how.title": "Four layers of checking, one clear verdict", "how.sub": "The lens starts with the fastest check and only goes deeper when it needs to.",
+      "tier.T0": "Known lists", "tier.T1": "Address and domain", "tier.T2": "Isolated page visit", "tier.T3": "AI investigator",
+      "how.T0": "Has this address been reported before?", "how.T1": "Does it imitate a known name? When was it registered?",
+      "how.T2": "We open the page in an isolated browser instead of you, and type nothing into it.", "how.T3": "Only for unclear cases. It gathers more evidence and never changes the score.",
+      "how.foot": "The verdict comes from a deterministic arbiter over the evidence, not from a language model.",
+      "check.title": "Check result", "status.checking": "Checking…", "status.done": "Check complete",
+      "url.note": "Defanged for display only; it cannot be tapped",
+      "prov.suspicious": "Suspicious signs so far · still checking", "prov.wait": "Don't tap the link until the check is complete.",
+      "v.dangerous": "Dangerous", "v.dangerous.sub": "Do not open this link",
+      "v.suspicious": "Suspicious", "v.suspicious.sub": "Stop and verify before doing anything",
+      "v.no_warning_signs": "No warning signs found", "v.no_warning_signs.sub": "This is not a guarantee. Stay careful.",
+      "band.no_warning_signs": "No warning signs", "band.suspicious": "Suspicious", "band.dangerous": "Dangerous",
+      "imp": "Impersonates:", "risk": "Risk score", "why": "Why?", "cite": "Evidence:",
+      "act.now": "What to do now", "act.acted": "If you already tapped the link or entered your details", "act.report": "Report it", "act.caution": "Stay careful",
+      "ch.source": "Source: adpolice.gov.ae · verified on", "indep": "Falcon Lens is an independent project. It is not affiliated with or endorsed by Abu Dhabi Police.",
+      "trail": "Investigation timeline", "tech": "Technical details",
+      "st.pending": "Waiting", "st.running": "Running…", "st.done": "Done", "st.skipped": "Not needed",
+      "skip.rule": "A hard rule decided the result, so the AI model was not needed.", "skip.clear": "The result was clear from the first layers, so no deeper check was needed.",
+      "rule": "Hard rule",
+      "m.id": "Check ID", "m.tier": "Tier reached", "m.route": "Model route", "m.source": "Source", "m.none": "No language model", "m.fixture": "Demo fixture",
+      "board.title": "Scam campaigns active now", "board.live": "Live (simulated)", "board.sub": "When several checks look alike, the Sentinel links them into one campaign and warns everyone early.",
+      "radar.cap": "Not a geographic map: each dot is an indicator, and closeness means similarity.",
+      "linked": "linked checks", "seen": "Last seen:", "now": "just now", "earlier": "minutes ago",
+      "sev.critical": "Critical", "sev.high": "High", "sev.medium": "Medium", "sev.low": "Low", "sev": "Severity",
+      "ops.title": "Incident board for operators", "ops.sub": "The Sentinel proposes, a human approves. Nothing leaves the system without human approval.",
+      "type.campaign": "Campaign", "s.awaiting_approval": "Awaiting approval", "s.executed": "Executed", "s.approved": "Approved · prototype: nothing was sent", "s.rejected": "Rejected",
+      "i.rules": "Rules", "i.keys": "Correlation keys", "i.ind": "Indicators", "i.tl": "Timeline", "i.act": "Actions", "i.first": "First seen", "i.blocked": "Blocked internally until",
+      "mode.internal_auto": "Internal · automatic · reversible", "mode.external_draft": "External draft · needs human approval",
+      "tool.block_indicator": "Block indicators internally", "tool.update_campaign_board": "Update campaign board", "tool.draft_takedown": "Takedown request draft",
+      "approve": "Approve", "reject": "Reject", "tl.new": "New check linked to the campaign (simulated)",
+      "foot.1": "Falcon Lens is an independent hackathon entry. It is not affiliated with or endorsed by Abu Dhabi Police. Ready to connect via REST and MCP.",
+      "foot.2": "Design prototype: all data here is demo data, and the brand “Falcon Demo Bank” is invented."
+    }
+  };
+  /* The incident contract carries one `what` string per timeline entry (English). The UI keeps
+     a translation table; see the contract proposal in IMPLEMENTATION_PLAN.md §7. */
+  const TL_AR = {
+    "First dangerous verdict (hard rule H1: brand mismatch)": "أول حكم «خطِر» (القاعدة الحاسمة H1: عدم تطابق العلامة)",
+    "Second domain with the same page fingerprint": "نطاق ثانٍ ببصمة الصفحة نفسها",
+    "Rule R1 fired: 3 linked checks in 15 minutes": "انطلقت القاعدة R1: ثلاثة فحوص مرتبطة خلال 15 دقيقة",
+    "Indicators blocked internally (automatic, reversible)": "حُظرت المؤشرات داخلياً (تلقائي وقابل للتراجع)",
+    "Takedown draft ready, waiting for human approval": "مسودة طلب الإزالة جاهزة بانتظار موافقة بشرية"
+  };
+  const t = (k) => STR[state.lang][k] ?? k;
+  const L = (o) => (o ? o[state.lang] : "");
+
+  /* ── DOM helpers (no innerHTML anywhere) ──────────────────────────── */
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k === "class") n.className = v;
+      else if (k === "text") n.textContent = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat(Infinity)) if (c != null && c !== false) n.append(c);
+    return n;
+  }
+  function svg(tag, attrs, ...kids) {
+    const n = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v);
+    n.append(...kids);
+    return n;
+  }
+  const $ = (id) => document.getElementById(id);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, instant ? 0 : ms));
+  const frame = () => new Promise((r) => (instant ? r() : requestAnimationFrame(() => requestAnimationFrame(r))));
+
+  /* Icons: 24 px grid, 1.9 stroke, round joins. Verdicts differ by outline shape:
+     octagon (dangerous), triangle (suspicious), lens with a dash (no warning signs).
+     No tick marks anywhere: a tick reads as a guarantee. */
+  const ICONS = {
+    dangerous: ["M8.3 2.6h7.4l5.7 5.7v7.4l-5.7 5.7H8.3l-5.7-5.7V8.3z", "M12 7.4v5.8", "M12 16.6v.1"],
+    suspicious: ["M12 3.1 21.8 20.4H2.2z", "M10.1 11.3a2 2 0 1 1 3 1.7c-.7.4-1.1.9-1.1 1.6", "M12 17.4v.1"],
+    no_warning_signs: ["M10.5 3.5a7 7 0 1 1 0 14 7 7 0 0 1 0-14z", "M15.6 15.6 21 21", "M7.6 10.5h5.8"],
+    url: ["M10 14a4.2 4.2 0 0 0 6 0l3-3a4.2 4.2 0 0 0-6-6l-1 1", "M14 10a4.2 4.2 0 0 0-6 0l-3 3a4.2 4.2 0 0 0 6 6l1-1"],
+    message: ["M4 5h16v11H9l-5 4z"],
+    email: ["M3 6h18v12H3z", "m3 7 9 6.5L21 7"],
+    image: ["M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z", "M14 14h2.5v2.5M20 14v6h-6v-2"],
+    hand: ["M8 12V6.5a1.5 1.5 0 0 1 3 0V11m0-5.5v-1a1.5 1.5 0 0 1 3 0V11m0-5a1.5 1.5 0 0 1 3 0v8.5a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.6-2.2L4.6 14a1.6 1.6 0 0 1 2.5-2z"],
+    undo: ["M9 7 4.5 11.5 9 16", "M4.5 11.5H14a5.5 5.5 0 0 1 0 11h-2"],
+    flag: ["M5 21V4", "M5 4.5c4-2 6 2 10 .5 1.6-.6 3-1 4-1v9c-1 0-2.4.4-4 1-4 1.5-6-2.5-10-.5"],
+    eye: ["M2.5 12s3.5-6.5 9.5-6.500S21.5 12 21.5 12s-3.5 6.5-9.5 6.500S2.5 12 2.5 12z", "M12 9.500a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"],
+    lock: ["M6 11h12v9H6z", "M8.5 11V8a3.5 3.5 0 0 1 7 0v3"],
+    scale: ["M12 4v16M7 20h10M5 8h14", "M5 8l-2.5 6a2.8 2.8 0 0 0 5 0zM19 8l-2.5 6a2.8 2.8 0 0 0 5 0z"],
+    list: ["M8 6h12M8 12h12M8 18h12", "M4 6v.1M4 12v.1M4 18v.1"],
+    globe: ["M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18z", "M3 12h18", "M12 3c2.5 2.5 3.5 5.5 3.5 9S14.5 18.5 12 21c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3z"],
+    box: ["M4 8l8-4 8 4v8l-8 4-8-4z", "M4 8l8 4 8-4M12 12v8"],
+    spark: ["M12 3v4M12 17v4M3 12h4M17 12h4", "M12 9.500a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"],
+    sun: ["M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z", "M12 2.500v2M12 19.500v2M2.5 12h2M19.5 12h2M5.3 5.300l1.4 1.400M17.3 17.300l1.4 1.400M5.3 18.700l1.4-1.400M17.3 6.700l1.4-1.4"],
+    moon: ["M20 14.500A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.500z"]
+  };
+  function icon(name, size = 24) {
+    const s = svg("svg", { class: "icon", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" });
+    for (const d of ICONS[name] || []) s.append(svg("path", { d }));
+    return s;
+  }
+  /* Evidence polarity marks: shape carries the meaning (up = raises risk, down = lowers, ring = neutral). */
+  function polarityMark(p) {
+    const s = svg("svg", { class: "icon ev-mark", width: 16, height: 16, viewBox: "0 0 16 16", "aria-hidden": "true" });
+    if (p === "risk") s.append(svg("path", { d: "M8 2.5 14.5 13.500h-13z", fill: "currentColor" }));
+    else if (p === "trust") s.append(svg("path", { d: "M8 13.5 1.5 2.500h13z", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linejoin": "round" }));
+    else s.append(svg("circle", { cx: 8, cy: 8, r: 4.5, fill: "none", stroke: "currentColor", "stroke-width": "2" }));
+    return s;
+  }
+  function severityMark(sev, size = 16) {
+    const s = svg("svg", { class: "icon", width: size, height: size, viewBox: "0 0 16 16", "aria-hidden": "true", fill: "currentColor" });
+    s.append(sevShape(sev, 8, 8, 6.5));
+    return s;
+  }
+  function sevShape(sev, cx, cy, r) {
+    if (sev === "high") return svg("path", { d: `M${cx} ${cy - r} ${cx + r} ${cy + r * 0.85}H${cx - r}z` });
+    if (sev === "medium") return svg("path", { d: `M${cx} ${cy - r} ${cx + r} ${cy} ${cx} ${cy + r} ${cx - r} ${cy}z` });
+    if (sev === "critical") { const k = r * 0.42; return svg("path", { d: `M${cx - k} ${cy - r}h${2 * k}l${r - k} ${r - k}v${2 * k}l${-(r - k)} ${r - k}h${-2 * k}l${-(r - k)} ${-(r - k)}v${-2 * k}z` }); }
+    return svg("circle", { cx, cy, r: r * 0.8 });
+  }
+
+  /* ── The lens ─────────────────────────────────────────────────────── */
+  const TIERS = ["T0", "T1", "T2", "T3"];
+  const polar = (r, deg) => [200 + r * Math.sin((deg * Math.PI) / 180), 200 - r * Math.cos((deg * Math.PI) / 180)];
+  const fx = (n) => n.toFixed(1);
+  function arcPath(r, a0, a1) {
+    const [x0, y0] = polar(r, a0), [x1, y1] = polar(r, a1);
+    return `M${fx(x0)} ${fx(y0)}A${r} ${r} 0 0 1 ${fx(x1)} ${fx(y1)}`;
+  }
+  const APERTURE = { idle: 78, scanning: 50, locked: 66 };
+  function createLens(mini) {
+    const node = el("div", { class: "lens" + (mini ? " lens--mini" : ""), "data-state": "idle", "aria-hidden": "true" });
+    const s = svg("svg", { class: "lens-svg", viewBox: "0 0 400 400" });
+    const grad = svg("radialGradient", { id: "fl-pupil", cx: "42%", cy: "38%", r: "70%" },
+      svg("stop", { offset: "0", "stop-color": "#1b2a4a" }), svg("stop", { offset: "0.6", "stop-color": "#070b14" }), svg("stop", { offset: "1", "stop-color": "#020409" }));
+    s.append(svg("defs", {}, grad));
+    s.append(svg("circle", { class: "lens-halo", cx: 200, cy: 200, r: 200 }));
+    s.append(svg("circle", { class: "lens-ticks", cx: 200, cy: 200, r: 190 }), svg("circle", { class: "lens-majors", cx: 200, cy: 200, r: 190 }));
+    const base = [], fill = [];
+    TIERS.forEach((_, i) => {
+      const d = arcPath(170, i * 90 + 7, i * 90 + 83);
+      base.push(svg("path", { class: "lens-arc lens-arc--base", d }));
+      fill.push(svg("path", { class: "lens-arc lens-arc--fill", d, pathLength: 1, "data-status": "pending" }));
+    });
+    s.append(...base, ...fill);
+    s.append(svg("circle", { class: "lens-ring", cx: 200, cy: 200, r: 152 }));
+    s.append(svg("circle", { class: "lens-pupil", cx: 200, cy: 200, r: 141 }), svg("circle", { class: "lens-pupil-tint", cx: 200, cy: 200, r: 141 }));
+    const blades = svg("g", {});
+    const polys = Array.from({ length: 8 }, () => svg("polygon", { class: "lens-blade" }));
+    blades.append(...polys);
+    s.append(blades);
+    s.append(svg("ellipse", { class: "lens-glint", cx: 168, cy: 166, rx: 9, ry: 5, transform: "rotate(-35 168 166)" }));
+    s.append(svg("path", { class: "lens-brow", d: "M52 86C120 22 262 6 372 78" }));
+    const sweep = el("div", { class: "lens-sweep" });
+    const core = el("div", { class: "lens-core" });
+    node.append(s, sweep, core);
+
+    let aperture = APERTURE.idle, raf = 0;
+    function draw(a) {
+      const R = 141, n = 8, rv = a / Math.cos(Math.PI / n), twist = 34 + (78 - a) * 0.9;
+      polys.forEach((p, i) => {
+        const a0 = i * 45 + 22.5, a1 = a0 + 45;
+        const pts = [polar(rv, a0), polar(rv, a1), polar(R, a1 + twist), polar(R, a0 + twist)];
+        p.setAttribute("points", pts.map(([x, y]) => `${fx(x)},${fx(y)}`).join(" "));
+      });
+    }
+    function tween(to) {
+      cancelAnimationFrame(raf);
+      if (still) { aperture = to; draw(to); return; }
+      const from = aperture, t0 = performance.now(), dur = 420;
+      const step = (now) => {
+        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 4);
+        aperture = from + (to - from) * e; draw(aperture);
+        if (k < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    }
+    draw(aperture);
+    return {
+      node,
+      set(stateName, verdict) {
+        node.dataset.state = stateName;
+        if (verdict) node.dataset.verdict = verdict; else delete node.dataset.verdict;
+        core.replaceChildren(...(verdict ? [icon(verdict, 96)] : []));
+        tween(APERTURE[stateName]);
+      },
+      tiers(status) {
+        TIERS.forEach((tier, i) => { fill[i].dataset.status = status[tier]; base[i].dataset.status = status[tier]; });
+      }
+    };
+  }
+
+  const heroLens = createLens(false);
+  const miniLens = createLens(true);
+  const stage = $("lens-stage");
+  stage.append(heroLens.node);
+  [
+    ["hxxps://", 2, 16, "ltr"], ["رمز التحقق", 76, 8, "ar"], ["OTP", 90, 58, "ltr"], ["[.]test", 0, 70, "ltr"], ["QR", 80, 88, "ltr"],
+    ["رسوم توصيل", 8, 90, "ar"], ["@", 94, 30, "ltr"], ["secure-", 30, -3, "ltr"]
+  ].forEach(([text, x, y, lang], i) => {
+    const c = el("span", { class: "specimen", lang: lang === "ar" ? "ar" : "en", text });
+    c.style.insetInlineStart = "auto";
+    c.style.left = x + "%"; c.style.top = y + "%";
+    c.style.setProperty("--d", 7 + (i % 4) * 1.3 + "s");
+    c.style.setProperty("--dx", (i % 2 ? -8 : 8) + "px");
+    c.style.setProperty("--dy", (i % 3 ? -12 : 10) + "px");
+    c.style.setProperty("--px", (50 - x) * 2.2 + "px");
+    c.style.setProperty("--py", (50 - y) * 2.2 + "px");
+    stage.append(c);
+  });
+  function setLens(stateName, verdict, status) {
+    stage.dataset.state = stateName;
+    for (const l of [heroLens, miniLens]) { l.set(stateName, verdict); if (status) l.tiers(status); }
+  }
+
+  /* ── Static i18n ──────────────────────────────────────────────────── */
+  const KINDS = ["url", "message", "email", "image"];
+  function renderStatic() {
+    root.lang = state.lang; root.dir = state.lang === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-i18n]").forEach((n) => { n.textContent = t(n.dataset.i18n); });
+    $("btn-lang").replaceChildren(icon("globe", 20), t("lang"));
+    const dark = getTheme() === "dark";
+    $("btn-theme").replaceChildren(icon(dark ? "sun" : "moon", 20), el("span", { class: "vh", text: t(dark ? "theme.light" : "theme.dark") }));
+    $("btn-check").replaceChildren(icon("no_warning_signs", 24), t("btn.check"));
+    $("promise").replaceChildren(icon("lock", 20), el("span", { text: t("promise") }));
+    $("seg").replaceChildren(...KINDS.map((k) => el("button", { type: "button", role: "tab", "aria-selected": String(state.kind === k), onclick: () => { state.kind = k; renderStatic(); } }, icon(k, 18), t("kind." + k))));
+    $("input-label").textContent = t("input." + state.kind);
+    const howIcons = { T0: "list", T1: "url", T2: "box", T3: "spark" };
+    $("how-grid").replaceChildren(...TIERS.map((tier, i) => {
+      const c = el("div", { class: "card how-card" }, el("span", { class: "code", text: tier }), el("h3", {}, icon(howIcons[tier], 22), t("tier." + tier)), el("p", { text: t("how." + tier) }));
+      c.style.setProperty("--i", i);
+      return c;
+    }));
+    $("how-foot").replaceChildren(icon("scale", 22), el("span", { text: t("how.foot") }));
+  }
+  function getTheme() {
+    return root.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  }
+  function withTransition(fn) {
+    if (!still && document.startViewTransition) document.startViewTransition(fn); else fn();
+  }
+  $("btn-lang").addEventListener("click", () => withTransition(() => { state.lang = state.lang === "ar" ? "en" : "ar"; renderAll(); }));
+  $("btn-theme").addEventListener("click", () => withTransition(() => { root.dataset.theme = getTheme() === "dark" ? "light" : "dark"; renderStatic(); }));
+
+  /* ── Check: the simulated SSE stream and the verdict renderer ──────── */
+  const SCENE_URL = (s) => s.url_parts.join("");
+  function partial(scene, k) {
+    const s = scene.stream[k], f = scene.final, upto = TIERS.indexOf(s.tier);
+    const last = k === scene.stream.length - 1;
+    return { ...f, verdict: s.verdict, risk_score: s.risk_score, calibrated_probability: s.calibrated_probability, tier_reached: s.tier, latency_ms: s.latency_ms,
+      evidence: f.evidence.filter((e) => TIERS.indexOf(e.tier) <= upto), reasons: last ? f.reasons : [], final: last };
+  }
+
+  async function runScene(name) {
+    const scene = FX.scenes[name];
+    const run = ++state.run;
+    state.scene = name; state.view = null;
+    $("input").value = SCENE_URL(scene);
+    $("check").hidden = false;
+    renderCheck(true);
+    setLens("scanning", null, tierStatus(null));
+    if (!instant) $("check").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    for (let k = 0; k < scene.stream.length; k++) {
+      await sleep(scene.stream[k].delay);
+      if (run !== state.run) return;
+      onVerdictEvent(partial(scene, k));   // the app calls exactly this from EventSource "verdict"
+      await frame();
+    }
+  }
+
+  function tierStatus(v) {
+    const reached = v ? TIERS.indexOf(v.tier_reached) : -1, out = {};
+    TIERS.forEach((tier, i) => { out[tier] = i <= reached ? "done" : v && v.final ? "skipped" : i === reached + 1 ? "running" : "pending"; });
+    return out;
+  }
+
+  function onVerdictEvent(v) {
+    const prev = state.view;
+    state.view = v;
+    const status = tierStatus(v);
+    /* A provisional "no warning signs" is never shown: only a final verdict may say it. */
+    setLens(v.final ? "locked" : "scanning", v.final ? v.verdict : null, status);
+    renderCase();
+    renderTrail(prev);
+    renderVerdict(!prev || prev.final !== v.final || prev.verdict !== v.verdict);
+  }
+
+  function renderCheck(reset) {
+    if (!state.scene) return;
+    renderCase();
+    renderTrail(reset ? null : state.view, true);
+    renderVerdict(false, true);
+  }
+
+  function renderCase() {
+    const scene = FX.scenes[state.scene], v = state.view, done = v && v.final;
+    const [a, b, c] = scene.url_parts;
+    const status = el("div", { class: "case-status" }, t(done ? "status.done" : "status.checking"));
+    if (v && !v.final && v.verdict !== "no_warning_signs") {
+      status.append(el("span", { class: "chip-prov", "data-verdict": v.verdict }, icon(v.verdict, 18), t("prov." + v.verdict)));
+    }
+    $("case").replaceChildren(miniLens.node,
+      el("div", { class: "case-main" }, status,
+        el("code", { class: "url mono", translate: "no" }, a, el("strong", { text: b }), c),
+        el("p", { class: "url-note", text: t("url.note") })));
+  }
+
+  function renderTrail(prev, all) {
+    const scene = FX.scenes[state.scene], v = state.view, status = tierStatus(v);
+    const known = new Set(all || !prev ? [] : prev.evidence.map((e) => e.id));
+    const trail = $("trail");
+    trail.classList.toggle("tech", state.tech);
+    const tech = el("input", { type: "checkbox", role: "switch", onchange: (e) => { state.tech = e.target.checked; trail.classList.toggle("tech", state.tech); } });
+    tech.checked = state.tech;
+    const head = el("div", { class: "trail-head" }, el("h3", { class: "h3" }, icon("list", 22), t("trail")), el("label", { class: "switch" }, tech, t("tech")));
+    const fresh = [];
+    const tiers = TIERS.map((tier) => {
+      const rows = (v ? v.evidence : []).filter((e) => e.tier === tier).map((e) => {
+        const row = el("div", { class: "ev", id: e.id, "data-polarity": e.polarity }, polarityMark(e.polarity),
+          el("div", {}, el("p", { text: L(e.display) }),
+            el("div", { class: "ev-meta" },
+              el("span", { text: e.id }),
+              e.hard_rule && el("span", { class: "tag-rule", "data-polarity": e.polarity, text: e.hard_rule }),
+              el("span", { class: "ev-tech", text: e.signal }),
+              el("span", { class: "ev-tech", text: (e.weight > 0 ? "+" : "") + e.weight.toFixed(1) }),
+              el("span", { class: "ev-tech", text: e.source }))));
+        if (known.has(e.id) || all) row.classList.add("in"); else fresh.push(row);
+        return row;
+      });
+      const body = el("div", { class: "tier-body" }, rows);
+      if (status[tier] === "running") body.append(el("div", { class: "sk" }));
+      if (status[tier] === "skipped" && tier === TIERS[TIERS.indexOf(v.tier_reached) + 1]) body.append(el("p", { class: "tier-note", text: t(scene.skipped_note) }));
+      return el("div", { class: "tier", "data-status": status[tier] }, el("span", { class: "tier-dot" }),
+        el("div", { class: "tier-head" }, el("h4", { text: t("tier." + tier) }), el("span", { class: "tier-code", text: tier }), el("span", { class: "tier-state", text: t("st." + status[tier]) })), body);
+    });
+    trail.replaceChildren(head, ...tiers);
+    fresh.forEach((row, i) => row.style.setProperty("--i", i));
+    frame().then(() => fresh.forEach((row) => row.classList.add("in")));
+  }
+
+  function list(items) { return el("ul", {}, items.map((x) => el("li", { text: x }))); }
+  function focusEvidence(id) {
+    const row = document.getElementById(id);
+    if (!row) return;
+    row.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+    row.classList.add("hit");
+    setTimeout(() => row.classList.remove("hit"), 1800);
+  }
+
+  function renderVerdict(animate, all) {
+    const v = state.view, box = $("verdict");
+    if (!v || !v.final) {
+      delete box.dataset.verdict;
+      box.replaceChildren(el("div", { class: "pending" }, el("p", {}, icon("hand", 24), el("span", { text: t("prov.wait") })), el("div", { class: "sk" }), el("div", { class: "sk" }), el("div", { class: "sk" })));
+      return;
+    }
+    box.dataset.verdict = v.verdict;
+    const plate = el("div", { class: "plate" }, icon(v.verdict, 56), el("div", {}, el("h3", { text: t("v." + v.verdict), tabindex: "-1" }), el("p", { text: t("v." + v.verdict + ".sub") })));
+    const body = el("div", { class: "vbody" });
+    const parts = [];
+    if (v.impersonated_brand) parts.push(el("p", { class: "imp" }, icon("eye", 20), t("imp") + " ", el("b", { text: state.lang === "ar" ? v.impersonated_brand.name_ar : v.impersonated_brand.name_en })));
+
+    const mark = el("span", { class: "band-mark" });
+    const zone = v.verdict === "no_warning_signs" ? 0 : v.verdict === "suspicious" ? 1 : 2;
+    parts.push(el("div", { class: "risk" },
+      el("div", { class: "risk-top" }, el("span", { text: t("risk") }), el("b", { text: v.risk_score + " / 100" })),
+      el("div", { class: "band", role: "img", "aria-label": t("risk") + " " + v.risk_score + " / 100" }, [0, 1, 2].map((i) => el("i", { "data-on": String(i === zone) })), mark),
+      el("div", { class: "band-legend" }, el("span", { text: t("band.no_warning_signs") }), el("span", { text: t("band.suspicious") }), el("span", { text: t("band.dangerous") }))));
+
+    parts.push(el("div", {}, el("h3", { class: "h3" }, t("why")),
+      el("ol", { class: "reasons" }, v.reasons.map((r) => el("li", {}, el("div", {}, el("p", { text: L(r) }),
+        el("div", { class: "cites" }, t("cite"), r.evidence_ids.map((id) => {
+          const ev = v.evidence.find((e) => e.id === id);
+          return [el("button", { class: "cite", type: "button", text: id, onclick: () => focusEvidence(id) }), ev && ev.hard_rule && el("span", { class: "tag-rule", "data-polarity": ev.polarity, text: t("rule") + " " + ev.hard_rule })];
+        }))))))));
+
+    const acts = el("div", { class: "acts" });
+    if (v.actions.caution) acts.append(el("div", { class: "act act--caution" }, el("h4", {}, icon("suspicious", 24), t("act.caution")), list(L(v.actions.caution))));
+    acts.append(el("div", { class: "act act--now" }, el("h4", {}, icon("hand", 24), t("act.now")), list(L(v.actions.now))));
+    if (L(v.actions.if_already_acted).length) acts.append(el("div", { class: "act" }, el("h4", {}, icon("undo", 24), t("act.acted")), list(L(v.actions.if_already_acted))));
+    const rep = v.actions.report;
+    acts.append(el("div", { class: "act act--report" }, el("h4", {}, icon("flag", 24), t("act.report")), el("p", { text: L(rep) }),
+      el("div", { class: "channels" }, rep.channels.map((c) => el("div", { class: "channel" }, el("span", { text: state.lang === "ar" ? c.label_ar : c.label_en }), el("b", { text: c.value, translate: "no" })))),
+      el("p", { class: "small" }, t("ch.source") + " ", el("span", { class: "mono", text: rep.channels[0].retrieved_at })),
+      el("p", { class: "small", text: t("indep") })));
+    parts.push(acts);
+
+    parts.forEach((p, i) => { p.classList.add("reveal"); p.style.setProperty("--i", i * 2 + 3); });
+    body.append(...parts);
+    const meta = el("div", { class: "meta" },
+      el("span", {}, t("m.id") + " ", el("b", { class: "mono", text: v.verdict_id })),
+      el("span", {}, t("m.tier") + " ", el("b", { class: "mono", text: v.tier_reached })),
+      el("span", {}, t("m.route") + " ", el("b", { text: t("m." + v.model_route) })),
+      el("span", {}, t("m.source") + " ", el("b", { text: t("m." + v.source) })));
+    box.replaceChildren(plate, body, meta);
+
+    const show = () => { plate.classList.add("in"); parts.forEach((p) => p.classList.add("in")); mark.style.insetInlineStart = v.risk_score + "%"; };
+    if (animate && !all) { frame().then(show); if (!still && v.verdict === "dangerous" && navigator.vibrate) navigator.vibrate([60, 60, 120]); }
+    else { mark.style.transition = "none"; show(); }
+  }
+
+  $("paste").addEventListener("submit", (e) => { e.preventDefault(); runScene($("input").value.includes("bank[.]test") ? "nws" : "danger"); });
+  document.querySelectorAll("[data-scene]").forEach((b) => b.addEventListener("click", () => runScene(b.dataset.scene)));
+
+  /* ── Campaign board (simulated live feed) ─────────────────────────── */
+  const camps = FX.campaigns.map((c) => ({ ...c, series: [...c.series], fresh: false }));
+  const CLUSTER = { 1: [112, 48], 2: [128, 172], 3: [96, 292] };
+  const nodes = [];
+  let seed = 7;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  function addNode(n, isNew) {
+    const [r, a] = CLUSTER[n];
+    const rr = r + (rand() - 0.5) * 64, aa = a + (rand() - 0.5) * 46;
+    nodes.push({ n, x: 200 + rr * Math.sin((aa * Math.PI) / 180), y: 200 - rr * Math.cos((aa * Math.PI) / 180), isNew });
+  }
+  camps.forEach((c) => { for (let i = 0; i < c.count; i++) addNode(c.n, false); });
+
+  function renderRadar() {
+    const s = svg("svg", { viewBox: "0 0 400 400", role: "img", "aria-label": t("board.title") });
+    [60, 120].forEach((r) => s.append(svg("circle", { class: "radar-ring", cx: 200, cy: 200, r })));
+    s.append(svg("circle", { class: "radar-ring radar-ring--outer", cx: 200, cy: 200, r: 180 }));
+    s.append(svg("line", { class: "radar-axis", x1: 20, y1: 200, x2: 380, y2: 200 }), svg("line", { class: "radar-axis", x1: 200, y1: 20, x2: 200, y2: 380 }));
+    for (const c of camps) {
+      const g = svg("g", { "data-sev": c.severity, "data-camp": c.n });
+      for (const nd of nodes.filter((x) => x.n === c.n)) {
+        const node = svg("g", { class: "node" + (nd.isNew ? " new" : "") });
+        node.append(svg("circle", { class: "node-ping", cx: fx(nd.x), cy: fx(nd.y), r: 7 }));
+        const shape = sevShape(c.severity, nd.x, nd.y, 7); shape.setAttribute("class", "node-shape");
+        node.append(shape); g.append(node); nd.isNew = false;
+      }
+      const [r, a] = CLUSTER[c.n], [lx, ly] = polar(Math.min(r + 62, 176), a);
+      g.append(svg("g", { class: "cluster-label" }, svg("circle", { cx: fx(lx), cy: fx(ly), r: 13 }), Object.assign(svg("text", { x: fx(lx), y: fx(ly) }), { textContent: String(c.n) })));
+      s.append(g);
+    }
+    $("radar").replaceChildren(s, el("div", { class: "radar-clip" }, el("div", { class: "radar-sweep" })));
+  }
+  function highlight(n) {
+    document.querySelectorAll("#radar g[data-camp]").forEach((g) => g.setAttribute("data-dim", String(n != null && g.dataset.camp !== String(n))));
+  }
+  function renderCamps(bumped) {
+    $("camps").replaceChildren(...camps.map((c, i) => {
+      const card = el("article", { class: "card camp reveal in" + (bumped === c.n ? " bump" : ""), "data-sev": c.severity, onmouseenter: () => highlight(c.n), onmouseleave: () => highlight(null) },
+        el("span", { class: "camp-n mono", text: String(c.n) }),
+        el("div", {}, el("span", { class: "sev" }, severityMark(c.severity), t("sev") + ": " + t("sev." + c.severity)),
+          el("h3", { text: L(c.title) }),
+          el("div", { class: "camp-stats" }, el("span", {}, el("b", { class: "mono", text: String(c.count) }), " " + t("linked")), el("span", { text: t("seen") + " " + t(c.fresh ? "now" : "earlier") })),
+          el("div", { class: "spark", "aria-hidden": "true" }, c.series.map((h) => { const b = el("i"); b.style.setProperty("--h", h); return b; })),
+          el("p", { class: "camp-advice" }, icon("hand", 20), el("span", { text: L(c.advice) }))));
+      card.style.setProperty("--i", i);
+      return card;
+    }));
+  }
+
+  /* ── Incident card ────────────────────────────────────────────────── */
+  const inc = FX.incident;
+  const liveTl = [];
+  const timeFmt = () => new Intl.DateTimeFormat(state.lang === "ar" ? "ar-AE-u-nu-latn" : "en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dubai", hour12: false });
+  const dateFmt = () => new Intl.DateTimeFormat(state.lang === "ar" ? "ar-AE-u-nu-latn" : "en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dubai", hour12: false });
+  function renderIncident(newRow) {
+    const tf = timeFmt(), df = dateFmt();
+    const head = el("div", { class: "inc-head", "data-sev": inc.severity },
+      el("span", { class: "sev" }, severityMark(inc.severity, 20), t("sev") + ": " + t("sev." + inc.severity)),
+      el("h3", { text: L(inc.summary) }),
+      el("span", { class: "pill", text: t("type." + inc.type) }),
+      el("span", { class: "pill pill--wait pill--live", text: t("s." + inc.status) }));
+    const tlItems = [...inc.timeline, ...liveTl];
+    const left = el("div", {},
+      el("p", { text: L(inc.severity_reason) }),
+      el("div", { class: "kv" }, el("span", { text: inc.incident_id }), inc.rule_ids.map((r) => el("span", { text: "rule:" + r })), Object.entries(inc.correlation_keys).map(([k, v]) => el("span", { text: k + "=" + v }))),
+      el("h4", { text: t("i.ind") }),
+      el("ul", { class: "ind" }, inc.indicators.map((x) => el("li", {}, el("span", { class: "mono", text: x.value_defanged, translate: "no" }),
+        el("small", { text: x.kind + " · " + t("i.first") + " " + tf.format(new Date(x.first_seen)) + (x.blocked_until ? " · " + t("i.blocked") + " " + df.format(new Date(x.blocked_until)) : "") })))));
+    const right = el("div", {},
+      el("h4", { text: t("i.tl") }),
+      el("ol", { class: "tl" }, tlItems.map((x, i) => el("li", { class: newRow && i === tlItems.length - 1 ? "new" : null }, el("time", { datetime: x.at, text: tf.format(new Date(x.at)) }), el("span", { text: x.key ? t(x.key) : state.lang === "ar" ? TL_AR[x.what] || x.what : x.what })))),
+      el("h4", { text: t("i.act") }),
+      inc.actions.map((a) => {
+        const waiting = a.status === "awaiting_approval";
+        return el("div", { class: "op", "data-status": a.status },
+          el("div", { class: "op-top" }, el("b", { text: t("tool." + a.tool) }), el("span", { class: "pill" + (waiting ? " pill--wait" : ""), text: t("s." + a.status) })),
+          el("span", { class: "op-mode", text: t("mode." + a.mode) }),
+          a.draft && el("p", { class: "op-draft", text: state.lang === "ar" ? a.draft.body_ar : a.draft.body_en }),
+          waiting && el("div", { class: "op-btns" },
+            el("button", { class: "btn btn--sm", type: "button", text: t("approve"), onclick: () => { a.status = "approved"; renderIncident(); } }),
+            el("button", { class: "btn btn--sm", type: "button", text: t("reject"), onclick: () => { a.status = "rejected"; renderIncident(); } })));
+      }));
+    $("incident").replaceChildren(head, el("div", { class: "inc-grid" }, left, right));
+  }
+
+  /* Simulated feed: one event every few seconds while the board is on screen. */
+  let boardVisible = false, ticks = 0;
+  function tick() {
+    if (!boardVisible || document.hidden || ticks >= 24) return;
+    ticks++;
+    const pick = rand();
+    const c = camps[pick < 0.6 ? 0 : pick < 0.85 ? 1 : 2];
+    c.count++; c.fresh = true; c.series.shift(); c.series.push(Math.min(100, 40 + Math.round(rand() * 60)));
+    camps.forEach((x) => { if (x !== c) x.fresh = false; });
+    addNode(c.n, true);
+    renderRadar(); renderCamps(c.n);
+    if (c.n === 1 && liveTl.length < 3) { liveTl.push({ at: new Date().toISOString(), key: "tl.new" }); renderIncident(true); }
+  }
+
+  /* ── Wiring ───────────────────────────────────────────────────────── */
+  function renderAll() { renderStatic(); renderCheck(false); renderRadar(); renderCamps(); renderIncident(); }
+  renderAll();
+
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.target.id === "board" || e.target.id === "ops") { if (e.target.id === "board") boardVisible = e.isIntersecting; continue; }
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach((n) => io.observe(n));
+  io.observe($("board"));
+  if (!instant) setInterval(tick, 4200);
+
+  const first = params.get("scene");
+  if (first && FX.scenes[first]) runScene(first);
+})();
+</script>
+</body>
+</html>

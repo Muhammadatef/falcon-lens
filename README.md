@@ -15,7 +15,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Build status: Phase 0 to 1, building in parallel** (from [`STATUS.md`](STATUS.md)). `main` holds the platform skeleton, the contracts, the SSRF guard, the URL signals, the arbiter, the check API and the Sentinel core rules. The cascade that joins them is in review, so no check runs end to end yet. The diagrams below show the target design. The [status table](#status) says what is merged, what is in progress and what is planned. No detection metric is published yet.
+> **Build status: Phase 0 to 1, building in parallel** (from [`STATUS.md`](STATUS.md)). `main` holds the platform skeleton, the contracts, the SSRF guard, the URL, domain and message signals, the arbiter, the check API, the cascade and worker, the Sentinel rules and triage agent, and the demo tooling. The sandbox capture service and the Chrome extension are merged too; the web app, the MCP tools and the wiring of the AI investigator into the cascade are still in review or in progress. Gate G1 (one URL in, one verdict out, through every tier) is not recorded as passed in `STATUS.md`, so nothing here is described as working end to end. The diagrams below show the target design. The [status table](#status) says what is merged, what is in progress and what is planned and may lag `main` by a few merges; [`STATUS.md`](STATUS.md) and the pull request list are the source. One offline evaluation artifact is published; its scope is stated in the [Evaluation](#evaluation) section and it is not a measurement of the full system.
 
 Falcon Lens is an entry for the Abu Dhabi Police x 42 "ScamShield AI" challenge. It is an independent project and is **not affiliated with or endorsed by Abu Dhabi Police**. Integration with police systems is designed as *ready to connect*; nothing is connected.
 
@@ -63,12 +63,12 @@ One check, end to end ([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)):
 1. **In.** `POST /v1/check/url` reaches the API through the Caddy gateway. The API validates, rate-limits, assigns a `verdict_id`, puts a job on the `fl:jobs` stream and returns the SSE address. Two checks of the same URL share one job.
 2. **Cascade.** The worker runs the tiers in order and can exit after any of them. After each tier it re-emits a partial verdict under the same `verdict_id`.
 
-   | Tier | Budget | What runs |
+   | Tier | Design budget | What runs |
    |---|---|---|
-   | T0 | 50 ms | Canonicalise, verdict cache, verified-official registry, local feed mirror |
-   | T1 | 1 s | Deterministic URL, domain and reputation signals in parallel, plus a calibrated classifier |
-   | T2 | 6 s | Sandbox render, page and visual features, the brand check, the quarantined extractor |
-   | T3 | 15 s | The bounded investigator, only for the uncertain band |
+   | T0 | 50 ms (design budget) | Canonicalise, verdict cache, verified-official registry, local feed mirror |
+   | T1 | 1 s (design budget) | Deterministic URL, domain and reputation signals in parallel, plus a calibrated classifier |
+   | T2 | 6 s (design budget) | Sandbox render, page and visual features, the brand check, the quarantined extractor |
+   | T3 | 15 s (design budget) | The bounded investigator, only for the uncertain band |
 
    The budgets are design limits from [ADR-001](docs/adr/ADR-001-cascade-arbiter.md), not measurements.
 3. **Verdict.** The deterministic arbiter sets the score and the verdict. The result is stored in Postgres and streamed back over SSE.
@@ -209,7 +209,7 @@ make smoke              # one URL in, one verdict out
 make demo               # the demo scenarios
 ```
 
-Honest state of those targets on `main`: `make up`, `make down`, `make test` and `make scan` are implemented. `make smoke` is implemented, but it cannot pass against the real pipeline until the cascade and worker merge (PR #18); its fake-worker mode is a test double and does not count as gate G1. `make demo`, `make eval`, `make redteam`, `make seed`, `make replay` and `make submission` exit with "not yet implemented" until their gate is passed. They never pass silently.
+Honest state of those targets on `main`: `make up`, `make down`, `make test`, `make scan`, `make smoke`, `make eval`, `make seed`, `make replay`, `make demo`, `make urls`, `make tunnel`, `make demo-reset` and `make submission` are implemented. Implemented does not mean the gate has passed: `make smoke` runs against the real worker, gate G1 counts only once [`STATUS.md`](STATUS.md) records it as passed, and the fake-worker mode is a test double that never counts as G1. `make eval` is the offline evaluation described under [Evaluation](#evaluation); the artifact states its own scope. `make submission` builds the submission package and marks it NOT READY until the end-to-end check ships ([`submission/README.md`](submission/README.md)). `make redteam` exits with "not yet implemented". A target that is not built never passes silently.
 
 When the stack is up:
 
