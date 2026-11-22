@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from urllib.parse import parse_qsl
 
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
@@ -27,6 +28,7 @@ SPEC_BIDI = _spec("url.bidi_or_zero_width")
 SPEC_IP = _spec("url.raw_ip_host")
 SPEC_REDIRECT = _spec("url.open_redirect_abuse")
 SPEC_DATA = _spec("url.data_uri")
+_MIME_RE = re.compile(r"^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$")
 
 
 @signal(SPEC_DATA)
@@ -36,7 +38,12 @@ def run_data_uri(ctx: SignalContext) -> list[Evidence]:
         return []
     head = c.raw[5:].split(",", 1)[0]
     params = [p.strip().lower() for p in head.split(";")]
-    mime = params[0] if params and "/" in params[0] else "text/plain"
+    if not params[0]:
+        mime = "text/plain"
+    elif _MIME_RE.match(params[0]):
+        mime = params[0]
+    else:
+        mime = "invalid"  # never echo attacker-controlled text (URLs, markup) into evidence
     return [
         url_evidence(
             "url.data_uri",

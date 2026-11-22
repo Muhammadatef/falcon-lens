@@ -54,7 +54,7 @@ target-version = "py312"
 extend-exclude = ["web", ".venv", "docs", "*.md"]  # ruff 0.17 would reformat code blocks in docs
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "S"]
+select = ["E", "F", "I", "UP", "B", "SIM", "S", "PLE2502", "PLE2515"]
 ignore = ["S104", "SIM905", "UP047"]  # S104: services bind 0.0.0.0 in containers; SIM905: `"a b".split()` word lists are deliberate
 
 [tool.ruff.lint.isort]

@@ -76,6 +76,8 @@ def test_typosquat_transposition():
 def test_combosquat():
     n = names("https://falcon-demo-bank-secure-pay.test/")
     assert "url.combosquat" in n and "url.typosquat" not in n
+    assert "url.combosquat" in names("https://falcon-demo-bank-gov-fines.test/")
+    assert "url.combosquat" in names("https://falcon-demo-bank-gov.example/")
 
 
 def test_data_uri_evidence():
@@ -83,6 +85,10 @@ def test_data_uri_evidence():
     assert ev and ev[0].observed == {"mime": "text/html", "base64": True, "length": 34}
     assert "PGh0" not in str(ev[0].to_dict())  # never the payload
     assert run_signal("url.data_uri", "DATA:,hello")[0].observed["mime"] == "text/plain"
+    for bad in ("data:https://evil.example/login.php,x", "data:<script>alert(1)</script>,x"):
+        ev = run_signal("url.data_uri", bad)
+        assert ev and ev[0].observed["mime"] == "invalid"
+        assert "evil" not in str(ev[0].to_dict()) and "<script>" not in str(ev[0].to_dict())
     assert not run_signal("url.data_uri", "https://falcon-demo-bank.test/")
 
 
@@ -208,7 +214,7 @@ def test_short_brand_labels_not_typosquatted():
 
 
 def test_real_brand_typo_and_tld_swap_and_keyboard():
-    assert "url.typosquat" in names("https://falcon-demo-bamk.test/")  # r next to e on QWERTY
+    assert "url.typosquat" in names("https://falcon-demo-bamk.test/")  # n next to m on QWERTY
     ev = run_signal("url.typosquat", "https://falcon-demo-bank.example/")
     assert ev and ev[0].observed["kind"] == "tld_swap"
     assert "url.typosquat" in names("https://falcondemobank.test/")  # hyphen removed
