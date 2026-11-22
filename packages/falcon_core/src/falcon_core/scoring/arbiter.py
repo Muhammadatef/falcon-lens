@@ -64,6 +64,8 @@ class ArbiterContext:
     # Degradation reported by the cascade itself (e.g. sandbox unreachable), on top of
     # errored evidence.
     extra_degraded_reasons: tuple[str, ...] = ()
+    # Signals with criticality "enrichment": their errors are informational, never degrading.
+    enrichment_signals: frozenset[str] = frozenset()
     params: ScoringParams | None = None
 
 
@@ -245,7 +247,10 @@ def score(
     errored = [
         e
         for e in evidence
-        if e.error is not None and e.tier in DEGRADING_TIERS and e.error not in params.informational_errors
+        if e.error is not None
+        and e.tier in DEGRADING_TIERS
+        and e.error not in params.informational_errors
+        and e.signal not in ctx.enrichment_signals
     ]
     invalid = [e for e in present if e.signal in params.degrading_signals and family_matches(e)]
     reasons = tuple(

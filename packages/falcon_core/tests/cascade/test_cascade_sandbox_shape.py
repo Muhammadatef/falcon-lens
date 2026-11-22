@@ -32,8 +32,21 @@ async def test_sandbox_exfil_targets_trigger_h4_on_phish_fixture() -> None:
     assert post["observed"]["target_kind"] == "messaging_bot" and post["observed"]["bot"] is True
 
 
-async def test_sandbox_render_error_degrades() -> None:
+async def test_sandbox_render_error_on_clean_url_is_not_degraded() -> None:
     feats = SandboxFeatures.model_validate({"error": "net::ERR_NAME_NOT_RESOLVED", "final_url": None})
     cascade, _ = make_cascade(StubSandboxClient(default=feats))
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert_valid(final)
+    assert not final["degraded"] and final["verdict"] == "no_warning_signs" and final["tier_reached"] == "T2"
+    ev = next(e for e in final["evidence"] if e["signal"] == "sandbox.not_rendered")
+    assert ev["weight"] == 0 and "could not open the page" in ev["display"]["en"]
+
+
+async def test_sandbox_failure_degrades_with_risk_evidence_or_internal_error() -> None:
+    feats = SandboxFeatures.model_validate({"error": "x", "final_url": None})
+    cascade, _ = make_cascade(StubSandboxClient(default=feats))
+    final = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]  # url.* risk evidence present
     assert final["degraded"] and "sandbox_unavailable:render_failed" in final["degraded_reasons"]
+    cascade, _ = make_cascade(StubSandboxClient(error="unreachable:ConnectError"))
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]  # not a soft render failure
+    assert final["degraded"] and final["verdict"] != "no_warning_signs"

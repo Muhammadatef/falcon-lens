@@ -385,7 +385,7 @@ async def test_t2_sandbox_failure_degrades() -> None:
 async def test_t2_sandbox_timeout_is_enforced() -> None:
     cascade, m = make_cascade(SlowSandbox(benign_features(), delay_s=1.0), sandbox_timeout_s=0.05)
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
-    assert final["degraded"] and final["verdict"] == "suspicious"
+    assert not final["degraded"] and final["verdict"] == "no_warning_signs"  # clean address checks, page not opened
     assert metric(m, "fl_sandbox_timeouts_total") == 1
 
 

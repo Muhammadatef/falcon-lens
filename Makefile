@@ -4,7 +4,7 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
+.PHONY: regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
 
 help:
 	@echo "Targets: up down smoke test test-web eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard"
@@ -67,6 +67,10 @@ scan: ## gitleaks, pip-audit, pnpm audit, trivy, syft (a missing tool only warns
 
 smoke: ## T-015 assertions against the running stack (starts it if needed). FL_SMOKE_FAKE_WORKER=1 uses a test double (NOT a G1 pass)
 	@scripts/smoke.sh
+
+regress-legit: ## false-positive gate: 30 legit URLs through the running stack (needs LIVE=1, FL_GATEWAY_URL)
+	@test "$(LIVE)" = 1 || { echo "regress-legit needs a running stack: LIVE=1 make regress-legit" >&2; exit 2; }
+	uv run python scripts/regress_legit.py
 
 openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on drift)
 	uv run python scripts/gen_openapi.py

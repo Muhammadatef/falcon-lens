@@ -67,6 +67,9 @@ Tier = Literal["T0", "T1", "T2", "T3"]
 STRONG_EVIDENCE_ADJ = 2.5  # log-odds of non-classifier risk evidence needed for dangerous without a hard rule
 MODEL_ONLY_MARGIN = 1.5  # log-odds of deterministic risk evidence needed to move from the model cap to dangerous
 
+# Sandbox failures meaning "could not open the page" (bot blocking, slow site), not a platform fault.
+SOFT_RENDER_FAILURES: frozenset[str] = frozenset(["render_failed", "timeout", "dns_failure", "http_502"])
+
 
 class VerdictSink(Protocol):
     """Publishes one verdict doc. Errors must propagate (the worker retries the job).
@@ -198,6 +201,12 @@ class Cascade:
     def __init__(self, deps: CascadeDeps) -> None:
         self.d = deps
         self.params = deps.params or load_params()
+        # Signals whose errors are informational only (SignalSpec.criticality == "enrichment").
+        specs = [
+            *(deps.t1_signals if deps.t1_signals is not None else default_t1_signals()).values(),
+            *(deps.t0_signals if deps.t0_signals is not None else default_signals("T0")).values(),
+        ]
+        self._enrichment: frozenset[str] = frozenset(sp.name for sp, _ in specs if sp.criticality == "enrichment")
         self._llm_open_until = 0.0
         self.verified: dict[str, frozenset[str]] = {
             b.brand_id: frozenset(b.verified_domains) for b in deps.registry.brands
@@ -221,6 +230,7 @@ class Cascade:
             registrable_domain=run.canonical.registrable if run.canonical else None,
             verified_domains=self.verified,
             extra_degraded_reasons=tuple(dict.fromkeys(run.degraded_reasons)),
+            enrichment_signals=self._enrichment,
             params=self.params,
         )
         evidence = dedupe(run.evidence)
@@ -573,6 +583,13 @@ class Cascade:
 
     # --- T2 --------------------------------------------------------------------------------
 
+    def _t1_risky(self, run: _Run) -> bool:
+        """T1 result in/above the uncertain band, or any url./brand./rep. risk evidence present."""
+        r = self._score(run)
+        if r.calibrated_probability >= self.params.tau_low or r.fired_rules:
+            return True
+        return any(e.weight > 0 and e.signal.split(".", 1)[0] in ("url", "brand", "rep") for e in r.weighted_evidence)
+
     async def _t2(self, run: _Run, sink: VerdictSink) -> dict[str, Any]:
         if run.canonical is None:
             raise RuntimeError("T0 did not canonicalise")
@@ -585,16 +602,29 @@ class Cascade:
                 self.d.sandbox_timeout_s,
             )
             if features.error and not features.final_url:
-                raise SandboxError("render_failed")
+                err = features.error.lower()
+                blocked = err.startswith(("ssrf", "blocked", "egress"))
+                raise SandboxError("blocked_target" if blocked else "render_failed")
         except (TimeoutError, SandboxError) as exc:
             reason = "timeout" if isinstance(exc, TimeoutError) else exc.reason
             if reason == "timeout":
                 self.d.metrics.sandbox_timeouts.inc()
             self.d.metrics.tool_errors.labels("sandbox", reason[:40]).inc()
-            # The input was escalated because T1 was unsure: without the page we must not
-            # fall back to no_warning_signs (DECISIONS: sandbox failure degrades).
-            run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
             summary = "Sandbox could not render the page"
+            # SCORING §4: a page that cannot be opened (bot blocking, timeout, DNS) degrades only when
+            # T1 is in or above the uncertain band or risk evidence exists. Egress/SSRF blocks and
+            # internal errors always degrade.
+            if reason in SOFT_RENDER_FAILURES and not self._t1_risky(run):
+                added.append(
+                    make_evidence(
+                        "sandbox.not_rendered", "page", {"reason": reason[:40]}, tier="T2", source="computed",
+                        en="We could not open the page itself; the address checks found no warning signs.",
+                        ar="تعذّر علينا فتح الصفحة نفسها؛ فحوصات العنوان لم تُظهر أي علامات تحذير.",
+                    )
+                )  # fmt: skip
+                summary += "; address checks clean, not degraded"
+            else:
+                run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
         else:
             added.extend(page_evidence(features, run.canonical.registrable, self.d.registry, self.d.favicons))
             final_reg = canonicalize(features.final_url).registrable if features.final_url else ""

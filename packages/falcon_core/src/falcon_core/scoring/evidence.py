@@ -51,6 +51,7 @@ PREFIX_FAMILY: dict[str, str] = {
     "url": "url",
     "domain": "domain",
     "page": "page",
+    "sandbox": "page",
     "visual": "visual",
     "brand": "brand",
     "registry": "brand",
