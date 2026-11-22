@@ -55,3 +55,17 @@ async def test_handle_publishes_partial_then_final() -> None:
     )
     assert json.loads(await r.get(last_key(VID)))["final"] is True
     assert FakeStore().docs == {}
+
+
+async def test_feed_membership_uses_hashes_only() -> None:
+    from falcon_api.canon import canonicalize_url, sha256_hex
+
+    r: Any = fakeredis.FakeAsyncRedis(decode_responses=True)
+    url = "http://listed.test/x"
+    job = {"verdict_id": VID, "input_type": "url", "payload_json": json.dumps({"url": url})}
+    await r.sadd("feed:openphish", url)  # plaintext must NOT match
+    await handle(r, job, None)
+    assert json.loads(await r.get(last_key(VID)))["verdict"] == "suspicious"
+    await r.sadd("feed:openphish", sha256_hex(canonicalize_url(url)))
+    await handle(r, job, None)
+    assert json.loads(await r.get(last_key(VID)))["verdict"] == "dangerous"

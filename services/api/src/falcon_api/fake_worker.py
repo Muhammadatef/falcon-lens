@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 
 import redis.asyncio as aioredis
 
+from falcon_api.canon import canonicalize_url, sha256_hex
 from falcon_api.jobs import STREAM, channel, last_key
 
 log = logging.getLogger("falcon.fake_worker")
@@ -152,9 +153,8 @@ async def handle(r: Any, fields: dict[str, str], dsn: str | None) -> None:
     in_feed = False
     if url:
         host = urlsplit(url).hostname or ""
-        in_feed = bool(
-            await r.sismember("feed:openphish", url) or await r.sismember("feed:openphish", host)
-        )
+        hashes = [sha256_hex(canonicalize_url(url)), sha256_hex(host.lower())]
+        in_feed = any([await r.sismember("feed:openphish", h) for h in hashes])
     for final in (False, True):
         doc = build_doc(
             vid,

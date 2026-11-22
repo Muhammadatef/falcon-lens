@@ -22,6 +22,8 @@ import httpx
 import jsonschema
 from referencing import Registry, Resource
 
+from falcon_api.canon import canonicalize_url, sha256_hex
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = os.environ.get("FL_GATEWAY_URL", "https://localhost:8443").rstrip("/")
 FAKE = os.environ.get("FL_SMOKE_FAKE_WORKER") == "1"
@@ -130,7 +132,9 @@ def main() -> int:
     def t_feed() -> str:
         url = f"http://synthetic-openphish.test/{secrets.token_hex(4)}"
         host = "synthetic-openphish.test"
-        compose("exec", "-T", "redis", "redis-cli", "SADD", "feed:openphish", url, host)
+        # feed:openphish stores sha256 hex of the canonical URL and of the host, never plaintext
+        hashes = [sha256_hex(canonicalize_url(url)), sha256_hex(host)]
+        compose("exec", "-T", "redis", "redis-cli", "SADD", "feed:openphish", *hashes)
         d = final_verdict(c, url)
         assert d["verdict"] == "dangerous", d["verdict"]
         assert has_rule(d, "H2"), "H2 not cited"
