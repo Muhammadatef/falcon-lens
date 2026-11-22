@@ -29,6 +29,10 @@ typecheck:
 test: lint typecheck ## ruff + mypy (falcon_core) + pytest
 	uv run pytest -q
 
+unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL and REDIS_URL, host-reachable)
+	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
+	uv run python -m falcon_sentinel.unblock $(ID)
+
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py
 
@@ -95,7 +99,3 @@ demo-reset: ## Reset Postgres+Redis volumes and seed state (names resolved from 
 	@YES=$(YES) $(DEMO) reset
 	$(MAKE) demo
 
-unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs falcon_sentinel.unblock, host-reachable DATABASE_URL/REDIS_URL)
-	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
-	@uv run python -c "import falcon_sentinel.unblock" 2>/dev/null || { echo "make unblock: falcon_sentinel.unblock not available yet (sentinel-graph PR unmerged)" >&2; exit 1; }
-	uv run python -m falcon_sentinel.unblock $(ID)

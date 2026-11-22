@@ -48,7 +48,7 @@ dev = [
   "fakeredis>=2.26",
   "pyyaml>=6",
   "pytest-cov>=6",
-  "pyyaml>=6",
+  "qrcode>=8",
 ]
 
 [tool.ruff]
@@ -72,6 +72,9 @@ known-first-party = [
 "evals/**" = ["S603", "S607"]
 "**/fixtures.py" = ["S311"]
 "scripts/falcon_demo/**" = ["S311", "S603", "S607"]
+"services/sentinel/**" = ["E501"]  # bilingual strings and SQL read better unwrapped
+"packages/falcon_core/src/falcon_core/tools/**" = ["E501"]
+"services/sentinel/sentinel_core/**" = ["S311", "S324", "UP047"]
 "scripts/smoke.py" = ["S101", "S501"]
 
 [tool.mypy]
@@ -89,3 +92,4 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["packages/falcon_core/tests", "services", "scripts/tests", "scripts/falcon_demo"]
 pythonpath = ["scripts"]
+markers = ["integration: needs a real Postgres (FL_TEST_PG_DSN)"]
