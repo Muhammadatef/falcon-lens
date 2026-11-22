@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """url.homograph: UTS#39 skeleton match against brand domain labels/names, plus mixed-script labels."""
 
 from __future__ import annotations
@@ -78,7 +79,15 @@ def run(ctx: SignalContext) -> list[Evidence]:
         obs.update(brand_id=best[0], matched=best[3], candidate=best[4][:100])
         en = f"Domain imitates {best[1]} with look-alike characters"
         ar = f"النطاق يحاكي اسم «{best[2]}» بأحرف مشابهة"
-        return [url_evidence("url.homograph", obs, en, ar, 1.0 if len(reasons) > 1 or "non_ascii" in reasons else 0.9)]
+        return [
+            url_evidence(
+                "url.homograph",
+                obs,
+                en,
+                ar,
+                1.0 if len(reasons) > 1 or "non_ascii" in reasons else 0.9,
+            )
+        ]
     return [
         url_evidence(
             "url.homograph",
