@@ -138,9 +138,7 @@ def _base_weight(ev: Evidence, params: ScoringParams) -> float:
     return params.weights.get(ev.signal, 0.0)
 
 
-def _contributions(
-    evidence: Sequence[Evidence], params: ScoringParams, h3_holds: bool
-) -> list[float]:
+def _contributions(evidence: Sequence[Evidence], params: ScoringParams, h3_holds: bool) -> list[float]:
     """Per-evidence contribution ``w_i * c_i`` in log-odds points (same order as ``evidence``).
 
     ``registry.verified_official`` trust counts only when H3 holds: with open-redirect abuse or
@@ -190,19 +188,13 @@ def score(
 
     # 1. Hard rules over present evidence.
     present = [e for e in evidence if is_present(e)]
-    outcome = hard_rules.evaluate(
-        present, params, ctx.input_type, ctx.registrable_domain, ctx.verified_domains
-    )
+    outcome = hard_rules.evaluate(present, params, ctx.input_type, ctx.registrable_domain, ctx.verified_domains)
 
     # 2-3. Classifier probability plus log-odds adjustment.
     h3_holds = any(r.rule_id == "H3" for r in outcome.fired)
     contrib = _contributions(evidence, params, h3_holds)
-    t1_sum = sum(
-        c for e, c in zip(evidence, contrib, strict=True) if e.family in CLASSIFIER_FAMILIES
-    )
-    adj = sum(
-        c for e, c in zip(evidence, contrib, strict=True) if e.family not in CLASSIFIER_FAMILIES
-    )
+    t1_sum = sum(c for e, c in zip(evidence, contrib, strict=True) if e.family in CLASSIFIER_FAMILIES)
+    adj = sum(c for e, c in zip(evidence, contrib, strict=True) if e.family not in CLASSIFIER_FAMILIES)
 
     if p_clf is None:
         draft = True
@@ -238,9 +230,7 @@ def score(
     errored = [
         e
         for e in evidence
-        if e.error is not None
-        and e.tier in DEGRADING_TIERS
-        and e.error not in params.informational_errors
+        if e.error is not None and e.tier in DEGRADING_TIERS and e.error not in params.informational_errors
     ]
     invalid = [e for e in present if e.signal in params.degrading_signals and family_matches(e)]
     reasons = tuple(
@@ -288,9 +278,7 @@ def score(
 
 def has_brand_conflict(evidence: Sequence[Evidence]) -> bool:
     """True when T1 evidence says the input resembles or claims a brand (needs T2 brand check)."""
-    return any(
-        e.signal in BRAND_CONFLICT_SIGNALS and family_matches(e) and is_present(e) for e in evidence
-    )
+    return any(e.signal in BRAND_CONFLICT_SIGNALS and family_matches(e) and is_present(e) for e in evidence)
 
 
 def t1_should_exit(p_clf: float, brand_conflict: bool, params: ScoringParams | None = None) -> bool:

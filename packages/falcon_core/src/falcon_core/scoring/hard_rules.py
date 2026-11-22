@@ -25,9 +25,7 @@ Effect = Literal["floor_dangerous", "floor_suspicious", "cap_no_warning_signs"]
 InputType = Literal["url", "message", "email", "image"]
 
 FEED_SIGNALS: frozenset[str] = frozenset(["rep.openphish", "rep.gsb", "rep.urlhaus"])
-BOT_TARGET_KINDS: frozenset[str] = frozenset(
-    ["bot_api", "messaging_bot", "webhook", "webhook_relay", "form_relay"]
-)
+BOT_TARGET_KINDS: frozenset[str] = frozenset(["bot_api", "messaging_bot", "webhook", "webhook_relay", "form_relay"])
 LINK_VERDICT_SIGNALS: frozenset[str] = frozenset(["message.link_verdict", "email.link_verdict"])
 IMPERSONATION_SIGNALS: frozenset[str] = frozenset(
     ["message.rule.authority", "email.display_name_impersonation", "brand.claimed_not_owned"]
@@ -67,9 +65,7 @@ def h1_brand_mismatch(
         # Double-check "not owned" against the registry when the caller supplies it.
         dom = registrable_domain.lower()
         claims = [
-            e
-            for e in claims
-            if dom not in verified_domains.get(str(observed_get(e, "brand_id") or ""), frozenset())
+            e for e in claims if dom not in verified_domains.get(str(observed_get(e, "brand_id") or ""), frozenset())
         ]
     intent = _by_signal(present, "page.cred_form", "message.rule.payment")
     if not claims or not intent:
@@ -104,9 +100,7 @@ def h3_verified_official(
 ) -> FiredRule | None:
     if input_type != "url":
         return None
-    official = [
-        e for e in _by_signal(present, "registry.verified_official") if not untrusted_origin(e)
-    ]
+    official = [e for e in _by_signal(present, "registry.verified_official") if not untrusted_origin(e)]
     if not official:
         return None
     if _by_signal(present, "url.open_redirect_abuse") or _by_signal(present, *FEED_SIGNALS):

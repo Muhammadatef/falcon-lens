@@ -6,7 +6,6 @@ import math
 from dataclasses import replace
 
 import pytest
-from scoring_helpers import DEMO_BRAND, make_evidence
 
 from falcon_core.scoring import (
     ArbiterContext,
@@ -18,6 +17,8 @@ from falcon_core.scoring import (
     t2_should_exit,
 )
 from falcon_core.scoring.arbiter import logit, sigmoid
+
+from scoring_helpers import DEMO_BRAND, make_evidence
 
 mk = make_evidence
 
@@ -59,9 +60,7 @@ def test_band_edges(p: float, expected: str) -> None:
     assert band(p, P) == expected
 
 
-@pytest.mark.parametrize(
-    ("p", "expected"), [(0.35, "suspicious"), (0.80, "dangerous"), (0.3499, "no_warning_signs")]
-)
+@pytest.mark.parametrize(("p", "expected"), [(0.35, "suspicious"), (0.80, "dangerous"), (0.3499, "no_warning_signs")])
 def test_band_edges_through_score_are_exact(p: float, expected: str) -> None:
     res = score([], p_clf=p)
     assert res.calibrated_probability == p
@@ -143,9 +142,7 @@ def test_logit_clipped() -> None:
     many = [mk("page.cross_origin_post", {"bot": False}) for _ in range(10)]
     res = score(many, p_clf=0.99)
     assert math.isclose(res.calibrated_probability, sigmoid(8.0))
-    low = score(
-        [mk("registry.verified_official", True, source="registry", tier="T0")] * 1, p_clf=1e-9
-    )
+    low = score([mk("registry.verified_official", True, source="registry", tier="T0")] * 1, p_clf=1e-9)
     assert low.calibrated_probability >= sigmoid(-8.0) - 1e-12
 
 
@@ -312,9 +309,7 @@ def test_brand_conflict_detection() -> None:
     assert not has_brand_conflict([mk("url.typosquat", False), mk("url.raw_ip_host")])
 
 
-@pytest.mark.parametrize(
-    ("p", "exits"), [(0.24, True), (0.25, False), (0.5, False), (0.85, False), (0.86, True)]
-)
+@pytest.mark.parametrize(("p", "exits"), [(0.24, True), (0.25, False), (0.5, False), (0.85, False), (0.86, True)])
 def test_t2_exit_band(p: float, exits: bool) -> None:
     assert t2_should_exit(score([], p_clf=p), P) is exits
 

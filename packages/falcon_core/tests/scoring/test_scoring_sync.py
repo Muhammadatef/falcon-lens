@@ -10,10 +10,11 @@ import re
 from pathlib import Path
 
 import pytest
-from scoring_helpers import make_evidence
 
 from falcon_core.scoring import ArbiterContext, load_params, score, template_reasons
 from falcon_core.scoring.reasons import load_reporting_channels, template_actions
+
+from scoring_helpers import make_evidence
 
 mk = make_evidence
 

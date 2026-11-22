@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 
 import pytest
-from scoring_helpers import DEMO_BRAND, make_evidence
 
 from falcon_core.scoring import (
     ArbiterContext,
@@ -23,6 +22,8 @@ from falcon_core.scoring.reasons import (
     load_reporting_channels,
     parse_reporting_channels,
 )
+
+from scoring_helpers import DEMO_BRAND, make_evidence
 
 mk = make_evidence
 
@@ -180,9 +181,7 @@ def test_core_fields_validate_against_verdict_schema(case: str) -> None:
         res = score([mk("registry.verified_official", True, source="registry", tier="T0")], 0.3)
     else:
         res = score([mk("domain.age", None, error="timeout")], 0.01, ArbiterContext())
-    core = verdict_core_fields(
-        res, load_reporting_channels(str(REPO / "config" / "reporting_channels.yaml"))
-    )
+    core = verdict_core_fields(res, load_reporting_channels(str(REPO / "config" / "reporting_channels.yaml")))
     verdict = {
         "schema_version": "1.0",
         "verdict_id": "vd_01JD0000000000000000000000",

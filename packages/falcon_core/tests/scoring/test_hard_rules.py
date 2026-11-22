@@ -5,9 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from scoring_helpers import DEMO_BRAND, DEMO_LOOKALIKE, DEMO_OFFICIAL, make_evidence
 
 from falcon_core.scoring import ArbiterContext, score
+
+from scoring_helpers import DEMO_BRAND, DEMO_LOOKALIKE, DEMO_OFFICIAL, make_evidence
 
 mk = make_evidence
 
@@ -177,12 +178,8 @@ EFFECT_FLOOR = {
 RANK = {"no_warning_signs": 0, "suspicious": 1, "dangerous": 2}
 
 
-@pytest.mark.parametrize(
-    ("case", "rule", "specs", "input_type", "fires"), CASES, ids=[c[0] for c in CASES]
-)
-def test_hard_rule_table(
-    case: str, rule: str, specs: list[Spec], input_type: str, fires: bool
-) -> None:
+@pytest.mark.parametrize(("case", "rule", "specs", "input_type", "fires"), CASES, ids=[c[0] for c in CASES])
+def test_hard_rule_table(case: str, rule: str, specs: list[Spec], input_type: str, fires: bool) -> None:
     evidence = [mk(sig, obs, **kw) for sig, obs, kw in specs]
     # Low classifier probability so any risk verdict must come from the hard rule.
     res = score(evidence, p_clf=0.01, ctx=ArbiterContext(input_type=input_type))  # type: ignore[arg-type]
@@ -207,14 +204,10 @@ def test_h1_floor_is_095() -> None:
 
 
 def test_h1_registry_cross_check_blocks_owned_domain() -> None:
-    ctx = ArbiterContext(
-        registrable_domain=DEMO_OFFICIAL, verified_domains={DEMO_BRAND: frozenset([DEMO_OFFICIAL])}
-    )
+    ctx = ArbiterContext(registrable_domain=DEMO_OFFICIAL, verified_domains={DEMO_BRAND: frozenset([DEMO_OFFICIAL])})
     res = score([mk(*CLAIM[:2]), mk(*CRED[:2])], p_clf=0.01, ctx=ctx)
     assert "H1" not in {r.rule_id for r in res.fired_rules}
-    ctx2 = ArbiterContext(
-        registrable_domain=DEMO_LOOKALIKE, verified_domains={DEMO_BRAND: frozenset([DEMO_OFFICIAL])}
-    )
+    ctx2 = ArbiterContext(registrable_domain=DEMO_LOOKALIKE, verified_domains={DEMO_BRAND: frozenset([DEMO_OFFICIAL])})
     res2 = score([mk(*CLAIM[:2]), mk(*CRED[:2])], p_clf=0.01, ctx=ctx2)
     assert "H1" in {r.rule_id for r in res2.fired_rules}
 
