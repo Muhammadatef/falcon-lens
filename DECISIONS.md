@@ -59,3 +59,4 @@
 - 2026-11-22 · L1 · Sentinel incident ids must be **canonical**, independent of arrival order. The seed is rule_id + correlation-group key + the earliest `occurred_at` among the group's qualifying events, recomputed when the group changes. The id is kept stable once published, and later merges alias the original.
 - 2026-11-22 · L1 · Repo recreate in progress: the first public repo had a commit with defanged feed URLs (PR #1). The owner chose delete-and-recreate. Clean branches are backed up in `data/private/repo-backup/` (bundle plus keep/* branches).
 - 2026-11-22 · L1 · The supervisor role may run as up to two parallel instances, each on a separate PR set, for throughput before the deadline. Approval rules are unchanged.
+- 2026-11-22 · owner · Collaborator @Abdulrahman-alseiari invited with write access. Human task board is in docs/CONTRIBUTOR_TASKS.md (Arabic review, domain verification, data audits, device QA, iOS Shortcut).
