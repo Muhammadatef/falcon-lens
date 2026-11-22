@@ -85,6 +85,7 @@ DEFAULT_TIMEOUT_S = 6.0  # sandbox total budget; signals pass their own smaller 
 DEFAULT_MAX_REQUEST_BYTES = 64 * 1024  # POST body cap (reputation API lookups only)
 USER_AGENT = "FalconLensChecker/0.1 (+defensive URL checker)"
 
+_POST_HEADER_ALLOW = frozenset({"auth-key", "x-goog-api-key", "content-type"})
 _ALLOWED_METHODS = frozenset({"GET", "HEAD"})  # fetch() never submits anything
 _REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 _HEADER_SUBSET = (
@@ -467,6 +468,7 @@ class GuardedHTTPClient:
         *,
         json: typing.Any = None,
         data: Mapping[str, str] | None = None,
+        headers: Mapping[str, str] | None = None,
         max_bytes: int = DEFAULT_MAX_BYTES,
         timeout: float = DEFAULT_TIMEOUT_S,
     ) -> FetchResult:
@@ -476,12 +478,21 @@ class GuardedHTTPClient:
         otherwise this raises ``SSRFBlocked(method_not_allowed)``. The body is at most 64 KB
         (``request_too_large`` otherwise). Resolution and pinning are the same as ``fetch``.
         Redirects are *not* followed: a 3xx is returned as-is.
+        ``headers`` may carry only the names in ``_POST_HEADER_ALLOW`` (API keys); any other name
+        raises ``ValueError``.
         """
         if json is not None and data is not None:
             raise ValueError("pass json or data, not both")
+        extra: dict[str, str] = {}
+        for k, v in (headers or {}).items():
+            if k.lower() not in _POST_HEADER_ALLOW:
+                raise ValueError(f"header not allowed: {k[:32]}")
+            if "\r" in v or "\n" in v:
+                raise ValueError("invalid header value")
+            extra[k] = v
         max_bytes = max(0, min(max_bytes, DEFAULT_MAX_BYTES))
         timeout = _clamp_timeout(timeout)
-        return await self._guarded(timeout, self._post(url, json, data, max_bytes, timeout))
+        return await self._guarded(timeout, self._post(url, json, data, max_bytes, timeout, extra))
 
     async def _post(
         self,
@@ -490,6 +501,7 @@ class GuardedHTTPClient:
         data: Mapping[str, str] | None,
         max_bytes: int,
         timeout: float,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> FetchResult:
         target = validate_url(url, self._policy)
         if target.host not in self._policy.post_allow_hosts:
@@ -506,7 +518,7 @@ class GuardedHTTPClient:
             raise SSRFBlocked(BlockReason.REQUEST_TOO_LARGE, str(len(content)))
         ips = await resolve_and_check(target, self._resolver, self._policy)
         ip = ips[0]
-        resp = await self._send("POST", target, ip, timeout, content, ctype)
+        resp = await self._send("POST", target, ip, timeout, content, ctype, extra_headers)
         try:
             self._raise_if_proxy_denied(resp)
             body = await _read_capped(resp, max_bytes)
@@ -577,6 +589,7 @@ class GuardedHTTPClient:
         timeout: float,
         content: bytes | None = None,
         content_type: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
         headers = {
             "Host": target.host_header,
@@ -587,6 +600,8 @@ class GuardedHTTPClient:
         }
         if content_type is not None:
             headers["Content-Type"] = content_type
+        if extra_headers:
+            headers.update(extra_headers)
         extensions: dict[str, typing.Any] = {"timeout": httpx.Timeout(timeout).as_dict()}
         if self._proxy is None:
             req_url = target.url_for_ip(ip)  # pinned: httpx never resolves
