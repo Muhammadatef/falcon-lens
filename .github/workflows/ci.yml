@@ -1,84 +1,189 @@
 name: ci
 
+# Runs for every pull request into main and every push to main. No job needs a secret, so the
+# workflow is safe for pull requests from forks. Actions are pinned by full commit SHA.
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
-  pull_request:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-jobs:
-  test:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.13.7"
-          enable-cache: true
-      - run: uv sync --frozen
-      - run: make test
+env:
+  UV_VERSION: "0.13.7"
+  GITLEAKS_VERSION: "8.30.1"
 
-  web:
+jobs:
+  lint:
+    name: lint
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: web
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
-          version: 12.21.0
-      - uses: actions/setup-node@v4
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: web/pnpm-lock.yaml
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm build
+        working-directory: web
+      - run: pnpm lint
+        working-directory: web
 
-  scan:
+  typecheck:
+    name: typecheck
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: uv sync --frozen
+      - run: uv run mypy
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - run: pnpm typecheck
+        working-directory: web
+
+  test:
+    name: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: uv sync --frozen
+      - name: pytest with coverage
+        run: |
+          uv run pytest -q --cov=falcon_core --cov-report=term --cov-report=xml
+          {
+            echo "### Python coverage"
+            echo '```'
+            uv run coverage report --skip-covered | tail -n 25
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - name: web unit tests
+        run: pnpm test
+        working-directory: web
+
+  contracts:
+    name: contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: schema round-trip (pydantic models vs contracts/*.schema.json)
+        run: uv run pytest -q packages/falcon_core/tests/contracts
+      - name: openapi drift (code must not implement undeclared routes)
+        run: uv run python scripts/check_openapi_drift.py
+
+  security:
+    name: security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - name: gitleaks
+      - name: gitleaks (full history, repo config)
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz | tar -xz gitleaks
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar -xz gitleaks
           ./gitleaks git --config .gitleaks.toml --no-banner .
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
-          version: "0.13.7"
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
       - name: pip-audit
         run: |
           uv export --frozen --no-dev --all-packages --no-emit-workspace --no-hashes -o requirements.audit.txt
           uvx pip-audit -r requirements.audit.txt --no-deps --disable-pip
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: pnpm audit (production deps)
+        run: pnpm audit --prod
+        working-directory: web
       - name: trivy fs
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
         with:
           scan-type: fs
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           exit-code: "1"
           skip-dirs: web/node_modules
+      - name: defensive-only guard (no live URLs, no data/private)
+        run: python3 scripts/check_no_live_urls.py
 
-  compose:
+  docker-build:
+    name: docker-build
     runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      DOCKER_DEFAULT_PLATFORM: linux/amd64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: cp .env.example .env
-      - run: docker compose --profile core --profile obs --profile tools config -q
+      - name: build every image (linux/amd64, nothing is pushed)
+        run: docker compose --profile core --profile obs --profile tools build
 
   eval-gate:
-    # TODO(builder-evals): placeholder. Replace with `make eval` + the merge-gate tolerances from
-    # docs/EVALS.md once the harness exists. This job intentionally does NOT gate anything yet.
+    # Not a required check until builder-evals lands evals/baseline.json. Until then the job runs
+    # `make eval-gate`, which prints an explicit SKIPPED notice (never a silent pass).
+    name: eval-gate
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - run: echo "TODO eval gate not implemented yet; see docs/EVALS.md"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: make eval-gate
