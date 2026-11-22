@@ -1,0 +1,52 @@
+Return-Path: <bounce@falcon-demo-bnak.test>
+Received: from mail.falcon-demo-bnak.test ([192.0.2.35]) by mx.example.test
+ with ESMTPS; Mon, 23 Nov 2026 13:55:00 +0400
+Authentication-Results: mx.example.test; spf=fail
+ smtp.mailfrom=falcon-demo-bnak.test; dkim=fail
+ header.d=falcon-demo-bnak.test; dmarc=fail header.from=falcon-demo-bnak.test
+From: =?utf-8?b?2KjZhtmDINin2YTYtdmC2LEg2KfZhNiq2KzYsdmK2KjZiiAtINil2K/Yp9ix?=
+ =?utf-8?b?2Kkg2KfZhNin2YXYqtir2KfZhA==?= <compliance@falcon-demo-bnak.test>
+To: Customer <customer@example.test>
+Subject: =?utf-8?b?2KXYtNi52KfYsSDZhtmH2KfYptmKOiDYqtis2YXZitivINin2YTYrdiz?=
+ =?utf-8?b?2KfYqCDZhNi52K/ZhSDYqtit2K/ZitirINio2YrYp9mG2KfYqiDCq9in2LnYsdmB?=
+ =?utf-8?b?INi52YXZitmE2YPCuw==?=
+Date: Mon, 23 Nov 2026 13:55:00 +0400
+Message-ID: <c05-25.fixture@falcon-demo-bnak.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9
+
+=D8=B9=D9=85=D9=8A=D9=84=D9=86=D8=A7 =D8=A7=D9=84=D9=83=D8=B1=D9=8A=D9=85=D8=
+=8C
+
+=D9=88=D9=81=D9=82=D9=8B=D8=A7 =D9=84=D9=85=D8=AA=D8=B7=D9=84=D8=A8=D8=A7=D8=
+=AA =D8=AA=D8=AD=D8=AF=D9=8A=D8=AB =D8=A8=D9=8A=D8=A7=D9=86=D8=A7=D8=AA =C2=
+=AB=D8=A7=D8=B9=D8=B1=D9=81 =D8=B9=D9=85=D9=8A=D9=84=D9=83=C2=BB=D8=8C =D8=AA=
+=D8=A8=D9=8A=D9=91=D9=86 =D8=A3=D9=86 =D9=85=D9=84=D9=81=D9=83 =D9=84=D8=AF=
+=D9=8A=D9=86=D8=A7 =D8=BA=D9=8A=D8=B1 =D9=85=D9=83=D8=AA=D9=85=D9=84. =D8=B3=
+=D9=8A=D8=AA=D9=85 =D8=AA=D8=AC=D9=85=D9=8A=D8=AF =D8=AD=D8=B3=D8=A7=D8=A8=D9=
+=83 =D9=88=D8=AC=D9=85=D9=8A=D8=B9 =D8=A7=D9=84=D8=A8=D8=B7=D8=A7=D9=82=D8=A7=
+=D8=AA =D8=A7=D9=84=D9=85=D8=B1=D8=AA=D8=A8=D8=B7=D8=A9 =D8=A8=D9=87 =D8=AE=
+=D9=84=D8=A7=D9=84 24 =D8=B3=D8=A7=D8=B9=D8=A9 =D9=85=D8=A7 =D9=84=D9=85 =D8=
+=AA=D9=8F=D9=83=D9=85=D9=84 =D8=A7=D9=84=D8=AA=D8=AD=D8=AF=D9=8A=D8=AB.
+
+=D9=84=D8=A5=D9=83=D9=85=D8=A7=D9=84 =D8=A7=D9=84=D8=AA=D8=AD=D8=AF=D9=8A=D8=
+=AB=D8=8C =D9=8A=D8=B1=D8=AC=D9=89 =D8=A5=D8=AF=D8=AE=D8=A7=D9=84 =D8=A8=D9=
+=8A=D8=A7=D9=86=D8=A7=D8=AA =D8=A8=D8=B7=D8=A7=D9=82=D8=AA=D9=83 =D9=88=D8=A7=
+=D9=84=D8=B1=D9=82=D9=85 =D8=A7=D9=84=D8=B3=D8=B1=D9=8A =D8=B9=D8=A8=D8=B1 =
+=D8=A7=D9=84=D8=B1=D8=A7=D8=A8=D8=B7 =D8=A7=D9=84=D8=AA=D8=A7=D9=84=D9=8A:
+https://falcon-demo-bnak.test/kyc
+
+=D9=86=D8=B9=D8=AA=D8=B0=D8=B1 =D8=B9=D9=86 =D8=A3=D9=8A =D8=A5=D8=B2=D8=B9=
+=D8=A7=D8=AC.
+=D8=A5=D8=AF=D8=A7=D8=B1=D8=A9 =D8=A7=D9=84=D8=A7=D9=85=D8=AA=D8=AB=D8=A7=D9=
+=84
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9

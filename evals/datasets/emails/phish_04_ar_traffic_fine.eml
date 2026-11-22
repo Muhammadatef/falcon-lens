@@ -1,0 +1,30 @@
+Return-Path: <bounce@traffic-fines.example.test>
+Received: from mail.traffic-fines.example.test ([192.0.2.14]) by
+ mx.example.test with ESMTPS; Fri, 20 Nov 2026 20:28:00 +0400
+Authentication-Results: mx.example.test; spf=fail
+ smtp.mailfrom=traffic-fines.example.test; dkim=none
+ header.d=traffic-fines.example.test; dmarc=fail
+ header.from=traffic-fines.example.test
+From: =?utf-8?b?2KXYr9in2LHYqSDYp9mE2YXYrtin2YTZgdin2Kog2KfZhNmF2LHZiNix2Yo=?=
+ =?utf-8?q?=D8=A9?= <fines@traffic-fines.example.test>
+To: Customer <customer@example.test>
+Subject: =?utf-8?b?2KXYtNi52KfYsSDZhdiu2KfZhNmB2Kkg2YXYsdmI2LHZitipINi62Yo=?=
+ =?utf-8?b?2LEg2YXYs9iv2K/YqSAtINii2K7YsSDYqtmG2KjZitmH?=
+Date: Fri, 20 Nov 2026 20:28:00 +0400
+Message-ID: <c05-04.fixture@traffic-fines.example.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoK2KfZhNmF2KrYudin2YXZhCDYp9mE2YPYsdmK2YXY
+jAoK2LPZj9is2ZHZhNiqINi52YTZiSDZhdix2YPYqNiq2YMg2YXYrtin2YTZgdipINmF2LHZiNix
+2YrYqSDYqNmC2YrZhdipIDQwMCDYr9ix2YfZhSDYqNiq2KfYsdmK2K4gMTUg2YbZiNmB2YXYqNix
+IDIwMjbYjCDZiNmE2YUg2KrZj9iz2K/ZjtmR2K8g2K3YqtmJINin2YTYotmGLgoK2YrYsdis2Ykg
+2KfZhNiz2K/Yp9ivINmB2YjYsdmL2Kcg2LnYqNixINin2YTYsdin2KjYtyDYo9iv2YbYp9mHINmE
+2KrYrNmG2ZHYqCDZhdi22KfYudmB2Kkg2KfZhNi62LHYp9mF2Kkg2YjYrdis2LIg2KfZhNmF2LHZ
+g9io2Kk6Cmh0dHBzOi8vcGF5LWZpbmVzLmV4YW1wbGUudGVzdC9wYXkKCtmH2LDYpyDYotiu2LEg
+2KrZhtio2YrZhyDZgtio2YQg2KfYqtiu2KfYsCDYp9mE2KXYrNix2KfYodin2Kog2KfZhNmC2KfZ
+htmI2YbZitipLgoKVEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNip
+INin2K7Yqtio2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQo=

@@ -1,0 +1,27 @@
+Return-Path: <bounce@fines-portal.example.test>
+Received: from mail.fines-portal.example.test ([192.0.2.22]) by
+ mx.example.test with ESMTPS; Sat, 21 Nov 2026 21:24:00 +0400
+Received-SPF: fail (mx.example.test: domain of fines-portal.example.test does
+ not designate 192.0.2.10 as permitted sender)
+From: =?utf-8?b?2YXZhti12Kkg2LPYr9in2K8g2KfZhNmF2K7Yp9mE2YHYp9iq?=
+ <no-reply@fines-portal.example.test>
+To: Customer <customer@example.test>
+Subject: =?utf-8?b?2LrYsdin2YXYqSDZhdiq2KPYrtix2Kkg2KjZgtmK2YXYqSAxLDIwMCA=?=
+ =?utf-8?b?2K/YsdmH2YUgLSDYs9iv2ZHYryDZgtio2YQg2KXZitmC2KfZgSDYsdiu2LXYqtmD?=
+Date: Sat, 21 Nov 2026 21:24:00 +0400
+Message-ID: <c05-12.fixture@fines-portal.example.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoK2LnYstmK2LLZiiDYp9mE2YXYqti52KfZhdmE2IwK
+CtmG2YHZitiv2YPZhSDYqNmI2KzZiNivINi62LHYp9mF2Kkg2YXYqtij2K7YsdipINmF2LPYrNmR
+2YTYqSDYqNin2LPZhdmD2YUg2KjZgtmK2YXYqSAxLDIwMCDYr9ix2YfZhS4g2YHZiiDYrdin2YQg
+2LnYr9mFINin2YTYs9iv2KfYryDYrtmE2KfZhCA0OCDYs9in2LnYqdiMINiz2YrYqtmFINil2YrZ
+gtin2YEg2LHYrti12Kkg2KfZhNmC2YrYp9iv2Kkg2YjYpdit2KfZhNipINin2YTZhdmE2YEg2KXZ
+hNmJINin2YTYrNmH2KfYqiDYp9mE2YXYrtiq2LXYqS4KCtmE2YTYs9iv2KfYryDYp9mE2YHZiNix
+2Yog2YXYuSDYrti12YUgNTAlOgpodHRwczovL2ZpbmVzLXBvcnRhbC5leGFtcGxlLnRlc3QvcGF5
+CgrZhdi5INin2YTYqtit2YrYqS4KClRFU1QgRklYVFVSRSwgbm90IGEgcmVhbCBtZXNzYWdlIC8g
+2LHYs9in2YTYqSDYp9iu2KrYqNin2LEg2YjZhNmK2LPYqiDYrdmC2YrZgtmK2KkK

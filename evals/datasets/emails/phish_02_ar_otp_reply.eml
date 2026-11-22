@@ -1,0 +1,35 @@
+Return-Path: <bounce@falcon-demo-bank-secure.test>
+Received: from mail.falcon-demo-bank-secure.test ([192.0.2.12]) by
+ mx.example.test with ESMTPS; Fri, 20 Nov 2026 14:14:00 +0400
+Authentication-Results: mx.example.test; spf=softfail
+ smtp.mailfrom=falcon-demo-bank-secure.test; dkim=none
+ header.d=falcon-demo-bank-secure.test; dmarc=none
+ header.from=falcon-demo-bank-secure.test
+From: =?utf-8?b?2KjZhtmDINin2YTYtdmC2LEg2KfZhNiq2KzYsdmK2KjZig==?=
+ <no-reply@falcon-demo-bank-secure.test>
+To: Customer <customer@example.test>
+Reply-To: verify-team@mailbox.example.test
+Subject: =?utf-8?b?2KrZhtio2YrZhyDYo9mF2YbZijog2YrYsdis2Ykg2KrYo9mD2YrYryA=?=
+ =?utf-8?b?2LHZhdiyINin2YTYqtit2YLZgiDZhNil2KrZhdin2YUg2KrYrdiv2YrYqyDYrdiz?=
+ =?utf-8?b?2KfYqNmD?=
+Date: Fri, 20 Nov 2026 14:14:00 +0400
+Message-ID: <c05-02.fixture@falcon-demo-bank-secure.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoK2LnZhdmK2YTZhtinINin2YTYudiy2YrYstiMCgrY
+qtmE2YLZkdmK2YbYpyDYt9mE2KjZi9inINmE2KrYrdiv2YrYqyDYqNmK2KfZhtin2Kog2K3Ys9in
+2KjZgyDZhNiv2Ykg2KjZhtmDINin2YTYtdmC2LEg2KfZhNiq2KzYsdmK2KjZii4g2YTYpdiq2YXY
+p9mFINin2YTYt9mE2Kgg2YjYqtis2YbZkdioINil2YrZgtin2YEg2K7Yr9mF2KfYqtmDINin2YTZ
+hdi12LHZgdmK2KnYjCDZitix2KzZiSDYp9mE2LHYryDYudmE2Ykg2YfYsNmHINin2YTYsdiz2KfZ
+hNipINio2LHZhdiyINin2YTYqtit2YLZgiDYp9mE2YXZg9mI2ZHZhiDZhdmGINiz2KrYqSDYo9ix
+2YLYp9mFINin2YTYsNmKINmI2LXZhNmDINmE2YTYqtmIINmB2Yog2LHYs9in2YTYqSDZhti12YrY
+qS4KCtil2LDYpyDZhNmFINmK2LXZhNmG2Kcg2KfZhNix2YXYsiDYrtmE2KfZhCDYs9in2LnYqtmK
+2YbYjCDYs9mK2KrZhSDYqti52YTZitmCINit2LPYp9io2YMg2YXYpNmC2KrZi9inLgoK2YXYuSDY
+rtin2YTYtSDYp9mE2KrYrdmK2KnYjArZgdix2YrZgiDYrtiv2YXYqSDYp9mE2LnZhdmE2KfYoQrY
+qNmG2YMg2KfZhNi12YLYsSDYp9mE2KrYrNix2YrYqNmKCgpURVNUIEZJWFRVUkUsIG5vdCBhIHJl
+YWwgbWVzc2FnZSAvINix2LPYp9mE2Kkg2KfYrtiq2KjYp9ixINmI2YTZitiz2Kog2K3ZgtmK2YLZ
+itipCg==
