@@ -5,7 +5,7 @@
 draft: false  # thresholds fitted; weights are still the SCORING.md draft values
 fit:
   dataset_hash: "382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1"
-  git_sha: "cb2bd170223060d3805a0aa62d4c10632a58932d"
+  git_sha: "45bbd72feae1315005cc78945a068730793b4e99"
   fit_date: "2026-11-22"
   seed: 20261122
   n_train: 426
