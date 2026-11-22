@@ -225,7 +225,7 @@ async def test_non_get_methods_blocked(method: str) -> None:
             resolver=resolver,
             transport=httpx.MockTransport(lambda r: httpx.Response(200)),
         )
-    assert ei.value.reason is BlockReason.METHOD
+    assert ei.value.reason is BlockReason.METHOD_NOT_ALLOWED
 
 
 @pytest.mark.asyncio
