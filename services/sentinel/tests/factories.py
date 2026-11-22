@@ -14,7 +14,12 @@ _n = 0
 
 
 def ev(
-    type_: str, minutes: float, payload: dict[str, Any], key: str, source: str = "replay", vid: str | None = None
+    type_: str,
+    minutes: float,
+    payload: dict[str, Any],
+    key: str,
+    source: str = "replay",
+    vid: str | None = None,
 ) -> Event:
     at = T0 + timedelta(minutes=minutes)
     return parse_event(
@@ -39,7 +44,11 @@ def verdict_ev(
     type_: str = "verdict.created",
     key: str | None = None,
 ) -> Event:
-    fp: dict[str, Any] = {"asn": "AS64500", "registrar": "Example Registrar", "cert_issuer": "Example CA"}
+    fp: dict[str, Any] = {
+        "asn": "AS64500",
+        "registrar": "Example Registrar",
+        "cert_issuer": "Example CA",
+    }
     if simhash is not None:
         fp["dom_simhash"] = f"{simhash:016x}"
     k = key or f"v|{domain}|{minutes}|{type_}"
@@ -75,8 +84,18 @@ def observed_ev(domain: str, minutes: float, brand: str | None = "falcon_demo_ba
 
 
 def report_ev(fp: str, minutes: float, i: int = 0) -> Event:
-    return ev("report.submitted", minutes, {"kind": "scam_link", "script_fingerprint": fp}, f"r|{fp}|{minutes}|{i}")
+    return ev(
+        "report.submitted",
+        minutes,
+        {"kind": "scam_link", "script_fingerprint": fp},
+        f"r|{fp}|{minutes}|{i}",
+    )
 
 
 def feedback_ev(signal: str, minutes: float, i: int = 0, kind: str = "false_positive") -> Event:
-    return ev("feedback.submitted", minutes, {"kind": kind, "signal": signal}, f"f|{signal}|{minutes}|{i}|{kind}")
+    return ev(
+        "feedback.submitted",
+        minutes,
+        {"kind": kind, "signal": signal},
+        f"f|{signal}|{minutes}|{i}|{kind}",
+    )
