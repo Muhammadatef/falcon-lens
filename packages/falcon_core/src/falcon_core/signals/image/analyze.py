@@ -136,9 +136,7 @@ def _decode_qr(rgb: object) -> list[str]:
     return out
 
 
-async def analyze_image_with_ocr(
-    data: bytes, ocr: OcrHook | None = None
-) -> tuple[ImageAnalysis, str | None]:
+async def analyze_image_with_ocr(data: bytes, ocr: OcrHook | None = None) -> tuple[ImageAnalysis, str | None]:
     """analyze_image plus the OCR hook. The returned text is untrusted; route it to the message pipeline."""
     res = analyze_image(data)
     text = await ocr(data) if (ocr and res.needs_ocr) else None

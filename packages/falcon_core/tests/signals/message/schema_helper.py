@@ -10,11 +10,7 @@ from falcon_core.signals.base import Evidence
 
 
 def _schema() -> dict[str, object]:
-    root = next(
-        p
-        for p in Path(__file__).resolve().parents
-        if (p / "contracts" / "evidence.schema.json").is_file()
-    )
+    root = next(p for p in Path(__file__).resolve().parents if (p / "contracts" / "evidence.schema.json").is_file())
     return json.loads((root / "contracts" / "evidence.schema.json").read_text())  # type: ignore[no-any-return]
 
 

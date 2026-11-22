@@ -118,10 +118,7 @@ async def test_embedder_calls_api_embed_and_checks_dim() -> None:
     emb = OllamaEmbedder(http, "http://ollama.test:11434/", model="m", dim=DIM)
     (v,) = await emb.embed(["هلا otp"])
     assert len(v) == DIM
-    assert (
-        http.calls[0][0] == "http://ollama.test:11434/api/embed"
-        and http.calls[0][1]["model"] == "m"
-    )
+    assert http.calls[0][0] == "http://ollama.test:11434/api/embed" and http.calls[0][1]["model"] == "m"
     assert await emb.verify_dimension() == DIM
     with pytest.raises(EmbedDimMismatch):
         await OllamaEmbedder(http, "http://ollama.test", dim=DIM + 1).embed(["x"])
@@ -139,9 +136,7 @@ def test_embedder_defaults_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_loader_seeds_and_keeps_synthetic(tmp_path: Path) -> None:
     conn = FakeConn()
     store = ScriptStore(conn, DIM)
-    n = await load_scripts(
-        store, OllamaEmbedder(FakeHttp(), "http://o.test", dim=DIM), jsonl(tmp_path, ROWS)
-    )
+    n = await load_scripts(store, OllamaEmbedder(FakeHttp(), "http://o.test", dim=DIM), jsonl(tmp_path, ROWS))
     assert n == 2 and set(conn.rows) == {"s1", "s2"}
     inserts = [p for q, p in conn.executed if q.startswith("INSERT")]
     assert all(p is not None and p[5] is True for p in inserts)  # synthetic kept
@@ -163,11 +158,7 @@ async def test_script_match_threshold_and_privacy(tmp_path: Path) -> None:
     ev = await script_match("pay this fine now", emb, store, theta=0.9)
     assert len(ev) == 1 and ev[0].signal == "message.script_match"
     m = ev[0].observed["matches"]
-    assert (
-        m[0]["id"] == "s1"
-        and m[0]["label"] == "fake_fine"
-        and set(m[0]) == {"id", "label", "similarity"}
-    )
+    assert m[0]["id"] == "s1" and m[0]["label"] == "fake_fine" and set(m[0]) == {"id", "label", "similarity"}
     assert "pay this fine" not in json.dumps(ev[0].observed)
     assert await script_match("hello", emb, store, theta=0.99) == []
     assert await script_match("pay this fine now", emb, store, theta=1.01) == []
@@ -188,9 +179,7 @@ def test_knn_sql_returns_only_id_label_similarity() -> None:
     conn = FakeConn()
     asyncio.run(ScriptStore(conn, DIM).knn([0.1] * DIM, 3))
     q = conn.executed[-1][0]
-    assert (
-        q.startswith("SELECT id, label, 1 - (embedding <=> ") and "text" not in q.split("FROM")[0]
-    )
+    assert q.startswith("SELECT id, label, 1 - (embedding <=> ") and "text" not in q.split("FROM")[0]
 
 
 @dataclass

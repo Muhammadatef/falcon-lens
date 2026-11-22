@@ -12,9 +12,7 @@ from dataclasses import dataclass
 
 MAX_MESSAGE_CHARS = 8192  # THREAT_MODEL: message limit 8 KB
 
-_DIGITS = {ord(c): str(i) for i, c in enumerate("٠١٢٣٤٥٦٧٨٩")} | {
-    ord(c): str(i) for i, c in enumerate("۰۱۲۳۴۵۶۷۸۹")
-}
+_DIGITS = {ord(c): str(i) for i, c in enumerate("٠١٢٣٤٥٦٧٨٩")} | {ord(c): str(i) for i, c in enumerate("۰۱۲۳۴۵۶۷۸۹")}
 _FOLD = {
     "أ": "ا",
     "إ": "ا",

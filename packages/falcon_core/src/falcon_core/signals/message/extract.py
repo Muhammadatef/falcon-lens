@@ -107,9 +107,7 @@ _PHONE_RE = re.compile(r"(?<![\w+])\+?\d[\d\s().-]{6,20}\d(?![\w])")
 class ChildInput:
     kind: str  # "url" | "phone"
     value: str  # url as found (de-obfuscated) or E.164-ish phone
-    span: tuple[int, int] | None = (
-        None  # offsets in the cleaned text (urls) / normalised text (phones)
-    )
+    span: tuple[int, int] | None = None  # offsets in the cleaned text (urls) / normalised text (phones)
     source: str = "message"
 
 

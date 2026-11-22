@@ -49,9 +49,7 @@ def prepare_for_embedding(text: str) -> str:
 class OllamaEmbedder:
     """POST {base}/api/embed {"model", "input": [...]} -> {"embeddings": [[...], ...]}."""
 
-    def __init__(
-        self, http: Any, base_url: str, model: str | None = None, dim: int | None = None
-    ) -> None:
+    def __init__(self, http: Any, base_url: str, model: str | None = None, dim: int | None = None) -> None:
         m, d = embed_settings()
         self.http, self.base_url = http, base_url.rstrip("/")
         self.model, self.dim = model or m, dim or d
@@ -119,9 +117,7 @@ class ScriptStore:
             if stmt.strip():
                 await self.conn.execute(stmt.strip().rstrip(";"))
 
-    async def upsert(
-        self, rows: Sequence[dict[str, Any]], vectors: Sequence[Sequence[float]]
-    ) -> int:
+    async def upsert(self, rows: Sequence[dict[str, Any]], vectors: Sequence[Sequence[float]]) -> int:
         for r, v in zip(rows, vectors, strict=True):
             if len(v) != self.dim:
                 raise EmbedDimMismatch(f"vector dim {len(v)} != {self.dim}")
@@ -165,9 +161,7 @@ def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     return rows
 
 
-async def load_scripts(
-    store: ScriptStore, embedder: OllamaEmbedder, path: str | Path, batch: int = 16
-) -> int:
+async def load_scripts(store: ScriptStore, embedder: OllamaEmbedder, path: str | Path, batch: int = 16) -> int:
     rows = read_jsonl(path)
     n = 0
     for i in range(0, len(rows), batch):
@@ -208,10 +202,7 @@ async def script_match(
             confidence=min(1.0, top.similarity),
             observed={
                 "theta": theta,
-                "matches": [
-                    {"id": m.id, "label": m.label, "similarity": round(m.similarity, 4)}
-                    for m in matches
-                ],
+                "matches": [{"id": m.id, "label": m.label, "similarity": round(m.similarity, 4)} for m in matches],
             },
             display={"en": "Matches a known scam script", "ar": "يطابق نصا احتياليا معروفا"},
         )

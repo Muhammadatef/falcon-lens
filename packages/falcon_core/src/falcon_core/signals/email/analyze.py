@@ -238,14 +238,8 @@ def _impersonation(display: str, sender_domain: str | None, reg: BrandRegistry) 
     comp = compact(display)
     hit = []
     for b in reg.brands:
-        named = any(t in comp for t in b.tokens_en if len(t) >= 4) or any(
-            t in comp for t in b.tokens_ar
-        )
-        if named and not (
-            sender_domain
-            and reg.is_official(sender_domain)
-            and reg.official_brand(sender_domain) is b
-        ):
+        named = any(t in comp for t in b.tokens_en if len(t) >= 4) or any(t in comp for t in b.tokens_ar)
+        if named and not (sender_domain and reg.is_official(sender_domain) and reg.official_brand(sender_domain) is b):
             hit.append(b.brand_id)
     if not hit:
         return None
@@ -319,9 +313,7 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
                 },
             )
         )
-    rp = (
-        str(msg["Return-Path"] or "").strip("<> ").lower() if msg["Return-Path"] is not None else ""
-    )
+    rp = str(msg["Return-Path"] or "").strip("<> ").lower() if msg["Return-Path"] is not None else ""
     if (rpd := _domain_of(rp)) and from_dom and rpd != from_dom:
         res.evidence.append(
             Evidence(
@@ -344,11 +336,7 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
             continue
         ctype = p.get_content_type()
         fname = p.get_filename()
-        is_att = (
-            p.get_content_disposition() == "attachment"
-            or fname is not None
-            or not ctype.startswith("text/")
-        )
+        is_att = p.get_content_disposition() == "attachment" or fname is not None or not ctype.startswith("text/")
         if not is_att and ctype == "text/plain":
             plain += _decode_text(p) + "\n"
         elif not is_att and ctype == "text/html":
@@ -380,9 +368,7 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
                             "detected_type": kind,
                             "size": len(blob),
                             "sha256": hashlib.sha256(blob).hexdigest(),
-                            "risky": kind in ("exe", "elf", "lnk", "html", "ole2")
-                            or ext in _RISKY_EXT
-                            or double_ext,
+                            "risky": kind in ("exe", "elf", "lnk", "html", "ole2") or ext in _RISKY_EXT or double_ext,
                             "double_extension": double_ext,
                         },
                         display={
@@ -394,9 +380,7 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
             if kind in ("png", "jpeg", "webp", "gif"):
                 ia = analyze_image(blob)
                 res.evidence += ia.evidence
-                res.children += [
-                    ChildInput(c.kind, c.value, None, "email.attachment_qr") for c in ia.children
-                ]
+                res.children += [ChildInput(c.kind, c.value, None, "email.attachment_qr") for c in ia.children]
 
     bad, kids = _link_mismatches(links)
     res.children += kids
@@ -436,7 +420,5 @@ def run_email(ctx: SignalContext) -> list[Evidence]:
         return []
     return analyze_email(
         data,
-        getattr(ctx, "brands", None)
-        if isinstance(getattr(ctx, "brands", None), BrandRegistry)
-        else None,
+        getattr(ctx, "brands", None) if isinstance(getattr(ctx, "brands", None), BrandRegistry) else None,
     ).evidence

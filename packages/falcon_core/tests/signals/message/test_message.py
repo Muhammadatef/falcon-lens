@@ -136,9 +136,7 @@ def test_h6_flag_otp_plus_authority() -> None:
 
 
 def test_all_evidence_validates_against_schema() -> None:
-    res = analyze_message(
-        "عاجل شرطة ابوظبي ارسل رمز التحقق hxxps://falcon-demo[.]test/x 0500000000 بنك الصقر"
-    )
+    res = analyze_message("عاجل شرطة ابوظبي ارسل رمز التحقق hxxps://falcon-demo[.]test/x 0500000000 بنك الصقر")
     assert res.evidence
     validate_evidence(res.evidence)
 
@@ -199,9 +197,7 @@ def test_brand_mention_and_url_mismatch() -> None:
     ok = analyze_message("بنك الصقر التجريبي يدعوكم https://falcon-demo-bank.test/")
     assert "message.brand_mention" in {e.signal for e in ok.evidence}
     assert "message.brand_url_mismatch" not in {e.signal for e in ok.evidence}
-    assert not [
-        e for e in analyze_message("hello there").evidence if e.signal.startswith("message.brand")
-    ]
+    assert not [e for e in analyze_message("hello there").evidence if e.signal.startswith("message.brand")]
 
 
 def test_registered_signals_run_async() -> None:

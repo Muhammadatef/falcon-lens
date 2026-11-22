@@ -63,21 +63,15 @@ def qr_png(payload: str) -> bytes:
 
 def test_clean_email_has_no_risk_evidence() -> None:
     res = analyze_email(mk().as_bytes())
-    assert not [
-        e for e in res.evidence if e.signal.startswith("email.") and e.signal != "email.attachment"
-    ]
+    assert not [e for e in res.evidence if e.signal.startswith("email.") and e.signal != "email.attachment"]
 
 
 def test_auth_fail_variants() -> None:
-    m = mk(
-        Authentication_Results="mx.example.test; spf=pass; dkim=fail (bad sig); dmarc=fail action=none"
-    )
+    m = mk(Authentication_Results="mx.example.test; spf=pass; dkim=fail (bad sig); dmarc=fail action=none")
     ev = get(analyze_email(m.as_bytes()), "email.auth_fail")
     assert ev.observed["failures"] == ["dkim=fail", "dmarc=fail"]
     m = mk(Received_SPF="softfail (example.test: domain does not designate ...)")
-    assert (
-        "spf=softfail" in get(analyze_email(m.as_bytes()), "email.auth_fail").observed["failures"]
-    )
+    assert "spf=softfail" in get(analyze_email(m.as_bytes()), "email.auth_fail").observed["failures"]
     m = mk(ARC_Authentication_Results="i=1; mx.example.test; arc=fail")
     assert "arc=fail" in get(analyze_email(m.as_bytes()), "email.auth_fail").observed["failures"]
     ok = mk(Authentication_Results="mx.example.test; spf=pass; dkim=pass; dmarc=pass")
@@ -94,18 +88,14 @@ def test_display_name_impersonation() -> None:
 
 
 def test_reply_to_and_return_path_mismatch() -> None:
-    res = analyze_email(
-        mk(Reply_To="x@other.example.test", Return_Path="<b@bounce.example.test>").as_bytes()
-    )
+    res = analyze_email(mk(Reply_To="x@other.example.test", Return_Path="<b@bounce.example.test>").as_bytes())
     assert "email.reply_to_mismatch" in names(res) and "email.return_path_mismatch" in names(res)
     same = analyze_email(mk(Reply_To="x@falcon-demo-bank.test").as_bytes())
     assert "email.reply_to_mismatch" not in names(same)
 
 
 def test_link_text_vs_href_mismatch() -> None:
-    html = (
-        '<p>Visit <a href="https://evil.example.test/p">https://falcon-demo-bank.test/login</a></p>'
-    )
+    html = '<p>Visit <a href="https://evil.example.test/p">https://falcon-demo-bank.test/login</a></p>'
     res = analyze_email(mk(html=html).as_bytes())
     ev = get(res, "email.link_text_mismatch")
     assert ev.observed["count"] == 1
@@ -126,9 +116,7 @@ def test_html_is_parsed_not_rendered_and_scripts_ignored() -> None:
 
 
 def test_body_goes_through_message_pipeline_and_h5_children() -> None:
-    res = analyze_email(
-        mk(subject="مخالفة مرورية", text="ادفع الان hxxps://pay.example[.]test/f").as_bytes()
-    )
+    res = analyze_email(mk(subject="مخالفة مرورية", text="ادفع الان hxxps://pay.example[.]test/f").as_bytes())
     assert {"message.rule.fine", "message.rule.payment"} <= names(res)
     assert ("url", "https://pay.example.test/f") in {(c.kind, c.value) for c in res.children}
 
@@ -137,9 +125,7 @@ def test_attachment_type_by_magic_and_hash_only() -> None:
     m = mk()
     exe = b"MZ\x90\x00" + b"\x00" * 60
     m.add_attachment(exe, maintype="application", subtype="pdf", filename="invoice.pdf.exe")
-    m.add_attachment(
-        b"%PDF-1.4 test", maintype="application", subtype="pdf", filename="../../a.pdf"
-    )
+    m.add_attachment(b"%PDF-1.4 test", maintype="application", subtype="pdf", filename="../../a.pdf")
     res = analyze_email(m.as_bytes())
     atts = [e.observed for e in res.evidence if e.signal == "email.attachment"]
     assert atts[0]["detected_type"] == "exe" and atts[0]["declared_type"] == "application/pdf"
@@ -150,9 +136,7 @@ def test_attachment_type_by_magic_and_hash_only() -> None:
 
 def test_image_attachment_qr_becomes_child() -> None:
     m = mk()
-    m.add_attachment(
-        qr_png("https://qr.example.test/pay"), maintype="image", subtype="png", filename="q.png"
-    )
+    m.add_attachment(qr_png("https://qr.example.test/pay"), maintype="image", subtype="png", filename="q.png")
     res = analyze_email(m.as_bytes())
     assert "image.qr_decoded" in names(res)
     assert ("url", "https://qr.example.test/pay") in {(c.kind, c.value) for c in res.children}
@@ -177,10 +161,7 @@ def test_too_many_parts_and_deep_nesting() -> None:
     for i in range(MAX_PARTS + 5):
         m.add_attachment(b"x", maintype="application", subtype="octet-stream", filename=f"{i}.bin")
     assert get(analyze_email(m.as_bytes()), "email.invalid").observed["reason"] == "too_many_parts"
-    nested = b"".join(
-        b"Content-Type: multipart/mixed; boundary=b%d\r\n\r\n--b%d\r\n" % (i, i)
-        for i in range(3000)
-    )
+    nested = b"".join(b"Content-Type: multipart/mixed; boundary=b%d\r\n\r\n--b%d\r\n" % (i, i) for i in range(3000))
     res = analyze_email(nested)  # RecursionError or part cap: either way no crash
     assert any(e.signal == "email.invalid" for e in res.evidence) or isinstance(res.children, list)
 
@@ -250,10 +231,7 @@ def test_image_without_qr() -> None:
 
 def test_invalid_images() -> None:
     assert get(analyze_image(b"not an image"), "image.invalid").observed["reason"] == "bad_magic"
-    assert (
-        get(analyze_image(b"\x89PNG\r\n\x1a\n" + b"junk"), "image.invalid").observed["reason"]
-        == "decode_error"
-    )
+    assert get(analyze_image(b"\x89PNG\r\n\x1a\n" + b"junk"), "image.invalid").observed["reason"] == "decode_error"
     huge = b"\x89PNG\r\n\x1a\n" + b"0" * MAX_IMAGE_BYTES
     assert get(analyze_image(huge), "image.invalid").observed["reason"] == "too_large"
     # PNG claiming JPEG-ish bytes is caught by magic; a GIF header over PNG data is a format mismatch
@@ -266,10 +244,7 @@ def _png_header_only(w: int, h: int) -> bytes:
 
     ihdr = struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)
     return (
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", ihdr)
-        + chunk(b"IDAT", zlib.compress(b"\x00" * 100))
-        + chunk(b"IEND", b"")
+        b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(b"\x00" * 100)) + chunk(b"IEND", b"")
     )
 
 
@@ -295,9 +270,7 @@ async def test_ocr_hook_is_only_called_for_valid_images() -> None:
 
 
 def test_image_evidence_validates_schema() -> None:
-    validate_evidence(
-        analyze_image(qr_png("https://qr.example.test/")).evidence + analyze_image(b"x").evidence
-    )
+    validate_evidence(analyze_image(qr_png("https://qr.example.test/")).evidence + analyze_image(b"x").evidence)
 
 
 def test_base64_payload_roundtrip_in_email_is_decoded_only_for_hashing() -> None:

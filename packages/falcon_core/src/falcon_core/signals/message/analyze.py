@@ -125,11 +125,7 @@ def _brand_evidence(text: str, urls: list[ChildInput], reg: BrandRegistry) -> li
     found = []
     for b in reg.brands:
         hit = any(
-            (
-                re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", nm)
-                if len(t) < 6
-                else t in comp
-            )
+            (re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", nm) if len(t) < 6 else t in comp)
             for t in b.tokens_en
             if len(t) >= 4
         ) or any(t in comp for t in b.tokens_ar)
