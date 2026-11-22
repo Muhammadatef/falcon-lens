@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Collect and verify the legitimate-URL eval set (docs/EVALS.md: legit URLs).
 
 Usage (run from repo root):
@@ -10,6 +11,7 @@ stay inside the brand's verified_domains. The per-row status log goes to
 data/private/legit_url_checks.jsonl (gitignored). The published CSV carries only rows
 that passed.
 """
+
 from __future__ import annotations
 
 import csv
@@ -29,34 +31,137 @@ TRANCO_ID = "46YLX"
 PSL = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
 
 OFFICIAL_PATHS: dict[str, list[str]] = {
-    "abu_dhabi_police": ["https://www.adpolice.gov.ae/", "https://www.adpolice.gov.ae/en/", "https://www.adpolice.gov.ae/ar/"],
-    "dubai_police": ["https://www.dubaipolice.gov.ae/", "https://www.dubaipolice.gov.ae/wps/portal/home/", "https://www.dubaipolice.gov.ae/wps/portal/home/services"],
+    "abu_dhabi_police": [
+        "https://www.adpolice.gov.ae/",
+        "https://www.adpolice.gov.ae/en/",
+        "https://www.adpolice.gov.ae/ar/",
+    ],
+    "dubai_police": [
+        "https://www.dubaipolice.gov.ae/",
+        "https://www.dubaipolice.gov.ae/wps/portal/home/",
+        "https://www.dubaipolice.gov.ae/wps/portal/home/services",
+    ],
     "moi_uae": ["https://www.moi.gov.ae/", "https://www.moi.gov.ae/en/", "https://www.moi.gov.ae/ar/"],
     "uae_pass": ["https://www.uaepass.ae/", "https://www.uaepass.ae/faq", "https://selfcare.uaepass.ae/"],
-    "tamm_abu_dhabi": ["https://www.tamm.abudhabi/", "https://www.tamm.abudhabi/en", "https://www.tamm.abudhabi/ar", "https://www.tamm.abudhabi/en/life-events"],
-    "icp_uae": ["https://icp.gov.ae/", "https://icp.gov.ae/en/", "https://icp.gov.ae/ar/", "https://smartservices.icp.gov.ae/"],
-    "emirates_post": ["https://www.emiratespost.ae/", "https://www.emiratespost.ae/track-and-trace", "https://www.emiratespost.ae/en", "https://www.epg.ae/"],
+    "tamm_abu_dhabi": [
+        "https://www.tamm.abudhabi/",
+        "https://www.tamm.abudhabi/en",
+        "https://www.tamm.abudhabi/ar",
+        "https://www.tamm.abudhabi/en/life-events",
+    ],
+    "icp_uae": [
+        "https://icp.gov.ae/",
+        "https://icp.gov.ae/en/",
+        "https://icp.gov.ae/ar/",
+        "https://smartservices.icp.gov.ae/",
+    ],
+    "emirates_post": [
+        "https://www.emiratespost.ae/",
+        "https://www.emiratespost.ae/track-and-trace",
+        "https://www.emiratespost.ae/en",
+        "https://www.epg.ae/",
+    ],
     "salik": ["https://www.salik.ae/", "https://www.salik.ae/en", "https://www.salik.ae/ar"],
-    "rta_dubai": ["https://www.rta.ae/", "https://www.rta.ae/wps/portal/rta/ae/home", "https://www.nol.ae/", "https://www.rta.ae/wps/portal/rta/ae/public-transport"],
+    "rta_dubai": [
+        "https://www.rta.ae/",
+        "https://www.rta.ae/wps/portal/rta/ae/home",
+        "https://www.nol.ae/",
+        "https://www.rta.ae/wps/portal/rta/ae/public-transport",
+    ],
     "itc_abu_dhabi_darb": ["https://admobility.gov.ae/", "https://admobility.gov.ae/en", "https://itc.gov.ae/"],
     "addc_taqa_distribution": ["https://www.addc.ae/", "https://www.taqadistribution.com/"],
-    "dewa": ["https://www.dewa.gov.ae/", "https://www.dewa.gov.ae/en/", "https://www.dewa.gov.ae/en/customer", "https://www.dewa.gov.ae/ar/"],
+    "dewa": [
+        "https://www.dewa.gov.ae/",
+        "https://www.dewa.gov.ae/en/",
+        "https://www.dewa.gov.ae/en/customer",
+        "https://www.dewa.gov.ae/ar/",
+    ],
     "sewa": ["https://www.sewa.gov.ae/", "https://www.sewa.gov.ae/en/", "https://www.sewa.gov.ae/ar/"],
-    "etisalat_by_eand": ["https://www.etisalat.ae/", "https://www.etisalat.ae/en/c/personal.html", "https://www.eand.com/", "https://www.eand.com/en/home.html", "https://www.eand.ae/"],
-    "du": ["https://www.du.ae/", "https://www.du.ae/personal", "https://www.du.ae/business", "https://www.du.ae/ar/personal"],
-    "cbuae": ["https://www.centralbank.ae/", "https://www.centralbank.ae/en/", "https://www.centralbank.ae/ar/", "https://www.centralbank.ae/en/consumer-protection/"],
-    "fab": ["https://www.bankfab.com/", "https://www.bankfab.com/en-ae/personal", "https://www.bankfab.com/ar-ae/personal", "https://www.bankfab.com/en-ae/personal/ways-to-bank/digital-banking"],
-    "adcb": ["https://www.adcb.com/", "https://www.adcb.com/en/personal/", "https://www.adcb.com/en/personal/ways-to-bank/", "https://www.adcb.com/ar/"],
-    "emirates_nbd": ["https://www.emiratesnbd.com/", "https://www.emiratesnbd.com/en", "https://www.emiratesnbd.com/ar-ae", "https://www.emiratesnbd.com/en/ways-to-bank/online-banking"],
-    "dib": ["https://www.dib.ae/", "https://www.dib.ae/personal", "https://www.dib.ae/ar", "https://www.dib.ae/personal/ways-to-bank"],
-    "mashreq": ["https://www.mashreq.com/", "https://www.mashreq.com/en/uae/neo/", "https://www.mashreq.com/en/uae/neo/personal", "https://www.mashreq.com/ar/uae/neo/"],
-    "adib": ["https://www.adib.ae/", "https://www.adib.ae/en/Pages/default.aspx", "https://www.adib.ae/ar/Pages/default.aspx", "https://www.adib.com/"],
-    "rakbank": ["https://www.rakbank.ae/", "https://www.rakbank.ae/wps/portal/retail-banking/home", "https://www.rakbank.ae/en/", "https://www.rakbank.ae/ar/"],
-    "emirates_islamic": ["https://www.emiratesislamic.ae/", "https://www.emiratesislamic.ae/en", "https://www.emiratesislamic.ae/ar"],
+    "etisalat_by_eand": [
+        "https://www.etisalat.ae/",
+        "https://www.etisalat.ae/en/c/personal.html",
+        "https://www.eand.com/",
+        "https://www.eand.com/en/home.html",
+        "https://www.eand.ae/",
+    ],
+    "du": [
+        "https://www.du.ae/",
+        "https://www.du.ae/personal",
+        "https://www.du.ae/business",
+        "https://www.du.ae/ar/personal",
+    ],
+    "cbuae": [
+        "https://www.centralbank.ae/",
+        "https://www.centralbank.ae/en/",
+        "https://www.centralbank.ae/ar/",
+        "https://www.centralbank.ae/en/consumer-protection/",
+    ],
+    "fab": [
+        "https://www.bankfab.com/",
+        "https://www.bankfab.com/en-ae/personal",
+        "https://www.bankfab.com/ar-ae/personal",
+        "https://www.bankfab.com/en-ae/personal/ways-to-bank/digital-banking",
+    ],
+    "adcb": [
+        "https://www.adcb.com/",
+        "https://www.adcb.com/en/personal/",
+        "https://www.adcb.com/en/personal/ways-to-bank/",
+        "https://www.adcb.com/ar/",
+    ],
+    "emirates_nbd": [
+        "https://www.emiratesnbd.com/",
+        "https://www.emiratesnbd.com/en",
+        "https://www.emiratesnbd.com/ar-ae",
+        "https://www.emiratesnbd.com/en/ways-to-bank/online-banking",
+    ],
+    "dib": [
+        "https://www.dib.ae/",
+        "https://www.dib.ae/personal",
+        "https://www.dib.ae/ar",
+        "https://www.dib.ae/personal/ways-to-bank",
+    ],
+    "mashreq": [
+        "https://www.mashreq.com/",
+        "https://www.mashreq.com/en/uae/neo/",
+        "https://www.mashreq.com/en/uae/neo/personal",
+        "https://www.mashreq.com/ar/uae/neo/",
+    ],
+    "adib": [
+        "https://www.adib.ae/",
+        "https://www.adib.ae/en/Pages/default.aspx",
+        "https://www.adib.ae/ar/Pages/default.aspx",
+        "https://www.adib.com/",
+    ],
+    "rakbank": [
+        "https://www.rakbank.ae/",
+        "https://www.rakbank.ae/wps/portal/retail-banking/home",
+        "https://www.rakbank.ae/en/",
+        "https://www.rakbank.ae/ar/",
+    ],
+    "emirates_islamic": [
+        "https://www.emiratesislamic.ae/",
+        "https://www.emiratesislamic.ae/en",
+        "https://www.emiratesislamic.ae/ar",
+    ],
 }
-GOV_BRANDS = {"abu_dhabi_police", "dubai_police", "moi_uae", "uae_pass", "tamm_abu_dhabi", "icp_uae", "emirates_post",
-              "salik", "rta_dubai", "itc_abu_dhabi_darb", "addc_taqa_distribution", "dewa", "sewa", "etisalat_by_eand",
-              "du", "cbuae"}
+GOV_BRANDS = {
+    "abu_dhabi_police",
+    "dubai_police",
+    "moi_uae",
+    "uae_pass",
+    "tamm_abu_dhabi",
+    "icp_uae",
+    "emirates_post",
+    "salik",
+    "rta_dubai",
+    "itc_abu_dhabi_darb",
+    "addc_taqa_distribution",
+    "dewa",
+    "sewa",
+    "etisalat_by_eand",
+    "du",
+    "cbuae",
+}
 # Official login / payment / service pages (also hard negatives); brand_id filled.
 OFFICIAL_HARD = [
     ("https://www.dewa.gov.ae/en/customer/services/pay-your-bill", "hard_negative_payment", "dewa"),
@@ -66,7 +171,11 @@ OFFICIAL_HARD = [
     ("https://www.emiratespost.ae/en/sendmoney", "hard_negative_payment", "emirates_post"),
     ("https://www.adcb.com/en/personal/ways-to-bank/online-banking/", "hard_negative_login", "adcb"),
     ("https://www.emiratesnbd.com/en/ways-to-bank/mobile-banking", "hard_negative_login", "emirates_nbd"),
-    ("https://www.bankfab.com/en-ae/personal/ways-to-bank/digital-banking/online-banking", "hard_negative_login", "fab"),
+    (
+        "https://www.bankfab.com/en-ae/personal/ways-to-bank/digital-banking/online-banking",
+        "hard_negative_login",
+        "fab",
+    ),
     ("https://www.mashreq.com/en/uae/neo/ways-to-bank/", "hard_negative_login", "mashreq"),
     ("https://www.dib.ae/personal/ways-to-bank/online-banking", "hard_negative_login", "dib"),
     ("https://www.rakbank.ae/en/personal/ways-to-bank/", "hard_negative_login", "rakbank"),
@@ -74,17 +183,231 @@ OFFICIAL_HARD = [
     ("https://www.uaepass.ae/login", "hard_negative_login", "uae_pass"),
     ("https://smartservices.icp.gov.ae/echannels/web/client/guest/index.html", "hard_negative_login", "icp_uae"),
     ("https://www.tamm.abudhabi/en/aspects-of-life", "hard_negative_login", "tamm_abu_dhabi"),
-    ("https://www.dubaipolice.gov.ae/wps/portal/home/services/individualservices/paytrafficfines", "hard_negative_payment", "dubai_police"),
+    (
+        "https://www.dubaipolice.gov.ae/wps/portal/home/services/individualservices/paytrafficfines",
+        "hard_negative_payment",
+        "dubai_police",
+    ),
     ("https://www.adpolice.gov.ae/en/services", "hard_negative_payment", "abu_dhabi_police"),
     ("https://www.rta.ae/wps/portal/rta/ae/home/fines", "hard_negative_payment", "rta_dubai"),
     ("https://www.eand.com/en/personal/pay-bill.html", "hard_negative_payment", "etisalat_by_eand"),
 ]
 
 # Tranco list TRANCO_ID (top-1m); user-facing sites picked by hand (CDN/infra domains excluded).
-POPULAR = ["google.com", "facebook.com", "microsoft.com", "youtube.com", "apple.com", "instagram.com", "linkedin.com", "amazon.com", "wikipedia.org", "netflix.com", "github.com", "yahoo.com", "bing.com", "reddit.com", "x.com", "whatsapp.com", "zoom.us", "adobe.com", "wordpress.org", "wordpress.com", "paypal.com", "ebay.com", "cloudflare.com", "mozilla.org", "spotify.com", "tiktok.com", "pinterest.com", "tumblr.com", "medium.com", "dropbox.com", "salesforce.com", "oracle.com", "ibm.com", "intel.com", "nvidia.com", "bbc.com", "cnn.com", "nytimes.com", "theguardian.com", "reuters.com", "bloomberg.com", "aljazeera.com", "aljazeera.net", "khaleejtimes.com", "gulfnews.com", "thenationalnews.com", "arabianbusiness.com", "emirates.com", "etihad.com", "flydubai.com", "airarabia.com", "noon.com", "talabat.com", "careem.com", "dubizzle.com", "bayut.com", "propertyfinder.ae", "carrefouruae.com", "lulu.com", "namshi.com", "sharafdg.com", "amazon.ae", "amazon.sa", "python.org", "nodejs.org", "stackoverflow.com", "gitlab.com", "slack.com", "atlassian.com", "notion.so", "canva.com", "figma.com", "openai.com", "anthropic.com", "duckduckgo.com", "twitch.tv", "discord.com", "telegram.org", "signal.org", "skype.com", "office.com", "live.com", "outlook.com", "icloud.com", "booking.com", "airbnb.com", "tripadvisor.com", "expedia.com", "uber.com", "aliexpress.com", "alibaba.com", "temu.com", "shein.com", "walmart.com", "target.com", "bestbuy.com", "ikea.com", "nike.com", "adidas.com", "samsung.com", "sony.com", "hp.com", "dell.com", "lenovo.com", "huawei.com", "xiaomi.com", "cisco.com", "vmware.com", "docker.com", "kubernetes.io", "rust-lang.org", "golang.org", "php.net", "archive.org", "imdb.com", "quora.com", "vimeo.com", "soundcloud.com", "deezer.com", "anghami.com", "shahid.net", "who.int", "un.org", "worldbank.org", "imf.org", "nasa.gov", "nih.gov", "cdc.gov", "europa.eu", "www.gov.uk", "usa.gov", "mit.edu", "harvard.edu", "stanford.edu", "ox.ac.uk", "khalifa.ac.ae", "uaeu.ac.ae", "zu.ac.ae", "auc.edu", "visa.com", "mastercard.com", "americanexpress.com", "hsbc.com", "citi.com", "standardchartered.com", "barclays.com", "dhl.com", "fedex.com", "ups.com", "aramex.com"]
+POPULAR = [
+    "google.com",
+    "facebook.com",
+    "microsoft.com",
+    "youtube.com",
+    "apple.com",
+    "instagram.com",
+    "linkedin.com",
+    "amazon.com",
+    "wikipedia.org",
+    "netflix.com",
+    "github.com",
+    "yahoo.com",
+    "bing.com",
+    "reddit.com",
+    "x.com",
+    "whatsapp.com",
+    "zoom.us",
+    "adobe.com",
+    "wordpress.org",
+    "wordpress.com",
+    "paypal.com",
+    "ebay.com",
+    "cloudflare.com",
+    "mozilla.org",
+    "spotify.com",
+    "tiktok.com",
+    "pinterest.com",
+    "tumblr.com",
+    "medium.com",
+    "dropbox.com",
+    "salesforce.com",
+    "oracle.com",
+    "ibm.com",
+    "intel.com",
+    "nvidia.com",
+    "bbc.com",
+    "cnn.com",
+    "nytimes.com",
+    "theguardian.com",
+    "reuters.com",
+    "bloomberg.com",
+    "aljazeera.com",
+    "aljazeera.net",
+    "khaleejtimes.com",
+    "gulfnews.com",
+    "thenationalnews.com",
+    "arabianbusiness.com",
+    "emirates.com",
+    "etihad.com",
+    "flydubai.com",
+    "airarabia.com",
+    "noon.com",
+    "talabat.com",
+    "careem.com",
+    "dubizzle.com",
+    "bayut.com",
+    "propertyfinder.ae",
+    "carrefouruae.com",
+    "lulu.com",
+    "namshi.com",
+    "sharafdg.com",
+    "amazon.ae",
+    "amazon.sa",
+    "python.org",
+    "nodejs.org",
+    "stackoverflow.com",
+    "gitlab.com",
+    "slack.com",
+    "atlassian.com",
+    "notion.so",
+    "canva.com",
+    "figma.com",
+    "openai.com",
+    "anthropic.com",
+    "duckduckgo.com",
+    "twitch.tv",
+    "discord.com",
+    "telegram.org",
+    "signal.org",
+    "skype.com",
+    "office.com",
+    "live.com",
+    "outlook.com",
+    "icloud.com",
+    "booking.com",
+    "airbnb.com",
+    "tripadvisor.com",
+    "expedia.com",
+    "uber.com",
+    "aliexpress.com",
+    "alibaba.com",
+    "temu.com",
+    "shein.com",
+    "walmart.com",
+    "target.com",
+    "bestbuy.com",
+    "ikea.com",
+    "nike.com",
+    "adidas.com",
+    "samsung.com",
+    "sony.com",
+    "hp.com",
+    "dell.com",
+    "lenovo.com",
+    "huawei.com",
+    "xiaomi.com",
+    "cisco.com",
+    "vmware.com",
+    "docker.com",
+    "kubernetes.io",
+    "rust-lang.org",
+    "golang.org",
+    "php.net",
+    "archive.org",
+    "imdb.com",
+    "quora.com",
+    "vimeo.com",
+    "soundcloud.com",
+    "deezer.com",
+    "anghami.com",
+    "shahid.net",
+    "who.int",
+    "un.org",
+    "worldbank.org",
+    "imf.org",
+    "nasa.gov",
+    "nih.gov",
+    "cdc.gov",
+    "europa.eu",
+    "www.gov.uk",
+    "usa.gov",
+    "mit.edu",
+    "harvard.edu",
+    "stanford.edu",
+    "ox.ac.uk",
+    "khalifa.ac.ae",
+    "uaeu.ac.ae",
+    "zu.ac.ae",
+    "auc.edu",
+    "visa.com",
+    "mastercard.com",
+    "americanexpress.com",
+    "hsbc.com",
+    "citi.com",
+    "standardchartered.com",
+    "barclays.com",
+    "dhl.com",
+    "fedex.com",
+    "ups.com",
+    "aramex.com",
+]
 
 # Candidates for "legitimate newly registered domain": kept only if RDAP says registered >= 2024-01-01.
-NEW_DOMAIN_CANDIDATES = ["claude.com", "sora.com", "thinkingmachines.ai", "ssi.inc", "lovable.dev", "bolt.new", "windsurf.com", "cognition.ai", "manus.im", "kimi.com", "z.ai", "genspark.ai", "base44.com", "grok.com", "meta.ai", "threads.com", "bsky.app", "truthsocial.com", "pump.fun", "kalshi.com", "mistral.ai", "x.ai", "deepseek.com", "cursor.com", "v0.dev", "gemini.google", "notebooklm.google", "ai.google", "linear.app", "zed.dev", "ghostty.org", "astral.sh", "bun.sh", "deno.com", "tailscale.com", "resend.com", "clerk.com", "neon.com", "turso.tech", "convex.dev", "trigger.dev", "railway.com", "render.com", "northflank.com", "cerebras.ai", "groq.com", "together.ai", "fireworks.ai", "elevenlabs.io", "suno.com", "udio.com", "runwayml.com", "pika.art", "ideogram.ai", "leonardo.ai", "character.ai", "poe.com", "phind.com"]
+NEW_DOMAIN_CANDIDATES = [
+    "claude.com",
+    "sora.com",
+    "thinkingmachines.ai",
+    "ssi.inc",
+    "lovable.dev",
+    "bolt.new",
+    "windsurf.com",
+    "cognition.ai",
+    "manus.im",
+    "kimi.com",
+    "z.ai",
+    "genspark.ai",
+    "base44.com",
+    "grok.com",
+    "meta.ai",
+    "threads.com",
+    "bsky.app",
+    "truthsocial.com",
+    "pump.fun",
+    "kalshi.com",
+    "mistral.ai",
+    "x.ai",
+    "deepseek.com",
+    "cursor.com",
+    "v0.dev",
+    "gemini.google",
+    "notebooklm.google",
+    "ai.google",
+    "linear.app",
+    "zed.dev",
+    "ghostty.org",
+    "astral.sh",
+    "bun.sh",
+    "deno.com",
+    "tailscale.com",
+    "resend.com",
+    "clerk.com",
+    "neon.com",
+    "turso.tech",
+    "convex.dev",
+    "trigger.dev",
+    "railway.com",
+    "render.com",
+    "northflank.com",
+    "cerebras.ai",
+    "groq.com",
+    "together.ai",
+    "fireworks.ai",
+    "elevenlabs.io",
+    "suno.com",
+    "udio.com",
+    "runwayml.com",
+    "pika.art",
+    "ideogram.ai",
+    "leonardo.ai",
+    "character.ai",
+    "poe.com",
+    "phind.com",
+]
 
 LOGIN = """https://accounts.google.com/signin|https://github.com/login|https://www.facebook.com/login/
 https://www.paypal.com/signin|https://appleid.apple.com/sign-in|https://login.live.com/|https://www.linkedin.com/login
@@ -124,7 +447,9 @@ https://www.dropbox.com/plans|https://zoom.us/pricing|https://www.canva.com/pric
 https://www.adobe.com/creativecloud/plans.html|https://openai.com/chatgpt/pricing/|https://slack.com/pricing
 https://www.atlassian.com/software/jira/pricing|https://aws.amazon.com/pricing/
 https://www.aramex.com/ae/en/ship/pay-online|https://www.dhl.com/ae-en/home.html|https://www.fedex.com/en-ae/home.html
-https://www.ups.com/ae/en/Home.page|https://www.booking.com/|https://www.airbnb.com/help""".replace("\n", "|").split("|")
+https://www.ups.com/ae/en/Home.page|https://www.booking.com/|https://www.airbnb.com/help""".replace("\n", "|").split(
+    "|"
+)
 
 DEEPLINK = """https://www.youtube.com/watch?v=dQw4w9WgXcQ|https://en.wikipedia.org/wiki/Abu_Dhabi#History
 https://en.wikipedia.org/wiki/Dubai#Economy|https://ar.wikipedia.org/wiki/الإمارات_العربية_المتحدة
@@ -156,7 +481,9 @@ https://www.khaleejtimes.com/uae|https://gulfnews.com/uae|https://www.thenationa
 https://u.ae/en/information-and-services|https://u.ae/ar-ae/information-and-services|https://u.ae/en/about-the-uae
 https://u.ae/en/information-and-services/justice-safety-and-the-law|https://u.ae/en/about-the-uae/digital-uae
 https://www.visitabudhabi.ae/en|https://www.visitdubai.com/en|https://www.emirates.com/ae/english/help/
-https://www.etihad.com/en-ae/help|https://www.dubaiairports.ae/|https://www.abudhabiairport.ae/en""".replace("\n", "|").split("|")
+https://www.etihad.com/en-ae/help|https://www.dubaiairports.ae/|https://www.abudhabiairport.ae/en""".replace(
+    "\n", "|"
+).split("|")
 
 # Only named slugs / well-known public video ids on shorteners run by the destination organisation.
 SHORTENED = """https://youtu.be/dQw4w9WgXcQ|https://youtu.be/jNQXAC9IVRw|https://youtu.be/9bZkp7q19f0
@@ -186,33 +513,77 @@ def build_candidates() -> list[dict[str, str]]:
     for bid, urls in OFFICIAL_PATHS.items():
         cat = "official_gov" if bid in GOV_BRANDS else "official_bank"
         for u in urls:
-            rows.append({"url": u, "category": cat, "brand_id": bid,
-                             "source": "verified_domains of data/brands.yaml; page on the entity's own site"})
+            rows.append(
+                {
+                    "url": u,
+                    "category": cat,
+                    "brand_id": bid,
+                    "source": "verified_domains of data/brands.yaml; page on the entity's own site",
+                }
+            )
     for u, cat, bid in OFFICIAL_HARD:
-        rows.append({"url": u, "category": cat, "brand_id": bid,
-                         "source": "official login/payment/service page on a verified_domain of data/brands.yaml"})
+        rows.append(
+            {
+                "url": u,
+                "category": cat,
+                "brand_id": bid,
+                "source": "official login/payment/service page on a verified_domain of data/brands.yaml",
+            }
+        )
     for d in POPULAR:
-        rows.append({"url": f"https://{d}/", "category": "popular", "brand_id": "",
-                         "source": f"Tranco list {TRANCO_ID} (top-1m, retrieved {COLLECTED}); user-facing site picked by hand"})
+        rows.append(
+            {
+                "url": f"https://{d}/",
+                "category": "popular",
+                "brand_id": "",
+                "source": f"Tranco list {TRANCO_ID} (top-1m, retrieved {COLLECTED}); user-facing site picked by hand",
+            }
+        )
     for d in NEW_DOMAIN_CANDIDATES:
-        rows.append({"url": f"https://{d}/", "category": "hard_negative_new_domain", "brand_id": "", "source": "candidate"})
+        rows.append(
+            {"url": f"https://{d}/", "category": "hard_negative_new_domain", "brand_id": "", "source": "candidate"}
+        )
     for u in LOGIN:
-        rows.append({"url": u, "category": "hard_negative_login", "brand_id": "",
-                         "source": "well-known login page of a legitimate service"})
+        rows.append(
+            {
+                "url": u,
+                "category": "hard_negative_login",
+                "brand_id": "",
+                "source": "well-known login page of a legitimate service",
+            }
+        )
     for u in PAYMENT:
-        rows.append({"url": u, "category": "hard_negative_payment", "brand_id": "",
-                         "source": "payment/checkout/pricing page of a legitimate service"})
+        rows.append(
+            {
+                "url": u,
+                "category": "hard_negative_payment",
+                "brand_id": "",
+                "source": "payment/checkout/pricing page of a legitimate service",
+            }
+        )
     for u in DEEPLINK:
-        rows.append({"url": u, "category": "hard_negative_deeplink", "brand_id": "",
-                         "source": "deep link (path/query/fragment) on a legitimate site"})
+        rows.append(
+            {
+                "url": u,
+                "category": "hard_negative_deeplink",
+                "brand_id": "",
+                "source": "deep link (path/query/fragment) on a legitimate site",
+            }
+        )
     for u in SHORTENED:
         u = u.strip()
         if not u:
             continue
         if u.endswith("/") and u.count("/") == 3:
             continue  # bare shortener roots are not short links
-        rows.append({"url": u, "category": "hard_negative_shortened", "brand_id": "",
-                         "source": "short link on a shortener operated by the destination organisation itself"})
+        rows.append(
+            {
+                "url": u,
+                "category": "hard_negative_shortened",
+                "brand_id": "",
+                "source": "short link on a shortener operated by the destination organisation itself",
+            }
+        )
     seen: set[str] = set()
     out = []
     for r in rows:
@@ -243,8 +614,9 @@ def main() -> None:
     private.mkdir(parents=True, exist_ok=True)
     log = (private / "legit_url_checks.jsonl").open("w")
     kept: list[dict[str, str]] = []
-    with httpx.Client(headers={"User-Agent": UA, "Accept": "text/html,*/*;q=0.5"}, follow_redirects=True,
-                      timeout=20) as client:
+    with httpx.Client(
+        headers={"User-Agent": UA, "Accept": "text/html,*/*;q=0.5"}, follow_redirects=True, timeout=20
+    ) as client:
         for r in cands:
             time.sleep(1.0)
             rec: dict[str, object] = {"url": r["url"], "category": r["category"], "checked_at": COLLECTED}
@@ -264,7 +636,9 @@ def main() -> None:
                 rec["rdap_registered"] = created
                 ok = bool(created) and created >= "2024-01-01"
                 if ok:
-                    r["source"] = f"RDAP registration event {created} (rdap.org, {COLLECTED}); legitimate product/company site"
+                    r["source"] = (
+                        f"RDAP registration event {created} (rdap.org, {COLLECTED}); legitimate product/company site"
+                    )
             rec["kept"] = ok
             log.write(json.dumps(rec, ensure_ascii=False) + "\n")
             log.flush()

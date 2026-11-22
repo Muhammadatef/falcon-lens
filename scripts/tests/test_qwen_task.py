@@ -2,12 +2,13 @@
 
 Run: uv run --no-project --with httpx --with jsonschema --with pytest pytest scripts/test_qwen_task.py
 """
+
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import qwen_task as q
 
 

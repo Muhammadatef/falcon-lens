@@ -2,6 +2,7 @@
 
 Run: uv run --no-project --with httpx --with jsonschema --with pytest pytest scripts
 """
+
 from __future__ import annotations
 
 import argparse
@@ -11,10 +12,10 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import qwen_task as q
 
-SPEC_PATH = Path(__file__).resolve().parents[1] / "evals" / "specs" / "synthetic_messages_v2.json"
+SPEC_PATH = Path(__file__).resolve().parents[2] / "evals" / "specs" / "synthetic_messages_v2.json"
 SPEC = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
 LINK = SPEC["allowed_link_regex"]
 LANG = SPEC["language_rules"]
@@ -60,8 +61,13 @@ def test_phone_allowlist() -> None:
 
 
 def _item(text: str, **over: object) -> dict[str, object]:
-    base: dict[str, object] = {"text": text, "label": "scam", "language": "english",
-                               "subtype": "delivery_fee", "channel": "sms"}
+    base: dict[str, object] = {
+        "text": text,
+        "label": "scam",
+        "language": "english",
+        "subtype": "delivery_fee",
+        "channel": "sms",
+    }
     base.update(over)
     return base
 
@@ -72,8 +78,14 @@ def test_run_end_to_end_with_fake_model(tmp_path: Path, monkeypatch: pytest.Monk
     spec.update(
         count=2,
         batch_size=20,
-        strata=[{"share": 1.0, "constraints": {"label": "scam", "language": "english"},
-                 "variant_field": "subtype", "variants": ["delivery_fee"]}],
+        strata=[
+            {
+                "share": 1.0,
+                "constraints": {"label": "scam", "language": "english"},
+                "variant_field": "subtype",
+                "variants": ["delivery_fee"],
+            }
+        ],
     )
     spec_path = tmp_path / "spec.json"
     spec_path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
@@ -87,7 +99,9 @@ def test_run_end_to_end_with_fake_model(tmp_path: Path, monkeypatch: pytest.Monk
         _item("Your parcel is held, call 971 50 123 4567 to pay the fee"),
         _item("Your UAE Pass parcel is held, pay the fee: hxxps://example[.]test/a5"),
         _item("Your parcel is held. Pay AED 12 redelivery fee today to avoid return: hxxps://example[.]test/p1"),
-        _item("Dear customer, the courier could not reach you; the redelivery fee is AED 15: hxxps://example[.]test/ok1"),
+        _item(
+            "Dear customer, the courier could not reach you; the redelivery fee is AED 15: hxxps://example[.]test/ok1"
+        ),
         _item("Hello, your shipment was stopped at the depot. Settle AED 9 here: hxxps://example[.]test/ok2"),
         _item("Hello, your shipment was stopped at the depot. Settle AED 9 here: hxxps://example[.]test/ok2"),
     ]
@@ -107,9 +121,17 @@ def test_run_end_to_end_with_fake_model(tmp_path: Path, monkeypatch: pytest.Monk
     m = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
     c = m["counts"]
     assert m["audit"].startswith("PENDING") and m["synthetic"] is True and m["accepted"] == 2
-    for reason in ("rejected_schema", "rejected_constraint", "rejected_subtype", "rejected_language_script",
-                   "rejected_link_malformed", "rejected_phone_real_or_malformed", "rejected_entity_not_allowed",
-                   "rejected_example_copy", "dedup_removed"):
+    for reason in (
+        "rejected_schema",
+        "rejected_constraint",
+        "rejected_subtype",
+        "rejected_language_script",
+        "rejected_link_malformed",
+        "rejected_phone_real_or_malformed",
+        "rejected_entity_not_allowed",
+        "rejected_example_copy",
+        "dedup_removed",
+    ):
         assert c[reason] == 1, (reason, c)
     assert c["generated"] == len(items)
 

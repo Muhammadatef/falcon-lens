@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: E501
 """The only sanctioned caller of the local worker model (docs/HIERARCHY.md, local model rules).
 
   uv run --no-project --with httpx --with jsonschema python scripts/qwen_task.py \
@@ -27,6 +28,7 @@ Spec JSON keys:
                           forbid_any: [...], require_digit_letter: bool}}
   strata                 [{share, constraints, variants, variant_field, hint}]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -192,10 +194,14 @@ def validate_item(
 
 
 # ---------------------------------------------------------------- model I/O
-def build_prompt(kind: str, spec: dict[str, Any], stratum: dict[str, Any], n: int, variant: str | None) -> tuple[str, str]:
+def build_prompt(
+    kind: str, spec: dict[str, Any], stratum: dict[str, Any], n: int, variant: str | None
+) -> tuple[str, str]:
     system = KIND_PROMPTS[kind] + '\nReturn ONLY a JSON object {"items": [...]} with no commentary.'
     lines = [spec.get("description", ""), f"Produce exactly {n} distinct items."]
-    lines.append("Each item must validate against this JSON Schema:\n" + json.dumps(spec["item_schema"], ensure_ascii=False))
+    lines.append(
+        "Each item must validate against this JSON Schema:\n" + json.dumps(spec["item_schema"], ensure_ascii=False)
+    )
     if stratum.get("constraints"):
         lines.append("Fixed field values for every item: " + json.dumps(stratum["constraints"], ensure_ascii=False))
     if variant and stratum.get("variant_field"):
@@ -205,13 +211,21 @@ def build_prompt(kind: str, spec: dict[str, Any], stratum: dict[str, Any], n: in
     if spec.get("rules"):
         lines.append("Hard rules:\n" + "\n".join(f"- {r}" for r in spec["rules"]))
     if spec.get("examples"):
-        lines.append("Style examples (do not copy):\n" + "\n".join(json.dumps(e, ensure_ascii=False) for e in spec["examples"]))
+        lines.append(
+            "Style examples (do not copy):\n" + "\n".join(json.dumps(e, ensure_ascii=False) for e in spec["examples"])
+        )
     lines.append("Vary wording, length and structure across items.")
     return system, "\n\n".join(x for x in lines if x)
 
 
 def call_model(
-    client: httpx.Client, base: str, model: str, system: str, user: str, seed: int, temperature: float,
+    client: httpx.Client,
+    base: str,
+    model: str,
+    system: str,
+    user: str,
+    seed: int,
+    temperature: float,
     structured: bool = True,
 ) -> str:
     body: dict[str, Any] = {
@@ -350,8 +364,9 @@ def run(args: argparse.Namespace, model_fn: ModelFn = call_model) -> int:
             "dedup_removed": counts["dedup_removed"],
             **dict(sorted(counts.items())),
         },
-        "per_stratum": [{"constraints": s.get("constraints", {}), "target": s["target"], "accepted": s["accepted"]}
-                        for s in strata],
+        "per_stratum": [
+            {"constraints": s.get("constraints", {}), "target": s["target"], "accepted": s["accepted"]} for s in strata
+        ],
         "synthetic": True,
         "audit": "PENDING supervisor audit (reviews/QWEN-<id>.md); not importable until APPROVED",
         "duration_s": round(time.time() - t0, 1),
