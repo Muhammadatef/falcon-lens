@@ -12,7 +12,7 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 4. `risk_score = round(100 · p)`. `calibrated_probability = p` after the final calibrator, fitted on validation over the full-cascade output.
 5. **Bands**: `dangerous` if p ≥ τ_high; `suspicious` if τ_low ≤ p < τ_high; otherwise `no_warning_signs`.
    - Starting values: τ_high = 0.80, τ_low = 0.35. They are fitted so that FPR ≤ 2% and there are zero `dangerous` verdicts on the verified-official set (validation).
-6. **Cascade exits**: T1 exits if p_clf < ε_low or p_clf > ε_high and there is no brand conflict. T2 exits if a hard rule fired or p is outside [τ_low − 0.1, τ_high + 0.05]. Otherwise the input escalates to T3. ε values are fitted to keep T3 usage at 15% or less with no recall loss on validation.
+6. **Cascade exits** (also: T1 exits immediately when H2 or H3 fired or the target was SSRF-blocked; a sandbox failure degrades the verdict): T1 exits if p_clf < ε_low or p_clf > ε_high and there is no brand conflict. T2 exits if a hard rule fired or p is outside [τ_low − 0.1, τ_high + 0.05]. Otherwise the input escalates to T3. ε values are fitted to keep T3 usage at 15% or less with no recall loss on validation.
 
 ## 2. Evidence weights (draft log-odds points; positive = risk)
 | Signal | Family | w | Notes |
