@@ -41,7 +41,7 @@ x-app-env: &app-env
   FL_OPERATOR_KEY: ${FL_OPERATOR_KEY:-change-me-operator}
   FL_MCP_BEARER_TOKEN: ${FL_MCP_BEARER_TOKEN:-change-me-mcp}
   FL_WEBHOOK_SECRET: ${FL_WEBHOOK_SECRET:-change-me-webhook}
-  FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-30}
+  FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-60}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
   ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
@@ -421,6 +421,25 @@ services:
     mem_limit: 1g
     cpus: 1
     pids_limit: 256
+
+  # TEST DOUBLE, never part of `make up`. Only `FL_SMOKE_FAKE_WORKER=1 make smoke` starts it
+  # (and stops the real worker first) to exercise API + SSE before the real cascade exists.
+  fake-worker:
+    profiles: [smoke-fake]
+    image: falcon-lens/api:0.1.0
+    <<: *hardened
+    restart: "no"
+    command: ["python", "-m", "falcon_api.fake_worker"]
+    environment: *app-env
+    healthcheck:
+      disable: true
+    networks: [data]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
 
   # ───────────────────────────── tools ────────────────────────────
   # Placeholder fixture server: invented brand only, internal network only, never published.
