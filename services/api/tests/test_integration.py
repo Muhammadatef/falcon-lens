@@ -98,6 +98,7 @@ class Env:
         self.incidents = [make_incident(n) for n in (1, 2, 3)] + [make_incident(4, typ="report_burst")]
         self.calls: list[tuple[str, str, str]] = []
         self.keystore = MemoryKeyStore()
+        self.app: Any = None
         self.read_key = ""
         self.intel_key = ""
         self.submissions = MemorySubmissionStore()
@@ -129,6 +130,7 @@ async def api(env: Env) -> AsyncIterator[httpx.AsyncClient]:
         audit=env.audit,
         sentinel=sentinel,
     )
+    env.app = app
     transport = httpx.ASGITransport(app=app, client=("203.0.113.9", 1234))
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
@@ -389,15 +391,25 @@ async def test_incident_stream_strips_for_non_operator(
         assert len(data) == 1 and ("draft" in data[0]["actions"][0]) is full
 
 
+async def wait_slots(env: Env, n: int) -> None:
+    import asyncio
+
+    for _ in range(100):
+        if sum(len(v) for v in env.app.state.stream_slots.values()) == n:
+            return
+        await asyncio.sleep(0.05)
+    raise AssertionError("streams did not start")
+
+
 async def test_stream_caps_and_shared_subscription(
     api: httpx.AsyncClient, env: Env, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     import asyncio
 
-    monkeypatch.setattr(integ, "STREAM_MAX_S", 1.5)
+    monkeypatch.setattr(integ, "STREAM_MAX_S", 3.0)
     h = key(env.read_key)
-    tasks = [asyncio.create_task(api.get("/v1/incidents/stream", headers=h, timeout=10)) for _ in range(5)]
-    await asyncio.sleep(0.4)
+    tasks = [asyncio.create_task(api.get("/v1/incidents/stream", headers=h, timeout=20)) for _ in range(5)]
+    await wait_slots(env, 5)
     over = await api.get("/v1/incidents/stream", headers=h)
     assert over.status_code == 429 and over.headers["content-type"].startswith("application/problem+json")
     assert over.headers["retry-after"]
@@ -414,9 +426,9 @@ async def test_anonymous_verdict_stream_cap_per_ip(
 
     vid = f"vd_{ULID}"
     env.store.docs[vid] = make_doc(vid, final=False)
-    monkeypatch.setattr("falcon_api.app.SSE_MAX_S", 1.0)
-    tasks = [asyncio.create_task(api.get(f"/v1/verdicts/{vid}/events", timeout=10)) for _ in range(3)]
-    await asyncio.sleep(0.4)
+    monkeypatch.setattr("falcon_api.app.SSE_MAX_S", 3.0)
+    tasks = [asyncio.create_task(api.get(f"/v1/verdicts/{vid}/events", timeout=20)) for _ in range(3)]
+    await wait_slots(env, 3)
     assert (await api.get(f"/v1/verdicts/{vid}/events")).status_code == 429
     await asyncio.gather(*tasks)
 

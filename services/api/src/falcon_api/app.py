@@ -301,6 +301,7 @@ def build_app(
 
     # ---- concurrent SSE caps (in-process; one API replica) -----------------------------------
     slots: dict[str, dict[str, float]] = {}
+    app.state.stream_slots = slots  # exposed for tests and diagnostics
 
     def slot_bucket(request: Request) -> tuple[str, int]:
         p = principal_of(request)
