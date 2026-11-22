@@ -31,7 +31,6 @@ https://localhost:8443 {
 	tls internal
 
 	header {
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
@@ -45,15 +44,27 @@ https://localhost:8443 {
 		max_size 6MB
 	}
 
+	# CSP: the web app sets its own per-request nonce policy (web/proxy.ts: no 'unsafe-inline',
+	# no 'unsafe-eval'), so the gateway must not add a second one on web routes. API and MCP
+	# answers are data, never documents: they get a deny-all policy here.
 	handle /v1/* {
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
 		reverse_proxy api:8000 {
 			header_up X-Forwarded-For {client_ip}
 		}
 	}
 	handle /mcp* {
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
 		reverse_proxy mcp:8000
 	}
 	handle {
-		reverse_proxy web:3000
+		# Paths the app's CSP proxy does not match (static files, /api/health, their 404 pages)
+		# still get a policy: `?` sets it only when the app did not, so there is always exactly one.
+		header ?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		# The share target (/share) starts checks on the API from the web container and forwards
+		# this header, so it must carry the real visitor, exactly as on /v1 (per-visitor rate limit).
+		reverse_proxy web:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 }
