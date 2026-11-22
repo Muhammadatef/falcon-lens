@@ -29,7 +29,7 @@ _FOLD = {
     "؟": "?",
 }
 _DROP_RANGES = ((0x0610, 0x061A), (0x064B, 0x065F), (0x0670, 0x0670), (0x06D6, 0x06ED))
-_DROP = frozenset("ـ​‌‍⁠﻿­‎‏‪‫‬‭‮⁦⁧⁨⁩؜")
+_DROP = frozenset("ـ\u200b‌‍⁠﻿­\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069\u061c")
 
 
 @dataclass(frozen=True)

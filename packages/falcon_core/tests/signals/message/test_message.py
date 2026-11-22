@@ -306,7 +306,7 @@ def test_normalizer_fuzz_random_unicode() -> None:
     import random
 
     rnd = random.Random(1234)
-    pool = list("İßﬃﬁﷺ﷽ǅǈΣςµ٠١٢٣ءآأإةىيـَُّ ​‏ abcXYZ٣7 \n\t.-") + [chr(c) for c in range(0x0600, 0x0700, 7)]
+    pool = list("İßﬃﬁﷺ﷽ǅǈΣςµ٠١٢٣ءآأإةىيـَُّ \u200b\u200f abcXYZ٣7 \n\t.-") + [chr(c) for c in range(0x0600, 0x0700, 7)]
     for _ in range(300):
         s = "".join(rnd.choice(pool) for _ in range(rnd.randint(0, 60)))
         n = normalize(s)
