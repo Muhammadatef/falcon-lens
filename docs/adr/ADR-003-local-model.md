@@ -1,6 +1,6 @@
 # ADR-003: Local model for sovereign mode and L4 workers
 
-**Status:** Provisional · 2026-11-22 · L1. Revisit when mirai is reachable or Ollama is upgraded.
+**Status:** Accepted · 2026-11-22: `inkling-2-mini-chat` (text), `gemma3:27b` (vision fallback), `qwen3:4b` (L4), `qwen3-embedding:4b` (embeddings). See infra/ollama/README.md.
 
 ## Context
 The spec assumes `qwen3.8:27b` through Ollama. This Mac (M5 Max, 128 GB) has `gemma3:27b` (completion and vision, no tools), `qwen3:4b`, and `qwen3-embedding:4b`. The owner says qwen3.8:27b lives on host "mirai", which can't be reached from here. Inkling-2-Mini (Apache-2.0, 26B MoE with 3.4B active, text+image) is at `~/Models/Inkling-2-Mini`, but Ollama 0.40.13 can't pull it.

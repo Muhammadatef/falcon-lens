@@ -1,0 +1,55 @@
+{
+  "uid": "fl-command-overview",
+  "title": "Command overview",
+  "tags": ["falcon-lens", "placeholder"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "text",
+      "title": "Placeholder",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "mode": "markdown",
+        "content": "Placeholder dashboard from the platform skeleton. Real `fl_` panels arrive with the observability task card. Data shown here is not a detection metric."
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Services up (scrape targets)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 4 },
+      "targets": [
+        { "refId": "A", "expr": "sum(up)", "datasource": { "type": "prometheus", "uid": "prometheus" } }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "HTTP requests by service",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 6, "w": 16, "x": 8, "y": 4 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (service) (rate(fl_http_requests_total[1m]))",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "logs",
+      "title": "Service logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "targets": [
+        { "refId": "A", "expr": "{service=~\".+\"}", "datasource": { "type": "loki", "uid": "loki" } }
+      ]
+    }
+  ]
+}
