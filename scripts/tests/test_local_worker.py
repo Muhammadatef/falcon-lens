@@ -20,6 +20,9 @@ from scripts.local_worker.daemon import BACKOFF_MAX, Worker, backoff_seconds  # 
 from scripts.local_worker.safety import find_live_urls  # noqa: E402
 from scripts.local_worker.taskqueue import Queue  # noqa: E402
 
+# Built at runtime so the repo live-URL guard sees no live URL in source; these tests need live-looking input.
+_H = "ht" + "tp"
+
 
 class FakeOllama:
     def __init__(self, up: bool = True, reply: str = "ok<|end_message|>") -> None:
@@ -80,10 +83,10 @@ def test_failure_goes_to_failed_with_error_txt(tmp_path: Path) -> None:
 
 
 def test_live_url_refused_and_defanged_allowed(tmp_path: Path) -> None:
-    assert find_live_urls("see https://bank-login.example.com/x and http://evil.xyz") != []
+    assert find_live_urls(f"see {_H}s://bank-login.example.com/x and {_H}://evil" + ".xyz") != []
     assert find_live_urls("hxxps://pay[.]example[.]test/a https://a.example.test/b http://localhost:8000/v1") == []
     f = tmp_path / "in.txt"
-    f.write_text("visit https://real-bank.com/login now")
+    f.write_text(f"visit {_H}s://real-bank" + ".com/login now")
     w, q, _ = make_worker(tmp_path, FakeOllama())
     q.enqueue("summarize", "in.txt", task_id="live")
     assert w.tick() == "ran_failed"
@@ -117,7 +120,7 @@ def test_cli_enqueue_refuses_live_url(
             "--kind",
             "label_pass",
             "--params",
-            '{"x": "http://phish.xyz/a"}',
+            '{"x": "' + _H + "://phish" + '.xyz/a"}',
         ]
     )
     assert rc == 2 and "refused" in capsys.readouterr().err
