@@ -46,6 +46,22 @@
 - 2026-11-22 · L1 · iOS: no PWA share_target support (WebKit bug 194593), so iPhone uses a Shortcut (P1). Android Chrome supports share_target once the PWA is installed.
 - 2026-11-22 · L1 · Chrome MV3: `webNavigation` plus redirect to an extension warning page (web_accessible_resources) for automatic checks, with host permission only for the API origin.
 - 2026-11-22 · L1 · `inkling-2-mini` is in the Ollama library (vision, tools, thinking, about 20 GB) but needs a newer Ollama. Upgrade pending owner OK.
+
+## Security (builder-security)
+- 2026-11-22 · builder-security · Verified httpx **0.28.1** and httpcore **1.0.9** (PyPI and the docs at python-httpx.org/advanced/extensions and encode.io/httpcore/network-backends, plus the installed source). The guard uses only httpx and the stdlib. No dnspython: `loop.getaddrinfo` is the default resolver and can be injected for tests.
+- 2026-11-22 · builder-security · IP pinning: the request goes to the checked IP literal, with `Host` set to the hostname and the `sni_hostname` extension set, so TLS still verifies the hostname. Defence in depth: the httpcore network backend refuses any non-IP or disallowed connect.
+- 2026-11-22 · builder-security · httpx 0.28.1 does not expose `network_backend`, so `security/http.py` replaces the private `AsyncHTTPTransport._pool`. `test_transport_pool_uses_guarded_backend` pins this, so an httpx upgrade fails loudly.
+- 2026-11-22 · builder-security · httpcore 1.0.9 ignores `sni_hostname` inside CONNECT tunnels (it uses the origin host). So in proxy mode the client keeps the hostname and pre-checks each hop, and the egress proxy re-resolves, re-checks and pins.
+- 2026-11-22 · builder-security · If any record in a DNS answer is disallowed, the whole host is blocked, so a mixed public and private answer cannot win.
+- 2026-11-22 · builder-security · Non-canonical numeric hosts (decimal, octal, hex, short forms such as 127.1) are always blocked, even when they decode to a public IP. Legitimate links don't use them.
+- 2026-11-22 · builder-security · Userinfo (`@` in the authority) is always blocked, even for public hosts.
+- 2026-11-22 · builder-security · Ports 80 and 443 are allowed for either scheme. Every other port is blocked.
+- 2026-11-22 · builder-security · Only GET and HEAD are allowed, because the checker never submits anything. 303 changes the method to GET.
+- 2026-11-22 · builder-security · Special-use and internal suffixes are blocked: localhost, local, internal, lan, home.arpa, test, example, invalid, onion, svc, cluster.local and others, plus every single-label name. The `falcon-demo-bank.test` fixture needs an explicit `GuardPolicy(allow_hosts=...)`, and production leaves that empty.
+- 2026-11-22 · builder-security · IPv6-embedded IPv4 (mapped, 6to4, NAT64 64:ff9b::/96, IPv4-compatible) is unwrapped and judged as IPv4. Teredo and other 2001::/23 addresses, plus anything outside 2000::/3, are blocked.
+- 2026-11-22 · builder-security · A body over max_bytes (hard cap 5 MB, after decoding) raises `SSRFBlocked(response_too_large)` instead of being truncated. Only gzip and deflate are requested and decoded, with bounded zlib output, and any other encoding gives `FetchFailed(unsupported_encoding)`.
+- 2026-11-22 · builder-security · The caller can lower max_bytes or max_redirects but not raise them: values are clamped to 5 MB and 10. Keep-alive is off, so every hop gets a freshly pinned socket.
+- 2026-11-22 · builder-security · The `on_block(reason)` hook is per-client, with a process-wide default set through `set_default_on_block`. Hook exceptions are logged and swallowed. T-014 wires it to `fl_ssrf_blocked_total{reason}` using `BlockReason` values as the labels.
 - 2026-11-22 · owner · All frontend work (design vision, layout, palette, typography, motion, PWA, boards, extension UI) is led by **Fable 5.2**: `builder-frontend` now runs on `model: fable`, overriding the spec's Sonnet. The owner asked for a niche, state-of-the-art site with rich animated visuals.
 - 2026-11-22 · owner · Approved the Ollama upgrade 0.40.13 → 0.40.17 (brew; service restarted) and Inkling-2-Mini as the local model, pending the capability check.
 - 2026-11-22 · L1 · OpenPhish (checked by builder-evals at openphish.com/terms.html): the feed is the GitHub raw `public_feed/main/feed.txt`, updated every 12 h. Terms allow personal or academic research only; commercial use (including security operations) and redistribution need written consent. Decisions:
