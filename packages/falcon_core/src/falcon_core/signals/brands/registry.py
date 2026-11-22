@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Brand registry loaded from data/brands.yaml (verified official domains; see that file for source URLs and dates)."""
 
 from __future__ import annotations
@@ -16,18 +17,106 @@ from falcon_core.signals.url.textutil import compact, normalize_arabic
 
 # Words that describe a service or action, not a brand: never a brand token on their own.
 GENERIC_EN = frozenset(
-    "fine fines traffic violation violations case report parcel package delivery customs fee redelivery tracking "
-    "online banking card blocked account verify verification bill recharge balance points rewards suspended otp "
-    "payment pay refund services service renew renewal visa residency identity digital id login unpaid tag toll "
-    "mobile sim government clearance parking vehicle file disconnection compliance sanctions frozen kyc update "
-    "electricity water gas".split()
+    [
+        "fine",
+        "fines",
+        "traffic",
+        "violation",
+        "violations",
+        "case",
+        "report",
+        "parcel",
+        "package",
+        "delivery",
+        "customs",
+        "fee",
+        "redelivery",
+        "tracking",
+        "online",
+        "banking",
+        "card",
+        "blocked",
+        "account",
+        "verify",
+        "verification",
+        "bill",
+        "recharge",
+        "balance",
+        "points",
+        "rewards",
+        "suspended",
+        "otp",
+        "payment",
+        "pay",
+        "refund",
+        "services",
+        "service",
+        "renew",
+        "renewal",
+        "visa",
+        "residency",
+        "identity",
+        "digital",
+        "id",
+        "login",
+        "unpaid",
+        "tag",
+        "toll",
+        "mobile",
+        "sim",
+        "government",
+        "clearance",
+        "parking",
+        "vehicle",
+        "file",
+        "disconnection",
+        "compliance",
+        "sanctions",
+        "frozen",
+        "kyc",
+        "update",
+        "electricity",
+        "water",
+        "gas",
+    ]
 )
 GENERIC_AR = frozenset(
     normalize_arabic(w)
-    for w in (
-        "مخالفة مخالفات بلاغ قضية تحقق حساب فاتورة شحن رصيد تأشيرة إقامة تجديد جمارك طرد شحنة توصيل تتبع سداد "
-        "استرداد فصل خدمات مواقف رسوم مكافآت إيقاف امتثال مجمد بطاقة موقوفة تحديث البيانات أمان الخدمة"
-    ).split()
+    for w in [
+        "مخالفة",
+        "مخالفات",
+        "بلاغ",
+        "قضية",
+        "تحقق",
+        "حساب",
+        "فاتورة",
+        "شحن",
+        "رصيد",
+        "تأشيرة",
+        "إقامة",
+        "تجديد",
+        "جمارك",
+        "طرد",
+        "شحنة",
+        "توصيل",
+        "تتبع",
+        "سداد",
+        "استرداد",
+        "فصل",
+        "خدمات",
+        "مواقف",
+        "رسوم",
+        "مكافآت",
+        "إيقاف",
+        "امتثال",
+        "مجمد",
+        "بطاقة",
+        "موقوفة",
+        "تحديث",
+        "البيانات",
+        "أمان",
+        "الخدمة",
+    ]
 )
 
 
