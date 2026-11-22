@@ -101,7 +101,7 @@ async def test_fresh_boundary_is_six_hours() -> None:
 
 async def test_unloaded_mirror_is_error() -> None:
     (ev,) = await run("rep.openphish", Ctx(url=BAD, mirror=FeedMirror(MemoryCache())))
-    assert ev.error == "feed_unavailable"
+    assert ev.error == "feed_disabled"  # never populated: informational, non-degrading
 
 
 async def test_openphish_disabled_by_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -320,3 +320,22 @@ async def test_unexpected_exception_maps_to_fixed_code(monkeypatch: pytest.Monke
     (ev,) = await run("rep.gsb", Ctx(url=BAD, http=http))
     assert ev.error == "gsb_unexpected_error"
     assert "secret-key-123" not in json.dumps(ev.to_dict())
+
+
+async def test_stale_mirror_no_hit_is_informational() -> None:
+    _, m = await loaded_mirror(updated_at=NOW - 7 * 3600)
+    (ev,) = await run("rep.openphish", Ctx(url="https://not-listed.test/x", mirror=m))
+    assert ev.error is None and ev.observed["hit"] is False and ev.observed["fresh"] is False
+
+
+async def test_redis_exception_is_a_signal_error() -> None:
+    class Boom:
+        async def get(self, *_a: object, **_k: object) -> None:
+            raise ConnectionError("redis down")
+
+        async def sismember(self, *_a: object, **_k: object) -> None:
+            raise ConnectionError("redis down")
+
+    m = FeedMirror(Boom())  # type: ignore[arg-type]
+    (ev,) = await run("rep.openphish", Ctx(url=BAD, mirror=m))
+    assert ev.error is not None and ev.error != "feed_disabled"

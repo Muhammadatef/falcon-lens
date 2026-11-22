@@ -7,13 +7,15 @@ Nothing here touches the network.
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Sequence
 
 from falcon_core.cascade.models import SandboxFeatures, SandboxForm
-from falcon_core.cascade.ports import FeedHit
 from falcon_core.security import GuardPolicy
 from falcon_core.signals.base import Evidence as SignalEvidence
 from falcon_core.signals.base import SignalContext, SignalFn, SignalSpec
+from falcon_core.signals.cache import MemoryCache
+from falcon_core.signals.reputation.mirror import SET_KEY, UPDATED_KEY, FeedMirror, row_members
 
 DEMO_OFFICIAL_URL = "https://falcon-demo-bank.test/"
 DEMO_LOOKALIKE_URL = "https://falcon-demo-bank-login.test/secure/"
@@ -28,6 +30,7 @@ FIXTURE_HOSTS = frozenset(
         "community-garden-club.test",
         "synthetic-feed-entry.test",
         "plain-host.test",
+        "synthetic-openphish.test",
     ]
 )
 FIXTURE_POLICY = GuardPolicy(allow_hosts=FIXTURE_HOSTS)
@@ -75,12 +78,18 @@ def benign_features(final_url: str = DEMO_BENIGN_URL) -> SandboxFeatures:
     )
 
 
-class StubFeedMirror:
-    def __init__(self, hits: dict[str, Sequence[FeedHit]] | None = None) -> None:
-        self.hits = hits or {}
+def loaded_mirror(urls: Sequence[str] = (), age_s: float = 600.0) -> FeedMirror:
+    """An in-memory OpenPhish mirror (hash-only, like production) loaded ``age_s`` seconds ago.
 
-    async def lookup(self, canonical_url: str, host: str) -> Sequence[FeedHit]:
-        return tuple(self.hits.get(canonical_url, ())) + tuple(self.hits.get(host, ()))
+    Built synchronously on a ``MemoryCache`` so test factories need no event loop.
+    """
+    kv = MemoryCache()
+    members: set[str] = set()
+    for u in urls:
+        members.update(row_members(u))
+    kv._sets[SET_KEY] = frozenset(members)  # noqa: SLF001 - test double; same layout as FeedMirror.load
+    kv._data[UPDATED_KEY] = (time.time() - age_s, None)  # noqa: SLF001
+    return FeedMirror(kv)
 
 
 class SlowSandbox:

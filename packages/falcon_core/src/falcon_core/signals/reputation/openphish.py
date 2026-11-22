@@ -46,7 +46,9 @@ async def run(ctx: SignalContext) -> list[Evidence]:
         return []
     hit = await _mirror(ctx).lookup(ctx.url)
     if hit.updated_at is None:
-        return [error_evidence(SPEC, "feed_unavailable", FEED)]
+        # Never populated (no private feed on this deployment): informational, non-degrading (L1 decision).
+        # A Redis failure raises inside lookup() and is reported by the signal wrapper as a degrading error.
+        return [error_evidence(SPEC, "feed_disabled", FEED)]
     age = max(0, int(get_clock(ctx)() - hit.updated_at))
     metrics.set_age(FEED, age)
     fresh = age < FRESH_MAX_AGE_S
