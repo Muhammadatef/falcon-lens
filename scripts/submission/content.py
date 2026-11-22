@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (copy and tables read better unwrapped)
 """The copy shared by the deck and the description document.
 
 Rules this module enforces by construction (CLAUDE.md):
@@ -61,7 +62,9 @@ class Section:
 
 
 def _mark(lines: tuple[Line, ...], caps: Mapping[str, bool]) -> tuple[Line, ...]:
-    return tuple(Line(line.text, line.cap, planned=bool(line.cap) and not caps.get(line.cap or "", False)) for line in lines)
+    return tuple(
+        Line(line.text, line.cap, planned=bool(line.cap) and not caps.get(line.cap or "", False)) for line in lines
+    )
 
 
 def _problem() -> Section:
@@ -86,11 +89,20 @@ def _solution() -> Section:
         lead=PROMISE_EN,
         lines=(
             Line("Checks a link and streams an evidence-backed verdict as each check tier finishes.", "url_check"),
-            Line("Checks SMS and chat text in Arabic, Arabizi and English; every link inside is checked too.", "message_check"),
+            Line(
+                "Checks SMS and chat text in Arabic, Arabizi and English; every link inside is checked too.",
+                "message_check",
+            ),
             Line("Checks an email file without fetching anything remote.", "email_check"),
             Line("Checks a screenshot or QR code.", "image_check"),
-            Line("Three verdicts: Dangerous, Suspicious, No warning signs found. The lowest one always carries a caution reminder.", "url_check"),
-            Line("Every reason cites the evidence behind it, with what to do now and what to do if you already clicked.", "url_check"),
+            Line(
+                "Three verdicts: Dangerous, Suspicious, No warning signs found. The lowest one always carries a caution reminder.",
+                "url_check",
+            ),
+            Line(
+                "Every reason cites the evidence behind it, with what to do now and what to do if you already clicked.",
+                "url_check",
+            ),
             Line("Installable Arabic-first web app; Android can share a message straight into it.", "share_target"),
             Line("A second agent, the Sentinel, links single checks into campaigns and incidents.", "sentinel_agent"),
         ),
@@ -110,7 +122,10 @@ def _demo() -> Section:
             Line("A fictional phishing email file.", "email_check"),
             Line("A verified official site: No warning signs found, with a caution reminder.", "verified_official"),
             Line("A page with injected instructions: the verdict does not change.", "injection_defence"),
-            Line("Sentinel: a planted campaign in a replay opens an incident; a takedown draft waits for approval.", "sentinel_agent"),
+            Line(
+                "Sentinel: a planted campaign in a replay opens an incident; a takedown draft waits for approval.",
+                "sentinel_agent",
+            ),
             Line("A command-line client calls the MCP server.", "mcp"),
             Line("A phone shares a message into the installed app.", "share_target"),
         ),
@@ -126,7 +141,10 @@ def _architecture() -> Section:
         lines=(
             Line("Gateway to API; jobs and verdict events travel on Redis streams."),
             Line("Worker cascade T0 to T3 exits as early as the evidence allows.", "url_check"),
-            Line("The sandbox reaches the internet only through a filtering egress proxy and returns features, never raw pages.", "brand_check"),
+            Line(
+                "The sandbox reaches the internet only through a filtering egress proxy and returns features, never raw pages.",
+                "brand_check",
+            ),
             Line("PostgreSQL with pgvector stores verdicts, evidence, incidents and an append-only audit log."),
             Line("Metrics, logs and traces flow to dashboards and alerts.", "observability"),
         ),
@@ -139,19 +157,39 @@ def _agent() -> Section:
         "Inside the agent",
         lead="Models read and explain. Code decides.",
         lines=(
-            Line("Tiered cascade: known lists, then URL and domain signals, then an isolated page visit, then the AI investigator only for the uncertain band.", "url_check"),
+            Line(
+                "Tiered cascade: known lists, then URL and domain signals, then an isolated page visit, then the AI investigator only for the uncertain band.",
+                "url_check",
+            ),
             Line("A deterministic arbiter is the only component that sets the score and the verdict.", "url_check"),
-            Line("Brand-mismatch rule H1: a page that claims a brand, asks for credentials and sits on a domain the brand does not own is Dangerous.", "brand_check"),
-            Line("Untrusted text is delimited and datamarked, and read only by a quarantined extractor that has no tools.", "injection_defence"),
-            Line("The investigator is a bounded state machine with typed tools and a provenance check on every URL argument.", "investigator"),
-            Line("Sentinel: deterministic rules open incidents; a LangGraph agent enriches them and stops for a human before any external action.", "sentinel_agent"),
+            Line(
+                "Brand-mismatch rule H1: a page that claims a brand, asks for credentials and sits on a domain the brand does not own is Dangerous.",
+                "brand_check",
+            ),
+            Line(
+                "Untrusted text is delimited and datamarked, and read only by a quarantined extractor that has no tools.",
+                "injection_defence",
+            ),
+            Line(
+                "The investigator is a bounded state machine with typed tools and a provenance check on every URL argument.",
+                "investigator",
+            ),
+            Line(
+                "Sentinel: deterministic rules open incidents; a LangGraph agent enriches them and stops for a human before any external action.",
+                "sentinel_agent",
+            ),
         ),
     )
 
 
 def _results(artifact: artifact_mod.Artifact | None) -> Section:
     if artifact is None:
-        return Section("results", "Results", lead=NO_RESULTS, note="Method: docs/EVALS.md (temporal split, frozen test split, bootstrap confidence intervals).")
+        return Section(
+            "results",
+            "Results",
+            lead=NO_RESULTS,
+            note="Method: docs/EVALS.md (temporal split, frozen test split, bootstrap confidence intervals).",
+        )
     metrics = artifact.metrics
     rows = tuple((key, artifact_mod.show(value)) for key, value in metrics[:MAX_RESULT_ROWS])
     provenance = " · ".join(f"{key}: {artifact_mod.show(value)}" for key, value in artifact.provenance)
@@ -160,8 +198,20 @@ def _results(artifact: artifact_mod.Artifact | None) -> Section:
     if more > 0:
         note += " More metrics are in the artifact."
     if not rows:
-        return Section("results", "Results", lead=f"{artifact_mod.NO_ARTIFACT}. The published artifact has no `metrics` object yet.", note=note)
-    return Section("results", "Results", lead="Measured by `make eval`. Nothing on this page is typed by hand.", table=rows, note=note, extra={"provenance": provenance})
+        return Section(
+            "results",
+            "Results",
+            lead=f"{artifact_mod.NO_ARTIFACT}. The published artifact has no `metrics` object yet.",
+            note=note,
+        )
+    return Section(
+        "results",
+        "Results",
+        lead="Measured by `make eval`. Nothing on this page is typed by hand.",
+        table=rows,
+        note=note,
+        extra={"provenance": provenance},
+    )
 
 
 def _security() -> Section:
@@ -170,12 +220,23 @@ def _security() -> Section:
         "Security and sovereignty",
         lead="The checker fetches content that attackers control, so it is designed as a target.",
         lines=(
-            Line("A page cannot talk the model into lowering a score: model output never reaches the score.", "injection_defence"),
-            Line("SSRF guard: own DNS resolution, blocked private ranges, pinned address, every redirect re-checked.", "url_check"),
-            Line("Suspicious pages load once, passively, in an isolated browser. No form is ever submitted.", "brand_check"),
+            Line(
+                "A page cannot talk the model into lowering a score: model output never reaches the score.",
+                "injection_defence",
+            ),
+            Line(
+                "SSRF guard: own DNS resolution, blocked private ranges, pinned address, every redirect re-checked.",
+                "url_check",
+            ),
+            Line(
+                "Suspicious pages load once, passively, in an isolated browser. No form is ever submitted.",
+                "brand_check",
+            ),
             Line("Personal data is redacted before logging and before any cloud call.", "sovereign"),
             Line("Sovereign mode: every model call stays on the local machine.", "sovereign"),
-            Line("The product never asks for personal, banking or ID details, and its lowest verdict is never worded as a guarantee."),
+            Line(
+                "The product never asks for personal, banking or ID details, and its lowest verdict is never worded as a guarantee."
+            ),
         ),
     )
 
@@ -199,7 +260,9 @@ def _integration() -> Section:
 def _deployment(artifact: artifact_mod.Artifact | None) -> Section:
     cost = [(k, v) for k, v in (artifact.metrics if artifact else []) if "cost" in k.lower()]
     cost_line = (
-        "Measured cost per check: " + "; ".join(f"{k} = {artifact_mod.show(v)}" for k, v in cost[:3]) + " (from the published artifact)."
+        "Measured cost per check: "
+        + "; ".join(f"{k} = {artifact_mod.show(v)}" for k, v in cost[:3])
+        + " (from the published artifact)."
         if cost
         else "Cost per check: evaluation in progress. No cost figure is shown until an eval artifact reports one."
     )
@@ -208,8 +271,13 @@ def _deployment(artifact: artifact_mod.Artifact | None) -> Section:
         "Deployment and cost",
         lead="One command starts the whole stack on a laptop.",
         lines=(
-            Line("Docker Compose brings up the gateway, API, worker, sandbox, Sentinel, data stores and observability."),
-            Line("Most checks are meant to finish in the deterministic tiers; a model is called only for the uncertain band.", "url_check"),
+            Line(
+                "Docker Compose brings up the gateway, API, worker, sandbox, Sentinel, data stores and observability."
+            ),
+            Line(
+                "Most checks are meant to finish in the deterministic tiers; a model is called only for the uncertain band.",
+                "url_check",
+            ),
             Line("With no cloud key, or in sovereign mode, every model call goes to a local model.", "sovereign"),
             Line("Every external key is optional: a missing key switches that feature off."),
             Line(cost_line),
@@ -229,8 +297,15 @@ STATIC_ROADMAP = (
 def _roadmap(caps: Mapping[str, bool]) -> Section:
     labels = [cap.label.split(" (")[0] for cap in caps_mod.CAPABILITIES if not caps.get(cap.id) and cap.id != "evals"]
     step = 1 if len(labels) <= 4 else 4
-    unbuilt = tuple(Line("Not built yet: " + "; ".join(labels[i : i + step]) + ".") for i in range(0, len(labels), step))
-    return Section("roadmap", "Roadmap", lead="What is not in this build, stated plainly.", lines=unbuilt + tuple(Line(text) for text in STATIC_ROADMAP))
+    unbuilt = tuple(
+        Line("Not built yet: " + "; ".join(labels[i : i + step]) + ".") for i in range(0, len(labels), step)
+    )
+    return Section(
+        "roadmap",
+        "Roadmap",
+        lead="What is not in this build, stated plainly.",
+        lines=unbuilt + tuple(Line(text) for text in STATIC_ROADMAP),
+    )
 
 
 def _team(repo_url: str) -> Section:
@@ -238,7 +313,11 @@ def _team(repo_url: str) -> Section:
         "team",
         "Team",
         lead="Placeholder names: the owner fills these in before submitting.",
-        lines=(Line("[Team member name], [role]"), Line("[Team member name], [role]"), Line("[Team member name], [role]")),
+        lines=(
+            Line("[Team member name], [role]"),
+            Line("[Team member name], [role]"),
+            Line("[Team member name], [role]"),
+        ),
         note=DISCLAIMER_EN,
         extra={"repo_url": repo_url, "disclaimer_ar": DISCLAIMER_AR},
     )
@@ -259,10 +338,7 @@ def build(caps: Mapping[str, bool], artifact: artifact_mod.Artifact | None, repo
         _roadmap(caps),
         _team(repo_url),
     ]
-    return [
-        Section(s.key, s.title, s.lead, _mark(s.lines, caps), s.note, s.table, s.extra)
-        for s in sections
-    ]
+    return [Section(s.key, s.title, s.lead, _mark(s.lines, caps), s.note, s.table, s.extra) for s in sections]
 
 
 def mvp_shipped(caps: Mapping[str, bool]) -> bool:
@@ -272,5 +348,12 @@ def mvp_shipped(caps: Mapping[str, bool]) -> bool:
 def all_text(sections: list[Section]) -> str:
     parts: list[str] = []
     for s in sections:
-        parts += [s.title, s.lead, s.note, *(line.text for line in s.lines), *(f"{k} {v}" for k, v in s.table), *s.extra.values()]
+        parts += [
+            s.title,
+            s.lead,
+            s.note,
+            *(line.text for line in s.lines),
+            *(f"{k} {v}" for k, v in s.table),
+            *s.extra.values(),
+        ]
     return "\n".join(p for p in parts if p)

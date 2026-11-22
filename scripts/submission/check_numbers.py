@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: E501  (copy and tables read better unwrapped)
 """Fail if a number in the deck, the description document or the README cannot be traced.
 
 Truthfulness rule (CLAUDE.md): every metric shown anywhere comes from a generated eval
@@ -23,6 +24,7 @@ and requires every number in them to be one of:
    number followed by `%` must come from the artifact.
 
 Before scanning, Markdown code (fenced and inline), link targets, HTML tags and comments are
+and ordered-list markers are
 removed, because commands, ports and file names are not claims. Number WORDS ("six scenarios")
 are not checked: keep statistics as digits or leave them out.
 
@@ -40,7 +42,7 @@ import sys
 import unicodedata
 import zipfile
 from dataclasses import dataclass
-from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
+from decimal import ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -60,14 +62,21 @@ ALLOWED_CONTEXTS: tuple[tuple[str, str], ...] = (
     (r"\bPython 3\.\d+\b", "language version from .python-version"),
     (r"\bManifest V3\b", "Chrome extension platform name"),
     (r"\bFable 5\.2\b|\bInkling-2-Mini\b", "model names as recorded in DECISIONS.md"),
-    (r"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,? \d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*(?: \d{4})?", "calendar date"),
+    (
+        r"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,? \d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*(?: \d{4})?",
+        "calendar date",
+    ),
     (r"\b\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}\b", "calendar date"),
     (r"\b\d{4}-\d{2}-\d{2}\b", "ISO date"),
     (r"\b\d{1,2}:\d{2}(?::\d{2})?\b(?! ?%)", "clock time or video timestamp"),
     (r"#\d+\b", "pull request or issue reference"),
+    (r"\b[A-Z]{1,5}-\d+\b", "document, task or review identifier such as ADR-001 or T-012"),
     (r"\bPhase \d(?: (?:to|→) \d)?\b", "project phase from STATUS.md"),
     (r"\| ?T[0-3] ?\| ?\d+ m?s ?\|", "tier budget: a design limit from ADR-001, labelled as not measured"),
-    (r"\b(?:≤|at most|up to|max(?:imum)?|limit(?:ed to)?|within|under) ?\d+(?:[.,]\d+)? ?(?:MB|KB|GB|characters|chars|pages|slides|seconds|s|min(?:utes)?)\b", "stated limit, not a measurement"),
+    (
+        r"\b(?:≤|at most|up to|max(?:imum)?|limit(?:ed to)?|within|under) ?\d+(?:[.,]\d+)? ?(?:MB|KB|GB|characters|chars|pages|slides|seconds|s|min(?:utes)?)\b",
+        "stated limit, not a measurement",
+    ),
     (r"\b\d+(?:-| )(?:second|minute)s?\b", "duration of the video or pitch"),
     (r"\b999\b|\b800\d{4}\b", "official reporting numbers from config/reporting_channels.yaml"),
     (r"\b24/7\b", "idiom"),
@@ -111,6 +120,7 @@ def strip_markdown(text: str) -> str:
     text = re.sub(r"`[^`\n]*`", " ", text)
     text = re.sub(r"\]\([^)\s]*\)", "]", text)  # link targets
     text = re.sub(r"https?://\S+", " ", text)
+    text = re.sub(r"(?m)^\s*\d+[.)]\s", " ", text)  # ordered-list markers
     return re.sub(r"<[^>\n]+>", " ", text)  # HTML tags, with their attributes
 
 
@@ -200,10 +210,11 @@ class Traceable:
             places = -exponent if isinstance(exponent, int) and exponent < 0 else 0
             quantum = Decimal(1).scaleb(-places)
             for value in self.values:
-                if value.quantize(quantum, rounding=ROUND_HALF_EVEN) == number:
-                    return True
-                if percent and 0 <= value <= 1 and (value * 100).quantize(quantum, rounding=ROUND_HALF_EVEN) == number:
-                    return True
+                for rounding in (ROUND_HALF_EVEN, ROUND_HALF_UP):  # either convention a formatter may use
+                    if value.quantize(quantum, rounding=rounding) == number:
+                        return True
+                    if percent and 0 <= value <= 1 and (value * 100).quantize(quantum, rounding=rounding) == number:
+                        return True
             if not percent and number in self.loose:
                 return True
         return False
@@ -219,7 +230,11 @@ def find_untraceable(text: str, traceable: Traceable, source: str) -> list[Findi
     exempt: list[tuple[int, int]] = []
     for pattern, _reason in _ALLOWED:
         exempt.extend(match.span() for match in pattern.finditer(text))
-    hex_spans = [m.span() for m in _HEXWORD.finditer(text) if re.search(r"[a-f]", m.group(), re.I) and traceable.has_hex(m.group())]
+    hex_spans = [
+        m.span()
+        for m in _HEXWORD.finditer(text)
+        if re.search(r"[a-f]", m.group(), re.I) and traceable.has_hex(m.group())
+    ]
 
     findings = []
     for match in _NUMBER.finditer(text):
@@ -259,7 +274,10 @@ def collect_sources(root: Path, submission: Path, require_package: bool) -> tupl
     if pdf.is_file():
         text = pdf_text(pdf)
         if text is None:
-            print("note: pypdf is not installed, so description.pdf is checked through description.html only", file=sys.stderr)
+            print(
+                "note: pypdf is not installed, so description.pdf is checked through description.html only",
+                file=sys.stderr,
+            )
         else:
             sources.append((pdf.name, text))
     elif require_package:
@@ -278,7 +296,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--submission", type=Path, default=None, help="default: <root>/submission")
     parser.add_argument("--published", type=Path, default=None, help="default: <root>/evals/results/published")
-    parser.add_argument("--allow-missing", action="store_true", help="do not fail when the deck or the PDF is not built yet")
+    parser.add_argument(
+        "--allow-missing", action="store_true", help="do not fail when the deck or the PDF is not built yet"
+    )
     args = parser.parse_args(argv)
 
     root = args.root.resolve()

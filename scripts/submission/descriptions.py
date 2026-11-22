@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (copy and tables read better unwrapped)
 """Compose and check the submission descriptions (English and Arabic).
 
 Each sentence is tied to capability ids (scripts/submission/capabilities.py). A sentence is
@@ -241,7 +242,9 @@ def _fit(candidates: list[tuple[int, list[str]]]) -> str:
     keep = [True] * len(candidates)
 
     def text() -> str:
-        return " ".join(forms[min(i, len(forms) - 1)] for (_, forms), i, k in zip(candidates, choice, keep, strict=True) if k)
+        return " ".join(
+            forms[min(i, len(forms) - 1)] for (_, forms), i, k in zip(candidates, choice, keep, strict=True) if k
+        )
 
     def fits() -> bool:
         return count_chars(text()) <= MAX_CHARS and sum(keep) <= MAX_SENTENCES

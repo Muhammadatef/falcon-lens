@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (copy and tables read better unwrapped)
 """Detect which product capabilities are present in this checkout.
 
 Truthfulness rule (CLAUDE.md): the submission may only describe what ships. Every claim in
@@ -34,18 +35,22 @@ class Capability:
     demo: str = ""  # DEMO.md section that proves it on the running stack
 
 
+# The end-to-end check: `make smoke` is real, and the cascade and the arbiter are in the tree.
+# Every capability that needs a verdict includes these probes.
+E2E = ("make:smoke", f"path:{CORE}/cascade/engine.py", f"path:{CORE}/scoring/arbiter.py")
+
 CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "url_check",
         "URL check, end to end (paste a link, get a verdict)",
-        ("make:smoke", f"path:{CORE}/cascade/engine.py", f"path:{CORE}/scoring/arbiter.py"),
+        E2E,
         "Scenario 1",
     ),
     Capability(
         "brand_check",
         "Brand check H1 (lookalike page caught with no blocklist)",
         (
-            "make:smoke",
+            *E2E,
             f"path:{CORE}/scoring/hard_rules.py",
             "grep:services/sandbox/src/**/*.py::playwright",
         ),
@@ -54,41 +59,41 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "message_check",
         "Message check (SMS and chat text, Arabic and English)",
-        ("make:smoke", f"path:{CORE}/signals/message/analyze.py", "grep:services/api/src/**/*.py::check/message"),
+        (*E2E, f"path:{CORE}/signals/message/analyze.py", "grep:services/api/src/**/*.py::check/message"),
         "Scenario 3",
     ),
     Capability(
         "email_check",
         "Email check (.eml)",
-        ("make:smoke", f"path:{CORE}/signals/email/analyze.py", "grep:services/api/src/**/*.py::check/email"),
+        (*E2E, f"path:{CORE}/signals/email/analyze.py", "grep:services/api/src/**/*.py::check/email"),
         "Scenario 4",
     ),
     Capability(
         "image_check",
         "Image and QR check",
-        ("make:smoke", f"path:{CORE}/signals/image/analyze.py", "grep:services/api/src/**/*.py::check/image"),
+        (*E2E, f"path:{CORE}/signals/image/analyze.py", "grep:services/api/src/**/*.py::check/image"),
     ),
     Capability(
         "verified_official",
         "Verified-official rule H3 (lowest verdict is never worded as a guarantee)",
-        ("make:smoke", f"path:{CORE}/scoring/hard_rules.py", "path:data/brands.yaml"),
+        (*E2E, f"path:{CORE}/scoring/hard_rules.py", "path:data/brands.yaml"),
         "Scenario 5",
     ),
     Capability(
         "injection_defence",
         "Injection defence (spotlighting, quarantined extractor, code-only scoring)",
-        ("make:smoke", f"path:{CORE}/llm/spotlight.py", f"path:{CORE}/agent/extractor.py"),
+        (*E2E, f"path:{CORE}/llm/spotlight.py", f"path:{CORE}/agent/extractor.py"),
         "Scenario 6",
     ),
     Capability(
         "investigator",
         "Bounded AI investigator for the uncertain band (T3)",
-        ("make:smoke", f"path:{CORE}/agent/investigator.py"),
+        (*E2E, f"path:{CORE}/agent/investigator.py"),
     ),
     Capability(
         "sovereign",
         "Sovereign mode (every model call on the local machine)",
-        ("make:smoke", f"path:{CORE}/llm/router.py"),
+        (*E2E, f"path:{CORE}/llm/router.py"),
     ),
     Capability(
         "sentinel_rules",
@@ -104,13 +109,13 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "pwa",
         "Arabic-first web app (installable PWA)",
-        ("make:smoke", "path:web/app/manifest.ts"),
+        (*E2E, "path:web/app/manifest.ts"),
         "Scenario 1",
     ),
     Capability(
         "share_target",
         "Android share sheet into the installed PWA",
-        ("make:smoke", "path:web/app/manifest.ts", "path:web/app/share/route.ts"),
+        (*E2E, "path:web/app/manifest.ts", "path:web/app/share/route.ts"),
         "Phone scene",
     ),
     Capability(
@@ -122,13 +127,13 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "rest_api",
         "REST v1 with OpenAPI",
-        ("make:smoke", "path:contracts/openapi.yaml"),
+        (*E2E, "path:contracts/openapi.yaml"),
         "Scenario 1",
     ),
     Capability(
         "mcp",
         "MCP server (streamable HTTP, bearer auth)",
-        ("make:smoke", r"grep:services/mcp/src/**/*.py::(@\w+\.tool|add_tool\()"),
+        (*E2E, r"grep:services/mcp/src/**/*.py::(@\w+\.tool|add_tool\()"),
         "CLI scene",
     ),
     Capability(

@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (copy and tables read better unwrapped)
 """Generate the "tools used" list from what the shipped code actually uses.
 
 Truthfulness rule (CLAUDE.md): "Tools used" lists only what the shipped code uses. Nothing
@@ -114,7 +115,9 @@ def python_tools(root: Path = ROOT) -> list[str]:
     lock = tomllib.loads(lock_path.read_text(encoding="utf-8"))
     packages: list[dict[str, Any]] = lock.get("package", [])
     versions = {p["name"]: p.get("version", "") for p in packages}
-    members = [p for p in packages if isinstance(p.get("source"), dict) and ({"editable", "virtual"} & p["source"].keys())]
+    members = [
+        p for p in packages if isinstance(p.get("source"), dict) and ({"editable", "virtual"} & p["source"].keys())
+    ]
     member_names = {p["name"] for p in members}
     direct: set[str] = set()
     for member in members:
@@ -171,7 +174,9 @@ def infra_tools(root: Path = ROOT) -> list[str]:
             context = build if isinstance(build, str) else build.get("context", ".")
             if not str(context).lstrip("./").startswith("infra/"):
                 continue  # this repo's own service code, not a third-party tool
-            dockerfile = root / context / (build.get("dockerfile", "Dockerfile") if isinstance(build, dict) else "Dockerfile")
+            dockerfile = (
+                root / context / (build.get("dockerfile", "Dockerfile") if isinstance(build, dict) else "Dockerfile")
+            )
             if dockerfile.is_file():
                 images.extend(re.findall(r"(?mi)^FROM\s+(\S+)", dockerfile.read_text(encoding="utf-8")))
         elif service.get("image"):
@@ -226,7 +231,11 @@ def dev_tools(root: Path = ROOT) -> list[str]:
     ci = _read_all(root, (".github/workflows/*.yml",))
     if ci:
         out.append("GitHub Actions")
-        out.extend(human for needle, human in (("gitleaks", "gitleaks"), ("pip-audit", "pip-audit"), ("trivy", "Trivy")) if needle in ci)
+        out.extend(
+            human
+            for needle, human in (("gitleaks", "gitleaks"), ("pip-audit", "pip-audit"), ("trivy", "Trivy"))
+            if needle in ci
+        )
     if any((root / ".claude" / "agents").glob("*.md")):
         out.append("Claude Code (development agents)")
     return out

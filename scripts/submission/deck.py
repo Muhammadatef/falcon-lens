@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (copy and tables read better unwrapped)
 """Build submission/deck.pptx with python-pptx (1.0.2, see scripts/submission/requirements.txt).
 
 Night theme from web/design/tokens.css (the product's default theme). The palette is copied
@@ -61,7 +62,19 @@ def _style_run(run, size: float, color: str, bold: bool = False) -> None:  # typ
         element.set("typeface", FONT)
 
 
-def _text(slide, x, y, w, h, text: str, size: float, color: str = "text", bold: bool = False, align=None, anchor=MSO_ANCHOR.TOP):  # type: ignore[no-untyped-def]
+def _text(
+    slide,
+    x,
+    y,
+    w,
+    h,
+    text: str,
+    size: float,
+    color: str = "text",
+    bold: bool = False,
+    align=None,
+    anchor=MSO_ANCHOR.TOP,
+):  # type: ignore[no-untyped-def]
     box = slide.shapes.add_textbox(x, y, w, h)
     frame = box.text_frame
     frame.word_wrap = True
@@ -78,6 +91,7 @@ def _paragraph(paragraph, text: str, size: float, color: str, bold: bool = False
         paragraph.alignment = align or PP_ALIGN.RIGHT
     elif align is not None:
         paragraph.alignment = align
+    text = text.replace("`", "")  # code marks are for the HTML document only
     _style_run(paragraph.add_run(), size, color, bold)
     paragraph.runs[-1].text = text
 
@@ -116,8 +130,30 @@ def _chrome(slide, section: content_mod.Section, banner: bool) -> int:
     background.fore_color.rgb = _rgb("bg")
     _box(slide, 0, 0, W, Inches(0.07), "brand", shape=MSO_SHAPE.RECTANGLE)
     _lens(slide, MARGIN, Inches(0.42), Inches(0.42))
-    _text(slide, MARGIN + Inches(0.6), Inches(0.42), Inches(6), Inches(0.42), content_mod.TITLE, 14, "sand", bold=True, anchor=MSO_ANCHOR.MIDDLE)
-    _text(slide, W - MARGIN - Inches(5), Inches(0.42), Inches(5), Inches(0.42), "Independent project. Not affiliated with Abu Dhabi Police.", 10.5, "faint", align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
+    _text(
+        slide,
+        MARGIN + Inches(0.6),
+        Inches(0.42),
+        Inches(6),
+        Inches(0.42),
+        content_mod.TITLE,
+        14,
+        "sand",
+        bold=True,
+        anchor=MSO_ANCHOR.MIDDLE,
+    )
+    _text(
+        slide,
+        W - MARGIN - Inches(5),
+        Inches(0.42),
+        Inches(5),
+        Inches(0.42),
+        "Independent project. Not affiliated with Abu Dhabi Police.",
+        10.5,
+        "faint",
+        align=PP_ALIGN.RIGHT,
+        anchor=MSO_ANCHOR.MIDDLE,
+    )
     _text(slide, MARGIN, Inches(1.05), W - 2 * MARGIN, Inches(0.7), section.title, 32, "text", bold=True)
     y = Inches(1.8)
     if section.lead:
@@ -144,11 +180,37 @@ def _lines(slide, lines, x, y, w, bottom, size: float = 15) -> None:  # type: ig
         top = y + index * (row + gap)
         card = _box(slide, x, top, w, row, "surface1", "border")
         card.adjustments[0] = 0.18
-        _box(slide, x + Inches(0.18), top + int(row / 2) - Inches(0.05), Inches(0.1), Inches(0.1), "faint" if line.planned else "brand", shape=MSO_SHAPE.OVAL)
+        _box(
+            slide,
+            x + Inches(0.18),
+            top + int(row / 2) - Inches(0.05),
+            Inches(0.1),
+            Inches(0.1),
+            "faint" if line.planned else "brand",
+            shape=MSO_SHAPE.OVAL,
+        )
         chip = Inches(1.05) if line.planned else 0
-        _text(slide, x + Inches(0.42), top, w - Inches(0.6) - chip, row, line.text, size, "muted" if line.planned else "text", anchor=MSO_ANCHOR.MIDDLE)
+        _text(
+            slide,
+            x + Inches(0.42),
+            top,
+            w - Inches(0.6) - chip,
+            row,
+            line.text,
+            size,
+            "muted" if line.planned else "text",
+            anchor=MSO_ANCHOR.MIDDLE,
+        )
         if line.planned:
-            tag = _box(slide, x + w - Inches(1.1), top + int(row / 2) - Inches(0.13), Inches(0.95), Inches(0.26), "warn_tint", "warn")
+            tag = _box(
+                slide,
+                x + w - Inches(1.1),
+                top + int(row / 2) - Inches(0.13),
+                Inches(0.95),
+                Inches(0.26),
+                "warn_tint",
+                "warn",
+            )
             tag.adjustments[0] = 0.5
             frame = tag.text_frame
             frame.margin_left = frame.margin_right = frame.margin_top = frame.margin_bottom = 0
@@ -158,7 +220,17 @@ def _lines(slide, lines, x, y, w, bottom, size: float = 15) -> None:  # type: ig
 
 def _note(slide, text: str, bottom) -> None:  # type: ignore[no-untyped-def]
     if text:
-        _text(slide, MARGIN, bottom - Inches(0.5), W - 2 * MARGIN, Inches(0.5), text, 11, "faint", anchor=MSO_ANCHOR.BOTTOM)
+        _text(
+            slide,
+            MARGIN,
+            bottom - Inches(0.5),
+            W - 2 * MARGIN,
+            Inches(0.5),
+            text,
+            11,
+            "faint",
+            anchor=MSO_ANCHOR.BOTTOM,
+        )
 
 
 def _fallback_diagram(slide, x, y, w, h) -> None:  # type: ignore[no-untyped-def]
@@ -175,7 +247,15 @@ def _fallback_diagram(slide, x, y, w, h) -> None:  # type: ignore[no-untyped-def
     for r, row in enumerate(rows):
         cell_w = int((w - gap * (len(row) - 1)) / len(row))
         for c, label in enumerate(row):
-            cell = _box(slide, x + c * (cell_w + gap), y + r * (row_h + gap), cell_w, row_h, "surface2" if r % 2 else "surface1", "border")
+            cell = _box(
+                slide,
+                x + c * (cell_w + gap),
+                y + r * (row_h + gap),
+                cell_w,
+                row_h,
+                "surface2" if r % 2 else "surface1",
+                "border",
+            )
             frame = cell.text_frame
             frame.vertical_anchor = MSO_ANCHOR.MIDDLE
             _paragraph(frame.paragraphs[0], label, 12.5, "text", align=PP_ALIGN.CENTER)
@@ -218,20 +298,80 @@ def build(sections: list[content_mod.Section], out: Path, architecture_png: Path
             row_h = min(Inches(0.42), int((bottom - y - Inches(0.5)) / len(section.table)))
             for index, (label, value) in enumerate(section.table):
                 top = y + index * row_h
-                _box(slide, MARGIN, top, full, row_h - Emu(20000), "surface1" if index % 2 else "surface2", "border", shape=MSO_SHAPE.RECTANGLE)
+                _box(
+                    slide,
+                    MARGIN,
+                    top,
+                    full,
+                    row_h - Emu(20000),
+                    "surface1" if index % 2 else "surface2",
+                    "border",
+                    shape=MSO_SHAPE.RECTANGLE,
+                )
                 _text(slide, MARGIN + Inches(0.2), top, Inches(8), row_h, label, 13, "muted", anchor=MSO_ANCHOR.MIDDLE)
-                _text(slide, MARGIN + Inches(8.4), top, full - Inches(8.6), row_h, value, 15, "brand", bold=True, align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
+                _text(
+                    slide,
+                    MARGIN + Inches(8.4),
+                    top,
+                    full - Inches(8.6),
+                    row_h,
+                    value,
+                    15,
+                    "brand",
+                    bold=True,
+                    align=PP_ALIGN.RIGHT,
+                    anchor=MSO_ANCHOR.MIDDLE,
+                )
             if section.extra.get("provenance"):
-                _text(slide, MARGIN, y + len(section.table) * row_h + Inches(0.1), full, Inches(0.4), section.extra["provenance"], 10.5, "faint")
+                _text(
+                    slide,
+                    MARGIN,
+                    y + len(section.table) * row_h + Inches(0.1),
+                    full,
+                    Inches(0.4),
+                    section.extra["provenance"],
+                    10.5,
+                    "faint",
+                )
         elif section.key == "results":
             card = _box(slide, MARGIN, y + Inches(0.4), full, Inches(2.2), "surface1", "border")
             card.adjustments[0] = 0.06
-            _text(slide, MARGIN, y + Inches(0.4), full, Inches(2.2), "Evaluation in progress", 40, "sand", bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+            _text(
+                slide,
+                MARGIN,
+                y + Inches(0.4),
+                full,
+                Inches(2.2),
+                "Evaluation in progress",
+                40,
+                "sand",
+                bold=True,
+                align=PP_ALIGN.CENTER,
+                anchor=MSO_ANCHOR.MIDDLE,
+            )
         elif section.key == "team":
             _lines(slide, section.lines, MARGIN, y, Inches(6.2), y + Inches(2.4))
             _text(slide, MARGIN + Inches(6.6), y, full - Inches(6.6), Inches(0.4), "Repository", 12, "faint")
-            _text(slide, MARGIN + Inches(6.6), y + Inches(0.4), full - Inches(6.6), Inches(0.6), section.extra["repo_url"], 15, "brand")
-            _text(slide, MARGIN + Inches(6.6), y + Inches(1.3), full - Inches(6.6), Inches(1.0), section.extra["disclaimer_ar"], 15, "sand")
+            _text(
+                slide,
+                MARGIN + Inches(6.6),
+                y + Inches(0.4),
+                full - Inches(6.6),
+                Inches(0.6),
+                section.extra["repo_url"],
+                15,
+                "brand",
+            )
+            _text(
+                slide,
+                MARGIN + Inches(6.6),
+                y + Inches(1.3),
+                full - Inches(6.6),
+                Inches(1.0),
+                section.extra["disclaimer_ar"],
+                15,
+                "sand",
+            )
         else:
             _lines(slide, section.lines, MARGIN, y, full, bottom)
         _note(slide, section.note, floor)

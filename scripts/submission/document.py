@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (copy and tables read better unwrapped)
 """Build submission/description.html and render it to description.pdf with Playwright.
 
 Playwright (Python 1.65.2, Chromium) is used because Chromium shapes Arabic and renders the
@@ -55,7 +56,9 @@ def _font_face(root: Path) -> str:
     for path in FONT_FILES.values():
         file = root / path
         if file.is_file():
-            rules.append(f'@font-face {{ font-family: "Readex Pro"; src: url("{file.as_uri()}") format("woff2"); font-weight: 200 700; }}')
+            rules.append(
+                f'@font-face {{ font-family: "Readex Pro"; src: url("{file.as_uri()}") format("woff2"); font-weight: 200 700; }}'
+            )
     return "\n".join(rules)
 
 
@@ -70,7 +73,11 @@ def _section(section: content_mod.Section) -> str:
     if section.lead:
         out.append(f'<p class="lead">{_esc(section.lead)}</p>')
     if section.table:
-        out.append("<table>" + "".join(f'<tr><td>{_esc(k)}</td><td class="v">{_esc(v)}</td></tr>' for k, v in section.table) + "</table>")
+        out.append(
+            "<table>"
+            + "".join(f'<tr><td>{_esc(k)}</td><td class="v">{_esc(v)}</td></tr>' for k, v in section.table)
+            + "</table>"
+        )
         if section.extra.get("provenance"):
             out.append(f'<p class="note">{_esc(section.extra["provenance"])}</p>')
     if section.lines:
@@ -113,7 +120,9 @@ def build_html(
         body.append(_section(by_key[key]))
     if tools:
         rows = "".join(f"<li><strong>{_esc(title)}:</strong> {_esc(', '.join(items))}</li>" for title, items in tools)
-        body.append(f'<section><h2>Tools used</h2><p class="note">Generated from the lockfiles and the compose file. Only what the shipped code uses.</p><ul>{rows}</ul></section>')
+        body.append(
+            f'<section><h2>Tools used</h2><p class="note">Generated from the lockfiles and the compose file. Only what the shipped code uses.</p><ul>{rows}</ul></section>'
+        )
     team = by_key["team"]
     body.append(
         f'<section><h2>Independence</h2><p>{_esc(content_mod.DISCLAIMER_EN)}</p><p class="ar">{_esc(content_mod.DISCLAIMER_AR)}</p>'
@@ -126,17 +135,21 @@ def build_html(
     )
 
 
-def render_svg_png(svg: Path, png: Path, width: int = 1600) -> Path:
+def render_svg_png(svg: Path, png: Path, scale: float = 2) -> Path:
     """Static PNG of an animated SVG. Reduced motion is emulated so the still frame is the readable one."""
+    import re  # noqa: PLC0415
+
     from playwright.sync_api import sync_playwright  # noqa: PLC0415
 
+    match = re.search(r'viewBox="\s*[-\d.]+[ ,]+[-\d.]+[ ,]+([\d.]+)[ ,]+([\d.]+)', svg.read_text(encoding="utf-8"))
+    width, height = (round(float(match.group(1))), round(float(match.group(2)))) if match else (1600, 900)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
-        page = browser.new_page(viewport={"width": width, "height": 900}, device_scale_factor=2)
+        page = browser.new_page(viewport={"width": width, "height": height}, device_scale_factor=scale)
         page.emulate_media(reduced_motion="reduce")
-        page.set_content(f'<html><body style="margin:0;background:#070b14"><img id="d" src="{svg.as_uri()}" style="width:{width}px;display:block"></body></html>')
-        page.wait_for_function("document.getElementById('d').complete && document.getElementById('d').naturalWidth > 0")
-        page.locator("#d").screenshot(path=str(png))
+        page.goto(svg.as_uri())
+        page.wait_for_timeout(300)
+        page.screenshot(path=str(png), clip={"x": 0, "y": 0, "width": width, "height": height})
         browser.close()
     return png
 

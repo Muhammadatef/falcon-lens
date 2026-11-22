@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: E501  (copy and tables read better unwrapped)
 """`make submission`: build every form field and file of the submission into submission/.
 
 Outputs:
@@ -70,7 +71,14 @@ def size_line(path: Path) -> tuple[str, bool]:
     return f"{human} ({size} bytes)", ok
 
 
-def checklist(out: Path, root: Path, caps: dict[str, bool], artifact: artifact_mod.Artifact | None, problems: list[str], pages: int | None) -> str:
+def checklist(
+    out: Path,
+    root: Path,
+    caps: dict[str, bool],
+    artifact: artifact_mod.Artifact | None,
+    problems: list[str],
+    pages: int | None,
+) -> str:
     def text(name: str) -> str:
         return (out / name).read_text(encoding="utf-8").strip()
 
@@ -84,22 +92,35 @@ def checklist(out: Path, root: Path, caps: dict[str, bool], artifact: artifact_m
         "",
     ]
     if not content_mod.mvp_shipped(caps):
-        lines += ["> NOT READY: the end-to-end URL check is not detected in this checkout (organiser rule: a working MVP). Rebuild after gate G4.", ""]
+        lines += [
+            "> NOT READY: the end-to-end URL check is not detected in this checkout (organiser rule: a working MVP). Rebuild after gate G4.",
+            "",
+        ]
     for problem in problems:
         lines.append(f"> PROBLEM: {problem}")
     if problems:
         lines.append("")
 
     lines += ["## Form fields", "", "| Field | Source file | Length | Check |", "|---|---|---|---|"]
-    for name, limit in (("title.txt", None), ("description_en.txt", descriptions.MAX_CHARS), ("description_ar.txt", descriptions.MAX_CHARS), ("tools_used.txt", None), ("repo_url.txt", None)):
+    for name, limit in (
+        ("title.txt", None),
+        ("description_en.txt", descriptions.MAX_CHARS),
+        ("description_ar.txt", descriptions.MAX_CHARS),
+        ("tools_used.txt", None),
+        ("repo_url.txt", None),
+    ):
         value = text(name)
         length = descriptions.count_chars(value)
         if limit:
             errors = descriptions.check(value)
             state = "ok" if not errors else "FAIL: " + "; ".join(errors)
-            lines.append(f"| {name.removesuffix('.txt')} | `submission/{name}` | {length} of {limit} characters | {state} |")
+            lines.append(
+                f"| {name.removesuffix('.txt')} | `submission/{name}` | {length} of {limit} characters | {state} |"
+            )
         else:
-            lines.append(f"| {name.removesuffix('.txt')} | `submission/{name}` | {length} characters | {'ok' if value else 'FAIL: empty'} |")
+            lines.append(
+                f"| {name.removesuffix('.txt')} | `submission/{name}` | {length} characters | {'ok' if value else 'FAIL: empty'} |"
+            )
     lines += ["| video | recorded by the owner | see the shot list in `docs/DEMO.md` | owner |", ""]
 
     lines += ["## Files", "", "| File | Size | Limit | Check |", "|---|---|---|---|"]
@@ -115,9 +136,13 @@ def checklist(out: Path, root: Path, caps: dict[str, bool], artifact: artifact_m
 
     lines += ["## Numbers", ""]
     if artifact:
-        lines.append(f"- Source artifact: `evals/results/published/{artifact.path.name}`. Every number in the deck, the PDF and the README was traced to it by `scripts/submission/check_numbers.py`.")
+        lines.append(
+            f"- Source artifact: `evals/results/published/{artifact.path.name}`. Every number in the deck, the PDF and the README was traced to it by `scripts/submission/check_numbers.py`."
+        )
     else:
-        lines.append("- No published eval artifact. The deck and the PDF say \"Evaluation in progress\" and contain no statistic. Rebuild after `make eval` has published one.")
+        lines.append(
+            '- No published eval artifact. The deck and the PDF say "Evaluation in progress" and contain no statistic. Rebuild after `make eval` has published one.'
+        )
     lines.append("")
 
     lines += [
@@ -130,7 +155,9 @@ def checklist(out: Path, root: Path, caps: dict[str, bool], artifact: artifact_m
     ]
     for cap, shipped, results in caps_mod.probe_report(root):
         probes = "<br>".join(f"{'ok' if ok else 'missing'}: `{spec}`" for spec, ok in results)
-        lines.append(f"| {cap.label} | {'shipped' if shipped else 'not shipped (marked PLANNED, listed on the roadmap)'} | {cap.demo or 'n/a'} | {probes} |")
+        lines.append(
+            f"| {cap.label} | {'shipped' if shipped else 'not shipped (marked PLANNED, listed on the roadmap)'} | {cap.demo or 'n/a'} | {probes} |"
+        )
     lines.append("")
 
     lines += [
@@ -155,7 +182,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build the submission package.")
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--out", type=Path, default=None, help="default: <root>/submission")
-    parser.add_argument("--text-only", action="store_true", help="only the text fields and the checklist (no deck, no PDF)")
+    parser.add_argument(
+        "--text-only", action="store_true", help="only the text fields and the checklist (no deck, no PDF)"
+    )
     args = parser.parse_args(argv)
 
     root = args.root.resolve()
@@ -179,7 +208,9 @@ def main(argv: list[str] | None = None) -> int:
     (out / "repo_url.txt").write_text(url + "\n", encoding="utf-8")
 
     sections = content_mod.build(caps, artifact, url)
-    problems += [f"deck/document wording: {error}" for error in descriptions.wording_errors(content_mod.all_text(sections))]
+    problems += [
+        f"deck/document wording: {error}" for error in descriptions.wording_errors(content_mod.all_text(sections))
+    ]
 
     pages: int | None = None
     if not args.text_only:
@@ -190,11 +221,17 @@ def main(argv: list[str] | None = None) -> int:
         if svg.is_file():
             png = document.render_svg_png(svg, out / "architecture.png")
         else:
-            print(f"WARNING: {ARCHITECTURE_SVG} is not in this checkout; the deck uses the built-in block diagram instead.", file=sys.stderr)
+            print(
+                f"WARNING: {ARCHITECTURE_SVG} is not in this checkout; the deck uses the built-in block diagram instead.",
+                file=sys.stderr,
+            )
         mvp = content_mod.mvp_shipped(caps)
         deck.build(sections, out / "deck.pptx", png, mvp)
         html_path = out / "description.html"
-        html_path.write_text(document.build_html(sections, texts["en"], texts["ar"], tools_used.names(root), png, mvp, root), encoding="utf-8")
+        html_path.write_text(
+            document.build_html(sections, texts["en"], texts["ar"], tools_used.names(root), png, mvp, root),
+            encoding="utf-8",
+        )
         document.render_pdf(html_path, out / "description.pdf")
         pages = document.page_count(out / "description.pdf")
         if not document.MIN_PAGES <= pages <= document.MAX_PAGES:

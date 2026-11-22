@@ -209,7 +209,7 @@ make smoke              # one URL in, one verdict out
 make demo               # the demo scenarios
 ```
 
-Honest state of those targets on `main`: `make up`, `make down`, `make test` and `make scan` are implemented. `make smoke` is implemented, but it cannot pass against the real pipeline until the cascade and worker merge (PR #18); its fake-worker mode is a test double and does not count as gate G1. `make demo`, `make eval`, `make redteam`, `make seed`, `make replay` and `make submission` exit with "not yet implemented" until their gate is passed. They never pass silently.
+Honest state of those targets on `main`: `make up`, `make down`, `make test` and `make scan` are implemented. `make smoke` is implemented, but it cannot pass against the real pipeline until the cascade and worker merge (PR #18); its fake-worker mode is a test double and does not count as gate G1. `make submission` builds the submission package and marks it NOT READY until the end-to-end check ships ([`submission/README.md`](submission/README.md)). `make demo`, `make eval`, `make redteam`, `make seed` and `make replay` exit with "not yet implemented" until their gate is passed. They never pass silently.
 
 When the stack is up:
 
