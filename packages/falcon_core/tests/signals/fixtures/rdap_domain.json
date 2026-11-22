@@ -1,0 +1,11 @@
+{"objectClassName": "domain", "handle": "1234_DOMAIN_COM-VRSN", "ldhName": "falcon-demo-shop.com",
+ "events": [
+  {"eventAction": "registration", "eventDate": "2026-11-15T10:20:30Z"},
+  {"eventAction": "expiration", "eventDate": "2027-11-15T10:20:30Z"},
+  {"eventAction": "last changed", "eventDate": "2026-11-16T00:00:00Z"}
+ ],
+ "entities": [
+  {"objectClassName": "entity", "handle": "999", "roles": ["registrant"], "vcardArray": ["vcard", [["fn", {}, "text", "REDACTED"]]]},
+  {"objectClassName": "entity", "handle": "146", "roles": ["registrar"],
+   "vcardArray": ["vcard", [["version", {}, "text", "4.0"], ["fn", {}, "text", "Synthetic Registrar LLC"]]]}
+ ]}

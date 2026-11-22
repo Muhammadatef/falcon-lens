@@ -44,6 +44,8 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | injection.instruction_like_text | injection | +1.5 | evidence of manipulation, **never obeyed** |
 | registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |
 | domain.age_days > 3650 + no other risk | domain | −1.0 | |
+| domain.cert_issuer | domain | 0 (informational) | CT log issuer of the latest cert; proposed by builder-signals, fingerprint for Sentinel |
+| domain.ct_siblings | domain | 0 (informational) | other registrable domains on the same certs; campaign linking, proposed by builder-signals |
 
 ## 3. Hard rules
 | Id | Condition | Effect |

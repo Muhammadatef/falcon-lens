@@ -19,3 +19,14 @@ Key invariants:
 4. Degraded verdicts are never `no_warning_signs`.
 5. URLs in any output are defanged.
 6. Events and incidents never carry raw page or message text.
+
+## Internal messages
+
+### OpenPhish mirror (Redis)
+- `feed:openphish` is a Redis SET of lowercase sha256 hex digests, never plaintext: the sha256 of the canonical URL
+  (lowercase scheme and host, default port and fragment dropped, empty path becomes `/`; same form as the collector's
+  `sha256` field) and the sha256 of the lowercase ASCII (punycode) host. Host digests are stored only for bare-path
+  listings, so one phishing page on a shared host never condemns the host.
+- `feed:openphish:updated_at` is the last poll time as epoch seconds (JSON number). Age = now minus this value; H2 needs age < 6 h.
+- Writer: `falcon_core.signals.reputation.mirror.refresh_openphish` (periodic job, reads `data/private/feeds/openphish/2*.jsonl`, emits `feed.updated {feed, entries, age_s}` on `fl:events` as field `event` = JSON).
+- Reader: signal `rep.openphish` via `FeedMirror.lookup`. The set is private and is never exported (OpenPhish terms).
