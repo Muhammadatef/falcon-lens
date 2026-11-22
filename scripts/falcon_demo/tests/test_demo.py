@@ -265,6 +265,16 @@ def test_load_env_overrides_and_strips_comments(tmp_path: Path) -> None:
 def test_urls_follow_remapped_ports() -> None:
     rows = dict(ops.url_table({"FL_GATEWAY_PORT": "9443", "FL_GRAFANA_PORT": "4000"}))
     assert rows["Web app"] == "https://localhost:9443/"
+    # the routes the web app serves (web/app/campaigns, web/app/ops), as docs/DEMO.md says
+    assert rows["Campaign board"] == "https://localhost:9443/campaigns"
+    assert rows["Operator incident board"] == "https://localhost:9443/ops"
+    assert not any(u.endswith(("/board", "/incidents")) for u in rows.values())
+    # Grafana names match the provisioned dashboard titles (infra/grafana/dashboards/[1-6]-*.json)
+    titles = {
+        json.loads(f.read_text())["title"].split(" | ")[0]
+        for f in (Path(__file__).resolve().parents[3] / "infra" / "grafana" / "dashboards").glob("[1-6]-*.json")
+    }
+    assert {k.split(": ", 1)[1] for k in rows if k.startswith("Grafana")} == titles
     assert sum(k.startswith("Grafana") for k in rows) == 6
     assert rows["Prometheus"].endswith(":9090")
 

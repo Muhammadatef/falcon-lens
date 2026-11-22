@@ -3,6 +3,7 @@
 This page is for engineers. The plain-language overview is in the [README](../README.md).
 Everything here was moved from the README unchanged in meaning; nothing technical was removed.
 
+- [Why](#why)
 - [System architecture](#system-architecture)
 - [The Investigator](#the-investigator-the-agent-inside-one-check)
 - [The Sentinel](#the-sentinel-the-always-on-backend-agent)
@@ -19,6 +20,21 @@ Everything here was moved from the README unchanged in meaning; nothing technica
 The diagrams on this page are the detailed versions. The simple versions are
 [`how-it-works.svg`](assets/how-it-works.svg) and [`ai-agents.svg`](assets/ai-agents.svg).
 
+## Why
+
+People in the UAE receive fake fine, delivery-fee, bank-OTP and UAE Pass links by SMS, WhatsApp and email. The pages look official and are short-lived, so a blocklist often learns about them after people have already opened them. A warning written in English and in security jargon does little for the people who are hit hardest: older and non-technical residents.
+
+Falcon Lens is built on four principles ([`VISION.md`](VISION.md)):
+
+| Principle | What it means here |
+|---|---|
+| Proactive | A page that claims a brand, asks for credentials and sits on a domain the brand does not own is flagged by rule, even when no blocklist knows it. Single checks are linked into campaigns. |
+| Applicable | One command starts the whole stack on a laptop. A sovereign mode keeps every model call on the local machine. |
+| Truthful | Every number shown anywhere comes from a generated eval artifact. Replayed and synthetic data are labelled as such. |
+| Defensive only | Suspicious pages are loaded once, passively, in an isolated sandbox. No form is ever submitted. |
+
+This section carries no statistics on purpose: a figure appears in this repository only with a public source link or an eval artifact behind it.
+
 ## System architecture
 
 <p align="center">
@@ -30,12 +46,12 @@ One check, end to end ([`docs/ARCHITECTURE.md`](ARCHITECTURE.md)):
 1. **In.** `POST /v1/check/url` reaches the API through the Caddy gateway. The API validates, rate-limits, assigns a `verdict_id`, puts a job on the `fl:jobs` stream and returns the SSE address. Two checks of the same URL share one job.
 2. **Cascade.** The worker runs the tiers in order and can exit after any of them. After each tier it re-emits a partial verdict under the same `verdict_id`.
 
-   | Tier | Budget | What runs |
+   | Tier | Design budget | What runs |
    |---|---|---|
-   | T0 | 50 ms | Canonicalise, verdict cache, verified-official registry, local feed mirror |
-   | T1 | 1 s | Deterministic URL, domain and reputation signals in parallel, plus a calibrated classifier |
-   | T2 | 6 s | Sandbox render, page and visual features, the brand check, the quarantined extractor |
-   | T3 | 15 s | The bounded investigator, only for the uncertain band |
+   | T0 | 50 ms (design budget) | Canonicalise, verdict cache, verified-official registry, local feed mirror |
+   | T1 | 1 s (design budget) | Deterministic URL, domain and reputation signals in parallel, plus a calibrated classifier |
+   | T2 | 6 s (design budget) | Sandbox render, page and visual features, the brand check, the quarantined extractor |
+   | T3 | 15 s (design budget) | The bounded investigator, only for the uncertain band |
 
    The budgets are design limits from [ADR-001](adr/ADR-001-cascade-arbiter.md), not measurements.
 3. **Verdict.** The deterministic arbiter sets the score and the verdict. The result is stored in Postgres and streamed back over SSE.
@@ -92,24 +108,24 @@ Status as of Mon 23 Nov 2026. Legend: **merged** is on `main` with its tests. **
 
 | Feature | Description | Status |
 |---|---|---|
-| URL check | Paste a link and get a progressive verdict over SSE | in progress: the address-level path is merged (signals #1 and #26, arbiter #13, cascade and worker #18, check API #4); page-level checks need the sandbox (PR #28) |
+| URL check | Paste a link and get a progressive verdict over SSE | in progress: the address-level path (signals #1 and #26, arbiter #13, cascade and worker #18, check API #4) and sandbox capture (#28) are merged; joining the sandbox, domain and reputation signals and the investigator into the cascade is PR #44 (open) |
 | SMS and WhatsApp text check | Arabic, Arabizi and English message analysis, rule features and nearest known scam script. Every link found is checked as a URL. | in progress: signals merged (#8); the message pipeline is not wired into the cascade yet |
 | Email check | `.eml` parsing with no remote fetch: authentication results, header mismatches, link text against target, QR codes, attachment type and hash only | in progress: signals merged (#8), fixtures merged (#24); pipeline not wired yet |
 | Image and QR check | QR decode and quarantined OCR. Extracted links and text go through the URL and message pipelines. | in progress: signals merged (#8); pipeline not wired yet |
 | Arabic-first verdicts | Three verdicts: `dangerous`, `suspicious`, `no_warning_signs`. The product never says "safe". Reasons cite evidence ids. | merged (#13, #19); native-speaker review of the Arabic strings in PR #23 |
-| Actions and reporting | What to do now, what to do if you already clicked, and reporting channels taken only from the official site ([`config/`](../config)) | in progress (report intake in PR #30) |
-| PWA and share target | Next.js web app, Arabic-first RTL. Android share sheet through the PWA share target. | in progress (PR #35; scaffold merged) |
+| Actions and reporting | What to do now, what to do if you already clicked, and reporting channels taken only from the official site ([`config/`](../config)) | merged (report intake in #30) |
+| PWA and share target | Next.js web app, Arabic-first RTL. Android share sheet through the PWA share target. | merged (#35) |
 | Chrome extension | Manifest V3. Sends only the URL. Host permission only for the API origin. | merged (#34) |
-| Campaign board | Similarity view of linked checks and live campaigns | in progress (API in PR #30, web app in PR #35) |
-| Operator incident board | Incidents, evidence, and approve or reject for drafted external actions | in progress (API in PR #30, web app in PR #35) |
-| REST v1 | `POST /v1/check/*`, SSE stream, `?wait=` synchronous mode, scoped API keys | in progress: check endpoints, SSE and `?wait` merged (#4); keys, intake and incidents in PR #30 |
-| MCP server | Streamable HTTP with bearer auth: `check_url`, `check_message`, `check_email`, `get_verdict`, `list_campaigns`, `list_incidents`, `get_incident`, `submit_report` | in progress (PR #30; service scaffold merged) |
-| STIX 2.1 export and webhooks | Incident export and HMAC-signed webhooks for police or SOC systems, ready to connect | in progress (PR #30) |
+| Campaign board | Similarity view of linked checks and live campaigns | merged (API #30, web app #35) |
+| Operator incident board | Incidents, evidence, and approve or reject for drafted external actions | merged (API #30, web app #35) |
+| REST v1 | `POST /v1/check/*`, SSE stream, `?wait=` synchronous mode, scoped API keys | merged (check endpoints, SSE and `?wait` #4; keys, intake and incidents #30) |
+| MCP server | Streamable HTTP with bearer auth: `check_url`, `check_message`, `check_email`, `get_verdict`, `list_campaigns`, `list_incidents`, `get_incident`, `submit_report` | merged (#30) |
+| STIX 2.1 export and webhooks | Incident export and HMAC-signed webhooks for police or SOC systems, ready to connect | merged (#30) |
 | Sovereign mode | `FL_SOVEREIGN_MODE=true` sends every model call to the local Ollama model | merged with the model router (#19); the sovereign route has no published eval yet |
 | Observability dashboards | Six Grafana dashboards, `fl_` metrics, alerts with a runbook entry each | merged (#14) |
 | Demo tooling | `make seed`, `make replay`, `make demo`, tunnel | merged (#21, #32) |
-| Red-team suite | Prompt-injection, SSRF and XSS fixtures run by `make redteam` | in progress (no PR yet; `make redteam` exits with "not yet implemented") |
-| Submission kit | `make submission` builds the form fields, deck and description | in progress (PR #31) |
+| Red-team suite | Prompt-injection, SSRF and XSS fixtures run by `make redteam` | in progress (PR #41, open) |
+| Submission kit | `make submission` builds the form fields, deck and description | merged (#31); `make submission` marks the package NOT READY until the end-to-end check ships |
 
 ### AI agents and detection core
 
@@ -121,7 +137,7 @@ Status as of Mon 23 Nov 2026. Legend: **merged** is on `main` with its tests. **
 | SSRF guard and egress proxy | Own DNS resolution, blocked ranges, pinned IP, redirects re-checked; the egress proxy uses the same guard | merged (#3, #16) |
 | Tiered cascade and worker | T0 to T2 orchestration, early exits, partial verdicts | merged (#18) |
 | Deterministic arbiter | Hard rules H1 to H6, calibrated score, bands, degradation | merged (#13; scoring docs update in PR #15) |
-| Sandbox capture and fixtures | Isolated Playwright capture, page features, Falcon Demo Bank fixtures | in progress (PR #28) |
+| Sandbox capture and fixtures | Isolated Playwright capture, page features, Falcon Demo Bank fixtures | merged (#28) |
 | Quarantined extractor | No tools, strict schema, spotlighted input | merged (#19) |
 | Bounded investigator (T3) | State machine with typed tools, the provenance rule and budgets | merged (#19) |
 | Responder and verifier | Reasons that cite evidence ids, with a template fallback | merged (#19) |
@@ -129,7 +145,7 @@ Status as of Mon 23 Nov 2026. Legend: **merged** is on `main` with its tests. **
 | Sentinel core | Correlation and rules R1 to R5 | merged (#2) |
 | Sentinel triage graph | LangGraph nodes, Redis consumer, Postgres checkpointer, human-approval interrupt | merged (#6) |
 | Eval harness | Datasets, first-stage model fit, harness, merge gate, published artifacts | merged (#29, #7, #24); more hard negatives in PR #25 |
-| Offline prompt optimisation | DSPy on the validation split; compiled prompts are frozen | in progress (no PR yet) |
+| Offline prompt optimisation | DSPy on the validation split; compiled prompts are frozen | in progress (PR #45, open) |
 
 ## How scoring works
 
@@ -179,7 +195,7 @@ make smoke              # one URL in, one verdict out
 make demo               # the demo scenarios
 ```
 
-Honest state of those targets on `main`: `make up`, `make down`, `make test`, `make guard`, `make scan`, `make smoke`, `make eval`, `make fit-thresholds`, `make seed`, `make replay`, `make demo`, `make tunnel` and `make unblock` are implemented. `make redteam` and `make submission` exit with "not yet implemented" (the submission target is in PR #31). `make smoke` has a fake-worker mode that is a test double and does not count as gate G1. Whether a gate has passed is recorded only in [`STATUS.md`](../STATUS.md). Per-script documentation is in [`docs/SCRIPTS.md`](SCRIPTS.md) (added by a separate pull request).
+Honest state of those targets on `main`: `make up`, `make down`, `make test`, `make scan`, `make smoke`, `make eval`, `make seed`, `make replay`, `make demo`, `make urls`, `make tunnel`, `make demo-reset` and `make submission` are implemented. Implemented does not mean the gate has passed: `make smoke` runs against the real worker, gate G1 counts only once [`STATUS.md`](../STATUS.md) records it as passed, and the fake-worker mode is a test double that never counts as G1. `make eval` is the offline evaluation described under [Evaluation](#evaluation); the artifact states its own scope. `make submission` builds the submission package and marks it NOT READY until the end-to-end check ships ([`submission/README.md`](../submission/README.md)). `make redteam` exits with "not yet implemented". A target that is not built never passes silently. Per-script documentation is in [`docs/SCRIPTS.md`](SCRIPTS.md) (added by PR #40, not yet merged).
 
 When the stack is up:
 
@@ -222,50 +238,66 @@ Results are shown in one place only: the [Results section of the README](../READ
 
 Gates are tracked in [`STATUS.md`](../STATUS.md). At the time of writing that file records no gate as passed, so this document does not claim one. A feature marked "merged" below is on `main` with its tests; that is a weaker statement than "works end to end for a user".
 
+Gates G0 to G6, from [`STATUS.md`](../STATUS.md):
+
+| Gate | Target | State (from `STATUS.md`) |
+|---|---|---|
+| G0 `make up` healthy | Sun 19:00 | in progress |
+| G1 `make smoke` URL to verdict | Mon 06:00 | not recorded as passed |
+| G2 `make eval` baseline | Mon 14:00 | not recorded as passed |
+| G3 red-team 0%, scans clean, 5 dashboards | Mon 22:00 | not recorded as passed |
+| G4 MVP (organiser rule) | Tue 08:00 | not recorded as passed |
+| G5 Sentinel incident from replay | Tue 15:00 | not recorded as passed |
+| G6 `make demo` + `make submission` | Tue 20:00 | not recorded as passed |
+
 Every pull request in the repository, from `gh pr list --state all` on Mon 23 Nov 2026 (titles as written by their authors):
 
 | PR | State | Title |
 |---|---|---|
-| #1 | merged | feat(signals): T-007 URL/lexical signals, brand registry, UTS#39 skel |
+| #1 | merged | feat(signals): T-007 URL/lexical signals, brand registry, UTS#39 skel… |
 | #2 | merged | Feat/sentinel core |
 | #3 | merged | T-003: SSRF guard and guarded async HTTP client (library) |
 | #4 | merged | feat(api): T-013 check endpoints + SSE + ?wait, T-015 make smoke |
 | #5 | merged | T-001: platform skeleton (uv workspace, services, compose, Makefile, CI) |
 | #6 | merged | feat(sentinel): LangGraph triage agent, Redis consumer, Postgres persistence, tools |
-| #7 | merged | feat(evals): legit URL set (411 verified rows) and scripts/qwen_task. |
+| #7 | merged | feat(evals): legit URL set (411 verified rows) and scripts/qwen_task.… |
 | #8 | merged | feat(signals): message, email and image deterministic signals |
 | #9 | merged | fix(signals): PR-5 review changes (fixtures, escapes, url.data_uri, ruff) |
 | #10 | merged | T-001 review fixes (G0): sandbox isolation, deps, ports, PR CI |
-| #11 | in progress, open PR | ci: hotfix main — lint config, formatting, missing deps, trivy pin |
+| #11 | open PR | ci: hotfix main — lint config, formatting, missing deps, trivy pin |
 | #12 | merged | git: union merge for DECISIONS/STATUS/TASKS (keep both sides) |
 | #13 | merged | feat(scoring): arbiter + hard rules H1-H6 + template reasons (T-011, review round 2) |
 | #14 | merged | T-014: fl_ metrics registry, dashboards, alert rules, Alertmanager route |
-| #15 | in progress, open PR | docs(scoring): investigator evidence names |
+| #15 | open PR | docs(scoring): investigator evidence names |
 | #16 | merged | T-003: SSRF review fixes (PR-4), POST allow-list, egress proxy on the shared guard |
 | #17 | merged | docs: README with animated architecture, Investigator and Sentinel diagrams |
 | #18 | merged | T-012: cascade T0-T2 + worker (fl:jobs consumer, progressive verdicts) |
 | #19 | merged | feat(core): LLM router, tool registry + provenance, extractor, investigator, responder (T-024, T-025) |
-| #20 | in progress, open PR | fix(env): inline comments were parsed as values |
+| #20 | open PR | fix(env): inline comments were parsed as values |
 | #21 | merged | Demo tooling: seed, replay, demo, tunnel, demo-reset (G6) |
 | #22 | merged | data(brands): verify the 6 weakly verified official domains (C02) |
-| #23 | in progress, open PR | i18n(ar): native-speaker review of brand names and verdict strings (C01) |
+| #23 | open PR | i18n(ar): native-speaker review of brand names and verdict strings (C01) |
 | #24 | merged | evals: 40 fictional .eml fixtures for the email pipeline (C05) |
-| #25 | in progress, open PR | feat(evals): C06 more legitimate hard negatives (new domains, official short links) |
+| #25 | open PR | feat(evals): C06 more legitimate hard negatives (new domains, official short links) |
 | #26 | merged | T-008: domain (RDAP, crt.sh) + reputation (OpenPhish mirror, GSB/URLhaus) signals |
 | #27 | merged | docs: README status tables from live PR state (follow-up to #17) |
-| #28 | in progress, open PR | T-004/T-009: sandbox capture, page features, Falcon Demo Bank fixtures |
+| #28 | merged | T-004/T-009: sandbox capture, page features, Falcon Demo Bank fixtures |
 | #29 | merged | T-020/T-022/T-023: datasets, T1 fit, eval harness + gate |
-| #30 | in progress, open PR | feat(integration): API keys, intake, incidents, STIX, webhooks, MCP server |
-| #31 | in progress, open PR | docs: demo script and submission kit (make submission, number tracing) |
+| #30 | merged | feat(integration): API keys, intake, incidents, STIX, webhooks, MCP server |
+| #31 | merged | docs: demo script and submission kit (make submission, number tracing) |
 | #32 | merged | fix(demo): live-URL guard failure + fail-closed fixture gate (#21 follow-up) |
 | #33 | merged | docs: STIX intel-scope refang decision |
 | #34 | merged | feat(extension): Chrome MV3 extension (navigation guard, hover check, popup, options) |
-| #35 | in progress, open PR | feat(web): real Falcon Lens web app (Fable 5.2) |
-| #36 | in progress, open PR | docs: single page-evidence builder decision |
+| #35 | merged | feat(web): real Falcon Lens web app (Fable 5.2) |
+| #36 | open PR | docs: single page-evidence builder decision |
 | #38 | merged | reviews: supervisor review records batch 1 |
-| #39 | in progress, open PR | fix(env): inline comments parsed as values + guard (supersedes #20) |
-
-Work with no pull request yet, as reported by the coordinator: the red-team suite and the offline prompt optimisation.
+| #39 | open PR | fix(env): inline comments parsed as values + guard (supersedes #20) |
+| #40 | open PR | docs: usage headers on every script, make help for every target, docs/SCRIPTS.md |
+| #41 | open PR | T-026: injection detector + red-team suite (92 cases, attack success 0/92) + scan/XSS checks |
+| #42 | open PR | docs: plain-language README, simple diagrams, technical detail in docs/TECHNICAL.md |
+| #43 | open PR | chore(agents): Sonnet builders, Opus supervisor only (owner) |
+| #44 | open PR | feat(cascade): wire OpenPhish mirror, domain/reputation signals, worker env (G1) |
+| #45 | open PR | feat(evals): offline DSPy optimisation pipeline + frozen compiled prompts (ADR-002) |
 
 Reputation feeds: Google Safe Browsing is disabled (no key) and URLhaus is disabled (no key), per `STATUS.md`. The OpenPhish community feed is limited to non-commercial research use, per the terms note in [`DECISIONS.md`](../DECISIONS.md).
 

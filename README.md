@@ -77,15 +77,15 @@
 - It links checks that look alike, so that many fake pages copying one bank are seen as a single campaign.
 - It can block a known-bad link inside our own system straight away. Every block expires and can be undone.
 - It drafts takedown requests and police reports in Arabic and English.
-- It sends nothing itself. A person must read the draft and approve it first. Every action is written to a record that cannot be edited.
+- It sends nothing itself. A person must read the draft and approve it first. Every action is written to an append-only record (it cannot be changed by the application).
 
 ## What makes it different
 
 | | In plain words | Honest note |
 |---|---|---|
-| **It can catch brand-new fake pages** | Most tools wait until a fake page lands on a warning list. Falcon Lens also asks a simple question: does this page claim to be an organisation whose real address is somewhere else? | The rule is built. It needs the sealed browser, which is in review. Its catch rate on brand-new pages is not measured yet. |
+| **It can catch brand-new fake pages** | Most tools wait until a fake page lands on a warning list. Falcon Lens also asks a simple question: does this page claim to be an organisation whose real address is somewhere else? | The rule is built. The sealed browser it relies on is built and merged. Its catch rate on brand-new pages is not measured yet. |
 | **Code decides, not AI** | The result comes from fixed rules and a fixed formula. AI helps to read and to explain. It cannot raise or lower a score, so a scam page cannot talk its way out. | Built. |
-| **A person approves anything that leaves** | The system may protect its own users on its own. A takedown request or a police report is only ever a draft until a person approves it. | The pause is built. The operator's approve and reject screen is in review. Nothing is connected to any outside organisation. |
+| **A person approves anything that leaves** | The system may protect its own users on its own. A takedown request or a police report is only ever a draft until a person approves it. | The pause is built, and so is the operator's approve and reject screen. Nothing is connected to any outside organisation. |
 | **It can run fully on your own machines** | In its local mode the AI runs on your own computer, and no message or page content is sent to an outside AI service. | Built. Its accuracy in this mode is not measured yet. |
 | **Every number is traceable** | Any figure on this page is copied by a script from a saved test result. Nobody types a number by hand. | See [Results](#results). |
 
@@ -115,10 +115,9 @@ The project is developed in the open, one reviewed piece at a time. This is the 
 
 | State | Parts |
 |---|---|
-| **Built and merged** | Checks on the address of a link. The fixed rules that decide the result. The service that receives a check and streams back the answer. Both AI helpers. The Chrome extension. Monitoring dashboards. The testing tools that produce the results below. Demo tools. |
-| **Built, waiting for review** | The sealed browser. The web app. The doorways for other systems. The submission package. |
+| **Built and merged** | Checks on the address of a link. The fixed rules that decide the result. The service that receives a check and streams back the answer. Both AI helpers. The Chrome extension. The sealed browser. The web app, including the operator's board. The doorways for other systems (API, MCP, standard sharing format). The submission package. Monitoring dashboards. The testing tools that produce the results below. Demo tools. |
 | **Built in part** | Checks for text messages, emails and pictures: the individual checks are merged, and they are not yet joined into the full flow. |
-| **Not built yet** | The attack-simulation test suite. |
+| **Built, waiting for review** | The attack-simulation test suite (PR #41). Joining the checks into one flow (PR #44). Automatic improvement of the AI helper's instructions, done offline (PR #45). |
 
 Two cautions. First, "built and merged" means the code and its tests are in the main code line. It does not mean a resident can use the whole product from start to finish today. The project's own checkpoint list, [`STATUS.md`](STATUS.md), does not yet record a passed end-to-end checkpoint, so this page does not claim one. Second, the list above goes out of date quickly. The exact, piece-by-piece status is in the [technical reference](docs/TECHNICAL.md#status).
 
@@ -159,29 +158,29 @@ Source artifact: [`evals/results/published/20261122T182533Z.json`](evals/results
 | `test.ece_ci95` | [0.013481, 0.048042] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.f1` | 0.967213 | A single figure that balances recall and precision. Closer to one is better. |
 | `test.f1_ci95` | [0.93202, 0.992593] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.fpr` | 0.0375 | Of the genuine links in the set, the share we flagged by mistake. Closer to zero is better. |
+| `test.fpr` | 0.0375 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
 | `test.fpr_ci95` | [0.0, 0.082377] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.n` | 140 | How many links are in this set. |
+| `test.n` | 140 | How many checks are in this set. |
 | `test.official_false_dangerous` | 0 | Verified official sites wrongly marked dangerous. The target is zero. |
-| `test.pr_auc` | 0.986588 | How well scams are ranked above genuine links overall. Closer to one is better. |
+| `test.pr_auc` | 0.986588 | How well scams are ranked above genuine checks overall. Closer to one is better. |
 | `test.pr_auc_ci95` | [0.96648, 0.999321] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.precision` | 0.951613 | Of the links we flagged, the share that really were scams. Closer to one is better. |
+| `test.precision` | 0.951613 | Of the checks we flagged, the share that really were scams. Closer to one is better. |
 | `test.precision_ci95` | [0.888889, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.recall` | 0.983333 | Of the real scam links in the set, the share we flagged. Closer to one is better. |
+| `test.recall` | 0.983333 | Of the real scam checks in the set, the share we flagged. Closer to one is better. |
 | `test.recall_ci95` | [0.948253, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `val.ece` | 0.031541 | How far our stated confidence is from what really happened. Closer to zero is better. |
 | `val.ece_ci95` | [0.019403, 0.060841] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `val.f1` | 0.97479 | A single figure that balances recall and precision. Closer to one is better. |
 | `val.f1_ci95` | [0.938768, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.fpr` | 0.011905 | Of the genuine links in the set, the share we flagged by mistake. Closer to zero is better. |
+| `val.fpr` | 0.011905 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
 | `val.fpr_ci95` | [0.0, 0.0375] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.n` | 144 | How many links are in this set. |
+| `val.n` | 144 | How many checks are in this set. |
 | `val.official_false_dangerous` | 0 | Verified official sites wrongly marked dangerous. The target is zero. |
-| `val.pr_auc` | 0.986559 | How well scams are ranked above genuine links overall. Closer to one is better. |
+| `val.pr_auc` | 0.986559 | How well scams are ranked above genuine checks overall. Closer to one is better. |
 | `val.pr_auc_ci95` | [0.966758, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.precision` | 0.983051 | Of the links we flagged, the share that really were scams. Closer to one is better. |
+| `val.precision` | 0.983051 | Of the checks we flagged, the share that really were scams. Closer to one is better. |
 | `val.precision_ci95` | [0.943396, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.recall` | 0.966667 | Of the real scam links in the set, the share we flagged. Closer to one is better. |
+| `val.recall` | 0.966667 | Of the real scam checks in the set, the share we flagged. Closer to one is better. |
 | `val.recall_ci95` | [0.912251, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
 
 Not evaluated in this artifact, so no figure is shown for them: `arabic_clarity`, `cost_per_check_llm`, `faithfulness`, `flip_rate_3_runs`, `injection_attack_success_rate`, `llm_tier_T3`, `sandbox_tier_T2`, `zero_day`, `synthetic`, `cloud_route`, `sovereign_route`.
@@ -200,7 +199,7 @@ The full detail is in [`docs/PRIVACY.md`](docs/PRIVACY.md) and [`docs/THREAT_MOD
 
 ## What comes next
 
-- **Finish the full flow** for messages, emails and pictures, and bring in the sealed browser and the web app.
+- **Finish the full flow** for messages, emails and pictures, and join every check into one flow.
 - **Measure what is not measured yet**: brand-new fake pages, the AI helpers, the local mode, and resistance to manipulation.
 - **A licence for the scam list.** The prototype uses the OpenPhish community list, which allows research use only. A real deployment needs an OpenPhish licence.
 - **More warning lists**, once access keys are available.
@@ -220,7 +219,7 @@ All technical detail lives in one place: **[`docs/TECHNICAL.md`](docs/TECHNICAL.
 | Scoring, hard rules and bands | [How scoring works](docs/TECHNICAL.md#how-scoring-works) and [`docs/SCORING.md`](docs/SCORING.md) |
 | Threat model and data handling | [Security and privacy](docs/TECHNICAL.md#security-and-privacy) |
 | Commands, addresses and ports | [Run it](docs/TECHNICAL.md#run-it) |
-| What each script does | [`docs/SCRIPTS.md`](docs/SCRIPTS.md) (arrives with a separate pull request) |
+| What each script does | [`docs/SCRIPTS.md`](docs/SCRIPTS.md) (added by PR #40, not yet merged) |
 | Repository layout and contracts | [Project layout](docs/TECHNICAL.md#project-layout) and [`contracts/`](contracts) |
 | Feature-by-feature status with pull request numbers | [Features](docs/TECHNICAL.md#features) and [Status](docs/TECHNICAL.md#status) |
 | Evaluation method | [`docs/EVALS.md`](docs/EVALS.md) |
