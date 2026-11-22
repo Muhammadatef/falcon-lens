@@ -525,3 +525,4 @@
 - 2026-11-23 builder-docs: README/TECHNICAL status regenerated from gh pr list; #40 and #43 shown as open because gh reports them open; SCRIPTS.md still absent from main so link note says PR #40.
 - 2026-11-23 · agent-core · Worker `FL_SSRF_ALLOW_HOSTS` reads `FL_ENV` with no default; only exactly local|demo|ci honours it (matches sandbox settings.py).
 - 2026-11-23 · agent-core · Eval-report note: T1 signals run in parallel with per-signal timeouts, so T1 tail latency is bounded by the slowest signal timeout (network-bound domain/reputation lookups); report p95/p99 T1 separately from T0.
+- 2026-11-23 · owner · The website's audience is the Abu Dhabi Police × 42 evaluation committee. Every page and state must be production-ready: formal MSA plus clear English, no placeholders or dev text, WCAG 2.2 AA, Lighthouse mobile ≥90, human error states, judge-facing How-it-works/Results/Integration/Privacy pages, no ADP branding.
