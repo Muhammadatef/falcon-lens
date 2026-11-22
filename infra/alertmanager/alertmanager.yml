@@ -3,9 +3,12 @@
 # ALERT_WEBHOOK_URL are set. Kept so `amtool check-config` can validate the base shape.
 route:
   receiver: 'null'
-  group_by: [alertname, service]
+  group_by: [alertname, service, source]
   group_wait: 10s
   group_interval: 1m
   repeat_interval: 4h
+  routes:
+    - matchers: ['source="replay"']
+      receiver: 'null'
 receivers:
   - name: 'null'

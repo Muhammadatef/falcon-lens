@@ -4,8 +4,8 @@ before the real pipeline exists. Nothing here is a detection result: the values 
 
 Usage:  uv run python scripts/emit_demo_metrics.py [--port 9199] [--seconds 0]
 
-It serves /metrics on 0.0.0.0:<port> from the real metric registry (so names/labels are the
-contract's) and writes infra/prometheus/demo/targets.yml so Prometheus (file_sd, refreshed
+It serves /metrics on 127.0.0.1:<port> (set FL_DEMO_EMITTER_BIND to change; Linux Docker needs
+0.0.0.0) from the real metric registry (so names/labels are the contract's) and writes infra/prometheus/demo/targets.yml so Prometheus (file_sd, refreshed
 automatically) scrapes it at host.docker.internal:<port>. The file is removed on exit.
 """
 
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import os
 import random
 import time
 from pathlib import Path
@@ -23,8 +24,7 @@ from falcon_core.telemetry import metrics as m
 
 TARGETS = Path(__file__).resolve().parents[1] / "infra" / "prometheus" / "demo" / "targets.yml"
 VERDICTS = ["dangerous", "suspicious", "no_warning_signs"]
-TIERS = ["t0", "t1", "t2", "t3"]
-STAGES = ["t0", "t1", "t2", "t3", "arbiter", "sandbox", "total"]
+TIERS = ["T0", "T1", "T2", "T3"]
 BRANDS = ["falcon_demo_bank"]  # the only invented brand allowed in fixtures
 FEEDS = ["openphish", "urlhaus"]
 
@@ -37,22 +37,22 @@ def tick(rng: random.Random, state: dict[str, float]) -> None:
             input_type=rng.choice(["url", "message", "email"]),
             verdict=verdict,
             tier=tier,
-            route=rng.choice(["cascade", "llm_only"]),
+            route=rng.choice(["cloud", "local", "none"]),
             source="replay",
             degraded=rng.random() < 0.02,
         )
-        base = {"t0": 0.03, "t1": 0.3, "t2": 1.5, "t3": 4.0}[tier]
+        base = {"T0": 0.03, "T1": 0.3, "T2": 1.5, "T3": 4.0}[tier]
         total = 0.0
-        for stage in ("t0", "t1", "t2", "t3", "arbiter", "sandbox"):
-            if stage == "arbiter" or stage <= tier or (stage == "sandbox" and tier in ("t2", "t3")):
+        for stage in ("T0", "T1", "T2", "T3", "arbiter", "sandbox"):
+            if stage == "arbiter" or stage <= tier or (stage == "sandbox" and tier in ("T2", "T3")):
                 d = rng.lognormvariate(0, 0.6) * (0.02 if stage == "arbiter" else base)
                 m.STAGE_LATENCY.labels(stage).observe(d)
                 total += d
         m.STAGE_LATENCY.labels("total").observe(total)
-        if tier != "t0":
-            m.ESCALATIONS.labels("t0", tier).inc()
+        if tier != "T0":
+            m.ESCALATIONS.labels("T0", tier).inc()
         m.CACHE_HITS.labels(rng.choice(["redis", "verdict"])).inc(rng.random() < 0.5)
-        if tier == "t3":
+        if tier == "T3":
             model = rng.choice(["claude-haiku-5-5", "claude-sonnet-5-5"])
             tin, tout = rng.randint(800, 2500), rng.randint(100, 500)
             m.record_llm(
@@ -99,17 +99,21 @@ def tick(rng: random.Random, state: dict[str, float]) -> None:
         m.FEED_ENABLED.labels(feed).set(1)
         m.FEED_AGE.labels(feed).set(state.setdefault(feed, 0.0) + 1)
         state[feed] = (state[feed] + 1) % 1800
-    for name, base in (("f1", 0.9), ("precision", 0.93), ("recall", 0.88)):
-        m.EVAL_METRIC.labels(name, "demo", "cascade").set(base + rng.uniform(-0.005, 0.005))
+    # fl_eval_metric is deliberately NOT emitted: eval gauges come only from eval artifacts.
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--port", type=int, default=9199)
+    ap.add_argument(
+        "--bind",
+        default=os.environ.get("FL_DEMO_EMITTER_BIND", "127.0.0.1"),
+        help="listen address; Prometheus in docker needs FL_DEMO_EMITTER_BIND=0.0.0.0 on Linux",
+    )
     ap.add_argument("--seconds", type=float, default=0, help="stop after N seconds (0 = forever)")
     args = ap.parse_args()
 
-    start_http_server(args.port, addr="0.0.0.0", registry=m.REGISTRY)  # noqa: S104
+    start_http_server(args.port, addr=args.bind, registry=m.REGISTRY)
     TARGETS.parent.mkdir(parents=True, exist_ok=True)
     TARGETS.write_text(
         f"- targets: ['host.docker.internal:{args.port}']\n"

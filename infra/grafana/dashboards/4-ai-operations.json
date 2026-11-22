@@ -700,7 +700,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "label_replace(label_replace(sum by (source) (rate(fl_checks_total{tier=\"t3\"}[5m])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
+          "expr": "label_replace(label_replace(sum by (source) (rate(fl_checks_total{tier=\"T3\"}[5m])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"

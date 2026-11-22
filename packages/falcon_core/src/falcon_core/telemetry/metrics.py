@@ -16,6 +16,9 @@ from typing import Any, Literal, ParamSpec, TypeVar
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
 Source = Literal["live", "replay"]
+# Label values follow contracts/verdict.schema.json (tier_reached, model_route).
+TIERS = ("T0", "T1", "T2", "T3")
+ROUTES = ("cloud", "local", "none")
 
 REGISTRY = CollectorRegistry()
 
@@ -138,6 +141,10 @@ def record_verdict(
     """Count one finished check (``source="replay"`` for replayed or synthetic data)."""
     if source not in ("live", "replay"):
         raise ValueError(f"source must be live|replay, got {source!r}")
+    if tier not in TIERS:
+        raise ValueError(f"tier must be one of {TIERS}, got {tier!r}")
+    if route not in ROUTES:
+        raise ValueError(f"route must be one of {ROUTES}, got {route!r}")
     CHECKS.labels(input_type, verdict, tier, route, source).inc()
     if degraded:
         DEGRADED.inc()

@@ -17,6 +17,7 @@ from opentelemetry.context import Context
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, SpanExporter
+from opentelemetry.trace import Status, StatusCode
 
 from falcon_core.telemetry.logging import incident_id_var, verdict_id_var
 
@@ -82,11 +83,43 @@ def verdict_context(verdict_id: str) -> Iterator[None]:
 
 
 @contextmanager
+def _safe_span(name: str) -> Iterator[trace.Span]:
+    """Start a span that never records exception messages (they can echo untrusted text or
+    model output). Only the exception type name is kept, as ``error.type``."""
+    with get_tracer().start_as_current_span(name, record_exception=False, set_status_on_exception=False) as span:
+        try:
+            yield span
+        except BaseException as exc:
+            span.set_attribute("error.type", type(exc).__name__)
+            span.set_status(Status(StatusCode.ERROR))
+            raise
+
+
+@contextmanager
 def verdict_span(name: str, verdict_id: str) -> Iterator[trace.Span]:
     """Root/child span for one check with ``verdict_id`` bound for logs too."""
-    with verdict_context(verdict_id), get_tracer().start_as_current_span(name) as span:
+    with verdict_context(verdict_id), _safe_span(name) as span:
         span.set_attribute("verdict_id", verdict_id)
         yield span
+
+
+# The only attributes an LLM span may carry. Prompts, outputs and exception messages are
+# never recorded: untrusted text stays out of traces.
+LLM_SPAN_ATTRIBUTES = frozenset(
+    {
+        "openinference.span.kind",
+        "llm.model_name",
+        "llm.provider",
+        "fl.llm.role",
+        "verdict_id",
+        "incident_id",
+        "llm.token_count.prompt",
+        "llm.token_count.completion",
+        "llm.token_count.total",
+        "fl.llm.cost_usd",
+        "error.type",
+    }
+)
 
 
 @contextmanager
@@ -97,10 +130,10 @@ def llm_span(
     verdict_id: str | None = None,
     provider: str | None = None,
 ) -> Iterator[trace.Span]:
-    """Span for one LLM call (OpenInference attributes). Set token counts on exit via
-    ``set_llm_usage``. Prompts and outputs are NOT recorded: untrusted text stays out."""
+    """Span for one LLM call (OpenInference attributes). Set token counts via
+    ``set_llm_usage``. Prompts, outputs and exception messages are NOT recorded."""
     vid = verdict_id or verdict_id_var.get()
-    with get_tracer().start_as_current_span(f"llm.{role}") as span:
+    with _safe_span(f"llm.{role}") as span:
         span.set_attribute("openinference.span.kind", "LLM")
         span.set_attribute("llm.model_name", model)
         span.set_attribute("fl.llm.role", role)

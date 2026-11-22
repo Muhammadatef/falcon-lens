@@ -7,6 +7,8 @@ set -eu
 DIR=/alertmanager
 OUT="$DIR/alertmanager.rendered.yml"
 umask 077
+# Drop secrets left over from a previous mode (e.g. Telegram was disabled since).
+rm -f "$DIR/telegram_bot_token" "$DIR/telegram_chat_id" "$DIR/webhook_url"
 
 RECEIVERS="  - name: 'null'"
 ROUTE_RECEIVER="null"
@@ -44,10 +46,14 @@ fi
 cat > "$OUT" <<YAML
 route:
   receiver: '$ROUTE_RECEIVER'
-  group_by: [alertname, service]
+  group_by: [alertname, service, source]
   group_wait: 10s
   group_interval: 1m
   repeat_interval: 4h
+  routes:
+    # Replayed/synthetic data never pages anyone.
+    - matchers: ['source="replay"']
+      receiver: 'null'
 receivers:
 $RECEIVERS
 YAML

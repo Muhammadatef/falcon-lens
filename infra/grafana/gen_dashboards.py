@@ -790,7 +790,7 @@ def ai_ops() -> Board:
     b.add(
         ts(
             "Checks reaching T3 | فحوصات المستوى الثالث",
-            [target(src('sum by (source) (rate(fl_checks_total{tier="t3"}[5m])) * 60'), "{{source}}")],
+            [target(src('sum by (source) (rate(fl_checks_total{tier="T3"}[5m])) * 60'), "{{source}}")],
             replay=True,
         ),
         12,

@@ -20,7 +20,7 @@ incident_id_var: ContextVar[str | None] = ContextVar("incident_id", default=None
 
 _STANDARD = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {"message", "asctime"}
 # C0, DEL, C1, line/paragraph separators, bidi overrides (can visually reorder log text).
-_CONTROL = re.compile("[\x00-\x1f\x7f-\x9f  ‪-‮⁦-⁩]")
+_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u2028\u2029\u202a-\u202e\u2066-\u2069]")
 MAX_FIELD = 4000
 
 

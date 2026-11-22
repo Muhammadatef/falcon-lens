@@ -58,8 +58,8 @@ def test_no_undocumented_metrics() -> None:
 
 def test_labels_match_doc() -> None:
     # Touch every labelled metric once so samples (and label names) exist.
-    m.record_verdict(input_type="url", verdict="dangerous", tier="t0", route="a", source="replay")
-    m.ESCALATIONS.labels("t0", "t1").inc()
+    m.record_verdict(input_type="url", verdict="dangerous", tier="T0", route="none", source="replay")
+    m.ESCALATIONS.labels("T0", "T1").inc()
     m.CACHE_HITS.labels("redis").inc()
     m.TOOL_ERRORS.labels("whois", "timeout").inc()
     m.FEED_AGE.labels("openphish").set(1)
@@ -118,18 +118,18 @@ async def test_timed_stage_async() -> None:
 
 def test_record_verdict_source_and_validation() -> None:
     labels = {
-        "input_type": "url", "verdict": "dangerous", "tier": "t1", "route": "cascade",
+        "input_type": "url", "verdict": "dangerous", "tier": "T1", "route": "none",
         "source": "live",
     }  # fmt: skip
     before = m.REGISTRY.get_sample_value("fl_checks_total", labels) or 0.0
-    m.record_verdict(input_type="url", verdict="dangerous", tier="t1", route="cascade")
+    m.record_verdict(input_type="url", verdict="dangerous", tier="T1", route="none")
     assert m.REGISTRY.get_sample_value("fl_checks_total", labels) == before + 1
     with pytest.raises(ValueError):
         m.record_verdict(
             input_type="url",
             verdict="x",
-            tier="t0",
-            route="r",
+            tier="T0",
+            route="none",
             source="bogus",  # type: ignore[arg-type]
         )
 
@@ -148,7 +148,13 @@ def test_metrics_endpoint_exposes_fl_registry() -> None:
 
     from falcon_core.service import create_app
 
-    m.record_verdict(input_type="url", verdict="dangerous", tier="t0", route="a")
+    m.record_verdict(input_type="url", verdict="dangerous", tier="T0", route="none")
     body = TestClient(create_app("unit")).get("/metrics").text
     assert "fl_checks_total{" in body and 'source="live"' in body
     assert b"fl_checks_total" in generate_latest(m.REGISTRY)
+
+
+@pytest.mark.parametrize(("tier", "route"), [("t0", "none"), ("T4", "none"), ("T0", "cascade")])
+def test_record_verdict_rejects_non_contract_labels(tier: str, route: str) -> None:
+    with pytest.raises(ValueError):
+        m.record_verdict(input_type="url", verdict="dangerous", tier=tier, route=route)
