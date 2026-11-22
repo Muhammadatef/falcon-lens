@@ -153,11 +153,7 @@ def ts(
         "type": "timeseries",
         "title": title + (" | REPLAY-aware" if replay else ""),
         "description": desc
-        + (
-            " Series with source=replay are drawn dashed orange and labelled REPLAY."
-            if replay
-            else ""
-        ),
+        + (" Series with source=replay are drawn dashed orange and labelled REPLAY." if replay else ""),
         "datasource": PROM,
         "targets": targets,
         "fieldConfig": {
@@ -364,8 +360,7 @@ def overview() -> Board:
     b.add(
         stat(
             "p95 latency | زمن الاستجابة (p95)",
-            "histogram_quantile(0.95, sum by (le) "
-            '(rate(fl_stage_latency_seconds_bucket{stage="total"}[5m])))',
+            'histogram_quantile(0.95, sum by (le) (rate(fl_stage_latency_seconds_bucket{stage="total"}[5m])))',
             unit="s",
             steps=[(None, GREEN), (6, ORANGE), (8, RED)],
             desc="End-to-end (stage=total). Objective: p95 < 8 s.",
@@ -787,11 +782,7 @@ def ai_ops() -> Board:
     b.add(
         ts(
             "Escalations to LLM tier | التصعيد للنموذج",
-            [
-                target(
-                    "sum by (from, to) (rate(fl_escalations_total[5m])) * 60", "{{from}} -> {{to}}"
-                )
-            ],
+            [target("sum by (from, to) (rate(fl_escalations_total[5m])) * 60", "{{from}} -> {{to}}")],
         ),
         12,
         7,
@@ -799,11 +790,7 @@ def ai_ops() -> Board:
     b.add(
         ts(
             "Checks reaching T3 | فحوصات المستوى الثالث",
-            [
-                target(
-                    src('sum by (source) (rate(fl_checks_total{tier="t3"}[5m])) * 60'), "{{source}}"
-                )
-            ],
+            [target(src('sum by (source) (rate(fl_checks_total{tier="t3"}[5m])) * 60'), "{{source}}")],
             replay=True,
         ),
         12,
@@ -1050,9 +1037,7 @@ def main() -> None:
     }
     for board in (overview(), detection(), pipeline(), ai_ops(), security(), sentinel()):
         path = OUT / f"{names[board.uid]}.json"
-        path.write_text(
-            json.dumps(board.json(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
+        path.write_text(json.dumps(board.json(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print("wrote", path.name, len(board.panels), "panels")
 
 

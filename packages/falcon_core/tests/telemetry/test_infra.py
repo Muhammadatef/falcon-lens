@@ -91,9 +91,7 @@ def test_dashboards_use_only_documented_metrics_and_flag_replay() -> None:
         text = path.read_text(encoding="utf-8")
         for name in set(re.findall(r"\bfl_[a-z_0-9]+", text)):
             base = re.sub(r"_(bucket|count|sum)$", "", name)
-            assert base in documented or name in documented or name == "fl_http_requests_total", (
-                f"{path.name}: {name}"
-            )
+            assert base in documented or name in documented or name == "fl_http_requests_total", f"{path.name}: {name}"
         # REPLAY banner on every board, driven by the source label.
         banner = board["panels"][0]
         assert 'source="replay"' in banner["targets"][0]["expr"], path.name

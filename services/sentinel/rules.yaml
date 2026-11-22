@@ -1,0 +1,77 @@
+# Sentinel trigger rules (ADR-002). Declarative; evaluated by sentinel_core/rules.py.
+# The LLM agent cannot edit this file. Every rule needs fire / no-fire / replay tests.
+#
+# detector: threshold | flip
+# where:    feature -> value | {in: [...]} | {not_in: [...]} | {exists: bool}
+# group_by: brand_id | dom_simhash (Hamming<=6 cluster) | script_cluster (cosine>=0.88 cluster) | signal | domain
+# distinct: feature or "event_id" counted distinct inside one window
+# new_domains: only count domains whose first observation (any event) is within `window` of the counted event
+# merge_into: if the match overlaps an existing incident of these rules, fold into it (adds rule id)
+rules:
+  - id: R1
+    name: campaign
+    type: campaign
+    detector: threshold
+    event_types: [domain.observed, verdict.created, verdict.upgraded]
+    where:
+      lookalike: true
+      verdict: {not_in: [no_warning_signs]}
+    group_by: brand_id
+    window_minutes: 60
+    distinct: domain
+    new_domains: true   # domain first observed within the window (ADR-002 "new")
+    min_count: 3
+    severity_floor: high
+
+  - id: R2
+    name: kit_reuse
+    type: kit_reuse
+    detector: threshold
+    event_types: [verdict.created, verdict.upgraded]
+    where:
+      verdict: {not_in: [no_warning_signs]}
+      dom_simhash: {exists: true}
+    group_by: dom_simhash
+    window_minutes: 10080   # 7 days (assumption, see DECISIONS.md)
+    distinct: domain
+    min_count: 3
+    severity_floor: medium
+    merge_into: [R1]
+
+  - id: R3
+    name: report_burst
+    type: report_burst
+    detector: threshold
+    event_types: [report.submitted]
+    where:
+      script_fp: {exists: true}
+    group_by: script_cluster
+    window_minutes: 30
+    distinct: event_id
+    min_count: 5
+    severity_floor: medium
+
+  - id: R4
+    name: reputation_flip
+    type: reputation_flip
+    detector: flip
+    event_types: [verdict.created, verdict.upgraded]
+    group_by: domain
+    window_minutes: 43200   # 30 days (assumption)
+    from_verdicts: [no_warning_signs]
+    to_verdicts: [dangerous]
+    severity_floor: high
+
+  - id: R5
+    name: quality
+    type: quality
+    detector: threshold
+    event_types: [feedback.submitted]
+    where:
+      kind: false_positive
+      signal: {exists: true}
+    group_by: signal
+    window_minutes: 60
+    distinct: event_id
+    min_count: 5
+    severity_floor: low

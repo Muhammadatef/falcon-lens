@@ -27,7 +27,12 @@ scrape_configs:
         labels: { service: sentinel }
       - targets: ["mcp:8000"]
         labels: { service: mcp }
-      - targets: ["sandbox:8000"]
+
+  # The sandbox is not reachable from Prometheus (isolation): the worker relays its metrics.
+  - job_name: sandbox-via-worker
+    metrics_path: /metrics/sandbox
+    static_configs:
+      - targets: ["worker:8000"]
         labels: { service: sandbox }
 
   - job_name: egress-proxy

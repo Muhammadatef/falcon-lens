@@ -38,12 +38,8 @@ def _h(name: str, doc: str, buckets: tuple[float, ...], labels: tuple[str, ...] 
 
 
 # Checks
-CHECKS = _c(
-    "checks_total", "Checks completed", ("input_type", "verdict", "tier", "route", "source")
-)
-STAGE_LATENCY = _h(
-    "stage_latency_seconds", "Latency per pipeline stage", STAGE_LATENCY_BUCKETS, ("stage",)
-)
+CHECKS = _c("checks_total", "Checks completed", ("input_type", "verdict", "tier", "route", "source"))
+STAGE_LATENCY = _h("stage_latency_seconds", "Latency per pipeline stage", STAGE_LATENCY_BUCKETS, ("stage",))
 ESCALATIONS = _c("escalations_total", "Tier escalations", ("from", "to"))
 CACHE_HITS = _c("cache_hits_total", "Cache hits", ("layer",))
 # Health
@@ -77,9 +73,7 @@ SCORE_DRIFT = _g("score_drift_index", "Score distribution drift vs. baseline")
 INCIDENTS = _c("incidents_total", "Incidents opened", ("type", "severity", "source"))
 INCIDENT_OPEN = _g("incident_open", "Open incidents", ("severity",))
 RULE_FIRED = _c("rule_fired_total", "Sentinel rule firings", ("rule",))
-TIME_TO_INCIDENT = _h(
-    "time_to_incident_seconds", "First event to incident", TIME_TO_INCIDENT_BUCKETS
-)
+TIME_TO_INCIDENT = _h("time_to_incident_seconds", "First event to incident", TIME_TO_INCIDENT_BUCKETS)
 SENTINEL_ACTIONS = _c("sentinel_actions_total", "Sentinel actions", ("action", "mode"))
 APPROVALS_PENDING = _g("approvals_pending", "External drafts waiting for approval")
 BLOCKS_REVERTED = _c("blocks_reverted_total", "Blocks reverted")

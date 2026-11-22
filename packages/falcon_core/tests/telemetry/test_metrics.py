@@ -91,9 +91,7 @@ def test_stage_buckets_cover_10ms_to_20s() -> None:
 
 def test_timed_stage_context_and_decorator() -> None:
     def count(stage: str) -> float:
-        return (
-            m.REGISTRY.get_sample_value("fl_stage_latency_seconds_count", {"stage": stage}) or 0.0
-        )
+        return m.REGISTRY.get_sample_value("fl_stage_latency_seconds_count", {"stage": stage}) or 0.0
 
     before = count("ut")
     with m.timed_stage("ut"):
@@ -115,9 +113,7 @@ async def test_timed_stage_async() -> None:
         return 2
 
     assert await f() == 2
-    assert (
-        m.REGISTRY.get_sample_value("fl_stage_latency_seconds_count", {"stage": "ut_async"}) == 1.0
-    )
+    assert m.REGISTRY.get_sample_value("fl_stage_latency_seconds_count", {"stage": "ut_async"}) == 1.0
 
 
 def test_record_verdict_source_and_validation() -> None:

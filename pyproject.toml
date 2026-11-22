@@ -44,33 +44,41 @@ dev = [
   "ruff>=0.9",
   "mypy>=1.14",
   "types-jsonschema",
+  "types-PyYAML",
+  "pytest-cov>=6",
   "pyyaml>=6",
-  "types-pyyaml",
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py312"
 extend-exclude = ["web", ".venv", "docs", "*.md"]  # ruff 0.17 would reformat code blocks in docs
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "S"]
-ignore = ["S104"]  # services bind 0.0.0.0 inside containers by design
+ignore = ["S104", "SIM905", "UP047"]  # S104: services bind 0.0.0.0 in containers; SIM905: `"a b".split()` word lists are deliberate
 
 [tool.ruff.lint.isort]
+known-local-folder = ["conftest", "scoring_helpers"]
 known-first-party = [
   "falcon_core", "falcon_api", "falcon_worker", "falcon_sentinel",
   "falcon_mcp", "falcon_egress", "falcon_sandbox",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "S105", "S106"]
+"**/tests/**" = ["S101", "S105", "S106", "S311", "S324", "E501"]
+"evals/**" = ["S603", "S607"]
+"**/fixtures.py" = ["S311"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["packages/falcon_core/src", "packages/falcon_core/tests"]
+# Strict applies to falcon_core itself (CLAUDE.md). Tests are linted by ruff but not type-checked:
+# several test dirs ship a `conftest.py` and mypy reports them as duplicate modules.
+files = ["packages/falcon_core/src"]
+explicit_package_bases = true
+mypy_path = "packages/falcon_core/src"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

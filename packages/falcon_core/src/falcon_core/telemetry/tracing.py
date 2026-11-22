@@ -45,12 +45,8 @@ class CorrelationProcessor(SpanProcessor):
         return True
 
 
-def build_provider(
-    service: str, exporter: SpanExporter | None = None, version: str = "0.1.0"
-) -> TracerProvider:
-    provider = TracerProvider(
-        resource=Resource.create({"service.name": service, "service.version": version})
-    )
+def build_provider(service: str, exporter: SpanExporter | None = None, version: str = "0.1.0") -> TracerProvider:
+    provider = TracerProvider(resource=Resource.create({"service.name": service, "service.version": version}))
     provider.add_span_processor(CorrelationProcessor())
     if exporter is not None:
         provider.add_span_processor(BatchSpanProcessor(exporter))
@@ -115,9 +111,7 @@ def llm_span(
         yield span
 
 
-def set_llm_usage(
-    span: trace.Span, *, input_tokens: int, output_tokens: int, cost_usd: float | None = None
-) -> None:
+def set_llm_usage(span: trace.Span, *, input_tokens: int, output_tokens: int, cost_usd: float | None = None) -> None:
     span.set_attribute("llm.token_count.prompt", input_tokens)
     span.set_attribute("llm.token_count.completion", output_tokens)
     span.set_attribute("llm.token_count.total", input_tokens + output_tokens)
