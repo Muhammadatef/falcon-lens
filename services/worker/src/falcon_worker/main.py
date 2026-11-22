@@ -41,15 +41,18 @@ SANDBOX_METRICS_URL = f"{SANDBOX_URL}/metrics"
 REFRESH_S = float(os.environ.get("FL_OPENPHISH_REFRESH_S", "900"))
 
 
+ALLOWLIST_ENVS = frozenset({"local", "demo", "ci"})
+
+
 def guard_policy() -> GuardPolicy:
     """``FL_SSRF_ALLOW_HOSTS`` (comma list) widens the guard for internal fixture hosts only.
 
-    Refused when ``FL_ENV=production`` (the production policy is never widened).
+    Fail closed, same rule as the sandbox: honoured only when ``FL_ENV`` is local, demo or ci.
     """
     raw = os.environ.get("FL_SSRF_ALLOW_HOSTS", "")
     hosts = frozenset(h.strip().lower() for h in raw.split(",") if h.strip())
-    if hosts and settings.fl_env == "production":
-        log.error("FL_SSRF_ALLOW_HOSTS ignored in production")
+    if hosts and os.environ.get("FL_ENV", settings.fl_env) not in ALLOWLIST_ENVS:
+        log.error("FL_SSRF_ALLOW_HOSTS ignored outside local/demo/ci")
         hosts = frozenset()
     return GuardPolicy(allow_hosts=hosts)
 

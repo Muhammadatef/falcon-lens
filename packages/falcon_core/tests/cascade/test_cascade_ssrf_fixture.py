@@ -29,3 +29,23 @@ async def test_unlisted_host_with_dns_failure_is_blocked() -> None:
     final = (await run(cascade, "https://unresolvable-host.test/")).docs[-1]
     assert sandbox.calls == []
     assert final["degraded"] and final["verdict"] != "no_warning_signs"
+
+
+async def _hang(host: str) -> list[str]:
+    import asyncio
+
+    await asyncio.sleep(5)
+    return []
+
+
+async def test_allow_listed_fixture_host_with_dns_timeout_is_not_blocked() -> None:
+    sandbox = StubSandboxClient(default=benign_features("http://community-garden-club.test/"))
+    cascade, _ = make_cascade(
+        sandbox,
+        guard_policy=GuardPolicy(allow_hosts=frozenset({"community-garden-club.test"})),
+        resolver=_hang,
+        ssrf_timeout_s=0.05,
+    )
+    final = (await run(cascade, "http://community-garden-club.test/")).docs[-1]
+    assert sandbox.calls
+    assert not any(r.startswith("not_rendered") for r in final.get("degraded_reasons", []))

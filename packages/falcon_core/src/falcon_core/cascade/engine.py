@@ -304,9 +304,10 @@ class Cascade:
                 run.blocked = exc.reason.value
                 run.degraded_reasons.append(f"not_rendered:{exc.reason.value}")
         except TimeoutError:
-            self.d.metrics.on_ssrf_block("dns_failure")
-            run.blocked = "dns_timeout"
-            run.degraded_reasons.append("not_rendered:dns_timeout")
+            if c.host_ascii not in self.d.guard_policy.allow_hosts:  # see the DNS_FAILURE case above
+                self.d.metrics.on_ssrf_block("dns_failure")
+                run.blocked = "dns_timeout"
+                run.degraded_reasons.append("not_rendered:dns_timeout")
 
         added: list[Evidence] = []
         brand = self.d.registry.official_brand(c.registrable) if c.registrable else None
