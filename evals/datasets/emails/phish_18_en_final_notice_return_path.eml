@@ -1,0 +1,25 @@
+Return-Path: <mailer@bulk.example.invalid>
+Received: from mail.bulk.example.invalid ([192.0.2.28]) by mx.example.test
+ with ESMTPS; Sun, 22 Nov 2026 16:06:00 +0400
+Authentication-Results: mx.example.test; spf=fail
+ smtp.mailfrom=bulk.example.invalid; dkim=fail header.d=bulk.example.invalid;
+ dmarc=fail header.from=example.test
+From: "Falcon Demo Bank Security" <security-alerts@example.test>
+To: Customer <customer@example.test>
+Reply-To: account-review@falcon-demo-bnak.test
+Subject: Final notice: account closure scheduled
+Date: Sun, 22 Nov 2026 16:06:00 +0400
+Message-ID: <c05-18.fixture@example.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBjdXN0b21lciwKClRoaXMgaXMgeW91ciBm
+aW5hbCBub3RpY2UuIEJlY2F1c2Ugd2UgY291bGQgbm90IHZlcmlmeSB5b3VyIHJlY2VudCB0cmFu
+c2FjdGlvbnMsIHlvdXIgRmFsY29uIERlbW8gQmFuayBhY2NvdW50IHdpbGwgYmUgY2xvc2VkIHdp
+dGhpbiA0OCBob3Vycy4KClRvIHN0b3AgdGhlIGNsb3N1cmUsIHJlcGx5IHRvIHRoaXMgZW1haWwg
+d2l0aCB5b3VyIGZ1bGwgbmFtZSwgZGF0ZSBvZiBiaXJ0aCBhbmQgYWNjb3VudCBudW1iZXIuCgpG
+YWxjb24gRGVtbyBCYW5rIFNlY3VyaXR5CgpURVNUIEZJWFRVUkUsIG5vdCBhIHJlYWwgbWVzc2Fn
+ZSAvINix2LPYp9mE2Kkg2KfYrtiq2KjYp9ixINmI2YTZitiz2Kog2K3ZgtmK2YLZitipCg==

@@ -1,9 +1,10 @@
 [project]
 name = "falcon-egress"
 version = "0.1.0"
-description = "Falcon Lens filtering egress proxy (HTTP CONNECT), stdlib only"
+description = "Falcon Lens filtering egress proxy (CONNECT + absolute-form HTTP) using the shared SSRF guard"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+# The image installs only falcon_core.security and its deps (requirements.lock), not all of falcon-core.
+dependencies = ["falcon-core", "httpx>=0.28.1,<0.29"]
 
 [build-system]
 requires = ["hatchling"]

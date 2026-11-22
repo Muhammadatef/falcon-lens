@@ -1,0 +1,43 @@
+Return-Path: <bounce@falcon-demo-bank-secure.test>
+Received: from mail.falcon-demo-bank-secure.test ([192.0.2.17]) by
+ mx.example.test with ESMTPS; Sat, 21 Nov 2026 05:49:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank-secure.test; dkim=fail
+ header.d=falcon-demo-bank-secure.test; dmarc=fail
+ header.from=falcon-demo-bank-secure.test
+From: "Falcon Demo Bank Cards" <cards@falcon-demo-bank-secure.test>
+To: Customer <customer@example.test>
+Subject: Scan to pay your outstanding card fee
+Date: Sat, 21 Nov 2026 05:49:00 +0400
+Message-ID: <c05-07.fixture@falcon-demo-bank-secure.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============4884680223034846299=="
+
+--===============4884680223034846299==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBjYXJkaG9sZGVyLAoKQW4gYW5udWFsIGNh
+cmQgZmVlIG9mIEFFRCA5OSBpcyBvdXRzdGFuZGluZyBvbiB5b3VyIEZhbGNvbiBEZW1vIEJhbmsg
+Y2FyZC4gVG8gYXZvaWQgYSBsYXRlIGNoYXJnZSwgc2NhbiB0aGUgYXR0YWNoZWQgUVIgY29kZSB3
+aXRoIHlvdXIgcGhvbmUgYW5kIHBheSB0aGUgZmVlLgoKRmFsY29uIERlbW8gQmFuayBDYXJkcwoK
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQo=
+
+--===============4884680223034846299==
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="pay-fee-qr.png"
+MIME-Version: 1.0
+
+iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAABS0lEQVR42u2YwQ3DUAhDUTMAI/3V
+GekPEIliQ9pTe60rJYevKFws4jxDLD9fp93Fu6hbNFwLh+ex17Fxe1TxYV+uXxShtoTlhtrT1ulR
+gvuhqNptaGmGldSE2mq1uNrTyxI48x/UwrSl0ENdLX0Lx+KLW+K+bSaQBkufCQMz+nZa3U9EnRAD
+24zyA6mrzFs4ts7ETRC5JtvbwiyjwV4o6w9NU23Jg2m9o3iNYFm1FQoAbDQQaIOQ7W3DFqHgUbJT
+m2A2Cjsg+K1t6eSlHywJruyM0HVC6UR7W3Y2xKR7e7196pTmLReHa2CAH0yYYOYzJHC2MeDXlnBv
+EWTmDDXPN4eFZzDrlhILk2vC8y39EJ28ymqHsdwihwnyO2/39pp1deeE2dB3+wHt1f+f0Mmb1xim
+vvOysZ28yhv6a+clwWakEeft/V/zLv5P8QklEgvwAT6+LAAAAABJRU5ErkJggg==
+
+--===============4884680223034846299==--

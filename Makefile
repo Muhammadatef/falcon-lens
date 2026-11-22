@@ -1,12 +1,13 @@
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 COMPOSE := docker compose --profile core --profile obs
+DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: help up down smoke openapi test eval eval-gate redteam seed replay demo scan submission guard lint typecheck
+.PHONY: help up down smoke openapi test eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
 
 help:
-	@echo "Targets: up down smoke test eval eval-gate redteam seed replay demo scan submission guard"
+	@echo "Targets: up down smoke test eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard"
 	@echo "Parallel stacks: COMPOSE_PROJECT_NAME=x FL_GATEWAY_PORT=.. FL_PROMETHEUS_PORT=.. FL_GRAFANA_PORT=.. make up"
 
 up: ## Start core + obs, wait until every service is healthy
@@ -27,6 +28,10 @@ typecheck:
 
 test: lint typecheck ## ruff + mypy (falcon_core) + pytest
 	uv run pytest -q
+
+unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL and REDIS_URL, host-reachable)
+	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
+	uv run python -m falcon_sentinel.unblock $(ID)
 
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py
@@ -62,11 +67,35 @@ eval:
 	$(NYI)
 redteam:
 	$(NYI)
-seed:
-	$(NYI)
-replay:
-	$(NYI)
-demo:
-	$(NYI)
 submission:
 	$(NYI)
+
+# ---- demo tooling (gate G6) ---------------------------------------------------------------------------
+seed: ## Push the corpus through the real API/worker as source=replay (idempotent; FORCE=1 resubmits)
+	$(DEMO) seed $(if $(FORCE),--force,)
+
+replay: ## Steady labelled traffic + planted Sentinel campaign: make replay RATE=2/s DURATION=10m
+	$(DEMO) replay --rate $(or $(RATE),2/s) --duration $(or $(DURATION),10m)
+
+demo: ## up (core+obs+tools) -> healthy -> pre-warm -> seed -> print URLs
+	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' first." >&2; exit 1; }
+	docker compose --profile core --profile obs --profile tools up -d --build
+	@FL_PROFILES="core obs tools" scripts/wait_healthy.sh 600
+	@$(DEMO) prewarm
+	@$(DEMO) seed || echo "WARN: seed incomplete (see above); the stack is up, re-run 'make seed' when the failing service is ready." >&2
+	@$(DEMO) urls
+	@$(DEMO) next
+
+urls: ## Print the local URLs of the running stack
+	@$(DEMO) urls
+
+tunnel: ## Public cloudflared quick tunnel to the gateway; URL in data/private/tunnel_url.txt
+	@$(DEMO) tunnel
+
+tunnel-stop: ## Stop the tunnel started by `make tunnel` (other cloudflared processes are untouched)
+	@$(DEMO) tunnel-stop
+
+demo-reset: ## Reset Postgres+Redis volumes and seed state (names resolved from `docker compose config`), then `make demo`; YES=1 skips the prompt
+	@YES=$(YES) $(DEMO) reset
+	$(MAKE) demo
+
