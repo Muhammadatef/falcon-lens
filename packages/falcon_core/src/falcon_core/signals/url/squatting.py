@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """url.typosquat, url.combosquat, url.brand_in_subdomain_or_path (all offline, against data/brands.yaml)."""
 
 from __future__ import annotations
@@ -6,7 +7,12 @@ from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
 from falcon_core.signals.brands.registry import Brand, BrandRegistry
 from falcon_core.signals.url.canonical import CanonicalURL
 from falcon_core.signals.url.common import T1_TIMEOUT_MS, canon, registry, url_evidence
-from falcon_core.signals.url.textutil import all_subs_adjacent, compact, damerau_osa, normalize_arabic
+from falcon_core.signals.url.textutil import (
+    all_subs_adjacent,
+    compact,
+    damerau_osa,
+    normalize_arabic,
+)
 
 # English + transliterated-Arabic action/service words that scammers glue onto a brand name.
 COMBO_EN = (
@@ -91,7 +97,25 @@ COMBO_TRANSLIT = (
 )
 COMBO_AR = tuple(
     normalize_arabic(w)
-    for w in "دفع سداد تحقق تحديث تتبع مخالفة مخالفات تجديد استرداد حساب فاتورة خدمات رسمي موقع بوابة شحن توصيل".split()
+    for w in [
+        "دفع",
+        "سداد",
+        "تحقق",
+        "تحديث",
+        "تتبع",
+        "مخالفة",
+        "مخالفات",
+        "تجديد",
+        "استرداد",
+        "حساب",
+        "فاتورة",
+        "خدمات",
+        "رسمي",
+        "موقع",
+        "بوابة",
+        "شحن",
+        "توصيل",
+    ]
 )
 _COMBO_ALL = COMBO_EN + COMBO_TRANSLIT
 
@@ -156,7 +180,11 @@ def typosquat_match(c: CanonicalURL, reg: BrandRegistry) -> dict[str, object] | 
                     d = d * 2
             if info is None:
                 continue
-            info.update(brand_id=b.brand_id, target=f"{label}.{suffix}".replace(".", "[.]"), label=cand[:100])
+            info.update(
+                brand_id=b.brand_id,
+                target=f"{label}.{suffix}".replace(".", "[.]"),
+                label=cand[:100],
+            )
             if best is None or d < best[0]:
                 best = (d, info)
     return best[1] if best else None
