@@ -44,10 +44,12 @@ dev = [
   "ruff>=0.9",
   "mypy>=1.14",
   "types-jsonschema",
+  "types-PyYAML",
+  "pytest-cov>=6",
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py312"
 extend-exclude = ["web", ".venv", "docs", "*.md"]  # ruff 0.17 would reformat code blocks in docs
 
@@ -56,19 +58,31 @@ select = ["E", "F", "I", "UP", "B", "SIM", "S"]
 ignore = ["S104"]  # services bind 0.0.0.0 inside containers by design
 
 [tool.ruff.lint.isort]
+known-local-folder = ["conftest", "scoring_helpers"]
 known-first-party = [
   "falcon_core", "falcon_api", "falcon_worker", "falcon_sentinel",
   "falcon_mcp", "falcon_egress", "falcon_sandbox",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "S105", "S106"]
+"**/tests/**" = ["S101", "S105", "S106", "S311"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 files = ["packages/falcon_core/src", "packages/falcon_core/tests"]
+explicit_package_bases = true
+mypy_path = "packages/falcon_core/src:packages/falcon_core/tests"
+
+# CLAUDE.md: strict is required for falcon_core itself; tests may be untyped.
+[[tool.mypy.overrides]]
+module = ["tests.*", "signals.*", "scoring.*", "contracts.*", "security.*", "conftest", "*.conftest", "scoring_helpers"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
