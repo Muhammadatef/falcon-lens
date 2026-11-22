@@ -44,6 +44,8 @@ dev = [
   "ruff>=0.9",
   "mypy>=1.14",
   "types-jsonschema",
+  "types-PyYAML",
+  "fakeredis>=2.40",
 ]
 
 [tool.ruff]
@@ -62,13 +64,18 @@ known-first-party = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "S105", "S106"]
+"**/tests/**" = ["S101", "S105", "S106", "S311"]
+# Merged T-007 code: long Arabic/English display strings and prose; code lines are formatted.
+"packages/falcon_core/src/falcon_core/signals/**" = ["E501"]
+"packages/falcon_core/tests/signals/**" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["packages/falcon_core/src", "packages/falcon_core/tests"]
+files = ["packages/falcon_core/src", "packages/falcon_core/tests", "services/worker/src", "services/worker/tests"]
+# T-007 signal tests are untyped (and their conftest name clashes); builder-signals to type them.
+exclude = ["packages/falcon_core/tests/signals/"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

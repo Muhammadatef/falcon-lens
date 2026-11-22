@@ -7,9 +7,7 @@ import re
 import unicodedata
 from collections import Counter
 
-BIDI_CHARS = frozenset(
-    "؜‎‏‪‫‬‭‮⁦⁧⁨⁩"
-)
+BIDI_CHARS = frozenset("؜‎‏‪‫‬‭‮⁦⁧⁨⁩")
 ZERO_WIDTH_CHARS = frozenset("​‌‍⁠⁡⁢⁣⁤﻿­᠎͏")
 _ARABIC_DIACRITICS = re.compile("[ؐ-ًؚ-ٰٟۖ-ۭـ]")  # tashkeel, tatweel
 _SEP = re.compile(r"[\s\-_.‌‍]+")

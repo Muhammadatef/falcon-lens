@@ -10,27 +10,98 @@ from falcon_core.signals.url.squatting import TYPO_MIN_LABEL
 from falcon_core.signals.url.textutil import compact, damerau_osa, entropy
 
 SPEC_FREE = SignalSpec(
-    name="url.free_host_or_tunnel", family="url", tier="T1", input_types=("url", "message", "email"),
-    timeout_ms=T1_TIMEOUT_MS, network="none", emits=("url.free_host_or_tunnel",),
+    name="url.free_host_or_tunnel",
+    family="url",
+    tier="T1",
+    input_types=("url", "message", "email"),
+    timeout_ms=T1_TIMEOUT_MS,
+    network="none",
+    emits=("url.free_host_or_tunnel",),
 )
 
 RISKY_TLDS = frozenset(
-    "xyz top icu click shop live site online vip cfd sbs cyou rest buzz monster work support fit zip mov "
-    "gq ml cf tk ga link life today world bond".split()
+    [
+        "xyz",
+        "top",
+        "icu",
+        "click",
+        "shop",
+        "live",
+        "site",
+        "online",
+        "vip",
+        "cfd",
+        "sbs",
+        "cyou",
+        "rest",
+        "buzz",
+        "monster",
+        "work",
+        "support",
+        "fit",
+        "zip",
+        "mov",
+        "gq",
+        "ml",
+        "cf",
+        "tk",
+        "ga",
+        "link",
+        "life",
+        "today",
+        "world",
+        "bond",
+    ]
 )
 
 FEATURE_NAMES: tuple[str, ...] = (
-    "url_len", "host_len", "path_len", "query_len", "num_dots", "num_subdomains", "num_hyphens_host",
-    "digit_ratio_host", "digit_ratio_url", "host_entropy", "label_entropy", "longest_label", "num_params",
-    "path_depth", "is_https", "is_ip", "ip_obfuscated", "has_userinfo", "nondefault_port", "is_punycode",
-    "non_ascii_host", "mixed_script", "num_percent", "double_encoded", "is_shortener", "is_free_host",
-    "is_data_uri", "tld_len", "risky_tld", "has_bidi_or_zw", "brand_token_in_host", "brand_min_edit_distance",
-    "is_official", "num_special_chars_url", "has_at_in_path", "has_embedded_url_in_query",
+    "url_len",
+    "host_len",
+    "path_len",
+    "query_len",
+    "num_dots",
+    "num_subdomains",
+    "num_hyphens_host",
+    "digit_ratio_host",
+    "digit_ratio_url",
+    "host_entropy",
+    "label_entropy",
+    "longest_label",
+    "num_params",
+    "path_depth",
+    "is_https",
+    "is_ip",
+    "ip_obfuscated",
+    "has_userinfo",
+    "nondefault_port",
+    "is_punycode",
+    "non_ascii_host",
+    "mixed_script",
+    "num_percent",
+    "double_encoded",
+    "is_shortener",
+    "is_free_host",
+    "is_data_uri",
+    "tld_len",
+    "risky_tld",
+    "has_bidi_or_zw",
+    "brand_token_in_host",
+    "brand_min_edit_distance",
+    "is_official",
+    "num_special_chars_url",
+    "has_at_in_path",
+    "has_embedded_url_in_query",
 )
 
 SPEC_FEATURES = SignalSpec(
-    name="url.lexical_features", family="url", tier="T1", input_types=("url", "message", "email"),
-    timeout_ms=T1_TIMEOUT_MS, network="none", emits=(), feature_names=FEATURE_NAMES,
+    name="url.lexical_features",
+    family="url",
+    tier="T1",
+    input_types=("url", "message", "email"),
+    timeout_ms=T1_TIMEOUT_MS,
+    network="none",
+    emits=(),
+    feature_names=FEATURE_NAMES,
 )
 
 
@@ -45,7 +116,9 @@ def extract_features(url: str, reg: BrandRegistry | None = None) -> dict[str, fl
     f["is_data_uri"] = float(c.is_data_uri)
     f["num_percent"] = float(raw.count("%"))
     f["has_bidi_or_zw"] = float(c.has_bidi or c.has_zero_width)
-    f["num_special_chars_url"] = float(sum(1 for ch in raw if not ch.isalnum() and ch not in "/.:-_"))
+    f["num_special_chars_url"] = float(
+        sum(1 for ch in raw if not ch.isalnum() and ch not in "/.:-_")
+    )
     if not c.ok:
         return f
     reg = reg or default_registry()
@@ -77,7 +150,9 @@ def extract_features(url: str, reg: BrandRegistry | None = None) -> dict[str, fl
     f["tld_len"] = float(len(c.suffix.split(".")[-1])) if c.suffix else 0.0
     f["risky_tld"] = float(c.suffix.split(".")[-1] in RISKY_TLDS) if c.suffix else 0.0
     f["has_at_in_path"] = float("@" in c.path)
-    f["has_embedded_url_in_query"] = float("http" in c.query_decoded.lower() and "//" in c.query_decoded)
+    f["has_embedded_url_in_query"] = float(
+        "http" in c.query_decoded.lower() and "//" in c.query_decoded
+    )
     off = reg.is_official(c.registrable)
     f["is_official"] = float(off)
     if not c.is_ip:
@@ -105,7 +180,9 @@ def run_free_host(ctx: SignalContext) -> list[Evidence]:
     suffix = free_host_suffix(c)
     if suffix is None:
         return []
-    tenant = c.domain_label if c.suffix == suffix else c.subdomain.split(".")[-1] if c.subdomain else ""
+    tenant = (
+        c.domain_label if c.suffix == suffix else c.subdomain.split(".")[-1] if c.subdomain else ""
+    )
     return [
         url_evidence(
             "url.free_host_or_tunnel",

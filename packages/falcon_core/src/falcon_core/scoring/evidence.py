@@ -12,13 +12,35 @@ from dataclasses import dataclass, replace
 from typing import Literal, cast
 
 Family = Literal[
-    "url", "domain", "reputation", "page", "visual", "brand", "message", "email", "image", "injection", "llm"
+    "url",
+    "domain",
+    "reputation",
+    "page",
+    "visual",
+    "brand",
+    "message",
+    "email",
+    "image",
+    "injection",
+    "llm",
 ]
 Tier = Literal["T0", "T1", "T2", "T3"]
 Polarity = Literal["risk", "trust", "neutral"]
 
 FAMILIES: frozenset[str] = frozenset(
-    ["url", "domain", "reputation", "page", "visual", "brand", "message", "email", "image", "injection", "llm"]
+    [
+        "url",
+        "domain",
+        "reputation",
+        "page",
+        "visual",
+        "brand",
+        "message",
+        "email",
+        "image",
+        "injection",
+        "llm",
+    ]
 )
 TIERS: frozenset[str] = frozenset(["T0", "T1", "T2", "T3"])
 

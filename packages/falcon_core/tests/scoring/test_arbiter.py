@@ -57,7 +57,9 @@ def test_band_edges(p: float, expected: str) -> None:
     assert band(p, P) == expected
 
 
-@pytest.mark.parametrize(("p", "expected"), [(0.35, "suspicious"), (0.80, "dangerous"), (0.3499, "no_warning_signs")])
+@pytest.mark.parametrize(
+    ("p", "expected"), [(0.35, "suspicious"), (0.80, "dangerous"), (0.3499, "no_warning_signs")]
+)
 def test_band_edges_through_score_are_exact(p: float, expected: str) -> None:
     res = score([], p_clf=p)
     assert res.calibrated_probability == p
@@ -139,14 +141,19 @@ def test_logit_clipped(mk: Factory) -> None:
     many = [mk("page.cross_origin_post", {"bot": False}) for _ in range(10)]
     res = score(many, p_clf=0.99)
     assert math.isclose(res.calibrated_probability, sigmoid(8.0))
-    low = score([mk("registry.verified_official", True, source="registry", tier="T0")] * 1, p_clf=1e-9)
+    low = score(
+        [mk("registry.verified_official", True, source="registry", tier="T0")] * 1, p_clf=1e-9
+    )
     assert low.calibrated_probability >= sigmoid(-8.0) - 1e-12
 
 
 def test_t1_evidence_not_double_counted_when_p_clf_given(mk: Factory) -> None:
     res = score([mk("url.typosquat"), mk("domain.age", {"age_days": 3})], p_clf=0.3)
     assert res.calibrated_probability == 0.3
-    assert {e.signal: e.weight for e in res.weighted_evidence} == {"url.typosquat": 2.5, "domain.age": 2.5}
+    assert {e.signal: e.weight for e in res.weighted_evidence} == {
+        "url.typosquat": 2.5,
+        "domain.age": 2.5,
+    }
 
 
 def test_draft_classifier_used_when_p_clf_none(mk: Factory) -> None:
@@ -159,7 +166,8 @@ def test_draft_classifier_used_when_p_clf_none(mk: Factory) -> None:
 
 
 @pytest.mark.parametrize(
-    ("age", "weight"), [(0, 2.5), (6.9, 2.5), (7, 1.5), (29, 1.5), (30, 0.0), (3650, 0.0), (3651, -1.0)]
+    ("age", "weight"),
+    [(0, 2.5), (6.9, 2.5), (7, 1.5), (29, 1.5), (30, 0.0), (3650, 0.0), (3651, -1.0)],
 )
 def test_domain_age_weights(mk: Factory, age: float, weight: float) -> None:
     res = score([mk("domain.age", {"age_days": age})], p_clf=0.5)
@@ -197,7 +205,16 @@ def test_family_mismatch_gets_zero_weight(mk: Factory) -> None:
 
 
 def test_llm_family_evidence_never_moves_p(mk: Factory) -> None:
-    res = score([mk("llm.investigator_opinion", {"verdict": "no_warning_signs"}, source="llm:investigator")], 0.6)
+    res = score(
+        [
+            mk(
+                "llm.investigator_opinion",
+                {"verdict": "no_warning_signs"},
+                source="llm:investigator",
+            )
+        ],
+        0.6,
+    )
     assert res.calibrated_probability == 0.6
 
 
@@ -246,7 +263,10 @@ def test_degraded_low_p_is_shown_as_suspicious(mk: Factory) -> None:
 
 
 def test_degraded_never_no_warning_signs_even_on_official(mk: Factory) -> None:
-    ev = [mk("registry.verified_official", True, source="registry", tier="T0"), mk("domain.age", None, error="timeout")]
+    ev = [
+        mk("registry.verified_official", True, source="registry", tier="T0"),
+        mk("domain.age", None, error="timeout"),
+    ]
     res = score(ev, p_clf=0.01)
     assert res.verdict == "suspicious"
 
@@ -290,7 +310,9 @@ def test_brand_conflict_detection(mk: Factory) -> None:
     assert not has_brand_conflict([mk("url.typosquat", False), mk("url.raw_ip_host")])
 
 
-@pytest.mark.parametrize(("p", "exits"), [(0.24, True), (0.25, False), (0.5, False), (0.85, False), (0.86, True)])
+@pytest.mark.parametrize(
+    ("p", "exits"), [(0.24, True), (0.25, False), (0.5, False), (0.85, False), (0.86, True)]
+)
 def test_t2_exit_band(p: float, exits: bool) -> None:
     assert t2_should_exit(score([], p_clf=p), P) is exits
 

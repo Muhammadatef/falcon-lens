@@ -170,10 +170,7 @@ def test_validate_url_allows_public(url: str, canonical: str, port: int) -> None
 
 def test_allow_hosts_is_explicit_opt_in() -> None:
     policy = GuardPolicy(allow_hosts=frozenset({"falcon-demo-bank.test"}))
-    assert (
-        validate_url("http://falcon-demo-bank.test/", policy).host
-        == "falcon-demo-bank.test"
-    )
+    assert validate_url("http://falcon-demo-bank.test/", policy).host == "falcon-demo-bank.test"
     with pytest.raises(SSRFBlocked):
         validate_url("http://falcon-demo-bank.test:8080/", policy)  # ports stay strict
     with pytest.raises(SSRFBlocked):
@@ -228,9 +225,7 @@ def test_check_host_port_for_proxy() -> None:
 async def test_resolver_private_answer_blocked() -> None:
     t = validate_url("http://internal-looking.example.com/")
     with pytest.raises(SSRFBlocked) as ei:
-        await resolve_and_check(
-            t, static_resolver({"internal-looking.example.com": ["10.1.2.3"]})
-        )
+        await resolve_and_check(t, static_resolver({"internal-looking.example.com": ["10.1.2.3"]}))
     assert ei.value.reason is BlockReason.PRIVATE
 
 
@@ -300,9 +295,7 @@ async def test_dns_rebinding_second_resolve_private_blocked() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         wire_hosts.append(request.url.host)
-        return httpx.Response(
-            302, headers={"location": "http://rebind.example.com/admin"}
-        )
+        return httpx.Response(302, headers={"location": "http://rebind.example.com/admin"})
 
     blocks: list[BlockReason] = []
     with pytest.raises(SSRFBlocked) as ei:
@@ -367,9 +360,7 @@ async def test_redirect_chain_followed_and_recorded() -> None:
             return httpx.Response(302, headers={"location": "/final"})
         return ok_handler(request)
 
-    res = static_resolver(
-        {"a.example.com": [PUBLIC_V4], "b.example.com": [PUBLIC_V4_B]}
-    )
+    res = static_resolver({"a.example.com": [PUBLIC_V4], "b.example.com": [PUBLIC_V4_B]})
     r = await safe_fetch(
         "http://a.example.com/", resolver=res, transport=httpx.MockTransport(handler)
     )

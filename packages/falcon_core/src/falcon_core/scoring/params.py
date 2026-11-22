@@ -1,4 +1,4 @@
-"""Arbiter parameters loaded from ``params.yaml`` (draft until fitted by ``make fit-thresholds``)."""
+"""Arbiter parameters from ``params.yaml`` (draft until fitted by ``make fit-thresholds``)."""
 
 from __future__ import annotations
 

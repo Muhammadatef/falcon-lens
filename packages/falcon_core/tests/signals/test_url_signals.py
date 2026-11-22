@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 from conftest import Ctx, run_signal
+
 from falcon_core.signals import REGISTRY
 from falcon_core.signals.brands import BrandRegistry, default_registry
 from falcon_core.signals.url.lexical import FEATURE_NAMES, extract_features
@@ -28,23 +29,36 @@ def names(url: str, only=None) -> set[str]:
 
 def test_registry_specs_valid():
     schema = json.loads(
-        (Path(__file__).resolve().parents[4] / "contracts" / "signal.schema.json").read_text(encoding="utf-8")
+        (Path(__file__).resolve().parents[4] / "contracts" / "signal.schema.json").read_text(
+            encoding="utf-8"
+        )
     )
     pat = re.compile(schema["properties"]["name"]["pattern"])
-    scoring = (Path(__file__).resolve().parents[4] / "docs" / "SCORING.md").read_text(encoding="utf-8")
+    scoring = (Path(__file__).resolve().parents[4] / "docs" / "SCORING.md").read_text(
+        encoding="utf-8"
+    )
     for name, (spec, _fn) in REGISTRY.items():
         assert pat.match(name) and spec.network == "none" and 10 <= spec.timeout_ms <= 6000
         for e in spec.emits:
             assert e in scoring, e
     assert set(ALL_URL) >= {
-        "url.homograph", "url.typosquat", "url.combosquat", "url.brand_in_subdomain_or_path", "url.userinfo_trick",
-        "url.bidi_or_zero_width", "url.raw_ip_host", "url.free_host_or_tunnel", "url.open_redirect_abuse",
+        "url.homograph",
+        "url.typosquat",
+        "url.combosquat",
+        "url.brand_in_subdomain_or_path",
+        "url.userinfo_trick",
+        "url.bidi_or_zero_width",
+        "url.raw_ip_host",
+        "url.free_host_or_tunnel",
+        "url.open_redirect_abuse",
     }
 
 
 def test_evidence_shape():
     ev = run_signal("url.typosquat", "https://falcon-demo-bnak.test/")[0].to_dict()
-    assert re.match(r"^ev_[a-z0-9]{8,32}$", ev["id"]) and ev["family"] == "url" and ev["tier"] == "T1"
+    assert (
+        re.match(r"^ev_[a-z0-9]{8,32}$", ev["id"]) and ev["family"] == "url" and ev["tier"] == "T1"
+    )
     assert ev["weight"] == 0 and ev["source"] == "computed" and 0 <= ev["confidence"] <= 1
     assert ev["display"]["ar"] and ev["display"]["en"] and len(ev["display"]["en"]) <= 200
     assert len(json.dumps(ev["observed"])) < 1024
@@ -97,11 +111,17 @@ def test_same_script_capital_i_for_l():
     assert "url.homograph" in names("https://falcon-dem0-bank.test/")
 
 
-
 def test_rn_for_m():
     reg = BrandRegistry.from_entries(
-        [{"brand_id": "x", "name_en": "Example Demo", "name_ar": "x", "category": "demo",
-          "verified_domains": ["mashreqdemo.test"]}]
+        [
+            {
+                "brand_id": "x",
+                "name_en": "Example Demo",
+                "name_ar": "x",
+                "category": "demo",
+                "verified_domains": ["mashreqdemo.test"],
+            }
+        ]
     )
     ctx = Ctx(url="https://rnashreqdemo.test/", brands=reg)
     _s, fn = REGISTRY["url.homograph"]
@@ -119,13 +139,17 @@ def test_arabic_idn_brand_in_label():
     n = names("https://شرطة-ابوظبي-مخالفات.test/")
     assert "url.combosquat" in n
     assert "url.brand_in_subdomain_or_path" in names("https://شرطة-ابوظبي.verify.test/")
-    assert "url.brand_in_subdomain_or_path" in names("https://example.test/%D8%B4%D8%B1%D8%B7%D8%A9-%D8%A7%D8%A8%D9%88%D8%B8%D8%A8%D9%8A/")
+    assert "url.brand_in_subdomain_or_path" in names(
+        "https://example.test/%D8%B4%D8%B1%D8%B7%D8%A9-%D8%A7%D8%A8%D9%88%D8%B8%D8%A8%D9%8A/"
+    )
     # plain Arabic site with no brand token: nothing
     assert not names("https://مثال.test/صفحة", SQUAT)
 
 
 def test_official_domain_as_subdomain_prefix():
-    ev = run_signal("url.brand_in_subdomain_or_path", "https://adpolice.gov.ae.verify-fine.test/pay")
+    ev = run_signal(
+        "url.brand_in_subdomain_or_path", "https://adpolice.gov.ae.verify-fine.test/pay"
+    )
     assert ev and ev[0].observed["official_domain_in_host"] is True
     assert "url.brand_in_subdomain_or_path" in names("https://adpolice.gov.ae.verify-fine.xyz/")
 
@@ -143,12 +167,17 @@ def test_raw_ip(host):
 
 
 def test_open_redirect():
-    ev = run_signal("url.open_redirect_abuse", "https://example.test/redirect?url=https%3A%2F%2Fevil.example%2Fx")
+    ev = run_signal(
+        "url.open_redirect_abuse",
+        "https://example.test/redirect?url=https%3A%2F%2Fevil.example%2Fx",
+    )
     assert ev and ev[0].observed["target_host"] == "evil[.]example"
     assert run_signal("url.open_redirect_abuse", "https://adpolice.gov.ae/out?next=//evil.example/")
     # same-site and relative targets are fine
     assert not run_signal("url.open_redirect_abuse", "https://example.test/login?next=/home")
-    assert not run_signal("url.open_redirect_abuse", "https://example.test/login?next=https://example.test/home")
+    assert not run_signal(
+        "url.open_redirect_abuse", "https://example.test/login?next=https://example.test/home"
+    )
 
 
 # ----- legitimate official domains: no squat/homograph evidence
@@ -164,7 +193,11 @@ def test_all_official_domains_clean():
 
 
 def test_ordinary_sites_clean():
-    for u in ["https://example.com/", "https://www.wikipedia.org/wiki/Abu_Dhabi", "https://news.example.test/a"]:
+    for u in [
+        "https://example.com/",
+        "https://www.wikipedia.org/wiki/Abu_Dhabi",
+        "https://news.example.test/a",
+    ]:
         assert not names(u, SQUAT), u
 
 
@@ -178,14 +211,29 @@ def test_real_brand_typo_and_tld_swap_and_keyboard():
     assert "url.typosquat" in names("https://adpolicr.com/")  # r next to e on QWERTY
     ev = run_signal("url.typosquat", "https://adpolice.com/")
     assert ev and ev[0].observed["kind"] == "tld_swap"
-    assert "url.typosquat" in names("https://dubaipolice-gov.ae/") or "url.combosquat" in names("https://dubaipolice-gov.ae/")
+    assert "url.typosquat" in names("https://dubaipolice-gov.ae/") or "url.combosquat" in names(
+        "https://dubaipolice-gov.ae/"
+    )
     assert "url.typosquat" in names("https://falcondemobank.test/")  # hyphen removed
 
 
 # ----- robustness: never raises, hostile input
-@pytest.mark.parametrize("u", ["", "   ", "http://", "http://[::", "\x00", "a" * 30000, "http://%zz.test/%",
-                               "data:text/html,<x>",
-                               "javascript:alert(1)", "http://‮‮/", "http://" + "a." * 500 + "test"])
+@pytest.mark.parametrize(
+    "u",
+    [
+        "",
+        "   ",
+        "http://",
+        "http://[::",
+        "\x00",
+        "a" * 30000,
+        "http://%zz.test/%",
+        "data:text/html,<x>",
+        "javascript:alert(1)",
+        "http://‮‮/",
+        "http://" + "a." * 500 + "test",
+    ],
+)
 def test_never_raise(u):
     for n in REGISTRY:
         out = run_signal(n, u)
@@ -197,8 +245,15 @@ def test_timeout_yields_error_evidence(monkeypatch):
 
     from falcon_core.signals.base import SignalSpec, signal
 
-    spec = SignalSpec(name="url.slow_test", family="url", tier="T1", input_types=("url",), timeout_ms=10,
-                      network="none", emits=())
+    spec = SignalSpec(
+        name="url.slow_test",
+        family="url",
+        tier="T1",
+        input_types=("url",),
+        timeout_ms=10,
+        network="none",
+        emits=(),
+    )
 
     @signal(spec)
     def slow(ctx):

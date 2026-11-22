@@ -22,7 +22,10 @@ def url_evidence(
     signal: str, observed: dict[str, object], en: str, ar: str, confidence: float = 1.0
 ) -> Evidence:
     return Evidence(
-        signal=signal, family="url", observed=observed, display={"en": en[:200], "ar": ar[:200]},
+        signal=signal,
+        family="url",
+        observed=observed,
+        display={"en": en[:200], "ar": ar[:200]},
         confidence=confidence,
     )
 
