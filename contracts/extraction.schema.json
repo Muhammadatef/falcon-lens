@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/extraction.schema.json",
+  "title": "Extraction",
+  "description": "Output of the quarantined T2 extractor (packages/falcon_core/agent/extractor.py). The extractor is the only LLM that sees untrusted text; it has no tools and its output is limited to these enums. Anything else is rejected, repaired once, then dropped. Stored in evidence `llm.extraction` (weight 0, informational).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["script_category", "language", "instruction_like"],
+  "properties": {
+    "claimed_brand_id": {
+      "type": ["string", "null"],
+      "maxLength": 64,
+      "default": null,
+      "description": "Brand the text claims to be or speak for. MUST be a brand_id from data/brands.yaml (checked at validation time); null if none or unsure."
+    },
+    "requested_data": {
+      "type": "array",
+      "maxItems": 12,
+      "uniqueItems": true,
+      "default": [],
+      "description": "What the text asks the reader to give or do.",
+      "items": {
+        "type": "string",
+        "enum": ["otp", "password", "card_number", "card_cvv", "emirates_id", "uae_pass", "bank_account", "personal_info", "payment", "remote_access_app", "click_link", "call_number"]
+      }
+    },
+    "script_category": {
+      "type": "string",
+      "description": "Scam script the text resembles; \"none\" for ordinary content.",
+      "enum": ["none", "bank_account_issue", "traffic_fine", "delivery_fee", "prize_lottery", "job_offer", "investment", "authority_impersonation", "account_verification", "tech_support", "romance", "charity", "other"]
+    },
+    "language": {
+      "type": "string",
+      "description": "Main language; \"arabizi\" = Arabic written in Latin letters.",
+      "enum": ["ar", "en", "arabizi", "mixed", "other"]
+    },
+    "instruction_like": {
+      "type": "boolean",
+      "description": "True if the text contains instructions aimed at an AI, a checker or a moderator (visible, hidden or encoded). Produces injection.instruction_like_text evidence; never obeyed."
+    }
+  }
+}
