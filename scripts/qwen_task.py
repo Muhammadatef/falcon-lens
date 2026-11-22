@@ -27,6 +27,31 @@ Spec JSON keys:
   language_rules         {language: {script: arabic|latin, min_ratio, max_ratio, require_any: [...],
                           forbid_any: [...], require_digit_letter: bool}}
   strata                 [{share, constraints, variants, variant_field, hint}]
+
+What it does (short version):
+    Sends one batch job to the LOCAL model, checks every returned item against the spec (rules above), and
+    keeps only items that pass. Output stays under work/ and is never committed.
+
+When to use it:
+    Whenever a builder needs bulk drafts from the local model (synthetic test messages, unit-test drafts,
+    docstring drafts, UI strings, label passes). Do not call the local model any other way.
+
+How to run:
+    uv run --no-project --with httpx --with jsonschema python scripts/qwen_task.py
+        --task <task-id> --kind <kind> --spec <spec.json> [--seed N] [--timeout 300]
+    (no make target). Kinds: synthetic_messages, unit_test_draft, docstring, ui_strings, label_pass.
+
+Inputs:
+    The spec JSON, plus env OLLAMA_BASE_URL (default http://localhost:11434), FL_LOCAL_WORKER_MODEL
+    (default qwen3:4b) and FL_LOCAL_STRUCTURED (set to 0 for models without structured output).
+
+Outputs / side effects:
+    Writes work/qwen/<task-id>/output.jsonl and manifest.json (counts of every rejection reason). Makes HTTP
+    calls to the local Ollama server only. It never commits, and a supervisor must audit output before import.
+
+Safety notes:
+    The validators reject real brands, live links and unlisted phone numbers; all items are marked
+    synthetic=true. Never paste real phishing content into a spec.
 """
 
 from __future__ import annotations
@@ -74,6 +99,7 @@ ModelFn = Callable[[httpx.Client, str, str, str, str, int, float, bool], str]
 
 
 def normalise(text: str) -> str:
+    """Lower-case and collapse whitespace so near-duplicate texts compare equal."""
     t = unicodedata.normalize("NFKC", text).lower()
     t = ARABIC_MARKS.sub("", t)
     t = re.sub(r"[آأإ]", "ا", t)
@@ -82,6 +108,7 @@ def normalise(text: str) -> str:
 
 
 def shingles(text: str, k: int = 4) -> set[str]:
+    """Set of k-character shingles of a text (used for the near-duplicate check)."""
     t = normalise(text)
     if len(t) <= k:
         return {t}
@@ -89,12 +116,14 @@ def shingles(text: str, k: int = 4) -> set[str]:
 
 
 def jaccard(a: set[str], b: set[str]) -> float:
+    """Jaccard similarity of two shingle sets (0.0 to 1.0)."""
     if not a and not b:
         return 1.0
     return len(a & b) / len(a | b)
 
 
 def plan_strata(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    """Split the requested item count across the spec's strata by their share."""
     strata = spec.get("strata") or [{"share": 1.0, "constraints": {}}]
     total = float(sum(s["share"] for s in strata))
     out = []
@@ -136,6 +165,7 @@ def check_language(text: str, lang: str, rules: dict[str, Any]) -> str | None:
 
 
 def check_links(text: str, allowed_regex: str | None) -> str | None:
+    """Reject text with a link-like string that does not match the allowed placeholder form."""
     if allowed_regex is None:
         return "link_present" if LINK_LIKE.search(text) else None
     allowed = re.compile(r"(?<!\w)(?:" + allowed_regex + r")(?![\w\[\]?=&#%]|\.\w)")
@@ -144,6 +174,7 @@ def check_links(text: str, allowed_regex: str | None) -> str | None:
 
 
 def check_phones(text: str, allowed_phone: str | None) -> str | None:
+    """Reject text containing a phone number other than the allowed placeholder."""
     t = unicodedata.normalize("NFKC", text).translate(ARABIC_DIGITS)
     if allowed_phone:
         t = t.replace(allowed_phone, " ")
@@ -151,6 +182,7 @@ def check_phones(text: str, allowed_phone: str | None) -> str | None:
 
 
 def check_entities(text: str, subtype: str | None, rules: dict[str, list[str]]) -> str | None:
+    """Reject text matching an entity rule that is not allowed for the item's subtype."""
     for pat, allowed in rules.items():
         if re.search(pat, text, re.IGNORECASE) and subtype not in allowed:
             return "entity_not_allowed"
@@ -197,6 +229,7 @@ def validate_item(
 def build_prompt(
     kind: str, spec: dict[str, Any], stratum: dict[str, Any], n: int, variant: str | None
 ) -> tuple[str, str]:
+    """Build the system and user prompt for one batch from the spec and its strata."""
     system = KIND_PROMPTS[kind] + '\nReturn ONLY a JSON object {"items": [...]} with no commentary.'
     lines = [spec.get("description", ""), f"Produce exactly {n} distinct items."]
     lines.append(
@@ -228,6 +261,7 @@ def call_model(
     temperature: float,
     structured: bool = True,
 ) -> str:
+    """POST one chat request to the local Ollama server and return the reply text."""
     body: dict[str, Any] = {
         "model": model,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
@@ -244,6 +278,7 @@ def call_model(
 
 
 def parse_items(content: str) -> list[Any]:
+    """Extract the JSON list of items from the model reply."""
     data: Any = None
     try:
         data = json.loads(content)
@@ -261,6 +296,7 @@ def parse_items(content: str) -> list[Any]:
 
 # ---------------------------------------------------------------- runner
 def run(args: argparse.Namespace, model_fn: ModelFn = call_model) -> int:
+    """Execute a whole task: generate in rounds, validate every item, write output.jsonl and manifest.json."""
     spec_path = Path(args.spec)
     spec = json.loads(spec_path.read_text(encoding="utf-8"))
     kind = args.kind
@@ -377,6 +413,7 @@ def run(args: argparse.Namespace, model_fn: ModelFn = call_model) -> int:
 
 
 def main() -> int:
+    """Parse the command line and run the task; the return value is the process exit code."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--task", required=True)
     ap.add_argument("--kind", required=True, choices=KINDS)

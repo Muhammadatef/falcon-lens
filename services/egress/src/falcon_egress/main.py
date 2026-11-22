@@ -14,6 +14,21 @@ Everything else is refused: origin-form requests, absolute-form https, other
 methods for plain HTTP (the sandbox never submits), and request bodies. A denial
 is a ``403`` with ``X-Falcon-Block-Reason: <BlockReason>`` and increments
 ``fl_ssrf_blocked_total{reason}``.
+
+When to use it:
+    You do not run it by hand; the `egress-proxy` container starts it. The sandbox browser's traffic is
+    sent through it so a page can never reach internal addresses.
+
+How to run:
+    make up                                   (direct: uv run python -m falcon_egress.main)
+
+Inputs:
+    Env EGRESS_PROXY_PORT (default 3128) and EGRESS_HEALTH_PORT (default 8081).
+
+Outputs / side effects:
+    Opens outbound TCP connections only to addresses that passed the SSRF check, writes structured
+    log lines to stdout, and counts blocks in fl_ssrf_blocked_total (served at /metrics on the
+    health port). It refuses requests that carry a body.
 """
 
 from __future__ import annotations
@@ -242,6 +257,7 @@ def _metrics() -> bytes:
 
 
 async def handle_health(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    """Answer /healthz, /readyz and /metrics on the health port."""
     try:
         head = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), 5)
     except (asyncio.IncompleteReadError, asyncio.LimitOverrunError, TimeoutError, OSError):
@@ -266,6 +282,7 @@ async def handle_health(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
 
 
 async def serve() -> None:
+    """Start the proxy and health listeners and run until stopped."""
     proxy = await asyncio.start_server(make_proxy_handler(), "0.0.0.0", PROXY_PORT, limit=MAX_HEADER_BYTES * 2)
     health = await asyncio.start_server(handle_health, "0.0.0.0", HEALTH_PORT)
     _log(logging.INFO, "egress proxy started", proxy_port=PROXY_PORT, health_port=HEALTH_PORT)
@@ -274,6 +291,7 @@ async def serve() -> None:
 
 
 def main() -> None:
+    """Process entrypoint: run `serve` in an asyncio loop."""
     asyncio.run(serve())
 
 

@@ -8,6 +8,31 @@ It serves /metrics on 127.0.0.1:<port> (set FL_DEMO_EMITTER_BIND to change; Linu
 0.0.0.0) from the real metric registry (so names/labels are the contract's) and writes
 infra/prometheus/demo/targets.yml so Prometheus (file_sd, refreshed automatically)
 scrapes it at host.docker.internal:<port>. The file is removed on exit.
+
+What it does:
+    Starts a small metrics server and, once a second, sets random but plausible values on the real `fl_`
+    metric registry (checks, latency, drift, incidents, feed ages). It also writes a Prometheus target file
+    so Prometheus scrapes it. The numbers are fake and must never be shown as detection results.
+
+When to use it:
+    When you want to look at the Grafana dashboards before the real pipeline produces traffic. Do not use
+    it for the real demo or for any number in docs, slides or the README.
+
+How to run:
+    uv run python scripts/emit_demo_metrics.py --port 9199 --seconds 0
+    (no make target; options: --port, --bind or env FL_DEMO_EMITTER_BIND, --seconds, 0 = run until Ctrl-C)
+
+Inputs:
+    The command-line options above and the `falcon_core` metric definitions.
+
+Outputs / side effects:
+    Opens an HTTP /metrics listener on 127.0.0.1:<port> (loopback unless you change --bind). Writes
+    infra/prometheus/demo/targets.yml while running and deletes it on exit. No Redis, Postgres or outside
+    network calls. It deliberately does not emit `fl_eval_metric`; eval gauges come only from eval artifacts.
+
+Safety notes:
+    Binding 0.0.0.0 (needed for Prometheus in Docker on Linux) exposes the synthetic metrics to your
+    network; only do it on a trusted machine.
 """
 
 from __future__ import annotations
@@ -31,6 +56,7 @@ FEEDS = ["openphish", "urlhaus"]
 
 
 def tick(rng: random.Random, state: dict[str, float]) -> None:
+    """Move the synthetic metric values one step (random walk) on the real metric registry."""
     for _ in range(rng.randint(2, 7)):
         verdict = rng.choices(VERDICTS, weights=[3, 2, 6])[0]
         tier = rng.choices(TIERS, weights=[6, 3, 2, 1])[0]
@@ -104,6 +130,7 @@ def tick(rng: random.Random, state: dict[str, float]) -> None:
 
 
 def main() -> None:
+    """Parse options, serve /metrics, write the Prometheus target file and tick once a second."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--port", type=int, default=9199)
     ap.add_argument(

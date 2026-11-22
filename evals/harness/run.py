@@ -5,6 +5,24 @@ computed yet (sandbox tier, LLM tiers, injection, faithfulness, cloud and sovere
 ``{"status": "not_evaluated", "reason": ...}``, never as a number.
 
 Usage: ``python -m evals.harness.run [--splits val,test] [--publish] [--boot 1000] [--seed N]``
+
+When to use it:
+    After `make fit-thresholds` or any scoring change, to see how detection quality moved. Needs the
+    private data on this machine (it cannot run in CI).
+
+How to run:
+    make eval                  (direct: uv run python -m evals.harness.run)
+    uv run python -m evals.harness.run --publish      (also write the URL-free published summary)
+
+Inputs:
+    The hashed manifest, the private item cache, the frozen split lock and the fitted model. Options:
+    --splits, --boot (bootstrap rounds), --seed, --out-dir, --publish.
+
+Outputs / side effects:
+    Writes <timestamp>.json, latest.json, <timestamp>.html, latest.html and latest.prom into
+    evals/results/ (or --out-dir), and with --publish a URL-free <timestamp>.json under
+    evals/results/published/. It refuses to write any file that would contain a URL. No network calls.
+    scripts/readme_metrics.py later copies published numbers into README.md.
 """
 
 from __future__ import annotations
@@ -48,6 +66,7 @@ NOT_EVALUATED_GLOBAL = {
 
 
 def not_evaluated(reason: str) -> dict[str, str]:
+    """The placeholder written instead of a number when something cannot be measured yet."""
     return {"status": "not_evaluated", "reason": reason}
 
 
@@ -58,6 +77,7 @@ def _pct(vals: Sequence[float], q: float) -> float | None:
 def score_items(
     items: Sequence[Item], model: T1Model, params: ScoringParams, with_registry: bool = True
 ) -> dict[str, Any]:
+    """Score items through the T1 classifier and arbiter; returns the per-item results as a dict."""
     p_clf = model.p_clf_many([i.url for i in items])
     t0 = time.perf_counter()
     scored = [score_url(i.url, pc, params, with_registry) for i, pc in zip(items, p_clf, strict=True)]
@@ -95,6 +115,7 @@ def _headline(y: np.ndarray, warn: np.ndarray, p: np.ndarray, n_boot: int, seed:
 def evaluate_split(
     name: str, items: list[Item], model: T1Model, params: ScoringParams, n_boot: int, seed: int
 ) -> dict[str, Any]:
+    """Compute all metrics and breakdowns for one split."""
     r = score_items(items, model, params)
     y, p = r["y"], r["p"]
     verdict = np.array(r["verdict"])
@@ -219,6 +240,7 @@ def ablation(train: list[Item], val: list[Item], seed: int) -> dict[str, Any]:
 
 
 def run_eval(splits: Sequence[str], n_boot: int, seed: int) -> dict[str, Any]:
+    """Evaluate the requested splits and return the full artifact dict."""
     rows = read_jsonl(ITEMS_MANIFEST)
     lock = load_lock()
     errs = check_rows(rows, lock)
@@ -287,6 +309,7 @@ _URL_RE = re.compile(r"(?i)\b(?:https?|hxxps?|ftp)://|\bwww\.")
 
 
 def assert_url_free(doc: dict[str, Any]) -> None:
+    """Abort if the artifact contains anything that looks like a URL."""
     text = json.dumps(doc)
     if _URL_RE.search(text):
         raise SystemExit("published artifact would contain a URL; refusing")
@@ -313,6 +336,7 @@ def publish_doc(doc: dict[str, Any]) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the evaluation and write the result files (see module docstring)."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--splits", default="val,test")
     ap.add_argument("--boot", type=int, default=N_BOOT)

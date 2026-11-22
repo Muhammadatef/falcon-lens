@@ -4,6 +4,24 @@ Fails when recall drops > 2 points, FPR rises > 1 point, any false `dangerous` o
 injection success > 0, or faithfulness < 100%. Metrics that are `not_evaluated` are skipped and listed, never passed
 silently as numbers. `--run` runs the eval first, or prints an explicit SKIPPED notice (exit 0, NOT a pass) when
 the private data is not present (CI). `--make-baseline` writes the baseline from a result.
+
+When to use it:
+    Before merging a change that can affect detection quality (`make eval-gate`), and when the owner
+    decides to accept a new baseline (`make eval-baseline`).
+
+How to run:
+    make eval-gate           (direct: uv run python -m evals.gate --run)
+    make eval-baseline       (direct: uv run python -m evals.gate --make-baseline)
+    Other options: --result PATH (default evals/results/latest.json), --baseline PATH.
+
+Inputs:
+    evals/results/latest.json from the harness, and evals/baseline.json.
+
+Outputs / side effects:
+    Prints skipped and failed checks and exits 1 on failure. --run executes `python -m evals.harness.run`
+    first (so it writes the results files described there), but prints SKIPPED and exits 0 (NOT a pass)
+    when data/private/feeds is missing, as in CI. --make-baseline overwrites
+    evals/baseline.json; review that diff in the PR. No network calls.
 """
 
 from __future__ import annotations
@@ -23,6 +41,7 @@ FPR_RISE = 0.01
 
 
 def headline(doc: dict[str, Any]) -> dict[str, Any]:
+    """Pick the headline numbers the gate compares from a result document."""
     v = doc["splits"]["val"]
     return {
         "recall": v["overall"]["recall"]["value"],
@@ -34,6 +53,7 @@ def headline(doc: dict[str, Any]) -> dict[str, Any]:
 
 
 def make_baseline(doc: dict[str, Any]) -> dict[str, Any]:
+    """Reduce a result document to the baseline format."""
     return {
         "split": "val",
         "dataset_hash": doc["dataset_hash"],
@@ -73,6 +93,7 @@ def compare(baseline: dict[str, Any], doc: dict[str, Any]) -> tuple[list[str], l
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the gate (optionally the eval first) or write a new baseline."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--result", type=Path, default=RESULTS_DIR / "latest.json")
     ap.add_argument("--baseline", type=Path, default=BASELINE)
