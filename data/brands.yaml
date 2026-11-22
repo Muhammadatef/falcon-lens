@@ -13,7 +13,7 @@
 brands:
   - brand_id: abu_dhabi_police
     name_en: Abu Dhabi Police
-    name_ar: القيادة العامة لشرطة ابوظبي
+    name_ar: القيادة العامة لشرطة أبوظبي
     category: police
     verified_domains: [adpolice.gov.ae]
     source_url: https://www.adpolice.gov.ae
@@ -22,7 +22,7 @@ brands:
     keywords_ar: [شرطة ابوظبي, شرطة أبوظبي, مخالفة, مخالفات, بلاغ, قضية, أمان]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "name_ar copied as written on the site banner (without hamza)."
+    unverified_notes: "name_ar uses أبوظبي with hamza as the official AD999 app listing writes it (Google Play ae.adpolice.sos, 2026-11-22); the site banner omits the hamza. Both spellings are in keywords_ar."
 
   - brand_id: dubai_police
     name_en: Dubai Police
@@ -148,14 +148,14 @@ brands:
 
   - brand_id: addc_taqa_distribution
     name_en: Abu Dhabi Distribution Company (ADDC) / TAQA Distribution
-    name_ar: شركة أبوظبي للتوزيع
+    name_ar: طاقة للتوزيع
     category: utility
     verified_domains: [addc.ae, taqadistribution.com]
     source_url: https://taqadistribution.com/addc/en-us/residential/overview
     retrieved_at: 2026-11-22
     verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested. addc.ae 301→taqadistribution.com/addc."
     keywords_en: [addc, taqa, taqa distribution, electricity, water, bill, disconnection, payment]
-    keywords_ar: [أبوظبي للتوزيع, طاقة, كهرباء, ماء, فاتورة, فصل الخدمة, سداد]
+    keywords_ar: [طاقة للتوزيع, شركة أبوظبي للتوزيع, أبوظبي للتوزيع, طاقة, كهرباء, ماء, فاتورة, فصل الخدمة, سداد]
     logo_ref: null
     favicon_hash: null
     unverified_notes: "Weak verification: addc.ae returned a 301 redirect to taqadistribution.com/addc, whose fetched content showed only the title 'TAQA Distribution'. name_ar not confirmed on page. Re-check payment/login domains manually."
@@ -189,13 +189,13 @@ brands:
 
   - brand_id: etisalat_by_eand
     name_en: Etisalat by e&
-    name_ar: اتصالات من e&
+    name_ar: اتصالات
     category: telecom
     verified_domains: [etisalat.ae, eand.ae, eand.com]
     source_url: https://www.eand.ae/en/index.html
     retrieved_at: 2026-11-22
     keywords_en: [etisalat, e&, eand, sim, bill, recharge, points, rewards, suspended]
-    keywords_ar: [اتصالات, إي آند, فاتورة, شحن, نقاط, إيقاف الخدمة]
+    keywords_ar: [اتصالات, اتصالات الامارات, اتصالات الإمارات, إي آند, فاتورة, شحن, نقاط, إيقاف الخدمة]
     logo_ref: null
     favicon_hash: null
     unverified_notes: "etisalat.ae redirects (302) to www.eand.ae; the page links etisalat.ae, eand.ae and eand.com (group). name_ar not confirmed on page. eim.ae (mail) and eanduniverse.com were linked but not included."
