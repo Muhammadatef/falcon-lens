@@ -9,6 +9,7 @@ The machine-readable sources of truth are in `contracts/`. Pydantic models in `p
 | `signal.schema.json` | signal plugin registration (`add-signal` skill) |
 | `event.schema.json` | Redis Stream `fl:events` → Sentinel |
 | `incident.schema.json` | Sentinel → board, REST, MCP, STIX |
+| `campaign.schema.json` | `GET /v1/campaigns`, SSE `/v1/campaigns/stream` (projection of an incident; computed by the API) |
 | `tools.schema.json` | investigator, Sentinel and MCP tool registry plus the JSON `Action` |
 | `openapi.yaml` | REST v1. FastAPI generates it; CI checks it hasn't drifted from the committed file |
 

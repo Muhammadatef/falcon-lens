@@ -44,7 +44,9 @@ class BearerMiddleware:
         if ok:
             await self.app(scope, receive, send)
             return
-        body = json.dumps({"type": "urn:falcon-lens:problem:unauthorized", "title": "Unauthorized", "status": 401}).encode()
+        body = json.dumps(
+            {"type": "urn:falcon-lens:problem:unauthorized", "title": "Unauthorized", "status": 401}
+        ).encode()
         await send(
             {
                 "type": "http.response.start",

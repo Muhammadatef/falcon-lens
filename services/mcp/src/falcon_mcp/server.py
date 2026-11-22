@@ -6,6 +6,7 @@ from typing import Annotated, Any, Literal
 
 import httpx
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
@@ -28,7 +29,7 @@ Status = Literal["open", "triaging", "awaiting_approval", "mitigated", "closed",
 Severity = Literal["low", "medium", "high", "critical"]
 
 
-class ApiError(Exception):
+class ApiError(ToolError):
     """Raised for problem+json responses; the message is safe to show to the model (no submitted content)."""
 
 
@@ -86,7 +87,9 @@ def build_mcp(api: ApiClient, *, name: str = "falcon-lens") -> MCPServer:
 
     @mcp.tool(annotations=READ_ONLY)
     async def check_email(
-        raw_email: Annotated[str, Field(min_length=1, max_length=2_000_000, description="Full RFC 5322 source (.eml).")],
+        raw_email: Annotated[
+            str, Field(min_length=1, max_length=2_000_000, description="Full RFC 5322 source (.eml).")
+        ],
     ) -> dict[str, Any]:
         """Check a phishing-suspect email given as raw .eml source (headers + body). Waits up to 8 s."""
         files = {"file": ("message.eml", raw_email.encode(), "message/rfc822")}
@@ -130,7 +133,9 @@ def build_mcp(api: ApiClient, *, name: str = "falcon-lens") -> MCPServer:
     @mcp.tool(annotations=WRITE)
     async def submit_report(
         kind: Annotated[Literal["url", "message", "email", "phone", "other"], Field(description="What is reported.")],
-        text: Annotated[str | None, Field(max_length=8000, description="Reported URL/message; hashed on receipt.")] = None,
+        text: Annotated[
+            str | None, Field(max_length=8000, description="Reported URL/message; hashed on receipt.")
+        ] = None,
         verdict_id: Annotated[
             str | None, Field(pattern=r"^vd_[0-9A-HJKMNP-TV-Z]{26}$", description="Related verdict.")
         ] = None,
