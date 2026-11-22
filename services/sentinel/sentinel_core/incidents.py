@@ -154,7 +154,10 @@ def build_incident(
     ]
     seen_tl: set[tuple[str, str]] = set()
     timeline = []
-    for t in sorted(events_tl + carried + extra, key=lambda t: (parse_time(t["at"]), t.get("event_id", ""), t["what"])):
+    for t in sorted(
+        events_tl + carried + extra,
+        key=lambda t: (parse_time(t["at"]), t.get("event_id", ""), t["what"]),
+    ):
         k = (t["at"], t["what"])
         if k not in seen_tl:
             seen_tl.add(k)
