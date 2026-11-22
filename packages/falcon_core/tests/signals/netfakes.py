@@ -18,9 +18,7 @@ from falcon_core.signals.cache import MemoryCache
 
 NOW = datetime(2026, 11, 22, 12, 0, 0, tzinfo=UTC).timestamp()
 FIX = Path(__file__).parent / "fixtures"
-_EVIDENCE_SCHEMA = json.loads(
-    (Path(__file__).parents[4] / "contracts" / "evidence.schema.json").read_text()
-)
+_EVIDENCE_SCHEMA = json.loads((Path(__file__).parents[4] / "contracts" / "evidence.schema.json").read_text())
 
 
 def fixture(name: str) -> str:
@@ -60,9 +58,7 @@ class FakeHTTP:
                 return val
         raise AssertionError(f"unrouted url {url}")
 
-    async def fetch(
-        self, url: str, *, timeout: float = 6.0, max_bytes: int = 0, **_: Any
-    ) -> FetchResult:
+    async def fetch(self, url: str, *, timeout: float = 6.0, max_bytes: int = 0, **_: Any) -> FetchResult:
         self.calls.append(url)
         val = self._route(url)
         if isinstance(val, tuple) and val[0] == "sleep":

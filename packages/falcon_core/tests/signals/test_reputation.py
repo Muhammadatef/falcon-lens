@@ -218,9 +218,7 @@ def _write_feed(d: Path, *, extra: list[dict[str, Any]] | None = None) -> None:
         )
     rows.extend(extra or [])
     (d / "20261122.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows) + "\nnot json\n")
-    (d / "snapshot_queue.jsonl").write_text(
-        json.dumps({"url": "https://queue-only.test/", "sha256": "0" * 64}) + "\n"
-    )
+    (d / "snapshot_queue.jsonl").write_text(json.dumps({"url": "https://queue-only.test/", "sha256": "0" * 64}) + "\n")
     (d / "state.json").write_text(json.dumps({"last_poll_utc": "2026-11-22T11:00:00+00:00"}))
 
 

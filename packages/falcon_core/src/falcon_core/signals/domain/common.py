@@ -14,9 +14,7 @@ from falcon_core.signals.base import Evidence, SignalSpec
 from falcon_core.signals.url.canonical import canonicalize
 
 # ICANN section only: RDAP/CT answer for the registry-level domain, not for a tenant of a private suffix.
-_ICANN = tldextract.TLDExtract(
-    suffix_list_urls=(), include_psl_private_domains=False, cache_dir=None
-)
+_ICANN = tldextract.TLDExtract(suffix_list_urls=(), include_psl_private_domains=False, cache_dir=None)
 
 MAX_JSON_BYTES = 4 * 1024 * 1024
 
@@ -62,9 +60,7 @@ class FetchError(Exception):
         self.status = status
 
 
-async def fetch_json(
-    http: Any, url: str, *, timeout_s: float, max_bytes: int = MAX_JSON_BYTES
-) -> Any:
+async def fetch_json(http: Any, url: str, *, timeout_s: float, max_bytes: int = MAX_JSON_BYTES) -> Any:
     """GET ``url`` through the guarded client and parse JSON. Raises FetchError with a stable code."""
     if http is None:
         raise FetchError("no_http_client")

@@ -64,9 +64,7 @@ async def test_cache_hit_avoids_second_call() -> None:
 async def test_single_flight() -> None:
     http = FakeHTTP({"https://crt.sh/": result(fixture("crtsh.json"))})
     cache = Ctx().cache
-    await asyncio.gather(
-        *[run(Ctx(url="https://falcon-demo-shop.com/", http=http, cache=cache)) for _ in range(5)]
-    )
+    await asyncio.gather(*[run(Ctx(url="https://falcon-demo-shop.com/", http=http, cache=cache)) for _ in range(5)])
     assert len(http.calls) == 1
 
 
@@ -81,9 +79,7 @@ async def test_rate_limit_triggers_backoff_without_hammering() -> None:
     http = FakeHTTP({"https://crt.sh/": result("slow down", 429)})
     (ev,) = await run(Ctx(url="https://falcon-demo-shop.com/", http=http))
     assert ev.error == "crt_rate_limited"
-    (ev2,) = await run(
-        Ctx(url="https://falcon-demo-other.com/", http=http)
-    )  # different domain, breaker open
+    (ev2,) = await run(Ctx(url="https://falcon-demo-other.com/", http=http))  # different domain, breaker open
     assert ev2.error == "crt_backoff" and len(http.calls) == 1
 
 
@@ -131,9 +127,7 @@ def test_siblings_capped_and_exclude_self() -> None:
     assert s["siblings_total"] == 60 and len(s["siblings"]) == crt.MAX_SIBLINGS
 
 
-@pytest.mark.skipif(
-    os.environ.get("FL_NETWORK_TESTS") != "1", reason="live network test (FL_NETWORK_TESTS=1)"
-)
+@pytest.mark.skipif(os.environ.get("FL_NETWORK_TESTS") != "1", reason="live network test (FL_NETWORK_TESTS=1)")
 async def test_live_crt_example_com() -> None:
     import time
 

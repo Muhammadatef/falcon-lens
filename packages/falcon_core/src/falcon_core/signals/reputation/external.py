@@ -178,9 +178,7 @@ async def run_urlhaus(ctx: SignalContext) -> list[Evidence]:
         doc = cached
     else:
         try:
-            doc = await _post_json(
-                ctx, URLHAUS_HOST_URL, data={"host": c.host_ascii}, headers={"Auth-Key": key}
-            )
+            doc = await _post_json(ctx, URLHAUS_HOST_URL, data={"host": c.host_ascii}, headers={"Auth-Key": key})
         except _Fail as exc:
             return [error_evidence(URLHAUS_SPEC, f"urlhaus_{exc.code}", "urlhaus")]
         if not isinstance(doc, dict):

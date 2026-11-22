@@ -80,8 +80,7 @@ async def run(ctx: SignalContext) -> list[Evidence]:
                 "url_ref": ref,
             },
             display={
-                "en": "Listed in the OpenPhish phishing feed"
-                + ("" if fresh else " (feed is stale)"),
+                "en": "Listed in the OpenPhish phishing feed" + ("" if fresh else " (feed is stale)"),
                 "ar": "مدرج في قائمة OpenPhish للتصيّد" + ("" if fresh else " (القائمة قديمة)"),
             },
             polarity="risk",

@@ -1,4 +1,5 @@
 import pytest
+
 from falcon_core.signals.url.canonical import canonicalize, free_host_suffix, parse_ipv4
 
 

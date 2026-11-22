@@ -172,6 +172,11 @@ def async_signal(spec: SignalSpec) -> Callable[[SignalFn], SignalFn]:
 
 def _error(spec: SignalSpec, msg: str) -> Evidence:
     return Evidence(
-        signal=spec.name, family=spec.family, observed=None, polarity="neutral",
-        tier=spec.tier, confidence=0.0, error=msg,
+        signal=spec.name,
+        family=spec.family,
+        observed=None,
+        polarity="neutral",
+        tier=spec.tier,
+        confidence=0.0,
+        error=msg,
     )

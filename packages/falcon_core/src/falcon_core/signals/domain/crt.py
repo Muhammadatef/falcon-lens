@@ -133,9 +133,7 @@ async def crt_lookup(ctx: SignalContext, domain: str) -> dict[str, Any]:
             async with _semaphore():
                 rows = await fetch_json(ctx.http, url, timeout_s=HTTP_BUDGET_S)
         except FetchError as exc:
-            if exc.code in ("rate_limited", "timeout", "connect_error") or exc.code.startswith(
-                "http_5"
-            ):
+            if exc.code in ("rate_limited", "timeout", "connect_error") or exc.code.startswith("http_5"):
                 _blocked_until = time.monotonic() + BACKOFF_S
             raise
         res = summarize(rows, domain)

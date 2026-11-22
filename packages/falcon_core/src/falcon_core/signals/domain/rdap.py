@@ -169,9 +169,7 @@ async def run(ctx: SignalContext) -> list[Evidence]:
         return [error_evidence(SPEC, "rdap_no_registration_date", "rdap")]
     now = datetime.fromtimestamp(get_clock(ctx)(), tz=UTC)
     age = max(0, (now - reg).days)
-    polarity: Literal["risk", "trust", "neutral"] = (
-        "risk" if age < 30 else "trust" if age > 3650 else "neutral"
-    )
+    polarity: Literal["risk", "trust", "neutral"] = "risk" if age < 30 else "trust" if age > 3650 else "neutral"
     en = f"Domain registered {age} days ago"
     ar = f"تم تسجيل النطاق قبل {age} يومًا"
     observed = {

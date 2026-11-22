@@ -78,9 +78,7 @@ async def handle_proxy(reader: asyncio.StreamReader, writer: asyncio.StreamWrite
         await _reply(writer, "403 Forbidden")
         return
     try:
-        up_reader, up_writer = await asyncio.wait_for(
-            asyncio.open_connection(decision.addresses[0], port), 10
-        )
+        up_reader, up_writer = await asyncio.wait_for(asyncio.open_connection(decision.addresses[0], port), 10)
     except (OSError, TimeoutError):
         COUNTERS["denied"] += 1
         await _reply(writer, "502 Bad Gateway")

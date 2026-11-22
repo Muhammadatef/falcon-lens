@@ -2,8 +2,9 @@
 
 Licence: OpenPhish terms bar redistribution (DECISIONS.md). The mirror lives only in Redis (set ``feed:openphish``)
 and is built from ``data/private/feeds/openphish/2*.jsonl`` (gitignored). Members are hashes, never URLs:
-bare sha256 hex digests: the canonical URL hash and the lowercase ASCII host hash (host entries only for bare-path listings, so a phishing page on a
-shared host never condemns the whole host). Nothing here logs or emits a full URL.
+bare sha256 hex digests: the canonical URL hash and the lowercase ASCII host hash (host entries
+only for bare-path listings, so a phishing page on a shared host never condemns the whole host).
+Nothing here logs or emits a full URL.
 """
 
 from __future__ import annotations
@@ -138,9 +139,7 @@ def _read_rows(feed_dir: Path, now: float, max_age_days: int) -> tuple[list[str]
     members: set[str] = set()
     rows = 0
     cutoff = now - max_age_days * 86400
-    for f in sorted(
-        feed_dir.glob("2*.jsonl")
-    ):  # the collector's dated files; excludes snapshot_queue.jsonl
+    for f in sorted(feed_dir.glob("2*.jsonl")):  # the collector's dated files; excludes snapshot_queue.jsonl
         with f.open(encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
@@ -161,9 +160,7 @@ def _read_rows(feed_dir: Path, now: float, max_age_days: int) -> tuple[list[str]
                 if not isinstance(url, str):
                     continue
                 rows += 1
-                members.update(
-                    row_members(url, r.get("sha256") if isinstance(r.get("sha256"), str) else None)
-                )
+                members.update(row_members(url, r.get("sha256") if isinstance(r.get("sha256"), str) else None))
     return sorted(members), rows
 
 
@@ -171,9 +168,7 @@ def _feed_updated_at(feed_dir: Path) -> float | None:
     """Last poll time: state.json ``last_poll_utc`` (written by the collector), else newest file mtime."""
     st = feed_dir / "state.json"
     try:
-        return datetime.fromisoformat(
-            json.loads(st.read_text())["last_poll_utc"].replace("Z", "+00:00")
-        ).timestamp()
+        return datetime.fromisoformat(json.loads(st.read_text())["last_poll_utc"].replace("Z", "+00:00")).timestamp()
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         pass
     mt = [p.stat().st_mtime for p in feed_dir.glob("2*.jsonl")]

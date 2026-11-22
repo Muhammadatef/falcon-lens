@@ -8,9 +8,7 @@ from __future__ import annotations
 
 from prometheus_client import Gauge
 
-FEED_AGE = Gauge(
-    "fl_feed_age_seconds", "Seconds since the feed mirror was last refreshed", ["feed"]
-)
+FEED_AGE = Gauge("fl_feed_age_seconds", "Seconds since the feed mirror was last refreshed", ["feed"])
 FEED_ENABLED = Gauge("fl_feed_enabled", "1 if the feed is enabled and configured, else 0", ["feed"])
 
 

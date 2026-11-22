@@ -176,9 +176,7 @@ def test_clock_is_injected() -> None:
     assert NOW > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("FL_NETWORK_TESTS") != "1", reason="live network test (FL_NETWORK_TESTS=1)"
-)
+@pytest.mark.skipif(os.environ.get("FL_NETWORK_TESTS") != "1", reason="live network test (FL_NETWORK_TESTS=1)")
 async def test_live_rdap_example_com() -> None:
     from falcon_core.security.http import GuardedHTTPClient
 
