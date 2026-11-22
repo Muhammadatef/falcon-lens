@@ -69,7 +69,10 @@ def item_allowed(item: Item) -> bool:
     if item.kind == "url":
         if item.group == "legit":
             return True
-        host = (urlsplit(item.value).hostname or "").lower()
+        try:
+            host = (urlsplit(refang(item.value)).hostname or "").lower()
+        except ValueError:
+            return False  # fail closed on unparseable input
         return item.group == "fixture" and _host_ok(host)
     return item.kind == "event" and item.group == "phish"
 
