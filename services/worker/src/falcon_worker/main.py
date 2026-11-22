@@ -29,6 +29,7 @@ from falcon_core.signals.brands.registry import default_registry
 from falcon_core.signals.cache import RedisCache
 from falcon_core.signals.reputation.external import FEED_POST_HOSTS
 from falcon_core.signals.reputation.mirror import FeedMirror, redis_publisher, run_refresh_loop
+from falcon_worker.ai import build_ai
 from falcon_worker.consumer import RedisVerdictCache, Worker
 from falcon_worker.store import MemoryStore, PgStore, VerdictStore
 
@@ -103,6 +104,7 @@ def build_worker(
         signal_http=http,
         signal_cache=kv,
         mirror=FeedMirror(kv),
+        **build_ai(http=http, cache=kv, mirror=FeedMirror(kv), registry=registry, sandbox=sandbox),
     )
     return Worker(redis, Cascade(deps), store, registry, metrics), store, [sandbox, http]
 

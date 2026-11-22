@@ -23,6 +23,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol, TypeGuard
 
+from falcon_core.cascade.ai import InjectionDetect, injection_evidence, risk_only, to_contract_model, to_scoring
 from falcon_core.cascade.assemble import TraceStep, build_verdict, reissue
 from falcon_core.cascade.evidence import dedupe, from_signal, make_evidence
 from falcon_core.cascade.metrics import CascadeMetrics
@@ -138,6 +139,15 @@ class CascadeDeps:
     favicons: Mapping[str, str] = field(default_factory=dict)  # favicon sha256 -> brand_id
     channels: ReportingChannels | None = None
     params: ScoringParams | None = None
+    # AI wiring (all optional; None = deterministic-only cascade, which is also the fallback on any failure).
+    t1_model: Any = None  # scoring.t1_model.T1Model (p_clf); None -> draft p_clf
+    investigator: Any = None  # agent.Investigator (T3, uncertain band only)
+    responder: Any = None  # agent.Responder (reasons with template fallback)
+    injection: InjectionDetect | None = None
+    extractor_timeout_s: float = 7.0
+    investigator_timeout_s: float = 16.0
+    responder_timeout_s: float = 7.0
+    llm_cooldown_s: float = 60.0
     t0_signals: Mapping[str, tuple[SignalSpec, SignalFn]] | None = None  # None -> REGISTRY (rep.openphish)
     # Overall cap per tier on top of each signal's own timeout_ms (a hung signal never stalls a tier).
     tier_grace_s: float = 0.5
@@ -166,38 +176,59 @@ class _Run:
     blocked: str | None = None  # SSRF block reason: never render
     meta: dict[str, Any] = field(default_factory=dict)  # for platform events, never published
     final_emitted: bool = False  # structural guard: at most one final per verdict_id
+    p_clf: float | None = None  # fitted T1 model probability (None -> draft)
+    routes: set[str] = field(default_factory=set)  # LLM routes used ("cloud" / "local")
+    page_tier: bool = False  # a page (T2+) or text input was judged: the responder may phrase reasons
+    redirect_chain: tuple[str, ...] = ()
+
+    input_type: Literal["url", "message", "email", "image"] = "url"
 
     def ms(self) -> int:
         return int((time.perf_counter() - self.t_start) * 1000)
+
+    def route(self) -> Literal["cloud", "local", "none"]:
+        return "cloud" if "cloud" in self.routes else "local" if "local" in self.routes else "none"
 
 
 class Cascade:
     def __init__(self, deps: CascadeDeps) -> None:
         self.d = deps
         self.params = deps.params or load_params()
+        self._llm_open_until = 0.0
         self.verified: dict[str, frozenset[str]] = {
             b.brand_id: frozenset(b.verified_domains) for b in deps.registry.brands
         }
+
+    # --- LLM circuit breaker ----------------------------------------------------------------
+
+    def llm_allowed(self) -> bool:
+        """False for ``llm_cooldown_s`` after an LLM call timed out: with no reachable provider every
+        check would otherwise wait the full timeout. Deterministic results are unaffected."""
+        return time.monotonic() >= self._llm_open_until
+
+    def llm_trip(self) -> None:
+        self._llm_open_until = time.monotonic() + self.d.llm_cooldown_s
 
     # --- helpers ---------------------------------------------------------------------------
 
     def _score(self, run: _Run) -> ArbiterResult:
         ctx = ArbiterContext(
-            input_type="url",
+            input_type=run.input_type,
             registrable_domain=run.canonical.registrable if run.canonical else None,
             verified_domains=self.verified,
             extra_degraded_reasons=tuple(dict.fromkeys(run.degraded_reasons)),
             params=self.params,
         )
-        return score(dedupe(run.evidence), None, ctx)
+        return score(dedupe(run.evidence), run.p_clf, ctx)
 
     async def _emit(
         self, sink: VerdictSink, run: _Run, result: ArbiterResult, tier: Tier, final: bool
     ) -> dict[str, Any]:
+        reasons = await self._reasons(run, result) if final and run.page_tier else None
         doc = build_verdict(
             result,
             verdict_id=run.verdict_id,
-            input_type="url",
+            input_type=run.input_type,
             tier=tier,
             final=final,
             latency_ms=run.ms(),
@@ -207,10 +238,12 @@ class Cascade:
             trace=run.trace,
             source=run.source,
             channels=self.d.channels,
+            reasons=reasons,
+            model_route=run.route(),
         )
         await self._publish(sink, run, doc)
         if final:
-            self.d.metrics.record_final("url", doc["verdict"], tier, "none", run.source)
+            self.d.metrics.record_final(run.input_type, doc["verdict"], tier, run.route(), run.source)
             if doc["degraded"]:
                 self.d.metrics.degraded.inc()
         return doc
@@ -224,6 +257,36 @@ class Cascade:
             await sink.emit(doc, run.meta)
         except Exception as exc:
             raise SinkError(f"{type(exc).__name__}") from exc
+
+    async def _reasons(self, run: _Run, result: ArbiterResult) -> list[dict[str, Any]] | None:
+        """Responder reasons (faithfulness-verified) or None for the template reasons. Never raises."""
+        resp = self.d.responder
+        if resp is None or result.degraded or not self.llm_allowed():
+            return None
+        from falcon_core.agent.responder import ResponderInput
+        from falcon_core.contracts.verdict import Reason
+        from falcon_core.scoring.reasons import contract_reasons
+
+        try:
+            template = [Reason.model_validate(r) for r in contract_reasons(result)]
+            inp = ResponderInput(
+                verdict=result.verdict,
+                evidence=[to_contract_model(e) for e in result.weighted_evidence],
+                template_reasons=template,
+                verdict_id=run.verdict_id,
+                degraded=result.degraded,
+            )
+            out = await asyncio.wait_for(resp.respond(inp), self.d.responder_timeout_s)
+        except Exception as exc:  # noqa: BLE001 - the template wording is always available
+            self.d.metrics.tool_errors.labels("responder", type(exc).__name__[:40]).inc()
+            if isinstance(exc, TimeoutError):
+                self.llm_trip()
+            return None
+        if out.status in ("failed", "timeout"):
+            self.llm_trip()
+        if out.route != "none":
+            run.routes.add(out.route)
+        return [r.model_dump(mode="json", exclude_none=True) for r in out.reasons]
 
     def _observe(self, stage: str, t0: float) -> int:
         dt = time.perf_counter() - t0
@@ -263,6 +326,23 @@ class Cascade:
             run.degraded_reasons.append(f"internal_error:{type(exc).__name__}")
             run.trace.append(TraceStep(tier, "Check stopped by an internal error", ms=run.ms()))
             return await self._emit(sink, run, self._score(run), tier, final=True)
+
+    async def run_input(
+        self,
+        verdict_id: str,
+        input_type: Literal["message", "email", "image"],
+        data: bytes,
+        sink: VerdictSink,
+        *,
+        source: str = "live",
+        input_fingerprint: str | None = None,
+    ) -> dict[str, Any]:
+        """Message / email / image check (``cascade.inputs``): child URLs go through ``run_url`` (H5)."""
+        from falcon_core.cascade.inputs import run_input
+
+        return await run_input(
+            self, verdict_id, input_type, data, sink, source=source, input_fingerprint=input_fingerprint
+        )
 
     # --- T0 --------------------------------------------------------------------------------
 
@@ -412,6 +492,17 @@ class Cascade:
                 )
             ]  # fmt: skip
 
+    async def _fit_p_clf(self, run: _Run) -> None:
+        """Fitted T1 classifier probability; any failure falls back to the draft p_clf (flagged)."""
+        model = self.d.t1_model
+        if model is None or run.canonical is None:
+            return
+        try:
+            run.p_clf = float(await asyncio.to_thread(model.p_clf, run.canonical.url))
+        except Exception as exc:  # noqa: BLE001 - missing/tampered artifact or bad features
+            self.d.metrics.tool_errors.labels("t1_model", type(exc).__name__[:40]).inc()
+            run.degraded_reasons.append("t1_model_unavailable")
+
     async def _t1(self, run: _Run, sink: VerdictSink) -> dict[str, Any] | None:
         if run.canonical is None:
             raise RuntimeError("T0 did not canonicalise")
@@ -419,6 +510,7 @@ class Cascade:
         signals = self.d.t1_signals if self.d.t1_signals is not None else default_t1_signals()
         added = await self._run_signals(signals, self._ctx(run))
         run.evidence.extend(added)
+        await self._fit_p_clf(run)
         result = self._score(run)
         ms = self._observe("T1", t0)
         fired = {r.rule_id for r in result.fired_rules}
@@ -483,24 +575,89 @@ class Cascade:
             }
             if final_reg:
                 run.meta["final_registrable_domain"] = final_reg
-            if self.d.extractor is not None:  # T-024: quarantined extractor hook
+            run.redirect_chain = tuple(features.redirect_chain)
+            if self.d.extractor is not None and self.llm_allowed():  # quarantined extractor + injection detector
                 try:
-                    extra = await asyncio.wait_for(self.d.extractor.extract(features, run.verdict_id), 4.0)
-                    added.extend(extra)
+                    extra = await asyncio.wait_for(
+                        self.d.extractor.extract(features, run.verdict_id), self.d.extractor_timeout_s
+                    )
+                    # Agent output only ever adds risk-side evidence next to the deterministic evidence.
+                    added.extend(risk_only(e) for e in extra)
+                    adapter_route = getattr(self.d.extractor, "last_route", "none")
+                    if adapter_route != "none":
+                        run.routes.add(adapter_route)
                 except Exception as exc:  # noqa: BLE001 - extractor is optional
                     self.d.metrics.tool_errors.labels("extractor", type(exc).__name__[:40]).inc()
+                    if isinstance(exc, TimeoutError):
+                        self.llm_trip()
+            elif self.d.injection is not None:
+                added.extend(injection_evidence(self.d.injection, features.visible_text, features.title))
         run.evidence.extend(added)
+        run.page_tier = True
         result = self._score(run)
         ms = self._observe("T2", t0)
         hard = ",".join(r.rule_id for r in result.fired_rules)
         if hard:
             summary += f"; hard rule {hard}"
-        if not t2_should_exit(result, self.params) and not run.degraded_reasons:
-            # T3 investigator is not built yet (T-0xx): record the escalation only.
+        uncertain = not t2_should_exit(result, self.params) and not run.degraded_reasons
+        if uncertain:
             self.d.metrics.escalations.labels("T2", "T3").inc()
-            summary += "; uncertain band, T3 escalation recorded (investigator not enabled)"
+            summary += (
+                "; uncertain band, escalating to the investigator"
+                if self.d.investigator is not None
+                else "; uncertain band, T3 escalation recorded (investigator not enabled)"
+            )
         run.trace.append(TraceStep("T2", summary, tuple(e.id for e in added), ms))
-        return await self._emit(sink, run, result, "T2", final=True)
+        if not (uncertain and self.d.investigator is not None and self.llm_allowed()):
+            return await self._emit(sink, run, result, "T2", final=True)
+        await self._emit(sink, run, result, "T2", final=False)
+        return await self._t3(run, sink, result)
+
+    # --- T3 --------------------------------------------------------------------------------
+
+    async def _t3(self, run: _Run, sink: VerdictSink, prior: ArbiterResult) -> dict[str, Any]:
+        """Investigator (ADR-001): sees evidence only, may add T3 evidence; the arbiter re-scores."""
+        from falcon_core.agent.investigator import InvestigationCase
+        from falcon_core.tools.provenance import ProvenanceContext
+
+        if run.canonical is None:
+            raise RuntimeError("T0 did not canonicalise")
+        t0 = time.perf_counter()
+        new: list[Evidence] = []
+        summary = "Investigator did not run"
+        steps: list[TraceStep] = []
+        try:
+            case = InvestigationCase(
+                evidence=[to_contract_model(e) for e in prior.weighted_evidence],
+                provenance=ProvenanceContext(
+                    canonical_url=run.canonical.url,
+                    redirect_chain=run.redirect_chain,
+                    registrable_domains=frozenset({run.canonical.registrable} if run.canonical.registrable else ()),
+                ),
+                input_type="url",
+                verdict_id=run.verdict_id,
+                first_step=len(run.trace),
+            )
+            res = await asyncio.wait_for(self.d.investigator.run(case), self.d.investigator_timeout_s)
+            new = [risk_only(to_scoring(e)) for e in res.new_evidence]
+            if res.route != "none":
+                run.routes.add(res.route)
+            steps = [
+                TraceStep(
+                    s.name, s.summary, tuple(s.evidence_added or ()), s.ms, kind="llm" if s.kind == "llm" else "tool"
+                )
+                for s in res.trace
+            ]
+            summary = f"Investigator stopped ({res.stop_reason}) after {res.tool_calls} tool calls"
+        except Exception as exc:  # noqa: BLE001 - T3 is best effort: keep the T2 result
+            self.d.metrics.tool_errors.labels("investigator", type(exc).__name__[:40]).inc()
+            if isinstance(exc, TimeoutError):
+                self.llm_trip()
+            summary = "Investigator unavailable; T2 result kept"
+        run.evidence.extend(new)
+        run.trace.extend(steps)
+        run.trace.append(TraceStep("T3", summary, tuple(e.id for e in new), self._observe("T3", t0)))
+        return await self._emit(sink, run, self._score(run), "T3", final=True)
 
 
 AsyncDocFn = Callable[[dict[str, Any], Mapping[str, Any]], Awaitable[None]]

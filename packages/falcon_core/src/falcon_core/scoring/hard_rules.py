@@ -56,10 +56,13 @@ def h1_brand_mismatch(
     registrable_domain: str | None,
     verified_domains: Mapping[str, frozenset[str]] | None,
 ) -> FiredRule | None:
+    # H1 never depends on an LLM: only deterministic claims (page title/text brand tokens, favicon, hotlinked
+    # assets, form context) count. An extractor claim still adds log-odds weight (risk only) but cannot fire
+    # the rule, and a prompt-injected extractor can neither remove nor replace a deterministic claim.
     claims = [
         e
         for e in _by_signal(present, "brand.claimed_not_owned")
-        if confidence_of(e) >= params.h1_brand_claim_min_confidence
+        if confidence_of(e) >= params.h1_brand_claim_min_confidence and not untrusted_origin(e)
     ]
     if registrable_domain and verified_domains:
         # Double-check "not owned" against the registry when the caller supplies it.

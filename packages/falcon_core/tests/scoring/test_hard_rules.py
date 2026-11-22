@@ -233,3 +233,14 @@ def test_h3_overrides_and_reports_suppressed_rules() -> None:
     assert [r.rule_id for r in res.fired_rules] == ["H3"]
     assert [r.rule_id for r in res.suppressed_rules] == ["H1"]
     assert res.verdict == "no_warning_signs"
+
+
+def test_h1_ignores_llm_sourced_brand_claims() -> None:
+    """L1 security architecture: H1 never depends on the LLM extractor. The claim still adds weight."""
+    llm = mk(*CLAIM[:2], source="llm:extractor")
+    only_llm = score([llm, mk(*CRED[:2])], p_clf=0.01)
+    assert "H1" not in {r.rule_id for r in only_llm.fired_rules}
+    det = score([mk(*CRED[:2])], p_clf=0.01)
+    assert only_llm.calibrated_probability >= det.calibrated_probability  # risk-only
+    both = score([mk(*CLAIM[:2]), llm, mk(*CRED[:2])], p_clf=0.01)
+    assert "H1" in {r.rule_id for r in both.fired_rules}
