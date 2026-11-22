@@ -49,10 +49,8 @@ def normalise_url(url: str) -> str | None:
     scheme = parts.scheme.lower()
     if scheme not in ("http", "https") or not parts.hostname:
         return None
-    if parts.username is not None or parts.password is not None:
-        userinfo = parts.netloc.rsplit("@", 1)[0] + "@"
-    else:
-        userinfo = ""
+    has_userinfo = parts.username is not None or parts.password is not None
+    userinfo = parts.netloc.rsplit("@", 1)[0] + "@" if has_userinfo else ""
     host = normalise_host(parts.hostname)
     if host is None:
         return None

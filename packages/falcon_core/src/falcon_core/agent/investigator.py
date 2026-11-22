@@ -118,10 +118,7 @@ class Investigator:
 
     @staticmethod
     def _resolve(action: Action, targets: dict[str, str]) -> Action:
-        args = {
-            k: (targets[v] if isinstance(v, str) and v in targets else v)
-            for k, v in action.args.items()
-        }
+        args = {k: (targets[v] if isinstance(v, str) and v in targets else v) for k, v in action.args.items()}
         return action.model_copy(update={"args": args})
 
     def _context(
@@ -132,9 +129,7 @@ class Investigator:
         history: list[dict[str, Any]],
         calls_left: int,
     ) -> str:
-        shown_targets = {
-            k: (defang(v)[:120] if k.startswith(("u", "d")) else v) for k, v in targets.items()
-        }
+        shown_targets = {k: (defang(v)[:120] if k.startswith(("u", "d")) else v) for k, v in targets.items()}
         payload = {
             "input_type": case.input_type,
             "evidence": [evidence_item(e) for e in evidence[:60]],
@@ -190,9 +185,7 @@ class Investigator:
                     role="investigator",
                     task=INVESTIGATOR_TASK,
                     schema=Action,
-                    context=self._context(
-                        case, known, targets, history, self.max_tool_calls - calls
-                    ),
+                    context=self._context(case, known, targets, history, self.max_tool_calls - calls),
                     max_output_tokens=min(self.per_call_max_tokens, tokens_left),
                     timeout_s=remaining(),
                     fallback=_stop_action,
@@ -237,9 +230,7 @@ class Investigator:
                         step=step,
                         kind="llm",
                         name="investigator.plan",
-                        summary=_summary(
-                            f"chose {tool_name}" + (f" because of {', '.join(why)}" if why else "")
-                        ),
+                        summary=_summary(f"chose {tool_name}" + (f" because of {', '.join(why)}" if why else "")),
                         ms=int((self._clock() - t0) * 1000),
                     )
                 )
@@ -251,14 +242,10 @@ class Investigator:
                     continue
                 key = json.dumps([action.tool, action.args], sort_keys=True, default=str)
                 if key in seen_calls:
-                    outcome = ToolOutcome(
-                        tool=action.tool[:64], status="rejected", reason="duplicate"
-                    )
+                    outcome = ToolOutcome(tool=action.tool[:64], status="rejected", reason="duplicate")
                 else:
                     seen_calls.add(key)
-                    outcome = await self.registry.execute(
-                        action, ctx, timeout_s=max(0.0, remaining())
-                    )
+                    outcome = await self.registry.execute(action, ctx, timeout_s=max(0.0, remaining()))
                 calls += 1
                 state = State.OBSERVE
 
@@ -281,9 +268,7 @@ class Investigator:
                         step=step,
                         kind="tool",
                         name=tool_name,
-                        summary=_summary(
-                            f"{tool_name}: {outcome.status}{detail}, {len(outcome.evidence)} new"
-                        ),
+                        summary=_summary(f"{tool_name}: {outcome.status}{detail}, {len(outcome.evidence)} new"),
                         evidence_added=[e.id for e in outcome.evidence] or None,
                         ms=outcome.ms,
                     )

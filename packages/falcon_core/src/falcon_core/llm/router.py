@@ -127,7 +127,7 @@ class LLMRouter:
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self.config = config or RouterConfig.from_env()
-        self.metrics: m.MetricsSink = metrics or m.InMemoryMetrics()
+        self.metrics: m.MetricsSink = metrics or m.default_metrics()
         self._cloud: Provider | None = None
         if self.config.cloud_enabled:
             self._cloud = cloud or AnthropicProvider(self.config.anthropic_api_key or "")
@@ -224,9 +224,7 @@ class LLMRouter:
                 self.metrics.inc(m.LLM_FALLBACK, role=req.role)
 
         if resp is None or used is None:
-            return self._finish(
-                req, "none", None, None, calls, fell_back, False, "all routes failed", redactions
-            )
+            return self._finish(req, "none", None, None, calls, fell_back, False, "all routes failed", redactions)
 
         route, model, provider = used
         if self.leaks_canary(resp.text):
@@ -235,15 +233,11 @@ class LLMRouter:
                 "canary leak",
                 extra={"role": req.role, "route": route, "verdict_id": req.verdict_id},
             )
-            return self._finish(
-                req, route, model, None, calls, fell_back, True, "canary leak", redactions
-            )
+            return self._finish(req, route, model, None, calls, fell_back, True, "canary leak", redactions)
 
         try:
             value = parse_model(resp.text, req.schema, req.validation_context)
-            result = self._finish(
-                req, route, model, value, calls, fell_back, False, None, redactions
-            )
+            result = self._finish(req, route, model, value, calls, fell_back, False, None, redactions)
             self._maybe_shadow(req, route, system, turns, value)
             return result
         except ParseError as first:
@@ -252,27 +246,17 @@ class LLMRouter:
                 ChatTurn("assistant", resp.text[:_MAX_REPAIR_ECHO] or "(empty)"),
                 ChatTurn("user", REPAIR_PROMPT.format(error=first.summary[:300])),
             ]
-            r2 = await self._call(
-                req, route, model, provider, system, repair_turns, deadline, calls
-            )
+            r2 = await self._call(req, route, model, provider, system, repair_turns, deadline, calls)
             if r2 is None:
-                return self._finish(
-                    req, route, model, None, calls, fell_back, False, first.summary, redactions
-                )
+                return self._finish(req, route, model, None, calls, fell_back, False, first.summary, redactions)
             if self.leaks_canary(r2.text):
                 self.metrics.inc(m.CANARY_LEAK, role=req.role)
-                return self._finish(
-                    req, route, model, None, calls, fell_back, True, "canary leak", redactions
-                )
+                return self._finish(req, route, model, None, calls, fell_back, True, "canary leak", redactions)
             try:
                 value = parse_model(r2.text, req.schema, req.validation_context)
             except ParseError as second:
-                return self._finish(
-                    req, route, model, None, calls, fell_back, False, second.summary, redactions
-                )
-            return self._finish(
-                req, route, model, value, calls, fell_back, False, None, redactions, repaired=True
-            )
+                return self._finish(req, route, model, None, calls, fell_back, False, second.summary, redactions)
+            return self._finish(req, route, model, value, calls, fell_back, False, None, redactions, repaired=True)
 
     async def _call(
         self,

@@ -25,9 +25,7 @@ _IBAN_RE = re.compile(r"(?<![A-Za-z0-9])AE\d{2}(?:[ \-]?\d){19}(?!\d)", re.IGNOR
 _EID_RE = re.compile(r"(?<!\d)784[ \-]?\d{4}[ \-]?\d{7}[ \-]?\d(?!\d)")
 _CARD_CANDIDATE_RE = re.compile(r"(?<!\d)\d(?:[ \-]?\d){12,18}(?!\d)")
 # +971 / 00971 / 971, optional trunk 0, mobile 5x or landline area code 2-9, then 7 digits.
-_PHONE_INTL_RE = re.compile(
-    r"(?<![\d+])(?:\+|00)?971[ \-]?\(?0?\)?[ \-]?(?:5\d|[2-9])[ \-]?\d{3}[ \-]?\d{4}(?!\d)"
-)
+_PHONE_INTL_RE = re.compile(r"(?<![\d+])(?:\+|00)?971[ \-]?\(?0?\)?[ \-]?(?:5\d|[2-9])[ \-]?\d{3}[ \-]?\d{4}(?!\d)")
 # Local mobile 05x xxx xxxx.
 _PHONE_LOCAL_RE = re.compile(r"(?<!\d)05\d[ \-]?\d{3}[ \-]?\d{4}(?!\d)")
 

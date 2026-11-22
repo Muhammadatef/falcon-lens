@@ -1,16 +1,17 @@
 """Metric sink used by the router, tools and agents.
 
 ``docs/OBSERVABILITY.md`` says the ``fl_`` metrics are declared once in
-``falcon_core/telemetry/metrics.py`` (builder-observability). Until it lands, this defines a
-tiny sink protocol; the default in-memory sink keeps counts for tests and ``/metrics`` wiring can
-adapt it later without touching callers. Metric names are the contract names.
+``falcon_core/telemetry/metrics.py`` (builder-observability). Callers use the small sink protocol
+below. ``default_metrics()`` returns ``TelemetryMetrics`` (the shared prometheus registry) when that
+module is installed, else ``InMemoryMetrics``. Metric names are the contract names.
 """
 
 from __future__ import annotations
 
+import importlib
 import threading
-from collections import defaultdict
-from typing import Protocol
+from collections import defaultdict, deque
+from typing import Any, Protocol
 
 LLM_TOKENS = "fl_llm_tokens_total"  # {model, role}
 LLM_COST = "fl_llm_cost_usd_total"  # {model}
@@ -72,3 +73,71 @@ class NullMetrics:
 
     def observe(self, name: str, value: float, **labels: str) -> None:
         return None
+
+
+# --- adapter to falcon_core.telemetry.metrics (builder-observability, PR #14) ------------------
+
+TELEMETRY_MODULE = "falcon_core.telemetry.metrics"
+# Our metric name -> attribute in the telemetry module.
+_TELEMETRY_ATTRS: dict[str, str] = {
+    LLM_TOKENS: "LLM_TOKENS",
+    LLM_COST: "LLM_COST",
+    LLM_FALLBACK: "LLM_FALLBACK",
+    CANARY_LEAK: "CANARY_LEAK",
+    ROUTE_AGREEMENT: "ROUTE_AGREEMENT",
+    AGENT_STEPS: "AGENT_STEPS",
+    TOOL_ERRORS: "TOOL_ERRORS",
+    INJECTION_DETECTED: "INJECTION",
+}
+AGREEMENT_WINDOW = 200
+
+
+class TelemetryMetrics:
+    """``MetricsSink`` over the shared prometheus registry in ``falcon_core.telemetry.metrics``.
+
+    Labels the shared metric does not declare are dropped (e.g. ``role`` on ``fl_canary_leak_total``),
+    so a sink call never fails on a label mismatch; missing declared labels become "". The shared
+    ``fl_route_agreement_ratio`` is a gauge, so observations set a rolling mean over the last
+    ``AGREEMENT_WINDOW`` shadow samples. Unknown names are ignored.
+    """
+
+    def __init__(self, module: Any) -> None:
+        self._metrics: dict[str, Any] = {
+            name: getattr(module, attr) for name, attr in _TELEMETRY_ATTRS.items() if hasattr(module, attr)
+        }
+        self._agreement: deque[float] = deque(maxlen=AGREEMENT_WINDOW)
+        self._lock = threading.Lock()
+
+    def _bound(self, name: str, labels: dict[str, str]) -> Any | None:
+        metric = self._metrics.get(name)
+        if metric is None:
+            return None
+        names = tuple(getattr(metric, "_labelnames", ()))
+        if not names:
+            return metric
+        return metric.labels(*(labels.get(n, "") for n in names))
+
+    def inc(self, name: str, value: float = 1.0, **labels: str) -> None:
+        bound = self._bound(name, labels)
+        if bound is not None and value >= 0:
+            bound.inc(value)
+
+    def observe(self, name: str, value: float, **labels: str) -> None:
+        bound = self._bound(name, labels)
+        if bound is None:
+            return
+        if name == ROUTE_AGREEMENT:
+            with self._lock:
+                self._agreement.append(value)
+                bound.set(sum(self._agreement) / len(self._agreement))
+        else:
+            bound.observe(value)
+
+
+def default_metrics() -> MetricsSink:
+    """The shared telemetry registry when it is installed, else an in-memory sink."""
+    try:
+        module = importlib.import_module(TELEMETRY_MODULE)
+    except ImportError:
+        return InMemoryMetrics()
+    return TelemetryMetrics(module)

@@ -14,9 +14,7 @@ from falcon_core.tools.provenance import heuristic_registrable, normalise_url
 
 CANON = "https://login.falcon-demo-verify.example/account?id=1"
 HOP = "https://step2.falcon-demo-relay.example/p"
-CTX = ProvenanceContext(
-    canonical_url=CANON, redirect_chain=(HOP,), script_fingerprints=frozenset({"scr_abc123"})
-)
+CTX = ProvenanceContext(canonical_url=CANON, redirect_chain=(HOP,), script_fingerprints=frozenset({"scr_abc123"}))
 
 
 class Calls:
@@ -85,9 +83,7 @@ async def test_on_chain_args_are_accepted(tool: str, args: dict[str, str]) -> No
         ("search_similar_scripts", {"fingerprint": "scr_other999"}, "fingerprint"),
     ],
 )
-async def test_off_provenance_args_are_rejected_as_injection(
-    tool: str, args: dict[str, str], arg: str
-) -> None:
+async def test_off_provenance_args_are_rejected_as_injection(tool: str, args: dict[str, str], arg: str) -> None:
     calls, mx = Calls(), InMemoryMetrics()
     out = await registry(calls, mx).execute(Action(tool=tool, args=args), CTX)
     assert out.status == "rejected" and out.reason == "provenance"
@@ -128,9 +124,7 @@ async def test_invalid_actions_rejected(action: Action, reason: str) -> None:
 async def test_unavailable_tool() -> None:
     calls = Calls()
     reg = registry(calls, cert_lookup=None)
-    out = await reg.execute(
-        Action(tool="cert_lookup", args={"domain": "falcon-demo-verify.example"}), CTX
-    )
+    out = await reg.execute(Action(tool="cert_lookup", args={"domain": "falcon-demo-verify.example"}), CTX)
     assert out.reason == "unavailable"
     assert "cert_lookup" not in [t["tool"] for t in reg.catalogue()]
 
@@ -150,9 +144,7 @@ async def test_tool_timeout_and_error_are_contained() -> None:
     assert t.status == "timeout"
     e = await reg.execute(Action(tool="check_reputation", args={"url": CANON}), CTX)
     assert e.status == "error" and e.reason == "RuntimeError"
-    assert (
-        mx.get(m.TOOL_ERRORS, reason="timeout") == 1 and mx.get(m.TOOL_ERRORS, reason="error") == 1
-    )
+    assert mx.get(m.TOOL_ERRORS, reason="timeout") == 1 and mx.get(m.TOOL_ERRORS, reason="error") == 1
 
 
 async def test_tool_output_is_restamped() -> None:

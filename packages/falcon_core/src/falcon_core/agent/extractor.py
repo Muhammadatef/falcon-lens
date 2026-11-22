@@ -139,9 +139,7 @@ class Extractor:
     ) -> None:
         if brand_ids is None or verified_domains is None:
             idx = load_brand_index()
-            verified_domains = (
-                verified_domains if verified_domains is not None else idx.verified_domains
-            )
+            verified_domains = verified_domains if verified_domains is not None else idx.verified_domains
             brand_ids = brand_ids if brand_ids is not None else idx.ids
         self.router = router
         self.brand_ids = brand_ids
@@ -174,11 +172,7 @@ class Extractor:
         ms = int((time.monotonic() - t0) * 1000)
         source = "llm:extractor"
         if not res.ok or res.value is None:
-            err = (
-                "canary_leak"
-                if res.canary_leak
-                else (res.status if res.route != "none" else "llm_unavailable")
-            )
+            err = "canary_leak" if res.canary_leak else (res.status if res.route != "none" else "llm_unavailable")
             ev = Evidence(
                 id=self._ids(),
                 signal="llm.extraction",

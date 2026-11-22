@@ -39,9 +39,7 @@ def extract_json_object(text: str) -> dict[str, Any]:
     return obj
 
 
-def parse_model[T: BaseModel](
-    text: str, schema: type[T], context: Mapping[str, Any] | None = None
-) -> T:
+def parse_model[T: BaseModel](text: str, schema: type[T], context: Mapping[str, Any] | None = None) -> T:
     obj = extract_json_object(text)
     try:
         return schema.model_validate(obj, context=dict(context) if context else None)

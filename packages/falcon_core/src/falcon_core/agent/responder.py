@@ -67,9 +67,7 @@ def _text_errors(i: int, d: ReasonDraft) -> list[str]:
     return errs
 
 
-def verify_reasons(
-    drafts: Sequence[ReasonDraft], evidence: Sequence[Evidence], verdict: VerdictLabel
-) -> list[str]:
+def verify_reasons(drafts: Sequence[ReasonDraft], evidence: Sequence[Evidence], verdict: VerdictLabel) -> list[str]:
     """Return a list of problems; empty means the reasons are faithful to the evidence."""
     by_id = {e.id: e for e in evidence}
     errs: list[str] = []
@@ -131,10 +129,7 @@ class Responder:
         errs: Sequence[str] = (),
         cost: float = 0.0,
     ) -> ResponderResult:
-        reasons = tuple(
-            r.model_copy(update={"generated_by": "template"})
-            for r in inp.template_reasons[:MAX_REASONS]
-        )
+        reasons = tuple(r.model_copy(update={"generated_by": "template"}) for r in inp.template_reasons[:MAX_REASONS])
         return ResponderResult(reasons, "template", route, status, tuple(errs), cost)
 
     def _context(self, inp: ResponderInput) -> str:
@@ -145,8 +140,7 @@ class Responder:
             "degraded": inp.degraded,
             "evidence": [evidence_item(e, with_weight=True) for e in relevant[:20]],
             "template_reasons": [
-                {"en": r.en, "ar": r.ar, "evidence_ids": r.evidence_ids}
-                for r in inp.template_reasons
+                {"en": r.en, "ar": r.ar, "evidence_ids": r.evidence_ids} for r in inp.template_reasons
             ],
             "instructions": "Improve on the template reasons if you can, staying faithful to them.",
         }
@@ -167,9 +161,7 @@ class Responder:
         )
         res = await self.router.complete_json(req)
         if not res.ok or res.value is None:
-            return self._template(
-                inp, res.status, res.route, [res.error or res.status], res.cost_usd
-            )
+            return self._template(inp, res.status, res.route, [res.error or res.status], res.cost_usd)
         errs = verify_reasons(res.value.reasons, inp.evidence, inp.verdict)
         if errs:
             return self._template(inp, "rejected", res.route, errs, res.cost_usd)

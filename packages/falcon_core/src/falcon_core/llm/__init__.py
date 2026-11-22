@@ -2,7 +2,7 @@
 
 from falcon_core.llm.accounting import Usage, cost_usd
 from falcon_core.llm.config import ROLES, Role, Route, RouterConfig
-from falcon_core.llm.metrics import InMemoryMetrics, MetricsSink, NullMetrics
+from falcon_core.llm.metrics import InMemoryMetrics, MetricsSink, NullMetrics, TelemetryMetrics, default_metrics
 from falcon_core.llm.providers import (
     AnthropicProvider,
     ChatTurn,
@@ -36,9 +36,11 @@ __all__ = [
     "Route",
     "RouterConfig",
     "ShadowSample",
+    "TelemetryMetrics",
     "UntrustedText",
     "Usage",
     "cost_usd",
+    "default_metrics",
     "redact",
     "redact_text",
     "spotlight",
