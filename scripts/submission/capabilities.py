@@ -13,6 +13,8 @@ Probe kinds:
     path:<glob>           at least one file matches (relative to the repo root)
     make:<target>         the Makefile target exists and is not the "not yet implemented" stub
     grep:<glob>::<regex>  at least one matching file contains the regex
+    gate:<Gn>             the gate's row in STATUS.md is marked as passed by L1 (a check mark, "passed"
+                          or "done" in its State cell). Code being present is not a gate pass.
     nogrep:<glob>::<regex>  at least one file matches the glob and none contains the regex
                           (used to detect that a "not supported yet" stub is gone)
 
@@ -40,6 +42,7 @@ class Capability:
 # The end-to-end check: `make smoke` is real, and the cascade and the arbiter are in the tree.
 # Every capability that needs a verdict includes these probes.
 E2E = (
+    "gate:G1",  # `make smoke` recorded as passing against the real worker (STATUS.md)
     "make:smoke",
     f"path:{CORE}/cascade/engine.py",
     f"path:{CORE}/scoring/arbiter.py",
@@ -48,6 +51,11 @@ E2E = (
 )
 # The worker answers non-URL inputs with a degraded "not supported yet" verdict until it handles them.
 WORKER_KIND_STUB = r"nogrep:services/worker/src/**/*.py::input_type_not_supported_yet"
+# The cascade records a T3 escalation but runs no investigator until this marker is gone.
+T3_WIRED = rf"nogrep:{CORE}/cascade/engine.py::investigator not (?:enabled|built)"
+# The worker builds its cascade with an extractor and a model router (the hook defaults to None).
+EXTRACTOR_WIRED = r"grep:services/worker/src/**/*.py::extractor\s*="
+ROUTER_WIRED = r"grep:services/worker/src/**/*.py::falcon_core\.llm"
 
 CAPABILITIES: tuple[Capability, ...] = (
     Capability(
@@ -97,18 +105,18 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "injection_defence",
         "Injection defence (spotlighting, quarantined extractor, code-only scoring)",
-        (*E2E, f"path:{CORE}/llm/spotlight.py", f"path:{CORE}/agent/extractor.py"),
+        (*E2E, f"path:{CORE}/llm/spotlight.py", f"path:{CORE}/agent/extractor.py", EXTRACTOR_WIRED),
         "Scenario 6",
     ),
     Capability(
         "investigator",
         "Bounded AI investigator for the uncertain band (T3)",
-        (*E2E, f"path:{CORE}/agent/investigator.py"),
+        (*E2E, f"path:{CORE}/agent/investigator.py", T3_WIRED),
     ),
     Capability(
         "sovereign",
         "Sovereign mode (every model call on the local machine)",
-        (*E2E, f"path:{CORE}/llm/router.py"),
+        (*E2E, f"path:{CORE}/llm/router.py", ROUTER_WIRED),
     ),
     Capability(
         "pipeline",
@@ -223,12 +231,29 @@ def make_target_implemented(root: Path, target: str) -> bool:
     return False
 
 
+def gate_passed(root: Path, gate: str) -> bool:
+    """True when STATUS.md has a table row starting with the gate id whose last cell marks a pass."""
+    status = root / "STATUS.md"
+    if not status.is_file():
+        return False
+    for line in status.read_text(encoding="utf-8").splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) >= 2 and re.match(rf"{re.escape(gate)}\b", cells[0]):
+            state = cells[-1]
+            if re.search(r"not passed|in progress|pending|fail|⏳|❌", state, re.IGNORECASE):
+                return False
+            return bool(re.search(r"✅|✔|\bpass(?:ed)?\b|\bdone\b|\bgreen\b", state, re.IGNORECASE))
+    return False
+
+
 def probe(root: Path, spec: str) -> bool:
     kind, _, arg = spec.partition(":")
     if kind == "path":
         return any(True for _ in root.glob(arg))
     if kind == "make":
         return make_target_implemented(root, arg)
+    if kind == "gate":
+        return gate_passed(root, arg)
     if kind == "nogrep":
         pattern, _, regex = arg.partition("::")
         compiled = re.compile(regex)

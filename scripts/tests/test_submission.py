@@ -459,6 +459,43 @@ def test_non_url_checks_are_not_shipped_while_the_worker_stub_remains(tmp_path: 
     assert capabilities.probe(tmp_path, capabilities.WORKER_KIND_STUB)
 
 
+def test_gate_probe_reads_status_md(tmp_path: Path) -> None:
+    status = tmp_path / "STATUS.md"
+    row = "| Gate | Target | State |\n|---|---|---|\n| G1 `make smoke` URL → verdict | Mon 06:00 | {} |\n"
+    for state, expected in (
+        ("—", False),
+        ("⏳ in progress", False),
+        ("not passed", False),
+        ("✅ Mon 09:10", True),
+        ("passed (smoke 8/8, real worker)", True),
+        ("done", True),
+    ):
+        status.write_text(row.format(state), encoding="utf-8")
+        assert capabilities.gate_passed(tmp_path, "G1") is expected, state
+        assert capabilities.probe(tmp_path, "gate:G1") is expected
+    assert not capabilities.gate_passed(tmp_path, "G4")
+    status.unlink()
+    assert not capabilities.gate_passed(tmp_path, "G1")
+
+
+def test_end_to_end_claims_need_the_gate_and_the_wiring() -> None:
+    by_id = capabilities.BY_ID
+    for cap in (
+        "url_check",
+        "brand_check",
+        "message_check",
+        "verified_official",
+        "rest_api",
+        "mcp",
+        "pwa",
+        "extension",
+    ):
+        assert "gate:G1" in by_id[cap].probes, cap
+    assert capabilities.T3_WIRED in by_id["investigator"].probes
+    assert capabilities.EXTRACTOR_WIRED in by_id["injection_defence"].probes
+    assert capabilities.ROUTER_WIRED in by_id["sovereign"].probes
+
+
 # ── tools used, repo url ─────────────────────────────────────────────────────
 def test_python_tools_list_only_imported_direct_dependencies(tmp_path: Path) -> None:
     (tmp_path / "uv.lock").write_text(

@@ -22,15 +22,17 @@ This is a script. Nothing in it is recorded yet, and a scene may be recorded onl
 make submission      # then read submission/CHECKLIST.md, section "Capabilities claimed"
 ```
 
-| Scene | Needs on `main` | State when this file was written |
+| Scene | Needs | Open item when this file was last edited |
 |---|---|---|
-| Scenario 1 | URL check end to end (gate G1), snapshot replay in the sandbox (task T-021) | not ready: the sandbox is a stub on `main` |
-| Scenarios 2, 5, 6 | gate G1, the sandbox and the Falcon Demo Bank fixture hosts (PR #28) | not ready: PR #28 is open |
-| Scenarios 3, 4 | the worker handling message and email inputs | not ready: the worker answers these kinds with "not supported yet" |
-| Scenario 6 proof shot | `make redteam` | not ready: the target prints "not yet implemented" |
-| Sentinel scene | `make replay` (merged), the Sentinel agent (merged), the operator board at `/ops` (PR #35) | replay and incidents work from the terminal; the board is not merged |
-| Command-line scene | MCP tools (PR #30), `make tunnel` (merged) | not ready: the MCP server on `main` has no tools |
-| Phone scene | the web app with the share target (PR #35), `make tunnel` (merged) | not ready: PR #35 is open |
+| Scenario 1 | gate G1 recorded as passed in `STATUS.md`; snapshot replay in the sandbox (task T-021) | G1 not recorded; T-021 not merged |
+| Scenarios 2, 5 | gate G1; the sandbox and the Falcon Demo Bank fixture hosts (merged in #28) | G1 not recorded |
+| Scenarios 3, 4 | gate G1; the worker handling message and email inputs | the worker answers these kinds with "not supported yet" |
+| Scenario 6 | gate G1; the quarantined extractor wired into the cascade; `make redteam` for the proof shot | the extractor hook is not wired; `make redteam` prints "not yet implemented" |
+| Sentinel scene | `make replay` and the Sentinel agent (both merged); the operator board at `/ops` (PR #35) | the board is not merged; the scene works from the terminal only |
+| Command-line scene | gate G1; MCP tools (PR #30); `make tunnel` (merged) | the MCP server on `main` has no tools |
+| Phone scene | gate G1; the web app with the share target (PR #35); `make tunnel` (merged) | PR #35 is open |
+
+The checklist is the authority, not this table: it is rebuilt from the code on every `make submission`.
 
 If the checklist lists a scene's capability as "not shipped", do not record the scene and do not describe it as working. Cut it from the video.
 
