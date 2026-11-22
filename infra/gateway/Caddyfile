@@ -26,7 +26,6 @@ https://localhost:8443 {
 	tls internal
 
 	header {
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
@@ -40,10 +39,15 @@ https://localhost:8443 {
 		max_size 6MB
 	}
 
+	# CSP: the web app sets its own per-request nonce policy (web/proxy.ts: no 'unsafe-inline',
+	# no 'unsafe-eval'), so the gateway must not add a second one on web routes. API and MCP
+	# answers are data, never documents: they get a deny-all policy here.
 	handle /v1/* {
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
 		reverse_proxy api:8000
 	}
 	handle /mcp* {
+		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
 		reverse_proxy mcp:8000
 	}
 	handle {

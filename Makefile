@@ -3,10 +3,10 @@ SHELL := /bin/bash
 COMPOSE := docker compose --profile core --profile obs
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: help up down smoke openapi test eval eval-gate redteam seed replay demo scan submission guard lint typecheck
+.PHONY: help up down smoke openapi test test-web eval eval-gate redteam seed replay demo scan submission guard lint typecheck
 
 help:
-	@echo "Targets: up down smoke test eval eval-gate redteam seed replay demo scan submission guard"
+	@echo "Targets: up down smoke test test-web eval eval-gate redteam seed replay demo scan submission guard"
 	@echo "Parallel stacks: COMPOSE_PROJECT_NAME=x FL_GATEWAY_PORT=.. FL_PROMETHEUS_PORT=.. FL_GRAFANA_PORT=.. make up"
 
 up: ## Start core + obs, wait until every service is healthy
@@ -27,6 +27,9 @@ typecheck:
 
 test: lint typecheck ## ruff + mypy (falcon_core) + pytest
 	uv run pytest -q
+
+test-web: ## web: typecheck + eslint + vitest + production build + Playwright e2e (mock gateway, strict CSP)
+	cd web && pnpm install --frozen-lockfile && pnpm typecheck && pnpm lint && pnpm test:unit && pnpm build && pnpm test:e2e
 
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py
