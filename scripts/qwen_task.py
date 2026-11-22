@@ -1,0 +1,257 @@
+#!/usr/bin/env python3
+"""The only sanctioned caller of the local worker model (docs/HIERARCHY.md, local model rules).
+
+  uv run --no-project --with httpx --with jsonschema python scripts/qwen_task.py \
+      --task qwen-msg-001 --kind synthetic_messages --spec evals/specs/synthetic_messages_v1.json
+
+Calls Ollama's OpenAI-compatible API (OLLAMA_BASE_URL, default http://localhost:11434;
+FL_LOCAL_WORKER_MODEL, default qwen3:4b). Every item is validated against the spec's JSON
+Schema, checked against the stratum constraints and the spec's forbidden patterns, then
+near-duplicate removed (character-shingle Jaccard >= 0.8 on normalised text).
+Writes work/qwen/<task-id>/{output.jsonl,manifest.json}. Never commits (work/ is gitignored).
+Output items carry synthetic=true. A supervisor audit is required before any import.
+
+Spec JSON:
+  {
+    "kind": "synthetic_messages",
+    "description": "...",              # what the batch is for
+    "item_schema": {...},              # JSON Schema of ONE item
+    "count": 160,
+    "text_field": "text",              # field used for dedup (default "text")
+    "language_mix": {"gulf_arabic": 0.25, ...},   # informative; strata carry the real quotas
+    "strata": [{"share": 0.1, "constraints": {"label": "scam", "language": "english"},
+                "variants": ["urgency", "fake fine"], "variant_field": "scam_type", "hint": "..."}],
+    "rules": ["..."],                  # hard rules put in the prompt
+    "forbidden_patterns": ["regex"],   # items matching any are rejected (counted rejected_policy)
+    "examples": [{...}],               # few-shot items (must be invented/synthetic)
+    "batch_size": 5, "temperature": 0.8, "seed": 1234, "max_rounds_factor": 4
+  }
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+import time
+import unicodedata
+from pathlib import Path
+from typing import Any
+
+import httpx
+from jsonschema import Draft202012Validator
+
+KINDS = ("synthetic_messages", "unit_test_draft", "docstring", "ui_strings", "label_pass")
+KIND_PROMPTS = {
+    "synthetic_messages": "You write fictional SMS/WhatsApp/email-style messages used only to test a scam detector. "
+    "Everything is invented. Never include real brands, real people, real phone numbers or live links.",
+    "unit_test_draft": "You draft pytest unit tests from a description. Output code strings only inside the JSON items.",
+    "docstring": "You draft concise docstrings for the described functions. Do not invent behaviour.",
+    "ui_strings": "You draft short user-interface strings in the requested languages. Never say a site is 'safe'.",
+    "label_pass": "You assign labels to the supplied items strictly following the supplied label guide.",
+}
+ARABIC_MARKS = re.compile(r"[ؐ-ًؚ-ٰٟۖ-ۭـ]")
+THINK = re.compile(r"<think>.*?</think>", re.S)
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def normalise(text: str) -> str:
+    t = unicodedata.normalize("NFKC", text).lower()
+    t = ARABIC_MARKS.sub("", t)
+    t = re.sub(r"[آأإ]", "ا", t)
+    t = re.sub(r"[^\w\s]", " ", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def shingles(text: str, k: int = 4) -> set[str]:
+    t = normalise(text)
+    if len(t) <= k:
+        return {t}
+    return {t[i : i + k] for i in range(len(t) - k + 1)}
+
+
+def jaccard(a: set[str], b: set[str]) -> float:
+    if not a and not b:
+        return 1.0
+    return len(a & b) / len(a | b)
+
+
+def plan_strata(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    strata = spec.get("strata") or [{"share": 1.0, "constraints": {}}]
+    total = float(sum(s["share"] for s in strata))
+    out = []
+    allocated = 0
+    for i, s in enumerate(strata):
+        n = round(spec["count"] * s["share"] / total)
+        if i == len(strata) - 1:
+            n = spec["count"] - allocated
+        allocated += n
+        out.append({**s, "target": max(n, 0), "accepted": 0})
+    return out
+
+
+def build_prompt(kind: str, spec: dict[str, Any], stratum: dict[str, Any], n: int, variant: str | None) -> tuple[str, str]:
+    system = KIND_PROMPTS[kind] + "\nReturn ONLY a JSON object {\"items\": [...]} with no commentary."
+    lines = [spec.get("description", ""), f"Produce exactly {n} distinct items."]
+    lines.append("Each item must validate against this JSON Schema:\n" + json.dumps(spec["item_schema"], ensure_ascii=False))
+    if stratum.get("constraints"):
+        lines.append("Fixed field values for every item: " + json.dumps(stratum["constraints"], ensure_ascii=False))
+    if variant and stratum.get("variant_field"):
+        lines.append(f'Set field "{stratum["variant_field"]}" to exactly "{variant}" for every item.')
+    if stratum.get("hint"):
+        lines.append(stratum["hint"])
+    if spec.get("rules"):
+        lines.append("Hard rules:\n" + "\n".join(f"- {r}" for r in spec["rules"]))
+    if spec.get("examples"):
+        lines.append("Style examples (do not copy):\n" + "\n".join(json.dumps(e, ensure_ascii=False) for e in spec["examples"]))
+    lines.append("Vary wording, length and structure across items.")
+    return system, "\n\n".join(x for x in lines if x)
+
+
+def call_model(client: httpx.Client, base: str, model: str, system: str, user: str, seed: int, temperature: float) -> str:
+    body = {
+        "model": model,
+        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+        "temperature": temperature,
+        "seed": seed,
+        "reasoning_effort": "none",
+        "response_format": {"type": "json_object"},
+    }
+    r = client.post(f"{base.rstrip('/')}/v1/chat/completions", json=body)
+    r.raise_for_status()
+    content = r.json()["choices"][0]["message"]["content"] or ""
+    return THINK.sub("", content).strip()
+
+
+def parse_items(content: str) -> list[Any]:
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        return []
+    if isinstance(data, dict):
+        data = data.get("items", [])
+    return data if isinstance(data, list) else []
+
+
+def run(args: argparse.Namespace) -> int:
+    spec_path = Path(args.spec)
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    kind = args.kind
+    if kind not in KINDS:
+        print(f"unknown kind {kind}", file=sys.stderr)
+        return 2
+    if spec.get("kind", kind) != kind:
+        print(f"spec kind {spec.get('kind')} != --kind {kind}", file=sys.stderr)
+        return 2
+    base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    model = os.environ.get("FL_LOCAL_WORKER_MODEL", "qwen3:4b")
+    seed = int(args.seed if args.seed is not None else spec.get("seed", 1234))
+    batch = int(spec.get("batch_size", 5))
+    temperature = float(spec.get("temperature", 0.8))
+    text_field = spec.get("text_field", "text")
+    validator = Draft202012Validator(spec["item_schema"])
+    forbidden = [re.compile(p, re.I) for p in spec.get("forbidden_patterns", [])]
+    strata = plan_strata(spec)
+
+    outdir = ROOT / "work" / "qwen" / args.task
+    outdir.mkdir(parents=True, exist_ok=True)
+    prompt_hasher = hashlib.sha256()
+    prompt_hasher.update(json.dumps(KIND_PROMPTS[kind]).encode())
+    prompt_hasher.update(json.dumps(spec, sort_keys=True, ensure_ascii=False).encode())
+
+    counts = {"generated": 0, "rejected_schema": 0, "rejected_constraint": 0, "rejected_policy": 0,
+              "dedup_removed": 0, "model_errors": 0, "calls": 0}
+    accepted: list[dict[str, Any]] = []
+    sigs: list[set[str]] = []
+    call_idx = 0
+    max_calls = int(spec.get("max_rounds_factor", 4)) * max(1, -(-spec["count"] // batch))
+    t0 = time.time()
+    with httpx.Client(timeout=args.timeout) as client:
+        while call_idx < max_calls and any(s["accepted"] < s["target"] for s in strata):
+            for s in strata:
+                if s["accepted"] >= s["target"]:
+                    continue
+                n = min(batch, s["target"] - s["accepted"] + 1)
+                variants = s.get("variants") or [None]
+                variant = variants[call_idx % len(variants)]
+                system, user = build_prompt(kind, spec, s, n, variant)
+                prompt_hasher.update((system + user).encode())
+                call_idx += 1
+                counts["calls"] += 1
+                try:
+                    content = call_model(client, base, model, system, user, seed + call_idx, temperature)
+                except httpx.HTTPError as e:
+                    counts["model_errors"] += 1
+                    print(f"model error: {type(e).__name__}", file=sys.stderr)
+                    if counts["model_errors"] >= 5:
+                        print("too many model errors; aborting", file=sys.stderr)
+                        return 3
+                    continue
+                for item in parse_items(content):
+                    counts["generated"] += 1
+                    if not isinstance(item, dict) or any(True for _ in validator.iter_errors(item)):
+                        counts["rejected_schema"] += 1
+                        continue
+                    if any(item.get(k) != v for k, v in s.get("constraints", {}).items()) or (
+                        variant and s.get("variant_field") and item.get(s["variant_field"]) != variant
+                    ):
+                        counts["rejected_constraint"] += 1
+                        continue
+                    blob = json.dumps(item, ensure_ascii=False)
+                    if any(p.search(blob) for p in forbidden):
+                        counts["rejected_policy"] += 1
+                        continue
+                    sig = shingles(str(item.get(text_field, blob)))
+                    if any(jaccard(sig, o) >= 0.8 for o in sigs):
+                        counts["dedup_removed"] += 1
+                        continue
+                    if s["accepted"] >= s["target"]:
+                        continue  # surplus from the +1 over-ask
+                    sigs.append(sig)
+                    s["accepted"] += 1
+                    accepted.append({**item, "synthetic": True, "task_id": args.task, "kind": kind})
+                print(f"[{call_idx}/{max_calls}] accepted {len(accepted)}/{spec['count']}", file=sys.stderr, flush=True)
+                if call_idx >= max_calls:
+                    break
+
+    with (outdir / "output.jsonl").open("w", encoding="utf-8") as f:
+        for it in accepted:
+            f.write(json.dumps(it, ensure_ascii=False) + "\n")
+    manifest = {
+        "task_id": args.task,
+        "kind": kind,
+        "model": model,
+        "ollama_base_url": base,
+        "prompt_sha256": prompt_hasher.hexdigest(),
+        "spec_path": str(spec_path),
+        "spec_sha256": hashlib.sha256(spec_path.read_bytes()).hexdigest(),
+        "seed": seed,
+        "temperature": temperature,
+        "requested": spec["count"],
+        "accepted": len(accepted),
+        "counts": counts,
+        "per_stratum": [{"constraints": s.get("constraints", {}), "target": s["target"], "accepted": s["accepted"]}
+                        for s in strata],
+        "synthetic": True,
+        "audit": "PENDING supervisor audit (reviews/QWEN-<id>.md); not importable until APPROVED",
+        "duration_s": round(time.time() - t0, 1),
+    }
+    (outdir / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({"accepted": len(accepted), **counts}))
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--task", required=True)
+    ap.add_argument("--kind", required=True, choices=KINDS)
+    ap.add_argument("--spec", required=True)
+    ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--timeout", type=float, default=300.0)
+    return run(ap.parse_args())
+
+
+if __name__ == "__main__":
+    sys.exit(main())
