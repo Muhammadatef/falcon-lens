@@ -8,11 +8,13 @@ from pathlib import Path
 
 import pytest
 import yaml
-from conftest import Ctx, run_signal
+
 from falcon_core.signals import REGISTRY
 from falcon_core.signals.brands import BrandRegistry, default_registry
 from falcon_core.signals.url.lexical import FEATURE_NAMES, extract_features
 from falcon_core.signals.url.skeleton import skeleton, skeleton_ci
+
+from conftest import Ctx, run_signal
 
 BRAND = "falcon-demo-bank.test"
 SQUAT = ("url.homograph", "url.typosquat", "url.combosquat", "url.brand_in_subdomain_or_path")
@@ -40,8 +42,15 @@ def test_registry_specs_valid():
         for e in spec.emits:
             assert e in scoring, e
     assert set(ALL_URL) >= {
-        "url.homograph", "url.typosquat", "url.combosquat", "url.brand_in_subdomain_or_path", "url.userinfo_trick",
-        "url.bidi_or_zero_width", "url.raw_ip_host", "url.free_host_or_tunnel", "url.open_redirect_abuse",
+        "url.homograph",
+        "url.typosquat",
+        "url.combosquat",
+        "url.brand_in_subdomain_or_path",
+        "url.userinfo_trick",
+        "url.bidi_or_zero_width",
+        "url.raw_ip_host",
+        "url.free_host_or_tunnel",
+        "url.open_redirect_abuse",
     }
 
 
@@ -100,11 +109,17 @@ def test_same_script_capital_i_for_l():
     assert "url.homograph" in names("https://falcon-dem0-bank.test/")
 
 
-
 def test_rn_for_m():
     reg = BrandRegistry.from_entries(
-        [{"brand_id": "x", "name_en": "Example Demo", "name_ar": "x", "category": "demo",
-          "verified_domains": ["mashreqdemo.test"]}]
+        [
+            {
+                "brand_id": "x",
+                "name_en": "Example Demo",
+                "name_ar": "x",
+                "category": "demo",
+                "verified_domains": ["mashreqdemo.test"],
+            }
+        ]
     )
     ctx = Ctx(url="https://rnashreqdemo.test/", brands=reg)
     _s, fn = REGISTRY["url.homograph"]
@@ -122,7 +137,9 @@ def test_arabic_idn_brand_in_label():
     n = names("https://شرطة-ابوظبي-مخالفات.test/")
     assert "url.combosquat" in n
     assert "url.brand_in_subdomain_or_path" in names("https://شرطة-ابوظبي.verify.test/")
-    assert "url.brand_in_subdomain_or_path" in names("https://example.test/%D8%B4%D8%B1%D8%B7%D8%A9-%D8%A7%D8%A8%D9%88%D8%B8%D8%A8%D9%8A/")
+    assert "url.brand_in_subdomain_or_path" in names(
+        "https://example.test/%D8%B4%D8%B1%D8%B7%D8%A9-%D8%A7%D8%A8%D9%88%D8%B8%D8%A8%D9%8A/"
+    )
     # plain Arabic site with no brand token: nothing
     assert not names("https://مثال.test/صفحة", SQUAT)
 
@@ -181,14 +198,29 @@ def test_real_brand_typo_and_tld_swap_and_keyboard():
     assert "url.typosquat" in names("https://adpolicr.com/")  # r next to e on QWERTY
     ev = run_signal("url.typosquat", "https://adpolice.com/")
     assert ev and ev[0].observed["kind"] == "tld_swap"
-    assert "url.typosquat" in names("https://dubaipolice-gov.ae/") or "url.combosquat" in names("https://dubaipolice-gov.ae/")
+    assert "url.typosquat" in names("https://dubaipolice-gov.ae/") or "url.combosquat" in names(
+        "https://dubaipolice-gov.ae/"
+    )
     assert "url.typosquat" in names("https://falcondemobank.test/")  # hyphen removed
 
 
 # ----- robustness: never raises, hostile input
-@pytest.mark.parametrize("u", ["", "   ", "http://", "http://[::", "\x00", "a" * 30000, "http://%zz.test/%",
-                               "data:text/html,<x>",
-                               "javascript:alert(1)", "http://‮‮/", "http://" + "a." * 500 + "test"])
+@pytest.mark.parametrize(
+    "u",
+    [
+        "",
+        "   ",
+        "http://",
+        "http://[::",
+        "\x00",
+        "a" * 30000,
+        "http://%zz.test/%",
+        "data:text/html,<x>",
+        "javascript:alert(1)",
+        "http://‮‮/",
+        "http://" + "a." * 500 + "test",
+    ],
+)
 def test_never_raise(u):
     for n in REGISTRY:
         out = run_signal(n, u)
@@ -200,8 +232,9 @@ def test_timeout_yields_error_evidence(monkeypatch):
 
     from falcon_core.signals.base import SignalSpec, signal
 
-    spec = SignalSpec(name="url.slow_test", family="url", tier="T1", input_types=("url",), timeout_ms=10,
-                      network="none", emits=())
+    spec = SignalSpec(
+        name="url.slow_test", family="url", tier="T1", input_types=("url",), timeout_ms=10, network="none", emits=()
+    )
 
     @signal(spec)
     def slow(ctx):
@@ -221,9 +254,7 @@ def test_skeleton():
 
 def test_brand_registry_loads_all_yaml_entries():
     reg = default_registry()
-    raw = yaml.safe_load(
-        (Path(__file__).resolve().parents[4] / "data" / "brands.yaml").read_text(encoding="utf-8")
-    )
+    raw = yaml.safe_load((Path(__file__).resolve().parents[4] / "data" / "brands.yaml").read_text(encoding="utf-8"))
     assert len(reg.brands) == len(raw["brands"]) >= 20
     assert reg.is_official("adpolice.gov.ae") and reg.is_official("falcon-demo-bank.test")
     assert not reg.is_official("adpolice.com")
