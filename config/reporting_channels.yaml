@@ -1,0 +1,22 @@
+# Official Abu Dhabi Police channels, ONLY as read from the official site.
+# Do not add entries from memory or news articles.
+source_url: https://www.adpolice.gov.ae/en/
+retrieved_at: 2026-11-22
+verified_by: L1 research agent (page fetched; labels as shown on the page)
+channels:
+  - id: emergency
+    label_en: "Emergency"
+    label_ar: "الطوارئ"
+    value: "999"
+  - id: aman
+    label_en: "Aman service (Abu Dhabi Police)"
+    label_ar: "خدمة أمان (شرطة أبوظبي)"
+    value: "8002626 · aman.adpolice.gov.ae"
+    note: "Number shown under the Aman service on the official homepage."
+  - id: complaints
+    label_en: "Abu Dhabi Police complaints portal"
+    label_ar: "بوابة البلاغات لشرطة أبوظبي"
+    value: "cas.adpolice.gov.ae"
+generic_fallback:
+  en: "Report it through Abu Dhabi Police official channels."
+  ar: "أبلغ عبر القنوات الرسمية لشرطة أبوظبي."
