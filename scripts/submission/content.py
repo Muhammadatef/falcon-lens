@@ -71,14 +71,14 @@ def _problem() -> Section:
     return Section(
         "problem",
         "The problem",
-        lead="Scam links reach people faster than blocklists can list them.",
+        lead="A blocklist can only list a scam page after someone has reported it.",
         lines=(
-            Line("Fake fine, delivery-fee, bank one-time-code and UAE Pass links arrive by SMS, WhatsApp and email."),
-            Line("The pages look official and are short-lived, so a blocklist often learns about them late."),
-            Line("A warning in English and in security jargon does little for older and non-technical residents."),
+            Line("The challenge targets fake fine, delivery-fee, bank one-time-code and UAE Pass links sent by SMS, WhatsApp and email."),
+            Line("A page that copies an official site and has not been reported yet is on no blocklist."),
+            Line("A warning written in English and in security jargon is hard to act on for a reader of neither."),
             Line("People need one clear answer in Arabic: is this a scam, why, and what do I do now?"),
         ),
-        note="No statistic is quoted here on purpose: a figure appears in this project only with a public source link.",
+        note="No statistic and no measured claim about scams is made here: a figure appears in this project only with a public source link.",
     )
 
 
@@ -114,7 +114,7 @@ def _demo() -> Section:
     return Section(
         "demo",
         "Demo flow",
-        lead="Recorded on the real screen. Phishing scenarios use only snapshots and the invented brand Falcon Demo Bank.",
+        lead="Recording rule: real screen, real voice. Phishing scenarios use only snapshots and the invented brand Falcon Demo Bank.",
         lines=(
             Line("A phishing URL from a feed, replayed from a stored snapshot: Dangerous.", "url_check"),
             Line("A Falcon Demo Bank lookalike that no blocklist knows: caught by the brand check.", "brand_check"),
@@ -129,7 +129,7 @@ def _demo() -> Section:
             Line("A command-line client calls the MCP server.", "mcp"),
             Line("A phone shares a message into the installed app.", "share_target"),
         ),
-        note="Replayed and synthetic data are labelled as such on screen. Full script: docs/DEMO.md.",
+        note="The demo is a script, not a recording yet. A scene is recorded only when its line here is not marked PLANNED. Full script: docs/DEMO.md.",
     )
 
 
@@ -137,15 +137,16 @@ def _architecture() -> Section:
     return Section(
         "architecture",
         "Architecture",
-        lead="One gateway, a tiered worker, an isolated browser sandbox, and an event stream that feeds the Sentinel.",
+        lead="Design: one gateway, a tiered worker, an isolated browser sandbox, and an event stream that feeds the Sentinel.",
         lines=(
-            Line("Gateway to API; jobs and verdict events travel on Redis streams."),
+            Line("Gateway to API; jobs and verdict events travel on Redis streams.", "pipeline"),
             Line("Worker cascade T0 to T3 exits as early as the evidence allows.", "url_check"),
             Line(
                 "The sandbox reaches the internet only through a filtering egress proxy and returns features, never raw pages.",
                 "brand_check",
             ),
-            Line("PostgreSQL with pgvector stores verdicts, evidence, incidents and an append-only audit log."),
+            Line("PostgreSQL stores verdicts and their evidence.", "pipeline"),
+            Line("Incidents and every Sentinel action go to an append-only audit log.", "audit_log"),
             Line("Metrics, logs and traces flow to dashboards and alerts.", "observability"),
         ),
     )
@@ -235,7 +236,8 @@ def _security() -> Section:
             Line("Personal data is redacted before logging and before any cloud call.", "sovereign"),
             Line("Sovereign mode: every model call stays on the local machine.", "sovereign"),
             Line(
-                "The product never asks for personal, banking or ID details, and its lowest verdict is never worded as a guarantee."
+                "The product never asks for personal, banking or ID details, and its lowest verdict is never worded as a guarantee.",
+                "url_check",
             ),
         ),
     )
@@ -251,7 +253,7 @@ def _integration() -> Section:
             Line("MCP server so another agent can call the checks as tools.", "mcp"),
             Line("STIX export of incident indicators.", "stix"),
             Line("Operator board: the Sentinel proposes, a human approves or rejects.", "ops_board"),
-            Line("External actions are drafts only. Nothing is sent to a third party by the system."),
+            Line("External actions are drafts only. Nothing is sent to a third party by the system.", "sentinel_agent"),
         ),
         note="No integration with Abu Dhabi Police exists and none is implied. A real connection needs an agreement with the receiving organisation.",
     )
@@ -269,17 +271,18 @@ def _deployment(artifact: artifact_mod.Artifact | None) -> Section:
     return Section(
         "deployment",
         "Deployment and cost",
-        lead="One command starts the whole stack on a laptop.",
+        lead="Designed to start with one command on a laptop.",
         lines=(
             Line(
-                "Docker Compose brings up the gateway, API, worker, sandbox, Sentinel, data stores and observability."
+                "Docker Compose starts the gateway, API, worker, sandbox, Sentinel, data store and observability containers.",
+                "stack",
             ),
             Line(
                 "Most checks are meant to finish in the deterministic tiers; a model is called only for the uncertain band.",
                 "url_check",
             ),
             Line("With no cloud key, or in sovereign mode, every model call goes to a local model.", "sovereign"),
-            Line("Every external key is optional: a missing key switches that feature off."),
+            Line("Every external key is optional: a missing key switches that feature off.", "stack"),
             Line(cost_line),
         ),
     )

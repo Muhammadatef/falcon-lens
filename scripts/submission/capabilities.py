@@ -13,6 +13,8 @@ Probe kinds:
     path:<glob>           at least one file matches (relative to the repo root)
     make:<target>         the Makefile target exists and is not the "not yet implemented" stub
     grep:<glob>::<regex>  at least one matching file contains the regex
+    nogrep:<glob>::<regex>  at least one file matches the glob and none contains the regex
+                          (used to detect that a "not supported yet" stub is gone)
 
 Standard library only.
 """
@@ -37,7 +39,15 @@ class Capability:
 
 # The end-to-end check: `make smoke` is real, and the cascade and the arbiter are in the tree.
 # Every capability that needs a verdict includes these probes.
-E2E = ("make:smoke", f"path:{CORE}/cascade/engine.py", f"path:{CORE}/scoring/arbiter.py")
+E2E = (
+    "make:smoke",
+    f"path:{CORE}/cascade/engine.py",
+    f"path:{CORE}/scoring/arbiter.py",
+    "path:services/worker/src/falcon_worker/consumer.py",
+    "grep:services/sandbox/src/**/*.py::playwright",  # the sandbox is a real browser service, not the health-only stub
+)
+# The worker answers non-URL inputs with a degraded "not supported yet" verdict until it handles them.
+WORKER_KIND_STUB = r"nogrep:services/worker/src/**/*.py::input_type_not_supported_yet"
 
 CAPABILITIES: tuple[Capability, ...] = (
     Capability(
@@ -59,19 +69,19 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "message_check",
         "Message check (SMS and chat text, Arabic and English)",
-        (*E2E, f"path:{CORE}/signals/message/analyze.py", "grep:services/api/src/**/*.py::check/message"),
+        (*E2E, f"path:{CORE}/signals/message/analyze.py", "grep:services/api/src/**/*.py::check/message", WORKER_KIND_STUB),
         "Scenario 3",
     ),
     Capability(
         "email_check",
         "Email check (.eml)",
-        (*E2E, f"path:{CORE}/signals/email/analyze.py", "grep:services/api/src/**/*.py::check/email"),
+        (*E2E, f"path:{CORE}/signals/email/analyze.py", "grep:services/api/src/**/*.py::check/email", WORKER_KIND_STUB),
         "Scenario 4",
     ),
     Capability(
         "image_check",
         "Image and QR check",
-        (*E2E, f"path:{CORE}/signals/image/analyze.py", "grep:services/api/src/**/*.py::check/image"),
+        (*E2E, f"path:{CORE}/signals/image/analyze.py", "grep:services/api/src/**/*.py::check/image", WORKER_KIND_STUB),
     ),
     Capability(
         "verified_official",
@@ -94,6 +104,26 @@ CAPABILITIES: tuple[Capability, ...] = (
         "sovereign",
         "Sovereign mode (every model call on the local machine)",
         (*E2E, f"path:{CORE}/llm/router.py"),
+    ),
+    Capability(
+        "pipeline",
+        "Job and verdict pipeline (Redis streams, verdicts and evidence stored in PostgreSQL)",
+        (
+            "path:services/worker/src/falcon_worker/consumer.py",
+            "path:services/worker/src/falcon_worker/store.py",
+            "path:services/worker/src/falcon_worker/migrations/*.sql",
+            r"grep:services/api/src/**/*.py::xadd|fl:jobs",
+        ),
+    ),
+    Capability(
+        "stack",
+        "One-command local stack (`make up`)",
+        ("make:up", "path:docker-compose.yml", "path:.env.example"),
+    ),
+    Capability(
+        "audit_log",
+        "Incident store and append-only audit log",
+        ("path:services/sentinel/src/falcon_sentinel/db.py", r"grep:services/sentinel/src/**/*.py::audit_log"),
     ),
     Capability(
         "sentinel_rules",
@@ -194,6 +224,11 @@ def probe(root: Path, spec: str) -> bool:
         return any(True for _ in root.glob(arg))
     if kind == "make":
         return make_target_implemented(root, arg)
+    if kind == "nogrep":
+        pattern, _, regex = arg.partition("::")
+        compiled = re.compile(regex)
+        files = [path for path in root.glob(pattern) if path.is_file()]
+        return bool(files) and not any(compiled.search(f.read_text(encoding="utf-8", errors="ignore")) for f in files)
     if kind == "grep":
         pattern, _, regex = arg.partition("::")
         compiled = re.compile(regex)

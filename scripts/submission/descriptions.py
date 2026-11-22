@@ -100,7 +100,8 @@ def _kinds(caps: Mapping[str, bool], names: Mapping[str, str]) -> list[str]:
 
 
 def _candidates_en(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
-    """(priority, [long form, shorter forms...]) per sentence; priority 0 is never dropped."""
+    """(priority, [long form, shorter forms...]); each candidate is ONE sentence; priority 0 is never dropped."""
+    mvp = bool(caps.get("url_check"))
     out: list[tuple[int, list[str]]] = []
     if caps.get("url_check"):
         kinds = _join_en(_kinds(caps, KIND_EN))
@@ -116,9 +117,6 @@ def _candidates_en(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
             )
         )
     else:
-        built = []
-        if caps.get("sentinel_rules"):
-            built.append("Sentinel correlation rules")
         out.append(
             (
                 0,
@@ -128,9 +126,21 @@ def _candidates_en(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
                 ],
             )
         )
-        tail = f" Built so far: {', '.join(built)}." if built else ""
-        out.append((0, [f"The end-to-end check is not finished in this build.{tail}"]))
-    if caps.get("brand_check"):
+        out.append((0, ["The end-to-end check is not finished in this build."]))
+        if caps.get("sentinel_agent"):
+            out.append(
+                (
+                    2,
+                    [
+                        "Its second agent, the Sentinel, already links check events (replayed in this build) into "
+                        "incidents and drafts takedowns that wait for human approval.",
+                        "Its second agent, the Sentinel, already links replayed check events into incidents.",
+                    ],
+                )
+            )
+        elif caps.get("sentinel_rules"):
+            out.append((2, ["Built so far: Sentinel correlation rules."]))
+    if mvp and caps.get("brand_check"):
         out.append(
             (
                 1,
@@ -142,7 +152,7 @@ def _candidates_en(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
                 ],
             )
         )
-    if caps.get("sentinel_agent"):
+    if mvp and caps.get("sentinel_agent"):
         out.append(
             (
                 2,
@@ -170,6 +180,7 @@ def _candidates_en(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
 
 
 def _candidates_ar(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
+    mvp = bool(caps.get("url_check"))
     out: list[tuple[int, list[str]]] = []
     if caps.get("url_check"):
         kinds = " أو ".join(_kinds(caps, KIND_AR))
@@ -194,9 +205,21 @@ def _candidates_ar(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
                 ],
             )
         )
-        tail = " أُنجز حتى الآن: قواعد الربط في «الحارس»." if caps.get("sentinel_rules") else ""
-        out.append((0, [f"الفحص الكامل من البداية إلى النهاية لم يكتمل في هذه النسخة.{tail}"]))
-    if caps.get("brand_check"):
+        out.append((0, ["الفحص الكامل من البداية إلى النهاية لم يكتمل في هذه النسخة."]))
+        if caps.get("sentinel_agent"):
+            out.append(
+                (
+                    2,
+                    [
+                        "ووكيله الثاني «الحارس» يربط منذ الآن أحداث الفحص (المُعاد تشغيلها في هذه النسخة) في حوادث، "
+                        "ويُعدّ مسودات طلبات الإزالة بانتظار موافقة بشرية.",
+                        "ووكيله الثاني «الحارس» يربط منذ الآن أحداث الفحص المُعاد تشغيلها في حوادث.",
+                    ],
+                )
+            )
+        elif caps.get("sentinel_rules"):
+            out.append((2, ["أُنجز حتى الآن: قواعد الربط في «الحارس»."]))
+    if mvp and caps.get("brand_check"):
         out.append(
             (
                 1,
@@ -208,7 +231,7 @@ def _candidates_ar(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
                 ],
             )
         )
-    if caps.get("sentinel_agent"):
+    if mvp and caps.get("sentinel_agent"):
         out.append(
             (
                 2,
@@ -247,7 +270,8 @@ def _fit(candidates: list[tuple[int, list[str]]]) -> str:
         )
 
     def fits() -> bool:
-        return count_chars(text()) <= MAX_CHARS and sum(keep) <= MAX_SENTENCES
+        current = text()
+        return count_chars(current) <= MAX_CHARS and len(sentences(current)) <= MAX_SENTENCES
 
     order = sorted(range(len(candidates)), key=lambda i: -candidates[i][0])  # least important first
     for index in order:  # 1) shorter forms, least important sentence first

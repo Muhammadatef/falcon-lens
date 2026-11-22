@@ -209,12 +209,17 @@ def platform_tools(root: Path = ROOT) -> list[str]:
 
 
 def model_tools(root: Path = ROOT) -> list[str]:
-    """Model runtimes, listed only when the model router in shipped code calls them."""
-    llm = _read_all(root, ("packages/falcon_core/src/falcon_core/llm/**/*.py", "services/sentinel/src/**/llm.py"))
+    """Model runtimes, listed only when shipped code has a call site for them.
+
+    Ollama: a service or the core library reads the `ollama_base_url` setting to build a client
+    (the setting's definition in config.py, a comment or a docstring does not count).
+    Anthropic: the SDK is imported or the API host is addressed.
+    """
+    source = _read_all(root, SOURCE_GLOBS)
     out = []
-    if re.search(r"ollama", llm, re.IGNORECASE):
+    if re.search(r"\b(?:settings|ctx|cfg|config)\.ollama_base_url\b", source):
         out.append("Ollama (local models)")
-    if re.search(r"(?m)^\s*(?:from|import)\s+anthropic\b|api\.anthropic\.com", llm):
+    if re.search(r"(?m)^\s*(?:from|import)\s+anthropic\b|api\.anthropic\.com", source):
         out.append("Anthropic API (Claude models)")
     return out
 

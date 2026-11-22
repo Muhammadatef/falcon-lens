@@ -63,12 +63,12 @@ One check, end to end ([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)):
 1. **In.** `POST /v1/check/url` reaches the API through the Caddy gateway. The API validates, rate-limits, assigns a `verdict_id`, puts a job on the `fl:jobs` stream and returns the SSE address. Two checks of the same URL share one job.
 2. **Cascade.** The worker runs the tiers in order and can exit after any of them. After each tier it re-emits a partial verdict under the same `verdict_id`.
 
-   | Tier | Budget | What runs |
+   | Tier | Design budget | What runs |
    |---|---|---|
-   | T0 | 50 ms | Canonicalise, verdict cache, verified-official registry, local feed mirror |
-   | T1 | 1 s | Deterministic URL, domain and reputation signals in parallel, plus a calibrated classifier |
-   | T2 | 6 s | Sandbox render, page and visual features, the brand check, the quarantined extractor |
-   | T3 | 15 s | The bounded investigator, only for the uncertain band |
+   | T0 | 50 ms (design budget) | Canonicalise, verdict cache, verified-official registry, local feed mirror |
+   | T1 | 1 s (design budget) | Deterministic URL, domain and reputation signals in parallel, plus a calibrated classifier |
+   | T2 | 6 s (design budget) | Sandbox render, page and visual features, the brand check, the quarantined extractor |
+   | T3 | 15 s (design budget) | The bounded investigator, only for the uncertain band |
 
    The budgets are design limits from [ADR-001](docs/adr/ADR-001-cascade-arbiter.md), not measurements.
 3. **Verdict.** The deterministic arbiter sets the score and the verdict. The result is stored in Postgres and streamed back over SSE.
