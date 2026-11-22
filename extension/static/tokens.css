@@ -1,0 +1,246 @@
+/*
+ * Falcon Lens | عدسة الصقر — design tokens (source of truth for web/ and extension/).
+ * Spec: docs/DESIGN.md. Contrast is enforced by web/design/scripts/check-contrast.mjs.
+ *
+ * Themes: dark ("night") is the default; light ("sand") applies with
+ * <html data-theme="light"> or, when no data-theme is set, with prefers-color-scheme: light.
+ * Every colour below is a 6-digit hex so the contrast script can parse it.
+ * No verdict colour is ever used without its icon and its word (see DESIGN.md §4).
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ── Night theme: surfaces ─────────────────────────────────────────── */
+  --fl-bg: #070b14;            /* page: desert night */
+  --fl-surface-1: #0e1626;     /* cards */
+  --fl-surface-2: #16203a;     /* raised: inputs, chips, nested rows */
+  --fl-surface-3: #1f2c4c;     /* hover / pressed */
+  --fl-border: #2a3757;        /* hairlines (decorative) */
+  --fl-border-strong: #5a6c92; /* control outlines (>= 3:1 on surfaces) */
+
+  /* ── Night theme: text ─────────────────────────────────────────────── */
+  --fl-text: #f2eee6;          /* warm white, sand-tinted */
+  --fl-text-muted: #aeb8cc;
+  --fl-text-faint: #8794ae;    /* captions, ids; still AA on surface-1/2 */
+
+  /* ── Brand: the lens ───────────────────────────────────────────────── */
+  --fl-brand: #3fe0c5;         /* lens glass / scan beam / primary action */
+  --fl-brand-strong: #7df0dc;  /* hover on dark */
+  --fl-brand-ink: #04211d;     /* text on brand fills */
+  --fl-sand: #e7d7b6;          /* warm accent: wordmark, feather strokes */
+  --fl-focus: #7df0dc;         /* focus ring */
+
+  /* ── Verdicts (fg = text/icon on surfaces, solid = filled plate,
+        on = text on solid, tint = card wash, line = border) ─────────── */
+  --fl-dangerous-fg: #ff8589;
+  --fl-dangerous-solid: #d42a38;
+  --fl-dangerous-on: #ffffff;
+  --fl-dangerous-tint: #2b0f15;
+  --fl-dangerous-line: #8c2630;
+
+  --fl-suspicious-fg: #ffc55c;
+  --fl-suspicious-solid: #f4b23a;
+  --fl-suspicious-on: #2a1a00;
+  --fl-suspicious-tint: #2a1d07;
+  --fl-suspicious-line: #8a6416;
+
+  /* Deliberately NOT green: green reads as "safe", which the product never says. */
+  --fl-nws-fg: #a9c0ff;
+  --fl-nws-solid: #3a5bd0;
+  --fl-nws-on: #ffffff;
+  --fl-nws-tint: #111c3d;
+  --fl-nws-line: #34488c;
+
+  /* Evidence polarity (reuses verdict hues; shape carries the meaning) */
+  --fl-risk: var(--fl-dangerous-fg);
+  --fl-trust: var(--fl-nws-fg);
+  --fl-neutral: var(--fl-text-faint);
+
+  /* Incident severity (operator board): shape + label always shown */
+  --fl-sev-critical: var(--fl-dangerous-fg);
+  --fl-sev-high: #ff9f6b;
+  --fl-sev-medium: var(--fl-suspicious-fg);
+  --fl-sev-low: var(--fl-text-muted);
+
+  /* Effects */
+  --fl-shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.28);
+  --fl-shadow-2: 0 2px 4px rgb(0 0 0 / 0.5), 0 24px 64px rgb(0 0 0 / 0.45);
+  --fl-glow-brand: 0 0 0 1px rgb(63 224 197 / 0.35), 0 0 32px rgb(63 224 197 / 0.18);
+  --fl-scrim: rgb(7 11 20 / 0.72);
+
+  /* ── Typography ────────────────────────────────────────────────────── */
+  --fl-font-ui: "Readex Pro", "Readex Pro Variable", "Noto Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --fl-font-mono: "JetBrains Mono", "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Sizes are rem on a 16 px root; body never goes under 1.0625rem (17 px). */
+  --fl-text-xs: 0.8125rem;   /* 13: ids, legal; never for instructions */
+  --fl-text-sm: 0.9375rem;   /* 15: captions, chips */
+  --fl-text-md: 1.0625rem;   /* 17: body */
+  --fl-text-lg: 1.25rem;     /* 20: reasons, actions, input */
+  --fl-text-xl: 1.5rem;      /* 24: section titles */
+  --fl-text-2xl: 2rem;       /* 32: verdict word (phone) */
+  --fl-text-3xl: clamp(2.25rem, 1.4rem + 3.6vw, 4rem);  /* hero headline */
+  --fl-leading-ar: 1.75;     /* Arabic needs room for marks and descenders */
+  --fl-leading-en: 1.55;
+  --fl-leading-tight-ar: 1.35;
+  --fl-leading-tight-en: 1.15;
+  --fl-leading: var(--fl-leading-ar);
+  --fl-leading-tight: var(--fl-leading-tight-ar);
+  --fl-weight-regular: 400;
+  --fl-weight-medium: 500;
+  --fl-weight-bold: 650;
+
+  /* ── Space, radius, layout (4 px base) ─────────────────────────────── */
+  --fl-space-1: 0.25rem;
+  --fl-space-2: 0.5rem;
+  --fl-space-3: 0.75rem;
+  --fl-space-4: 1rem;
+  --fl-space-5: 1.5rem;
+  --fl-space-6: 2rem;
+  --fl-space-7: 3rem;
+  --fl-space-8: 4rem;
+  --fl-space-9: 6rem;
+  --fl-radius-sm: 8px;
+  --fl-radius-md: 14px;
+  --fl-radius-lg: 22px;
+  --fl-radius-pill: 999px;
+  --fl-tap: 48px;                 /* minimum touch target */
+  --fl-gutter: 1rem;              /* 390: 4 columns */
+  --fl-content-max: 76rem;        /* 1216 px, 12 columns at >= 1024 */
+  --fl-read-max: 38rem;           /* longest text measure */
+
+  /* ── Motion (mirrors web/design/motion.ts; keep both in sync) ──────── */
+  --fl-dur-instant: 90ms;
+  --fl-dur-fast: 160ms;
+  --fl-dur-base: 260ms;
+  --fl-dur-slow: 420ms;
+  --fl-dur-reveal: 640ms;
+  --fl-dur-ambient: 9s;
+  --fl-stagger: 70ms;
+  --fl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);        /* enter: fast start, long settle */
+  --fl-ease-in: cubic-bezier(0.5, 0, 0.9, 0.3);         /* exit */
+  --fl-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);     /* move, morph */
+  --fl-ease-linear: linear;                             /* sweeps, progress */
+  /* Critically-leaning spring (one soft overshoot) for the verdict plate and lens lock. */
+  --fl-ease-spring: linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 19.4%,
+      1.077 22.2%, 1.11 24.9%, 1.121 27.5%, 1.115 30.3%, 1.066 37.6%, 1.021 44.5%, 0.996 51.3%,
+      0.989 58.2%, 1.001 78.6%, 1);
+}
+
+/* ── Sand theme (light) ──────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --fl-bg: #f7f3ea;
+  --fl-surface-1: #ffffff;
+  --fl-surface-2: #efe8d8;
+  --fl-surface-3: #e4dbc6;
+  --fl-border: #ddd3bf;
+  --fl-border-strong: #8c8168;
+
+  --fl-text: #121826;
+  --fl-text-muted: #475066;
+  --fl-text-faint: #5c667c;
+
+  --fl-brand: #0a6e61;
+  --fl-brand-strong: #075a4f;
+  --fl-brand-ink: #ffffff;
+  --fl-sand: #7a6535;
+  --fl-focus: #0a6e61;
+
+  --fl-dangerous-fg: #a80f45;
+  --fl-dangerous-solid: #c01f3f;
+  --fl-dangerous-on: #ffffff;
+  --fl-dangerous-tint: #fce9ea;
+  --fl-dangerous-line: #e3a3a8;
+
+  --fl-suspicious-fg: #6a5600;
+  --fl-suspicious-solid: #f4b23a;
+  --fl-suspicious-on: #2a1a00;
+  --fl-suspicious-tint: #fff1cf;
+  --fl-suspicious-line: #dcb25a;
+
+  --fl-nws-fg: #2a4bb0;
+  --fl-nws-solid: #3353c4;
+  --fl-nws-on: #ffffff;
+  --fl-nws-tint: #e8eeff;
+  --fl-nws-line: #a9b9ea;
+
+  --fl-sev-high: #a8400a;
+
+  --fl-shadow-1: 0 1px 2px rgb(18 24 38 / 0.06), 0 8px 24px rgb(18 24 38 / 0.08);
+  --fl-shadow-2: 0 2px 4px rgb(18 24 38 / 0.08), 0 24px 64px rgb(18 24 38 / 0.14);
+  --fl-glow-brand: 0 0 0 1px rgb(10 110 97 / 0.35), 0 0 32px rgb(10 110 97 / 0.12);
+  --fl-scrim: rgb(247 243 234 / 0.8);
+}
+
+/* System preference, used only when the user has not chosen a theme. Keep this block
+   identical to the [data-theme="light"] block above (the contrast script checks parity). */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+
+    --fl-bg: #f7f3ea;
+    --fl-surface-1: #ffffff;
+    --fl-surface-2: #efe8d8;
+    --fl-surface-3: #e4dbc6;
+    --fl-border: #ddd3bf;
+    --fl-border-strong: #8c8168;
+
+    --fl-text: #121826;
+    --fl-text-muted: #475066;
+    --fl-text-faint: #5c667c;
+
+    --fl-brand: #0a6e61;
+    --fl-brand-strong: #075a4f;
+    --fl-brand-ink: #ffffff;
+    --fl-sand: #7a6535;
+    --fl-focus: #0a6e61;
+
+    --fl-dangerous-fg: #a80f45;
+    --fl-dangerous-solid: #c01f3f;
+    --fl-dangerous-on: #ffffff;
+    --fl-dangerous-tint: #fce9ea;
+    --fl-dangerous-line: #e3a3a8;
+
+    --fl-suspicious-fg: #6a5600;
+    --fl-suspicious-solid: #f4b23a;
+    --fl-suspicious-on: #2a1a00;
+    --fl-suspicious-tint: #fff1cf;
+    --fl-suspicious-line: #dcb25a;
+
+    --fl-nws-fg: #2a4bb0;
+    --fl-nws-solid: #3353c4;
+    --fl-nws-on: #ffffff;
+    --fl-nws-tint: #e8eeff;
+    --fl-nws-line: #a9b9ea;
+
+    --fl-sev-high: #a8400a;
+
+    --fl-shadow-1: 0 1px 2px rgb(18 24 38 / 0.06), 0 8px 24px rgb(18 24 38 / 0.08);
+    --fl-shadow-2: 0 2px 4px rgb(18 24 38 / 0.08), 0 24px 64px rgb(18 24 38 / 0.14);
+    --fl-glow-brand: 0 0 0 1px rgb(10 110 97 / 0.35), 0 0 32px rgb(10 110 97 / 0.12);
+    --fl-scrim: rgb(247 243 234 / 0.8);
+  }
+}
+
+/* Latin text gets tighter leading than Arabic. */
+:root:lang(en) {
+  --fl-leading: var(--fl-leading-en);
+  --fl-leading-tight: var(--fl-leading-tight-en);
+}
+
+/* Reduced motion: movement collapses to short fades; ambient loops stop.
+   Components must also honour this in JS (see motion.ts `reduced`). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fl-dur-fast: 1ms;
+    --fl-dur-base: 120ms;
+    --fl-dur-slow: 120ms;
+    --fl-dur-reveal: 160ms;
+    --fl-dur-ambient: 0s;
+    --fl-stagger: 0ms;
+    --fl-ease-spring: linear;
+  }
+}
