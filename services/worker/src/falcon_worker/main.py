@@ -4,6 +4,21 @@ Network note: the worker is the only service besides egress-proxy that shares a 
 sandbox (`sandbox_ctl`). Docker networks are not directional, so the sandbox can reach this port.
 The worker therefore exposes ONLY /healthz, /readyz and /metrics (plus /metrics/sandbox) on it:
 never a job or control API. Jobs arrive through Redis only.
+
+When to use it:
+    You do not run it by hand; the `worker` container starts it. `make smoke` proves it works.
+
+How to run:
+    make up                                   (direct: uv run python -m falcon_worker.main)
+
+Inputs:
+    Settings from env (Redis URL, optional database URL, FL_SANDBOX_TOKEN or FL_SANDBOX_API_KEY),
+    FL_SANDBOX_URL (default http://sandbox:8000) and FL_SSRF_ALLOW_HOSTS (ignored when FL_ENV=production).
+
+Outputs / side effects:
+    Reads jobs from the Redis stream fl:jobs and stores verdicts (Redis cache, and Postgres when
+    DATABASE_URL is set), and calls the sandbox over the internal network. Exposes /healthz, /readyz and
+    /metrics on port 8000.
 """
 
 from __future__ import annotations
@@ -50,6 +65,7 @@ def guard_policy() -> GuardPolicy:
 
 
 def sandbox_token() -> str | None:
+    """The bearer token for calling the sandbox (FL_SANDBOX_TOKEN, else FL_SANDBOX_API_KEY)."""
     for secret in (settings.fl_sandbox_token, settings.fl_sandbox_api_key):
         if secret is not None:
             return secret.get_secret_value()
@@ -59,6 +75,7 @@ def sandbox_token() -> str | None:
 def build_worker(
     app: FastAPI, redis: Any, metrics: CascadeMetrics | None = None
 ) -> tuple[Worker, VerdictStore, HttpSandboxClient]:
+    """Wire the cascade, the verdict store and the Redis consumer together."""
     metrics = metrics or CascadeMetrics()
     set_default_on_block(metrics.on_ssrf_block)
     dsn = settings.database_url.get_secret_value() if settings.database_url else None
@@ -78,6 +95,7 @@ def build_worker(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Connect to Redis and run the job consumer for the life of the app."""
     import redis.asyncio as aioredis
 
     client = aioredis.from_url(REDIS_URL, decode_responses=True)

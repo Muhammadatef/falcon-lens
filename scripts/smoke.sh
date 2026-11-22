@@ -1,12 +1,27 @@
 #!/usr/bin/env bash
-# `make smoke` (T-015). Brings the stack up if needed, then runs scripts/smoke.py.
+# smoke.sh - `make smoke`: start the stack if needed, then run the end-to-end smoke test (T-015).
 #
-# Real mode (default, the G1 gate): runs against the REAL worker.
-# FL_SMOKE_FAKE_WORKER=1: stops the real worker and starts the fake-worker TEST DOUBLE
-#   (services/api/src/falcon_api/fake_worker.py). The result is NOT a G1 result; it only
-#   proves the API + SSE path. The script says so loudly.
+# What it does:
+#   Checks that .env exists, starts the stack (core, obs and tools profiles) when the API is not healthy, waits
+#   for the gateway to answer /v1/version, then runs scripts/smoke.py. Real mode (default, the G1 gate) uses
+#   the REAL worker. With FL_SMOKE_FAKE_WORKER=1 it stops the real worker and starts the fake-worker TEST DOUBLE
+#   (services/api/src/falcon_api/fake_worker.py); that only proves the API and SSE path, is NOT a G1 pass,
+#   and the script says so loudly. On exit it stops the double and restarts the real worker.
 #
-# Env: COMPOSE_PROJECT_NAME (isolate parallel stacks), FL_GATEWAY_URL (default https://localhost:8443).
+# When to use it:
+#   Before a PR that touches the pipeline, and before gate G1. Takes a few minutes on a cold start.
+#
+# How to run:
+#   make smoke                              (direct: scripts/smoke.sh)
+#   FL_SMOKE_FAKE_WORKER=1 make smoke       (API-only check with the test double)
+#
+# Inputs:
+#   .env in the repo root; env COMPOSE_PROJECT_NAME (isolate parallel stacks), FL_GATEWAY_URL
+#   (default https://localhost:8443), FL_SMOKE_FAKE_WORKER.
+#
+# Outputs / side effects:
+#   May build and start Docker containers, stop and start the worker, and submits fixture checks (these
+#   add rows and counters to the running stack). Exit code is that of smoke.py.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

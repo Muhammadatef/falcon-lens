@@ -10,6 +10,16 @@
   already-assigned item in its split, and a new item whose domain is already in test is excluded, never added to test.
 
 CLI: ``python -m evals.splits --check`` (reads only the public manifest; needs no private data).
+
+When to use it:
+    As a library for the dataset build; the CLI check is also safe to run anywhere, including CI.
+
+How to run:
+    uv run python -m evals.splits --check
+
+Outputs / side effects:
+    --check prints "splits ok: ..." (exit 0) or FAIL lines (exit 1). Read-only: it never changes the
+    manifest or evals/splits.lock (the build step owns those).
 """
 
 from __future__ import annotations
@@ -33,6 +43,8 @@ EXCLUDED = "excluded"
 
 @dataclass(frozen=True, slots=True)
 class SplitItem:
+    """The fields the split assignment needs for one item."""
+
     item_id: str
     label: int  # 1 = phishing
     domain_key: str
@@ -40,6 +52,7 @@ class SplitItem:
 
 
 def temporal_feasible(items: Sequence[SplitItem]) -> bool:
+    """True if there are enough distinct polls for a temporal cut."""
     return len({i.first_seen for i in items if i.label == 1}) >= MIN_POLLS
 
 
@@ -140,6 +153,7 @@ def assign_splits(
 
 
 def test_hash(rows: Sequence[Mapping[str, object]]) -> str:
+    """SHA-256 over the test item ids (what splits.lock freezes)."""
     ids = sorted(str(r["item_id"]) for r in rows if r["split"] == "test")
     return sha256_hex("\n".join(ids))
 
@@ -148,11 +162,13 @@ test_hash.__test__ = False  # type: ignore[attr-defined]  # not a pytest test
 
 
 def dataset_hash(rows: Sequence[Mapping[str, object]]) -> str:
+    """SHA-256 over all item ids and splits."""
     lines = sorted(f"{r['item_id']}:{r['label']}:{r['split']}" for r in rows if r["split"] != EXCLUDED)
     return sha256_hex("\n".join(lines))
 
 
 def make_lock(rows: Sequence[Mapping[str, object]], seed: int, temporal_cut: bool) -> dict[str, object]:
+    """Build the splits.lock content for the given manifest rows."""
     counts = {s: sum(1 for r in rows if r["split"] == s) for s in (*SPLITS, EXCLUDED)}
     return {
         "seed": seed,
@@ -193,10 +209,12 @@ def check_rows(rows: Sequence[Mapping[str, object]], lock: Mapping[str, object] 
 
 
 def load_lock(path: Path = SPLITS_LOCK) -> dict[str, object] | None:
+    """Read evals/splits.lock, or None if it does not exist."""
     return json.loads(path.read_text()) if path.exists() else None
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI: `--check` verifies the manifest against the lock."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true", help="verify split invariants and the lock")
     args = ap.parse_args(argv)

@@ -12,6 +12,26 @@ Fit rules (docs/SCORING.md §1.5/§1.6, docs/EVALS.md):
 * eps_low: below every validation phishing p_clf that has no brand conflict (no recall loss), capped at tau_low / 2;
 * eps_high: above every validation legit p_clf (no false `dangerous` exit at T1), at least tau_high + 0.05, <= 0.99;
 * share of validation items that would reach T3 is computed and reported against the 15% budget, not forced.
+
+When to use it:
+    After `evals.datasets.build` produced a new item set, or when the T1 features change.
+
+How to run:
+    make fit-thresholds        (runs the dataset build, then this)
+    uv run python -m evals.train.fit [--seed N] [--date YYYY-MM-DD] [--dry-run]
+
+Inputs:
+    The hashed manifest, the private item cache and the split lock (checked for integrity first).
+    --dry-run prints the fitted thresholds and writes nothing.
+
+Outputs / side effects:
+    Without --dry-run it writes the model and its metadata under
+    packages/falcon_core/src/falcon_core/scoring/model/ and updates the fitted values in
+    packages/falcon_core/src/falcon_core/scoring/params.yaml. No network calls.
+
+Safety notes:
+    It cannot read the test split (it raises); only the eval harness may. Review the params.yaml diff in
+    the PR because it changes detection behaviour.
 """
 
 from __future__ import annotations
@@ -85,6 +105,7 @@ def load_items(
 
 
 def items_hash(items: Sequence[Item]) -> str:
+    """Hash of the item ids used for a fit (recorded in the model metadata)."""
     return sha256_hex("\n".join(sorted(f"{i.item_id}:{i.label}:{i.split}" for i in items)))
 
 
@@ -99,6 +120,7 @@ HGB_PARAMS = {
 
 
 def train_model(train: Sequence[Item], seed: int) -> object:
+    """Train the HistGradientBoostingClassifier on the given items."""
     from sklearn.ensemble import HistGradientBoostingClassifier
 
     x = feature_matrix([i.url for i in train])
@@ -116,6 +138,7 @@ def fit_platt(raw: np.ndarray, y: np.ndarray) -> object:
 
 
 def apply_platt(platt: object, raw: np.ndarray) -> np.ndarray:
+    """Apply the Platt calibration to raw model scores."""
     r = np.clip(raw, 1e-6, 1 - 1e-6)
     return np.asarray(platt.predict_proba(np.log(r / (1 - r)).reshape(-1, 1))[:, 1], dtype=float)  # type: ignore[attr-defined]
 
@@ -127,6 +150,8 @@ def _mid(candidates: list[float], chosen: float) -> float:
 
 @dataclass
 class Thresholds:
+    """The fitted band edges tau_low, tau_high, eps_low, eps_high plus notes."""
+
     tau_low: float
     tau_high: float
     eps_low: float
@@ -223,6 +248,7 @@ def render_params(text: str, th: Thresholds, meta: dict[str, object]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Fit and (unless --dry-run) write the model, its metadata and params.yaml."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--date", default=datetime.now(UTC).strftime("%Y-%m-%d"), help="fit date written to params.yaml")
