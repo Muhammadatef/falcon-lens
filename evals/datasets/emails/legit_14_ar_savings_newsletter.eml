@@ -1,0 +1,55 @@
+Return-Path: <bounce@falcon-demo-bank.test>
+Received: from mail.falcon-demo-bank.test ([192.0.2.49]) by mx.example.test
+ with ESMTPS; Wed, 25 Nov 2026 09:33:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank.test; dkim=pass
+ header.d=falcon-demo-bank.test; dmarc=pass header.from=falcon-demo-bank.test
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=falcon-demo-bank.test;
+ s=fixture; h=from:to:subject:date; bh=FIXTURE; b=FIXTURE-NOT-A-REAL-SIGNATURE
+From: =?utf-8?b?2KjZhtmDINin2YTYtdmC2LEg2KfZhNiq2KzYsdmK2KjZig==?=
+ <news@falcon-demo-bank.test>
+To: Customer <customer@example.test>
+Subject: =?utf-8?b?2K7Yt9i3INmE2YTYudin2YUg2KfZhNis2K/ZitivINmF2Lkg2K3Ys9in?=
+ =?utf-8?b?2Kgg2KfZhNiq2YjZgdmK2LE=?=
+Date: Wed, 25 Nov 2026 09:33:00 +0400
+Message-ID: <c05-39.fixture@falcon-demo-bank.test>
+List-Unsubscribe: <https://falcon-demo-bank.test/unsubscribe>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============2054870778534859624=="
+
+--===============2054870778534859624==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoK2LnZhdmK2YTZhtinINin2YTYudiy2YrYstiMCgrY
+p9io2K/YoyDYp9mE2LnYp9mFINin2YTYrNiv2YrYryDYqNiu2LfYqSDYp9iv2K7Yp9ixINmI2KfY
+ttit2KkuINmK2YXZg9mG2YMg2YHYqtitINit2LPYp9ioINiq2YjZgdmK2LEg2YXZhiDYp9mE2KrY
+t9io2YrZgiDYrtmE2KfZhCDYr9mC2KfYptmC2Iwg2YjYqtit2K/ZitivINmH2K/ZgSDYtNmH2LHZ
+iiDZitmG2KfYs9io2YMuCgrYp9mE2KrZgdin2LXZitmEOiBodHRwczovL2ZhbGNvbi1kZW1vLWJh
+bmsudGVzdC9zYXZpbmdzCtil2YTYutin2KEg2KfZhNin2LTYqtix2KfZgzogaHR0cHM6Ly9mYWxj
+b24tZGVtby1iYW5rLnRlc3QvdW5zdWJzY3JpYmUKCtio2YbZgyDYp9mE2LXZgtixINin2YTYqtis
+2LHZitio2YoKClRFU1QgRklYVFVSRSwgbm90IGEgcmVhbCBtZXNzYWdlIC8g2LHYs9in2YTYqSDY
+p9iu2KrYqNin2LEg2YjZhNmK2LPYqiDYrdmC2YrZgtmK2KkK
+
+--===============2054870778534859624==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGRpcj0icnRsIiBsYW5nPSJhciI+PGhlYWQ+PG1ldGEgY2hh
+cnNldD0idXRmLTgiPjx0aXRsZT5GYWxjb24gRGVtbyBCYW5rPC90aXRsZT48L2hlYWQ+Cjxib2R5
+Pgo8cD48c3Ryb25nPlRFU1QgRklYVFVSRSwgbm90IGEgcmVhbCBtZXNzYWdlIC8g2LHYs9in2YTY
+qSDYp9iu2KrYqNin2LEg2YjZhNmK2LPYqiDYrdmC2YrZgtmK2Kk8L3N0cm9uZz48L3A+CjxwPti5
+2YXZitmE2YbYpyDYp9mE2LnYstmK2LLYjDwvcD48cD7Yp9io2K/YoyDYp9mE2LnYp9mFINin2YTY
+rNiv2YrYryDYqNiu2LfYqSDYp9iv2K7Yp9ixINmI2KfYttit2KkuINmK2YXZg9mG2YMg2YHYqtit
+INit2LPYp9ioINiq2YjZgdmK2LEg2YXZhiDYp9mE2KrYt9io2YrZgiDYrtmE2KfZhCDYr9mC2KfY
+ptmC2Iwg2YjYqtit2K/ZitivINmH2K/ZgSDYtNmH2LHZiiDZitmG2KfYs9io2YMuPC9wPjxwPtin
+2YTYqtmB2KfYtdmK2YQ6IDxhIGhyZWY9Imh0dHBzOi8vZmFsY29uLWRlbW8tYmFuay50ZXN0L3Nh
+dmluZ3MiPmh0dHBzOi8vZmFsY29uLWRlbW8tYmFuay50ZXN0L3NhdmluZ3M8L2E+PC9wPjxwPjxh
+IGhyZWY9Imh0dHBzOi8vZmFsY29uLWRlbW8tYmFuay50ZXN0L3Vuc3Vic2NyaWJlIj7YpdmE2LrY
+p9ihINin2YTYp9i02KrYsdin2YM8L2E+PC9wPgo8L2JvZHk+PC9odG1sPgo=
+
+--===============2054870778534859624==--
