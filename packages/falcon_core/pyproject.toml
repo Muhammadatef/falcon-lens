@@ -9,6 +9,11 @@ dependencies = [
   "pydantic>=2.14,<3",
   "pydantic-settings>=2.7",
   "prometheus-client>=0.21",
+  "pyyaml>=6.0.2",
+  "tldextract>=5.4,<6",
+  "httpx>=0.28,<0.29",
+  "redis>=8.1,<9",
+  "python-ulid>=4.2,<5",
 ]
 
 [build-system]
