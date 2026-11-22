@@ -48,8 +48,7 @@ dev = [
   "fakeredis>=2.26",
   "pyyaml>=6",
   "pytest-cov>=6",
-  "fakeredis>=2.26",
-  "pyyaml>=6",
+  "qrcode>=8",
 ]
 
 [tool.ruff]
