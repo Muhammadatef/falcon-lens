@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 776" width="1200" height="776" role="img" aria-labelledby="t d">
+<title id="t">The Sentinel: the always-on backend agent</title>
+<desc id="d">The Sentinel listens to platform events on a Redis stream, correlates them with deterministic code, and applies rules R1 to R5 to open incidents. A LangGraph state graph then triages each incident through the nodes enrich, compare, assess, summarise, propose and act. Internal actions such as blocking an indicator run automatically and are reversible. External actions such as a takedown draft stop at an interrupt and wait for a human operator to approve or reject them. Every action is written to an append-only audit log.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
+.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.t1{font-size:22px;font-weight:600}
+.h{font-size:14.5px;font-weight:600}
+.b{font-size:13px;fill:#aeb8cc}
+.c{font-size:12.5px;fill:#8794ae}
+.k{font-size:11.5px;fill:#aeb8cc}
+.tag{font-size:11.5px;fill:#8794ae;letter-spacing:.08em}
+.tl{fill:#3fe0c5}.sd{fill:#e7d7b6}.am{fill:#ffc55c}
+.card{fill:#0e1626;stroke:#2a3757;stroke-width:1.2}
+.in{fill:#16203a;stroke:#2a3757}
+.w{fill:none;stroke:#3a4a70;stroke-width:1.5}
+.f{fill:none;stroke:#3fe0c5;stroke-width:1.5;stroke-dasharray:2 10;stroke-linecap:round;opacity:.55;animation:dash 1.6s linear infinite}
+.glow{fill:#3fe0c5;fill-opacity:.1;stroke:#3fe0c5;stroke-width:1.8;opacity:0}
+.glow.am{fill:#ffc55c;stroke:#ffc55c}
+.dot{fill:#16203a;stroke:#5a6c92;stroke-width:1.3}
+.pt{fill:#5a6c92}
+.pk{opacity:0;offset-rotate:0deg}
+.pk circle:first-child{opacity:.22}
+.on{animation:lit 18s linear infinite}
+.onl{animation:litl 18s linear infinite}
+.done{animation:done 18s linear infinite}
+.wait{animation:wait 18s linear infinite}
+.ping{transform-box:fill-box;transform-origin:center;animation:ping 18s ease-out infinite}
+.pk.s{animation:go 18s cubic-bezier(.65,0,.35,1) infinite}
+.pk.l{animation:gol 18s cubic-bezier(.65,0,.35,1) infinite}
+.sweep{transform-origin:46px 42px;animation:spin 9s linear infinite}
+.radar{transform-origin:454px 236px;animation:spin 7s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-24}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes lit{0%,13%,100%{opacity:0}1.5%,9%{opacity:1}}
+@keyframes litl{0%,26%,100%{opacity:0}1.5%,22%{opacity:1}}
+@keyframes done{0%,34%,100%{fill:#16203a;stroke:#5a6c92}1.5%,30%{fill:#3fe0c5;stroke:#7df0dc}}
+@keyframes wait{0%,18%,100%{opacity:0}1%,4%,8%,12%,16%{opacity:1}2.5%,6%,10%,14%{opacity:.35}}
+@keyframes ping{0%,100%{opacity:0;transform:scale(.4)}1%{opacity:.9;transform:scale(.4)}7%{opacity:0;transform:scale(2.6)}}
+@keyframes go{0%{offset-distance:0%;opacity:0}.5%{opacity:1}3.6%{offset-distance:100%;opacity:1}4.2%,100%{offset-distance:100%;opacity:0}}
+@keyframes gol{0%{offset-distance:0%;opacity:0}.5%{opacity:1}6.6%{offset-distance:100%;opacity:1}7.2%,100%{offset-distance:100%;opacity:0}}
+@supports not (offset-path:path("M0 0H1")){.pk{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.pk,.radar,.ping{display:none}}
+</style>
+<defs>
+<pattern id="lat" width="48" height="48" patternUnits="userSpaceOnUse">
+<path d="M24 4l6 14 14 6-14 6-6 14-6-14-14-6 14-6z" fill="none" stroke="#16203a" stroke-width="1"/>
+</pattern>
+<radialGradient id="halo" cx="50%" cy="0%" r="75%">
+<stop offset="0" stop-color="#3fe0c5" stop-opacity=".1"/><stop offset="1" stop-color="#3fe0c5" stop-opacity="0"/>
+</radialGradient>
+<marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0 .8L7 4 0 7.2z" fill="#5a6c92"/>
+</marker>
+</defs>
+
+<rect width="1200" height="776" rx="22" fill="#070b14"/>
+<rect width="1200" height="776" rx="22" fill="url(#lat)" opacity=".55"/>
+<rect width="1200" height="400" rx="22" fill="url(#halo)"/>
+
+<!-- header -->
+<g>
+<circle cx="46" cy="42" r="17" fill="#0e1626" stroke="#3fe0c5" stroke-width="2.4"/>
+<path class="sweep" d="M46 42L46 25A17 17 0 0 1 61.6 35.2z" fill="#3fe0c5" opacity=".22"/>
+<circle cx="46" cy="42" r="6" fill="#3fe0c5"/>
+<path d="M26 27q20-13 42 0" fill="none" stroke="#e7d7b6" stroke-width="2.6" stroke-linecap="round"/>
+<path d="M36 58q-2 9-9 14" fill="none" stroke="#e7d7b6" stroke-width="3.2" stroke-linecap="round"/>
+<text x="84" y="40" class="t1">Falcon Lens <tspan fill="#8794ae" font-weight="400">/</tspan> the Sentinel</text>
+<text x="84" y="62" class="b">The always-on backend agent. It links single checks into incidents and campaigns, acts inside the system, and waits for a human before anything leaves it.</text>
+<text x="1176" y="42" text-anchor="end" class="t1 sd">عدسة الصقر</text>
+</g>
+
+<g class="m tag">
+<text x="24" y="100">1 · LISTEN</text><text x="316" y="100">2 · CORRELATE</text><text x="608" y="100">3 · TRIGGER</text><text x="900" y="100">4 · TRIAGE</text><text x="24" y="478">5 · ACT</text>
+</g>
+
+<!-- wires -->
+<g class="w" marker-end="url(#a)">
+<path d="M300 275H316"/><path d="M592 275H608"/><path d="M884 275H900"/>
+<path d="M1038 440V462H292V486"/><path d="M876 462V486"/>
+</g>
+<g class="f"><path d="M1038 440V462H292V486"/><path d="M876 462V486"/></g>
+
+<!-- 1 listen -->
+<g>
+<rect class="card" x="24" y="110" width="276" height="330" rx="14"/>
+<text x="40" y="136" class="h">Redis Streams</text>
+<text x="40" y="156" class="m k" fill="#8794ae">fl:events · consumer group sentinel</text>
+<g>
+<rect class="in" x="40" y="170" width="244" height="26" rx="8"/><rect class="glow on" x="40" y="170" width="244" height="26" rx="8"/>
+<rect class="in" x="40" y="202" width="244" height="26" rx="8"/><rect class="glow on" style="animation-delay:.5s" x="40" y="202" width="244" height="26" rx="8"/>
+<rect class="in" x="40" y="234" width="244" height="26" rx="8"/><rect class="glow on" style="animation-delay:1s" x="40" y="234" width="244" height="26" rx="8"/>
+<rect class="in" x="40" y="266" width="244" height="26" rx="8"/><rect class="glow on" style="animation-delay:1.5s" x="40" y="266" width="244" height="26" rx="8"/>
+<rect class="in" x="40" y="298" width="244" height="26" rx="8"/><rect class="glow on" style="animation-delay:2s" x="40" y="298" width="244" height="26" rx="8"/>
+<g class="m k"><text x="52" y="187.500">verdict.created</text><text x="52" y="219.500">domain.observed</text><text x="52" y="251.500">report.submitted</text><text x="52" y="283.500">verdict.upgraded</text><text x="52" y="315.500">feedback.submitted</text></g>
+<g class="m k" text-anchor="end" fill="#8794ae"><text x="274" y="187.500">live</text><text x="274" y="219.500">live</text><text x="274" y="251.500">live</text><text x="274" y="283.500" class="am">replay</text><text x="274" y="315.500">live</text></g>
+</g>
+<text x="40" y="352" class="c">At-least-once delivery. Handlers are</text>
+<text x="40" y="369" class="c">idempotent on event_id.</text>
+<text x="40" y="396" class="c">Three failed attempts move an event to</text>
+<text x="40" y="414" class="m k" fill="#8794ae">fl:events:dlq</text>
+</g>
+
+<!-- 2 correlate -->
+<g>
+<rect class="card" x="316" y="110" width="276" height="330" rx="14"/><rect class="glow on" style="animation-delay:3s" x="316" y="110" width="276" height="330" rx="14" fill-opacity=".03"/>
+<text x="332" y="136" class="h">Correlate</text>
+<text x="332" y="156" class="c">Plain Python. Deterministic. No model.</text>
+<rect x="332" y="170" width="244" height="132" rx="10" fill="#0a101d" stroke="#2a3757"/>
+<circle cx="454" cy="236" r="30" fill="none" stroke="#16203a"/><circle cx="454" cy="236" r="56" fill="none" stroke="#16203a"/>
+<path class="radar" d="M454 236L454 180A56 56 0 0 1 493.600 196.400z" fill="#3fe0c5" opacity=".08"/>
+<g stroke="#3fe0c5" stroke-opacity=".5" stroke-width="1" stroke-dasharray="2 3"><path d="M410 222L392 244"/><path d="M392 244L420 258"/><path d="M420 258L410 222"/><path d="M410 222L436 236"/><path d="M436 236L420 258"/></g>
+<circle cx="412" cy="240" r="34" fill="#3fe0c5" fill-opacity=".05" stroke="#3fe0c5" stroke-opacity=".6" stroke-dasharray="4 4"/>
+<g class="tl"><circle cx="410" cy="222" r="4.500"/><circle cx="392" cy="244" r="4.500"/><circle cx="420" cy="258" r="4.500"/><circle cx="436" cy="236" r="4.500"/></g>
+<g class="pt"><circle cx="512" cy="200" r="4"/><circle cx="536" cy="262" r="4"/><circle cx="500" cy="232" r="4"/><circle cx="552" cy="218" r="4"/><circle cx="356" cy="194" r="4"/></g>
+<g fill="none" stroke="#3fe0c5" stroke-width="2"><circle class="ping" style="animation-delay:3.2s" cx="410" cy="222" r="6"/><circle class="ping" style="animation-delay:3.6s" cx="420" cy="258" r="6"/><circle class="ping" style="animation-delay:4s" cx="436" cy="236" r="6"/></g>
+<text x="566" y="294" text-anchor="end" class="m k tl">one brand · one kit</text>
+<g>
+<rect class="in" x="332" y="314" width="92" height="22" rx="11"/><rect class="in" x="430" y="314" width="52" height="22" rx="11"/><rect class="in" x="488" y="314" width="40" height="22" rx="11"/>
+<rect class="in" x="332" y="342" width="114" height="22" rx="11"/><rect class="in" x="452" y="342" width="78" height="22" rx="11"/>
+<rect class="in" x="332" y="370" width="92" height="22" rx="11"/><rect class="in" x="430" y="370" width="114" height="22" rx="11"/>
+<rect class="in" x="332" y="398" width="92" height="22" rx="11"/>
+<g class="m k" text-anchor="middle"><text x="378" y="329">dom_simhash</text><text x="456" y="329">brand</text><text x="508" y="329">ASN</text><text x="389" y="357">domain pattern</text><text x="491" y="357">registrar</text><text x="378" y="385">cert issuer</text><text x="487" y="385">script cluster</text><text x="378" y="413">time window</text></g>
+</g>
+</g>
+
+<!-- 3 trigger -->
+<g>
+<rect class="card" x="608" y="110" width="276" height="330" rx="14"/>
+<text x="624" y="136" class="h">Trigger</text>
+<text x="624" y="156" class="m k" fill="#8794ae">rules.yaml · unit-tested</text>
+<g>
+<rect class="in" x="624" y="170" width="244" height="44" rx="8"/><rect class="glow onl" style="animation-delay:5.4s" x="624" y="170" width="244" height="44" rx="8"/>
+<rect class="in" x="624" y="220" width="244" height="44" rx="8"/>
+<rect class="in" x="624" y="270" width="244" height="44" rx="8"/>
+<rect class="in" x="624" y="320" width="244" height="44" rx="8"/>
+<rect class="in" x="624" y="370" width="244" height="44" rx="8"/>
+<g class="m h tl" font-size="13"><text x="636" y="188">R1</text><text x="636" y="238">R2</text><text x="636" y="288">R3</text><text x="636" y="338">R4</text><text x="636" y="388">R5</text></g>
+<g class="h" font-size="13.500"><text x="662" y="188">Campaign</text><text x="662" y="238">Kit reuse</text><text x="662" y="288">Report burst</text><text x="662" y="338">Reputation flip</text><text x="662" y="388">Quality</text></g>
+<g class="c" font-size="12"><text x="636" y="205">3+ lookalikes of one brand in 60 min</text><text x="636" y="255">one dom_simhash on 3+ domains</text><text x="636" y="305">5+ reports on one script in 30 min</text><text x="636" y="355">was no warning signs, now dangerous</text><text x="636" y="405">5+ false-positive flags in 60 min</text></g>
+</g>
+<text x="868" y="136" text-anchor="end" class="m k am">incident.opened</text>
+</g>
+
+<!-- 4 triage -->
+<g>
+<rect class="card" x="900" y="110" width="276" height="330" rx="14"/>
+<text x="916" y="136" class="h">Triage <tspan class="b" font-weight="400">· LangGraph StateGraph</tspan></text>
+<text x="916" y="156" class="c">One thread per incident_id.</text>
+<path class="w" d="M972 180V352"/>
+<g>
+<rect class="in" x="916" y="168" width="112" height="26" rx="13"/><rect class="glow on" style="animation-delay:6.6s" x="916" y="168" width="112" height="26" rx="13"/>
+<rect class="in" x="916" y="202" width="112" height="26" rx="13"/><rect class="glow on" style="animation-delay:7.2s" x="916" y="202" width="112" height="26" rx="13"/>
+<rect class="in" x="916" y="236" width="112" height="26" rx="13"/><rect class="glow on" style="animation-delay:7.8s" x="916" y="236" width="112" height="26" rx="13"/>
+<rect class="in" x="916" y="270" width="112" height="26" rx="13"/><rect class="glow on" style="animation-delay:8.4s" x="916" y="270" width="112" height="26" rx="13"/>
+<rect class="in" x="916" y="304" width="112" height="26" rx="13"/><rect class="glow on" style="animation-delay:9s" x="916" y="304" width="112" height="26" rx="13"/>
+<rect class="in" x="916" y="338" width="112" height="26" rx="13"/><rect class="glow on" style="animation-delay:9.6s" x="916" y="338" width="112" height="26" rx="13"/>
+<g class="h" font-size="13" text-anchor="middle"><text x="972" y="185.500">enrich</text><text x="972" y="219.500">compare</text><text x="972" y="253.500">assess</text><text x="972" y="287.500">summarise</text><text x="972" y="321.500">propose</text><text x="972" y="355.500">act</text></g>
+</g>
+<g class="m k">
+<text x="1044" y="180" class="tag">STATE</text><text x="1044" y="198">Postgres</text><text x="1044" y="214">checkpointer</text>
+<text x="1044" y="246" class="tag">RETRIES</text><text x="1044" y="264">per node</text>
+<text x="1044" y="296" class="tag">BUDGET</text><text x="1044" y="314">8 steps</text><text x="1044" y="330">20k tokens</text><text x="1044" y="346">60 s</text>
+</g>
+<text x="916" y="390" class="c">The agent only enriches: severity reason,</text>
+<text x="916" y="407" class="c">summary, proposed actions. It cannot</text>
+<text x="916" y="424" class="c">edit rules, thresholds or scoring.</text>
+</g>
+
+<!-- 5a internal -->
+<g>
+<rect class="card" x="24" y="486" width="536" height="208" rx="14"/>
+<text x="40" y="512" class="h">Internal actions run automatically</text><text x="544" y="512" text-anchor="end" class="m k tl">internal_auto</text>
+<g>
+<rect class="in" x="40" y="528" width="140" height="28" rx="14"/><rect class="in" x="188" y="528" width="112" height="28" rx="14"/><rect class="in" x="308" y="528" width="182" height="28" rx="14"/>
+<rect class="in" x="40" y="564" width="112" height="28" rx="14"/><rect class="in" x="160" y="564" width="126" height="28" rx="14"/><rect class="in" x="294" y="564" width="140" height="28" rx="14"/>
+<circle class="dot done" style="animation-delay:11.4s" cx="55" cy="542" r="5"/><circle class="dot done" style="animation-delay:11.8s" cx="203" cy="542" r="5"/><circle class="dot done" style="animation-delay:12.2s" cx="323" cy="542" r="5"/>
+<circle class="dot done" style="animation-delay:12.6s" cx="55" cy="578" r="5"/><circle class="dot" cx="175" cy="578" r="5"/><circle class="dot done" style="animation-delay:11.4s" cx="309" cy="578" r="5"/>
+<g class="m k"><text x="67" y="546">block_indicator</text><text x="215" y="546">raise_alert</text><text x="335" y="546">update_campaign_board</text><text x="67" y="582">export_stix</text><text x="187" y="582">requeue_check</text><text x="321" y="582">upsert_incident</text></g>
+</g>
+<text x="40" y="620" class="c">Every block carries a TTL and can be reverted:</text>
+<text x="40" y="638" class="m k">make unblock ID=&lt;action_id&gt;</text>
+<text x="40" y="662" class="c">Rules and correlation decide what an incident is.</text>
+<text x="40" y="679" class="c">Incident counts reproduce with the LLM stubbed.</text>
+</g>
+
+<!-- 5b external -->
+<g>
+<rect class="card" x="576" y="486" width="600" height="208" rx="14"/>
+<text x="592" y="512" class="h">External actions stop at a human</text><text x="1160" y="512" text-anchor="end" class="m k am">external_draft</text>
+<g class="w" marker-end="url(#a)"><path d="M762 546H780V563H796"/><path d="M806 563H826"/><path d="M966 563H990"/><path d="M1026 563H1042V544H1056"/><path d="M1042 563V582H1056"/></g>
+<path class="w" d="M762 580H780V563"/>
+<rect class="in" x="592" y="532" width="170" height="28" rx="14"/><rect class="glow am on" style="animation-delay:11.4s" x="592" y="532" width="170" height="28" rx="14"/>
+<rect class="in" x="592" y="566" width="170" height="28" rx="14"/>
+<g class="m k"><text x="606" y="550">draft_takedown</text><text x="606" y="584">draft_police_report</text></g>
+<rect x="796" y="526" width="10" height="74" rx="5" fill="#f4b23a"/>
+<rect class="glow am onl" style="animation-delay:12.3s" x="792" y="522" width="18" height="82" rx="8"/>
+<text x="801" y="618" text-anchor="middle" class="m k am">interrupt()</text>
+<rect x="826" y="549" width="140" height="28" rx="14" fill="#2a1d07" stroke="#8a6416"/><rect class="glow am wait" style="animation-delay:12.4s" x="826" y="549" width="140" height="28" rx="14"/>
+<text x="896" y="567" text-anchor="middle" class="m k am">awaiting_approval</text>
+<circle cx="1008" cy="563" r="18" fill="#16203a" stroke="#5a6c92" stroke-width="1.3"/><circle class="glow on" style="animation-delay:15.2s" cx="1008" cy="563" r="18"/>
+<circle cx="1008" cy="557" r="5" fill="#e7d7b6"/><path d="M998 573q10-12 20 0" fill="none" stroke="#e7d7b6" stroke-width="2.4" stroke-linecap="round"/>
+<text x="1008" y="602" text-anchor="middle" class="c">operator</text>
+<rect x="1056" y="532" width="104" height="24" rx="12" fill="#04211d" stroke="#3fe0c5" stroke-opacity=".6"/><rect class="glow onl" style="animation-delay:15.8s" x="1056" y="532" width="104" height="24" rx="12"/>
+<rect class="in" x="1056" y="570" width="104" height="24" rx="12"/>
+<g class="m k" text-anchor="middle"><text x="1108" y="548" class="tl">approved</text><text x="1108" y="586">rejected</text></g>
+<text x="592" y="646" class="c">The Sentinel writes the draft in Arabic and English. It never sends it.</text>
+<text x="592" y="663" class="c">The graph resumes from its checkpoint when the operator decides.</text>
+</g>
+
+<!-- audit -->
+<g>
+<rect x="24" y="710" width="1152" height="42" rx="12" fill="#111c3d" stroke="#34488c" stroke-width="1.2"/>
+<text x="40" y="736" class="m k bl" fill="#a9c0ff">audit_log</text>
+<text x="118" y="736" class="b">Append-only. UPDATE and DELETE are revoked from the app role. Every action is stored with the evidence ids behind it.</text>
+</g>
+
+<!-- packets -->
+<g>
+<g class="pk s tl" style="offset-path:path('M284 275H332');animation-delay:2.5s"><circle r="10"/><circle r="4.500"/></g>
+<g class="pk s tl" style="offset-path:path('M576 275H624');animation-delay:4.900s"><circle r="10"/><circle r="4.500"/></g>
+<g class="pk s am" style="offset-path:path('M868 275H916');animation-delay:6s"><circle r="10"/><circle r="4.500"/></g>
+<g class="pk l tl" style="offset-path:path('M1038 440V462H292V486');animation-delay:10.100s"><circle r="10"/><circle r="4.500"/></g>
+<g class="pk s am" style="offset-path:path('M1038 440V462H876V486');animation-delay:10.500s"><circle r="10"/><circle r="4.500"/></g>
+<g class="pk s am" style="offset-path:path('M762 546H780V563H796');animation-delay:11.700s"><circle r="10"/><circle r="4.500"/></g>
+<g class="pk s tl" style="offset-path:path('M1026 563H1042V544H1056');animation-delay:15.300s"><circle r="10"/><circle r="4.500"/></g>
+</g>
+</svg>
