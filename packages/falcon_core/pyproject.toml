@@ -13,6 +13,7 @@ dependencies = [
   "httpcore>=1,<2",
   "tldextract>=5",
   "pyyaml>=6",
+  "python-ulid>=3",
 ]
 
 [build-system]

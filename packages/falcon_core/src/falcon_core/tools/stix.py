@@ -38,7 +38,8 @@ def _pattern(kind: str, value: str) -> str | None:
     if kind == "url":
         return f"[url:value = '{_esc(refanged)}']"
     if kind == "ip":
-        return f"[ipv4-addr:value = '{_esc(refanged)}']"
+        kind = "ipv6-addr" if ":" in refanged else "ipv4-addr"
+        return f"[{kind}:value = '{_esc(refanged)}']"
     return None  # dom_hash / script_cluster are Falcon-internal fingerprints: not STIX observables
 
 

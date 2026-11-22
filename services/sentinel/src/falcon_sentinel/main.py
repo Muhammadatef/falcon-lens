@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import hmac
 import logging
 import os
+import re
 import socket
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
@@ -100,7 +102,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     async with AsyncExitStack() as stack:
         client = aioredis.from_url(settings.redis_url, decode_responses=True)
         stack.push_async_callback(client.aclose)
-        repo = PgRepo(dsn)
+        repo = PgRepo(
+            dsn,
+            owner_dsn=os.environ.get("FL_DATABASE_OWNER_URL") or None,
+            app_role=os.environ.get("FL_SENTINEL_DB_ROLE") or None,
+        )
         await repo.init()
         stack.push_async_callback(repo.close)
         saver = await stack.enter_async_context(AsyncPostgresSaver.from_conn_string(dsn))
@@ -159,25 +165,39 @@ app = create_app(
 )
 
 
-def _operator(key: str | None) -> str:
+def _operator(key: str | None, name: str | None = None) -> str:
+    """Authenticate with FL_OPERATOR_KEY; identity = optional X-Operator-Name + short key id (never the key)."""
     want = settings.fl_operator_key.get_secret_value() if settings.fl_operator_key else None
     if not want or not key or not hmac.compare_digest(key.encode(), want.encode()):
         raise HTTPException(401, "operator key required")
-    return "operator"
+    key_id = hashlib.sha256(key.encode()).hexdigest()[:8]
+    who = re.sub(r"[^A-Za-z0-9_.@-]", "", name or "")[:40] or "operator"
+    return f"{who}#key:{key_id}"
 
 
 @app.get("/internal/incidents")
-async def list_incidents(status: str | None = None) -> list[dict[str, Any]]:
+async def list_incidents(status: str | None = None, x_operator_key: str | None = Header(None)) -> list[dict[str, Any]]:
+    _operator(x_operator_key)
     incs = rt.cache.all() if rt.cache else []
     return [i for i in incs if status in (None, i["status"])]
 
 
 @app.get("/internal/incidents/{incident_id}")
-async def get_incident(incident_id: str) -> dict[str, Any]:
+async def get_incident(incident_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
+    _operator(x_operator_key)
     inc = rt.cache.get(incident_id) if rt.cache else None
     if inc is None:
         raise HTTPException(404, "not found")
     return inc
+
+
+@app.get("/internal/incidents/{incident_id}/stix")
+async def get_stix(incident_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
+    _operator(x_operator_key)
+    bundle = await rt.repo.stix_get(incident_id) if rt.repo else None
+    if bundle is None:
+        raise HTTPException(404, "no STIX bundle exported for this incident")
+    return bundle
 
 
 async def _decide(incident_id: str, action_id: str, who: str, ok: bool) -> dict[str, Any]:
@@ -195,13 +215,23 @@ async def _decide(incident_id: str, action_id: str, who: str, ok: bool) -> dict[
 
 
 @app.post("/internal/incidents/{incident_id}/actions/{action_id}/approve")
-async def approve(incident_id: str, action_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
-    return await _decide(incident_id, action_id, _operator(x_operator_key), True)
+async def approve(
+    incident_id: str,
+    action_id: str,
+    x_operator_key: str | None = Header(None),
+    x_operator_name: str | None = Header(None),
+) -> dict[str, Any]:
+    return await _decide(incident_id, action_id, _operator(x_operator_key, x_operator_name), True)
 
 
 @app.post("/internal/incidents/{incident_id}/actions/{action_id}/reject")
-async def reject(incident_id: str, action_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
-    return await _decide(incident_id, action_id, _operator(x_operator_key), False)
+async def reject(
+    incident_id: str,
+    action_id: str,
+    x_operator_key: str | None = Header(None),
+    x_operator_name: str | None = Header(None),
+) -> dict[str, Any]:
+    return await _decide(incident_id, action_id, _operator(x_operator_key, x_operator_name), False)
 
 
 if __name__ == "__main__":
