@@ -113,9 +113,7 @@ def test_build_forms_flags_cross_origin_and_exfil() -> None:
 
 
 def test_build_forms_same_origin_search_is_not_cred() -> None:
-    forms = build_forms(
-        [_form("http://x.test/search", [{"type": "text", "name": "q"}])], "http://x.test/"
-    )
+    forms = build_forms([_form("http://x.test/search", [{"type": "text", "name": "q"}])], "http://x.test/")
     assert not forms[0].cred_form and not forms[0].action_cross_origin
 
 
@@ -151,14 +149,11 @@ def test_simhash_structure_only() -> None:
 
 def test_phash_stable_and_discriminates() -> None:
     grad = [
-        [200.0 if 6 <= x < 20 and 4 <= y < 14 else (60.0 if y > 20 else 120.0) for x in range(32)]
-        for y in range(32)
+        [200.0 if 6 <= x < 20 and 4 <= y < 14 else (60.0 if y > 20 else 120.0) for x in range(32)] for y in range(32)
     ]
     checker = [[255.0 if (x // 4 + y // 4) % 2 else 0.0 for x in range(32)] for y in range(32)]
     assert phash_from_gray32(grad) == phash_from_gray32(grad)
-    noisy = [
-        [v + (1 if (x + y) % 7 == 0 else 0) for x, v in enumerate(r)] for y, r in enumerate(grad)
-    ]
+    noisy = [[v + (1 if (x + y) % 7 == 0 else 0) for x, v in enumerate(r)] for y, r in enumerate(grad)]
     assert hamming64(phash_from_gray32(grad), phash_from_gray32(noisy)) <= 4
     assert hamming64(phash_from_gray32(grad), phash_from_gray32(checker)) > 10
     with pytest.raises(ValueError):
@@ -244,9 +239,7 @@ def test_official_site_yields_no_page_evidence() -> None:
 
 
 def test_cloaking_signal() -> None:
-    benign = _profile(
-        "desktop_en", "http://c.test/", dom_simhash="0" * 16, visible_text="Coming soon"
-    )
+    benign = _profile("desktop_en", "http://c.test/", dom_simhash="0" * 16, visible_text="Coming soon")
     phish = _phish_profile("mobile_ar")
     cl = compare_profiles(phish, benign)
     assert cl.diff and "cred_form_differs" in cl.reasons

@@ -11,9 +11,7 @@ def falcon(size: int) -> Image.Image:
     im = Image.new("RGB", (size, size), (14, 52, 96))
     d = ImageDraw.Draw(im)
     s = size / 64
-    d.polygon(
-        [(8 * s, 40 * s), (32 * s, 8 * s), (56 * s, 40 * s), (32 * s, 30 * s)], fill=(240, 180, 40)
-    )
+    d.polygon([(8 * s, 40 * s), (32 * s, 8 * s), (56 * s, 40 * s), (32 * s, 30 * s)], fill=(240, 180, 40))
     d.polygon(
         [(20 * s, 46 * s), (32 * s, 30 * s), (44 * s, 46 * s), (32 * s, 56 * s)],
         fill=(255, 255, 255),

@@ -125,17 +125,12 @@ def test_render_requires_key(tmp_path: Path) -> None:
     with c:
         assert c.post("/render", json={"url": "https://example.com/"}).status_code == 401
         assert (
-            c.post(
-                "/render", json={"url": "https://example.com/"}, headers={"x-sandbox-key": "no"}
-            ).status_code
-            == 401
+            c.post("/render", json={"url": "https://example.com/"}, headers={"x-sandbox-key": "no"}).status_code == 401
         )
         assert fake.calls == []
 
 
-@pytest.mark.parametrize(
-    "url", ["http://169.254.169.254/", "http://redis:6379/", "http://10.0.0.1/"]
-)
+@pytest.mark.parametrize("url", ["http://169.254.169.254/", "http://redis:6379/", "http://10.0.0.1/"])
 def test_render_refuses_internal_targets(tmp_path: Path, url: str) -> None:
     c, fake = _client(tmp_path)
     with c:

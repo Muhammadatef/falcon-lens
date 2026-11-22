@@ -82,9 +82,7 @@ def claimed_brands(p: ProfileFeatures, brands: Sequence[BrandRef]) -> dict[str, 
     return out
 
 
-def build_page_evidence(
-    features: RenderFeatures, brands: Sequence[BrandRef] = ()
-) -> list[Evidence]:
+def build_page_evidence(features: RenderFeatures, brands: Sequence[BrandRef] = ()) -> list[Evidence]:
     """All page/visual/brand evidence for one render (both profiles merged)."""
     profiles = _loaded(features)
     if not profiles:
@@ -94,9 +92,7 @@ def build_page_evidence(
 
     # page.cred_form -----------------------------------------------------------------------
     cred_profiles = [p for p in profiles if any(f.cred_form for f in p.forms)]
-    cred_kinds = sorted(
-        {k for p in profiles for f in p.forms if f.cred_form for k in f.sensitive_kinds}
-    )
+    cred_kinds = sorted({k for p in profiles for f in p.forms if f.cred_form for k in f.sensitive_kinds})
     if cred_profiles:
         out.append(
             _ev(
@@ -125,11 +121,7 @@ def build_page_evidence(
                 )
                 t["profiles"] = sorted({*t.get("profiles", []), p.profile})
         for pt in p.script_post_targets:
-            if (
-                pt.cross_origin
-                and host_of(pt.origin)
-                and registrable_domain(host_of(pt.origin)) != site
-            ):
+            if pt.cross_origin and host_of(pt.origin) and registrable_domain(host_of(pt.origin)) != site:
                 t = targets.setdefault(
                     (host_of(pt.origin), pt.kind, pt.exfil),
                     {

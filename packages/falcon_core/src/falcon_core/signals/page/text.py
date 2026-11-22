@@ -8,9 +8,7 @@ import unicodedata
 _CAMEL = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
 _SEP = re.compile(r"[^0-9a-z؀-ۿ]+")
 _ARABIC_MARKS = re.compile(r"[ً-ٰٟـ]")  # harakat, superscript alef, tatweel
-_ALEF = str.maketrans(
-    {"أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ى": "ي", "ة": "ه", "ؤ": "و", "ئ": "ي"}
-)
+_ALEF = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ى": "ي", "ة": "ه", "ؤ": "و", "ئ": "ي"})
 _ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 
 

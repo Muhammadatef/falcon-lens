@@ -81,9 +81,7 @@ def render(url: str, **kw: Any) -> RenderFeatures:
     return RenderFeatures(
         url=url,
         profiles=body["profiles"],
-        cloaking=Cloaking(
-            diff=c["diff"], reasons=c["reasons"], simhash_distance=c["simhash_distance"]
-        ),
+        cloaking=Cloaking(diff=c["diff"], reasons=c["reasons"], simhash_distance=c["simhash_distance"]),
     )
 
 
@@ -140,9 +138,7 @@ def test_smoke_paths_on_fixtures_host() -> None:
     assert not signals(render("http://fixtures/official/")) & {"page.cred_form"}
 
 
-@pytest.mark.parametrize(
-    "url", ["http://169.254.169.254/latest/meta-data/", "http://redis:6379/", "http://10.0.0.1/"]
-)
+@pytest.mark.parametrize("url", ["http://169.254.169.254/latest/meta-data/", "http://redis:6379/", "http://10.0.0.1/"])
 def test_internal_targets_refused(url: str) -> None:
     status, body = call("/render", {"url": url})
     assert status == 400 and body["detail"]["error"] == "blocked"

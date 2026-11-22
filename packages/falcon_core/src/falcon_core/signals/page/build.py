@@ -46,11 +46,7 @@ def build_forms(raw_forms: Iterable[Mapping[str, Any]], page_url: str) -> list[F
     out: list[FormFeature] = []
     for raw in raw_forms:
         kinds = [classify_field(f) for f in raw.get("fields", [])]
-        visible = [
-            k
-            for k, f in zip(kinds, raw.get("fields", []), strict=True)
-            if f.get("type") != "hidden"
-        ]
+        visible = [k for k, f in zip(kinds, raw.get("fields", []), strict=True) if f.get("type") != "hidden"]
         sensitive = sorted({k.value for k in visible if k in SENSITIVE_KINDS})
         action = str(raw.get("action") or "")
         action_origin = origin_of(action) if action else None
@@ -114,9 +110,7 @@ def build_dynamic_post_target(url: str, resource_type: str, page_url: str) -> Po
     origin = origin_of(url)
     if origin is None:
         return None
-    kind = {"fetch": "fetch", "xhr": "xhr", "ping": "beacon", "document": "form"}.get(
-        resource_type, "other"
-    )
+    kind = {"fetch": "fetch", "xhr": "xhr", "ping": "beacon", "document": "form"}.get(resource_type, "other")
     cls = classify_post_target(url)
     return PostTarget(
         origin=origin,

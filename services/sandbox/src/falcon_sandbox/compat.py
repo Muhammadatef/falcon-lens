@@ -34,11 +34,7 @@ def to_flat(f: RenderFeatures, verdict_id: str | None = None) -> dict[str, Any]:
     p = primary_profile(f)
     out: dict[str, Any] = {"verdict_id": verdict_id}
     if p is not None:
-        exfil = [
-            {"origin": t.origin, "category": t.exfil_category}
-            for t in p.script_post_targets
-            if t.exfil
-        ]
+        exfil = [{"origin": t.origin, "category": t.exfil_category} for t in p.script_post_targets if t.exfil]
         exfil += [
             {"origin": fm.action_origin, "category": fm.action_exfil_category}
             for fm in p.forms

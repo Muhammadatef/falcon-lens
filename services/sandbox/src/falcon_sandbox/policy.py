@@ -31,9 +31,7 @@ class RequestPolicy:
     guard: GuardPolicy
     visual: bool = False
 
-    def decide(
-        self, url: str, method: str, resource_type: str, redirect_depth: int = 0
-    ) -> Decision:
+    def decide(self, url: str, method: str, resource_type: str, redirect_depth: int = 0) -> Decision:
         if method.upper() not in SAFE_METHODS:
             return Decision(False, "method_not_get")  # NEVER send a form or script POST
         if url.startswith(LOCAL_SCHEMES):

@@ -68,9 +68,7 @@ def image_phash(data: bytes) -> str | None:
             gray = im.convert("RGBA")
             bg = Image.new("RGBA", gray.size, (255, 255, 255, 255))
             gray = Image.alpha_composite(bg, gray).convert("L").resize((32, 32), Image.LANCZOS)
-        px = list(
-            gray.get_flattened_data() if hasattr(gray, "get_flattened_data") else gray.getdata()
-        )
+        px = list(gray.get_flattened_data() if hasattr(gray, "get_flattened_data") else gray.getdata())
         return phash_from_gray32([[float(v) for v in px[r * 32 : (r + 1) * 32]] for r in range(32)])
     except Exception:  # noqa: BLE001 - untrusted bytes: any decode failure just means no hash
         return None
@@ -169,9 +167,7 @@ class SandboxBrowser:
             self._active += 1
             return self._browser
 
-    async def visit(
-        self, url: str, profile: str, *, visual: bool = False, keep_artifacts: bool = False
-    ) -> VisitResult:
+    async def visit(self, url: str, profile: str, *, visual: bool = False, keep_artifacts: bool = False) -> VisitResult:
         async with self._sem:
             browser = await self._get_browser()
             ctx: BrowserContext | None = None
@@ -210,9 +206,7 @@ class SandboxBrowser:
                     with contextlib.suppress(PlaywrightError, TimeoutError):
                         await asyncio.wait_for(ctx.close(), 3)
 
-    async def _visit(
-        self, ctx: BrowserContext, url: str, profile: str, visual: bool, keep: bool
-    ) -> VisitResult:
+    async def _visit(self, ctx: BrowserContext, url: str, profile: str, visual: bool, keep: bool) -> VisitResult:
         loop = asyncio.get_running_loop()
         deadline = loop.time() + TOTAL_TIMEOUT_S
         policy = RequestPolicy(self.settings.guard, visual=visual)
@@ -311,14 +305,10 @@ class SandboxBrowser:
         page.on(
             "requestfinished",
             lambda r: (
-                setattr(st, "non_get_sent", st.non_get_sent + 1)
-                if r.method.upper() not in ("GET", "HEAD")
-                else None
+                setattr(st, "non_get_sent", st.non_get_sent + 1) if r.method.upper() not in ("GET", "HEAD") else None
             ),
         )
-        page.on(
-            "response", lambda r: st.images.__setitem__(r.url, r) if len(st.images) < 60 else None
-        )
+        page.on("response", lambda r: st.images.__setitem__(r.url, r) if len(st.images) < 60 else None)
 
         feats = ProfileFeatures(profile=profile, requested_url=url[:512])  # type: ignore[arg-type]
         response = None
@@ -328,9 +318,7 @@ class SandboxBrowser:
             nonlocal response, nav_error
             nav_error = None
             try:
-                response = await page.goto(
-                    target, wait_until="domcontentloaded", timeout=remaining_ms()
-                )
+                response = await page.goto(target, wait_until="domcontentloaded", timeout=remaining_ms())
             except PlaywrightTimeout:
                 feats.timed_out = True
             except PlaywrightError as exc:
@@ -442,11 +430,7 @@ class SandboxBrowser:
 
     @staticmethod
     async def _favicon(page: Page, st: _State, url: str, policy: RequestPolicy) -> Favicon:
-        if (
-            not url
-            or not url.startswith(("http://", "https://"))
-            or not policy.decide(url, "GET", "image").allow
-        ):
+        if not url or not url.startswith(("http://", "https://")) or not policy.decide(url, "GET", "image").allow:
             return Favicon()
         resp = st.images.get(url)
         if resp is None:

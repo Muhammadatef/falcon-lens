@@ -75,23 +75,19 @@ def build_app(settings: Settings | None = None, browser: SandboxBrowser | None =
         finally:
             await sb.stop()
 
-    app = create_app(
-        "sandbox", title="Falcon Lens sandbox", lifespan=lifespan, deps={"browser": sb.ready}
-    )
+    app = create_app("sandbox", title="Falcon Lens sandbox", lifespan=lifespan, deps={"browser": sb.ready})
 
     @app.middleware("http")
-    async def require_key(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def require_key(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         """Everything except the health probes needs the worker token (same rule as the
         platform's ``protect=True``), sent as ``X-Sandbox-Key`` or ``Authorization: Bearer``."""
         if request.url.path in ("/healthz", "/readyz"):
             return await call_next(request)
         if not cfg.api_key:
             return JSONResponse({"detail": "service token not configured"}, status_code=503)
-        supplied = request.headers.get("x-sandbox-key") or request.headers.get(
-            "authorization", ""
-        ).removeprefix("Bearer ")
+        supplied = request.headers.get("x-sandbox-key") or request.headers.get("authorization", "").removeprefix(
+            "Bearer "
+        )
         if not supplied or not hmac.compare_digest(supplied.encode(), cfg.api_key.encode()):
             return JSONResponse({"detail": "invalid sandbox key"}, status_code=401)
         return await call_next(request)
@@ -106,9 +102,7 @@ def build_app(settings: Settings | None = None, browser: SandboxBrowser | None =
         refuse(req.url)
         t0 = time.monotonic()
         names = list(dict.fromkeys(req.profiles))
-        results = await asyncio.gather(
-            *(sb.visit(req.url, n, visual=req.visual, keep_artifacts=False) for n in names)
-        )
+        results = await asyncio.gather(*(sb.visit(req.url, n, visual=req.visual, keep_artifacts=False) for n in names))
         profiles: dict[ProfileName, ProfileFeatures] = {}
         for n, r in zip(names, results, strict=True):
             if r.screenshot:  # stored privately; never returned

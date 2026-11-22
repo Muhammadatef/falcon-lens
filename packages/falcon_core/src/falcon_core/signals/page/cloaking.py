@@ -60,6 +60,4 @@ def compare_profiles(a: ProfileFeatures, b: ProfileFeatures) -> Cloaking:
     # (site, form or exfil difference) or BOTH structure and text to diverge.
     strong = {"final_site_differs", "cred_form_differs", "exfil_differs"}
     diff = bool(strong & set(reasons)) or {"dom_structure_differs", "text_differs"} <= set(reasons)
-    return Cloaking(
-        diff=diff, reasons=reasons if diff else [], simhash_distance=dist, text_similarity=sim
-    )
+    return Cloaking(diff=diff, reasons=reasons if diff else [], simhash_distance=dist, text_similarity=sim)

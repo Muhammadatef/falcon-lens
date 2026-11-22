@@ -177,9 +177,7 @@ _WEAK: tuple[tuple[FieldKind, tuple[str, ...]], ...] = (
     (FieldKind.EMAIL, _phrases("email", "e mail", "mail", "البريد الالكتروني", "البريد", "ايميل")),
     (
         FieldKind.PHONE,
-        _phrases(
-            "phone", "mobile", "tel", "telephone", "رقم الجوال", "رقم الهاتف", "الجوال", "هاتف"
-        ),
+        _phrases("phone", "mobile", "tel", "telephone", "رقم الجوال", "رقم الهاتف", "الجوال", "هاتف"),
     ),
     (
         FieldKind.USERNAME,

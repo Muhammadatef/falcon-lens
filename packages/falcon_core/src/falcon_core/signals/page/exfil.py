@@ -24,9 +24,7 @@ _PATTERNS: tuple[_Rule, ...] = (
     ("webhook", re.compile(r"^hooks\.slack\.com$"), re.compile(r"^/services/")),
     (
         "webhook",
-        re.compile(
-            r"(^|\.)(webhook\.site|requestbin\.\w+|pipedream\.net|hookbin\.com|ngrok(-free)?\.(io|app|dev))$"
-        ),
+        re.compile(r"(^|\.)(webhook\.site|requestbin\.\w+|pipedream\.net|hookbin\.com|ngrok(-free)?\.(io|app|dev))$"),
         None,
     ),
     ("webhook", re.compile(r"^script\.google(usercontent)?\.com$"), re.compile(r"/macros/")),

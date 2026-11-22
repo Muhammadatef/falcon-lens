@@ -26,9 +26,7 @@ class Hop(_M):
 
 
 class FormFeature(_M):
-    action_origin: str | None = Field(
-        default=None, description="scheme://host[:port] of form action"
-    )
+    action_origin: str | None = Field(default=None, description="scheme://host[:port] of form action")
     action_cross_origin: bool = False
     action_exfil: bool = False
     action_exfil_category: str | None = None
@@ -61,9 +59,7 @@ class NetworkSummary(_M):
     by_type: dict[str, int] = Field(default_factory=dict)
     blocked: list[BlockedRequest] = Field(default_factory=list)
     blocked_total: int = 0
-    non_get_sent: int = Field(
-        default=0, description="non-GET/HEAD requests that left the sandbox; must be 0"
-    )
+    non_get_sent: int = Field(default=0, description="non-GET/HEAD requests that left the sandbox; must be 0")
     non_get_blocked: int = 0
     size_cap_hit: bool = False
     redirect_limit_hit: bool = False
@@ -105,15 +101,11 @@ class ProfileFeatures(_M):
     title: str = Field(default="", max_length=300)
     lang: str = Field(default="", max_length=20)
     redirect_chain: list[Hop] = Field(default_factory=list)
-    client_navigations: list[str] = Field(
-        default_factory=list, description="main-frame URLs after load"
-    )
+    client_navigations: list[str] = Field(default_factory=list, description="main-frame URLs after load")
     forms: list[FormFeature] = Field(default_factory=list)
     script_post_targets: list[PostTarget] = Field(default_factory=list)
     asset_origins: list[str] = Field(default_factory=list, description="third-party asset hosts")
-    visible_text: str = Field(
-        default="", description="<= 4 KB, UNTRUSTED: for the quarantined extractor only"
-    )
+    visible_text: str = Field(default="", description="<= 4 KB, UNTRUSTED: for the quarantined extractor only")
     favicon: Favicon = Field(default_factory=Favicon)
     screenshot_phash: str | None = Field(default=None, pattern=r"^[0-9a-f]{16}$")
     screenshot_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")

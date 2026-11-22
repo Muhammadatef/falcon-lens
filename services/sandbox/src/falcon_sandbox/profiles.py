@@ -20,8 +20,7 @@ PROFILES: dict[str, dict[str, Any]] = {
     },
     "desktop_en": {
         "user_agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-            f"{CHROME} Safari/537.36"
+            f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) {CHROME} Safari/537.36"
         ),
         "viewport": {"width": 1366, "height": 768},
         "is_mobile": False,
