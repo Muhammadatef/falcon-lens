@@ -64,3 +64,9 @@ scrape_configs:
     static_configs:
       - targets: ["grafana:3000"]
         labels: { service: grafana }
+
+  # Synthetic demo emitter (scripts/emit_demo_metrics.py). The script writes the target file
+  # while it runs and removes it on exit, so this job never shows a DOWN target.
+  - job_name: falcon-demo
+    file_sd_configs:
+      - files: [/etc/prometheus/demo/*.yml]

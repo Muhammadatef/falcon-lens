@@ -49,6 +49,7 @@ dev = [
   "pyyaml>=6",
   "pytest-cov>=6",
   "fakeredis>=2.26",
+  "pyyaml>=6",
 ]
 
 [tool.ruff]
@@ -57,7 +58,7 @@ target-version = "py312"
 extend-exclude = ["web", ".venv", "docs", "*.md"]  # ruff 0.17 would reformat code blocks in docs
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "S"]
+select = ["E", "F", "I", "UP", "B", "SIM", "S", "PLE2502", "PLE2515"]
 ignore = ["S104", "SIM905", "UP047"]  # S104: services bind 0.0.0.0 in containers; SIM905: `"a b".split()` word lists are deliberate
 
 [tool.ruff.lint.isort]
@@ -89,5 +90,5 @@ mypy_path = "packages/falcon_core/src:services/api/src"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["packages/falcon_core/tests", "services"]
+testpaths = ["packages/falcon_core/tests", "services", "scripts/tests"]
 markers = ["integration: needs a real Postgres (FL_TEST_PG_DSN)"]

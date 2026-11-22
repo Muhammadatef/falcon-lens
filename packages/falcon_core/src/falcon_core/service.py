@@ -22,6 +22,7 @@ from prometheus_client import (
 
 from falcon_core import __version__
 from falcon_core.logging import configure_logging
+from falcon_core.telemetry.metrics import REGISTRY as FL_REGISTRY
 
 Lifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
 DepCheck = Callable[[], Awaitable[bool]]
@@ -119,7 +120,9 @@ def create_app(
 
     @app.get("/metrics", include_in_schema=False)
     async def metrics() -> Response:
-        return Response(generate_latest(registry), media_type=CONTENT_TYPE_LATEST)
+        # fl_ metrics live in one shared registry (falcon_core.telemetry.metrics).
+        body = generate_latest(registry) + generate_latest(FL_REGISTRY)
+        return Response(body, media_type=CONTENT_TYPE_LATEST)
 
     return app
 
