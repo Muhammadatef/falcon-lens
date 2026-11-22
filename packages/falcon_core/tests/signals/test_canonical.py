@@ -1,4 +1,5 @@
 import pytest
+
 from falcon_core.signals.url.canonical import canonicalize, free_host_suffix, parse_ipv4
 
 
@@ -64,13 +65,27 @@ def test_data_uri():
 
 
 def test_never_raises_on_garbage():
-    for s in ["", " ", "http://", "://", "http://[", "http://:::", "\x00\x01", "http://a:99999999/", "a" * 20000]:
+    for s in [
+        "",
+        " ",
+        "http://",
+        "://",
+        "http://[",
+        "http://:::",
+        "\x00\x01",
+        "http://a:99999999/",
+        "a" * 20000,
+    ]:
         canonicalize(s)
 
 
 def test_psl_private_per_subdomain():
-    c = canonicalize("https://someuser.github.io/")
-    assert c.registrable == "someuser.github.io" and c.is_private_suffix and c.domain_label == "someuser"
+    c = canonicalize("https://fl-fixture-0000.github.io/")
+    assert (
+        c.registrable == "fl-fixture-0000.github.io"
+        and c.is_private_suffix
+        and c.domain_label == "fl-fixture-0000"
+    )
     assert free_host_suffix(c) == "github.io"
     assert free_host_suffix(canonicalize("https://falcon-demo-bank.test/")) is None
 

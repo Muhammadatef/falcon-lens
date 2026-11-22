@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Signal plugin base: SignalSpec, SignalContext protocol, Evidence, REGISTRY.
 
 Contracts: contracts/signal.schema.json, contracts/evidence.schema.json.
@@ -15,7 +16,18 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
-Family = Literal["url", "domain", "reputation", "page", "visual", "brand", "message", "email", "image", "injection"]
+Family = Literal[
+    "url",
+    "domain",
+    "reputation",
+    "page",
+    "visual",
+    "brand",
+    "message",
+    "email",
+    "image",
+    "injection",
+]
 
 
 @dataclass(frozen=True)
@@ -78,7 +90,9 @@ class Evidence:
 
     def __post_init__(self) -> None:
         if not self.id:
-            blob = json.dumps([self.signal, self.observed], sort_keys=True, default=str, ensure_ascii=True)
+            blob = json.dumps(
+                [self.signal, self.observed], sort_keys=True, default=str, ensure_ascii=True
+            )
             self.id = "ev_" + hashlib.sha256(blob.encode()).hexdigest()[:16]
 
     def to_dict(self) -> dict[str, Any]:
@@ -123,7 +137,7 @@ def signal(spec: SignalSpec) -> Callable[[Callable[[SignalContext], list[Evidenc
             except TimeoutError:
                 out = [_error(spec, "timeout")]
             except Exception as exc:  # noqa: BLE001 - signals must never raise
-                out = [_error(spec, f"{type(exc).__name__}: {exc}"[:200])]
+                out = [_error(spec, type(exc).__name__)]
             ms = int((time.perf_counter() - t0) * 1000)
             for ev in out:
                 ev.latency_ms = ms
@@ -141,6 +155,11 @@ def signal(spec: SignalSpec) -> Callable[[Callable[[SignalContext], list[Evidenc
 
 def _error(spec: SignalSpec, msg: str) -> Evidence:
     return Evidence(
-        signal=spec.name, family=spec.family, observed=None, polarity="neutral",
-        tier=spec.tier, confidence=0.0, error=msg,
+        signal=spec.name,
+        family=spec.family,
+        observed=None,
+        polarity="neutral",
+        tier=spec.tier,
+        confidence=0.0,
+        error=msg,
     )
