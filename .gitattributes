@@ -1,0 +1,4 @@
+# Append-only logs: on conflict keep BOTH sides (owner decision 2026-11-22)
+DECISIONS.md merge=union
+STATUS.md merge=union
+TASKS.md merge=union
