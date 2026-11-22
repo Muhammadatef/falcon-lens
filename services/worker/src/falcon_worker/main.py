@@ -4,6 +4,25 @@ Network note: the worker is the only service besides egress-proxy that shares a 
 sandbox (`sandbox_ctl`). Docker networks are not directional, so the sandbox can reach this port.
 The worker therefore exposes ONLY /healthz, /readyz and /metrics (plus /metrics/sandbox) on it:
 never a job or control API. Jobs arrive through Redis only.
+
+When to use it:
+    You do not run it by hand; the `worker` container starts it. `make smoke` proves it works.
+
+How to run:
+    make up                                   (direct: uv run python -m falcon_worker.main)
+
+Inputs:
+    Settings from env (Redis URL, optional database URL, FL_SANDBOX_TOKEN or FL_SANDBOX_API_KEY),
+    FL_SANDBOX_URL (default http://sandbox:8000), FL_SSRF_ALLOW_HOSTS (only honoured in local, demo and ci
+    environments), FL_EGRESS_PROXY (route reputation lookups through the egress proxy), FL_OPENPHISH_FEED_DIR
+    and FL_OPENPHISH_REFRESH_S (default 900 seconds).
+
+Outputs / side effects:
+    Reads jobs from the Redis stream fl:jobs and stores verdicts (Redis cache, and Postgres when DATABASE_URL
+    is set; it runs the table migration at start). Calls the sandbox over the internal network and the
+    reputation services through the SSRF-guarded client. If the OpenPhish feed folder is mounted it reads it
+    (local files only) and refreshes the Redis feed mirror, publishing feed.updated events on fl:events.
+    Exposes /healthz, /readyz and /metrics on port 8000.
 """
 
 from __future__ import annotations

@@ -10,6 +10,25 @@ no JS). Only 2xx final responses are kept; for official rows the final host must
 stay inside the brand's verified_domains. The per-row status log goes to
 data/private/legit_url_checks.jsonl (gitignored). The published CSV carries only rows
 that passed.
+
+When to use it:
+    Rarely: only to refresh or extend the legitimate-URL list. The result is committed, so most people
+    never need to run it.
+
+How to run:
+    uv run --no-project --with httpx --with tldextract --with pyyaml python evals/datasets/collect_legit_urls.py run
+    (no make target; without the word `run` it only prints this text)
+
+Inputs:
+    The candidate lists inside this file (official UAE sites and popular domains), data/brands.yaml, and live HTTPS responses from those sites.
+
+Outputs / side effects:
+    Sends one plain GET per candidate (at most one per second, no forms, no JavaScript) and RDAP lookups
+    for "new domain" rows. Overwrites evals/datasets/legit_urls.csv (defanged URLs, passed rows only) and
+    data/private/legit_url_checks.jsonl (gitignored status log).
+
+Safety notes:
+    It only visits legitimate, public sites. Never add phishing URLs to the candidate lists.
 """
 
 from __future__ import annotations
@@ -507,11 +526,13 @@ def refang(url: str) -> str:
 
 
 def reg_domain(url: str) -> str:
+    """Registrable domain (eTLD+1) of a URL."""
     ext = PSL(refang(url))
     return ".".join(p for p in (ext.domain, ext.suffix) if p).lower()
 
 
 def build_candidates() -> list[dict[str, str]]:
+    """The candidate legitimate URLs (official sites, popular domains, new-domain hard negatives)."""
     brands = yaml.safe_load((ROOT / "data/brands.yaml").read_text())["brands"]
     verified = {b["brand_id"]: set(b["verified_domains"]) for b in brands}
     rows: list[dict[str, str]] = []
@@ -601,6 +622,7 @@ def build_candidates() -> list[dict[str, str]]:
 
 
 def rdap_created(client: httpx.Client, domain: str) -> str | None:
+    """Registration date of a domain from RDAP, or None."""
     try:
         r = client.get(f"hxxps://rdap.org/domain/{domain}", follow_redirects=True, timeout=20)
         if r.status_code != 200:
@@ -614,6 +636,7 @@ def rdap_created(client: httpx.Client, domain: str) -> str | None:
 
 
 def main() -> None:
+    """Check every candidate once and write evals/datasets/legit_urls.csv with the ones that passed."""
     cands = build_candidates()
     private = ROOT / "data/private"
     private.mkdir(parents=True, exist_ok=True)

@@ -16,6 +16,18 @@ Usage:
     python scripts/readme_metrics.py --print   # print the block, change nothing
 
 Standard library only, so it runs before `uv sync`.
+
+When to use it:
+    After a new eval artifact is published (`make eval` with --publish), and in CI with --check.
+
+How to run:
+    python scripts/readme_metrics.py [--check | --print] [--readme PATH] [--published DIR]
+    Run from the repo root. Uses only the standard library.
+
+Outputs / side effects:
+    Without flags it rewrites only the block between the metrics:start and metrics:end markers in README.md.
+    --check changes nothing and exits 1 if the block is stale; --print shows the block and changes nothing.
+    No network access. It never computes, rounds or estimates a number.
 """
 
 from __future__ import annotations
@@ -146,6 +158,7 @@ def inject(readme_text: str, block: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Rewrite, check or print the README metrics block (see module docstring)."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--readme", type=Path, default=ROOT / "README.md")
     parser.add_argument("--published", type=Path, default=ROOT / "evals" / "results" / "published")

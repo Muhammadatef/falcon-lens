@@ -3,6 +3,13 @@
 For one URL: T1 url signals (``falcon_core.signals``) -> evidence, lexical features -> calibrated ``p_clf``,
 registry lookup -> ``registry.verified_official`` evidence (what the cascade's T0 registry step emits), then the
 deterministic arbiter. Tiers above T1 (sandbox render, LLM) are not run here and are reported ``not_evaluated``.
+
+When to use it:
+    As a library, imported by fit.py and the eval harness; it has no command of its own.
+
+Outputs / side effects:
+    Pure computation; the registry lookup reads the brand registry from the repo. No files written, no
+    network calls.
 """
 
 from __future__ import annotations
@@ -78,11 +85,13 @@ FEATURE_GROUPS: dict[str, tuple[str, ...]] = {
 
 
 def feature_vector(url: str) -> list[float]:
+    """Lexical feature vector of one URL."""
     f = extract_features(url)
     return [f[n] for n in FEATURE_NAMES]
 
 
 def feature_matrix(urls: list[str]) -> Any:
+    """Feature matrix (one row per URL) for the classifier."""
     return np.array([feature_vector(u) for u in urls], dtype=float)
 
 
@@ -100,10 +109,12 @@ def t1_evidence(url: str) -> list[Evidence]:
 
 
 def verified_domains() -> dict[str, frozenset[str]]:
+    """Map brand id to its verified domains from the brand registry."""
     return {b.brand_id: frozenset(b.verified_domains) for b in default_registry().brands}
 
 
 def registry_evidence(domain: str) -> list[Evidence]:
+    """The `registry.verified_official` trust evidence if the domain belongs to a registered brand, else none."""
     brand = default_registry().official_brand(domain)
     if brand is None:
         return []
@@ -122,6 +133,8 @@ def registry_evidence(domain: str) -> list[Evidence]:
 
 @dataclass
 class Scored:
+    """Result of scoring one URL: arbiter result, classifier probability, brand-conflict flag and latency."""
+
     result: ArbiterResult
     p_clf: float
     brand_conflict: bool

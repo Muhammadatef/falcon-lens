@@ -1,4 +1,25 @@
-"""Falcon Lens Sentinel: health server + stream consumer + LangGraph triage + incident/approval API."""
+"""Falcon Lens Sentinel: health server + stream consumer + LangGraph triage + incident/approval API.
+
+What it does (short version):
+    Reads events from the Redis stream fl:events, groups them into incidents, runs an AI triage graph that
+    proposes actions, and serves an operator API to list incidents, export STIX and approve or reject actions.
+
+When to use it:
+    You do not run it by hand; the `sentinel` container starts it.
+
+How to run:
+    make up                                   (direct: uv run python -m falcon_sentinel.main)
+
+Inputs:
+    Settings DATABASE_URL and REDIS_URL (if either is missing the service runs idle), FL_SENTINEL_LLM (ollama or
+    stub), FL_SENTINEL_MODEL, ALERTMANAGER_URL, FL_DATABASE_OWNER_URL, FL_SENTINEL_DB_ROLE and
+    FALCON_BRANDS_YAML (default data/brands.yaml).
+
+Outputs / side effects:
+    Writes incidents, actions and graph checkpoints to Postgres and block keys to Redis, and can call
+    Alertmanager (ALERTMANAGER_URL). The /internal/ routes need the operator key header. Actions wait for a
+    human approve or reject decision; `make unblock` reverts a block.
+"""
 
 from __future__ import annotations
 
@@ -38,6 +59,7 @@ BRANDS = Path(os.environ.get("FALCON_BRANDS_YAML") or Path(__file__).resolve().p
 
 
 def official_domains() -> list[str]:
+    """All verified domains from the brand registry (data/brands.yaml)."""
     if not BRANDS.exists():
         return []
     data = yaml.safe_load(BRANDS.read_text())
@@ -45,12 +67,15 @@ def official_domains() -> list[str]:
 
 
 def make_llm() -> LLMClient:
+    """The triage LLM client: stub if FL_SENTINEL_LLM=stub, otherwise the local OpenAI-compatible server."""
     if os.environ.get("FL_SENTINEL_LLM", "ollama") == "stub":
         return StubLLM()
     return OpenAICompatLLM(settings.ollama_base_url, os.environ.get("FL_SENTINEL_MODEL", "inkling-2-mini-chat"))
 
 
 class Runtime:
+    """Objects shared by the routes (triage runner, incident cache, repository); empty while the service is idle."""
+
     runner: TriageRunner | None = None
     cache: IncidentCache | None = None
     repo: PgRepo | None = None
@@ -73,6 +98,7 @@ async def retry_stuck_loop(runner: TriageRunner) -> None:
 
 
 async def triage_loop(consumer: Consumer, runner: TriageRunner, queue: asyncio.Queue[str]) -> None:
+    """Take incident ids from the queue and run the triage graph on each."""
     while True:
         iid = await queue.get()
         try:
@@ -82,6 +108,7 @@ async def triage_loop(consumer: Consumer, runner: TriageRunner, queue: asyncio.Q
 
 
 async def consume_loop(consumer: Consumer) -> None:
+    """Keep reading fl:events, retrying if Redis is temporarily unavailable."""
     while True:
         try:
             await consumer.run_once(block_ms=2000)
@@ -92,6 +119,7 @@ async def consume_loop(consumer: Consumer) -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Start the consumer and triage tasks on startup and stop them on shutdown."""
     dsn = settings.database_url.get_secret_value() if settings.database_url else None
     if not dsn or not settings.redis_url:
         log.warning("DATABASE_URL/REDIS_URL not set: sentinel runs idle")
@@ -177,6 +205,7 @@ def _operator(key: str | None, name: str | None = None) -> str:
 
 @app.get("/internal/incidents")
 async def list_incidents(status: str | None = None, x_operator_key: str | None = Header(None)) -> list[dict[str, Any]]:
+    """GET /internal/incidents: list incidents, optionally filtered by status (operator key required)."""
     _operator(x_operator_key)
     incs = rt.cache.all() if rt.cache else []
     return [i for i in incs if status in (None, i["status"])]
@@ -184,6 +213,7 @@ async def list_incidents(status: str | None = None, x_operator_key: str | None =
 
 @app.get("/internal/incidents/{incident_id}")
 async def get_incident(incident_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
+    """GET /internal/incidents/{id}: one incident (operator key required)."""
     _operator(x_operator_key)
     inc = rt.cache.get(incident_id) if rt.cache else None
     if inc is None:
@@ -193,6 +223,7 @@ async def get_incident(incident_id: str, x_operator_key: str | None = Header(Non
 
 @app.get("/internal/incidents/{incident_id}/stix")
 async def get_stix(incident_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
+    """GET /internal/incidents/{id}/stix: the exported STIX bundle (404 if none)."""
     _operator(x_operator_key)
     bundle = await rt.repo.stix_get(incident_id) if rt.repo else None
     if bundle is None:
@@ -221,6 +252,7 @@ async def approve(
     x_operator_key: str | None = Header(None),
     x_operator_name: str | None = Header(None),
 ) -> dict[str, Any]:
+    """POST: approve a proposed action (operator key required)."""
     return await _decide(incident_id, action_id, _operator(x_operator_key, x_operator_name), True)
 
 
@@ -231,6 +263,7 @@ async def reject(
     x_operator_key: str | None = Header(None),
     x_operator_name: str | None = Header(None),
 ) -> dict[str, Any]:
+    """POST: reject a proposed action (operator key required)."""
     return await _decide(incident_id, action_id, _operator(x_operator_key, x_operator_name), False)
 
 

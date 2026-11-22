@@ -1,4 +1,23 @@
-"""Shared plumbing: env, URLs, the API client and the Redis event sink."""
+"""Shared plumbing: env, URLs, the API client and the Redis event sink.
+
+What it does:
+    Provides the pieces every demo command shares: `load_env` (reads .env, then lets process env override;
+    only FL_, OLLAMA, COMPOSE_, REDIS and GRAFANA keys), `Endpoints` (local URLs from the port settings),
+    `ApiClient` (calls POST /v1/check/url and /v1/check/message), and two Redis event sinks.
+
+When to use it:
+    Only as a library for the other falcon_demo modules; it has no command of its own.
+
+Inputs:
+    .env in the repo root and env vars such as FL_GATEWAY_PORT, FL_GRAFANA_PORT, FL_PROMETHEUS_PORT,
+    FL_PHOENIX_PORT, FL_SANDBOX_API_KEY and FL_DEMO_REDIS_URL.
+
+Outputs / side effects:
+    The client sends HTTP requests to the gateway with header X-Falcon-Source: replay (TLS verification is
+    skipped for localhost only). The sinks add entries to the Redis stream `fl:events`: through
+    `docker compose exec redis redis-cli` by default, or directly if FL_DEMO_REDIS_URL is set.
+    Secret values are never printed.
+"""
 
 from __future__ import annotations
 
@@ -49,6 +68,8 @@ def refang(url: str) -> str:
 
 @dataclass(frozen=True)
 class Endpoints:
+    """Local URLs of the gateway, Grafana, Prometheus and Phoenix, built from the port settings."""
+
     gateway: str
     grafana: str
     prometheus: str
@@ -56,6 +77,7 @@ class Endpoints:
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> Endpoints:
+        """Build the endpoints from FL_GATEWAY_PORT, FL_GRAFANA_PORT, FL_PROMETHEUS_PORT, FL_PHOENIX_PORT."""
         gw = env.get("FL_GATEWAY_PORT") or "8443"
         return cls(
             gateway=f"https://localhost:{gw}",
@@ -66,10 +88,14 @@ class Endpoints:
 
 
 class ApiError(RuntimeError):
+    """The API was unreachable or answered with an error status."""
+
     pass
 
 
 class Throttled(ApiError):
+    """The API answered 429; carries the Retry-After seconds."""
+
     def __init__(self, retry_after: float) -> None:
         super().__init__(f"rate limited, retry after {retry_after:.0f}s")
         self.retry_after = retry_after
@@ -105,12 +131,15 @@ class ApiClient:
         return doc if isinstance(doc, dict) else {}
 
     def check_url(self, url: str, idem: str | None = None, wait: float = 0) -> dict[str, Any]:
+        """Submit a URL for checking (POST /v1/check/url); returns the response JSON."""
         return self._post("/v1/check/url", {"url": url}, idem, wait)
 
     def check_message(self, text: str, idem: str | None = None, wait: float = 0) -> dict[str, Any]:
+        """Submit message text for checking (POST /v1/check/message); returns the response JSON."""
         return self._post("/v1/check/message", {"text": text}, idem, wait)
 
     def healthy(self) -> bool:
+        """True if GET /v1/version answers 200."""
         try:
             return self._c.get("/v1/version").status_code == 200
         except httpx.HTTPError:
@@ -121,6 +150,8 @@ class ApiClient:
 
 
 class EventSink(Protocol):
+    """Anything that can publish an event to the Redis stream fl:events."""
+
     def xadd_event(self, event: dict[str, Any]) -> None: ...
     def close(self) -> None: ...
 
@@ -174,6 +205,7 @@ class UrlRedisSink:
 
 
 def default_sink(env: Mapping[str, str]) -> EventSink:
+    """UrlRedisSink if FL_DEMO_REDIS_URL is set, otherwise ComposeRedisSink."""
     url = env.get("FL_DEMO_REDIS_URL")
     return UrlRedisSink(url) if url else ComposeRedisSink()
 

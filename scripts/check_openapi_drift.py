@@ -4,6 +4,25 @@
 Contracts are law: code may implement a subset of the contract (work in progress), never more.
 If contracts/openapi.yaml does not exist yet the check prints a SKIPPED notice and exits 0
 (visible in the log; it starts to bite as soon as the file lands).
+
+What it does:
+    Imports the FastAPI app and compares the routes it implements with the routes listed in
+    contracts/openapi.yaml. Routes in the contract but not yet implemented are only reported as info.
+    Routes implemented but missing from the contract make it fail.
+
+When to use it:
+    In CI (contracts job) or locally after you add or change an API route.
+
+How to run:
+    uv run python scripts/check_openapi_drift.py     (run from the repo root; no make target)
+
+Inputs:
+    contracts/openapi.yaml (if it does not exist the check prints SKIPPED and exits 0) and the importable
+    `falcon_api` package.
+
+Outputs / side effects:
+    Prints "openapi-drift: ok" (exit 0) or a list of undeclared `METHOD /path` lines to stderr (exit 1).
+    Read-only: it never writes the contract (use `make openapi` for that) and makes no network calls.
 """
 
 from __future__ import annotations
@@ -18,6 +37,7 @@ METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}
 
 
 def main() -> int:
+    """Compare implemented routes with contracts/openapi.yaml; 1 on drift."""
     if not CONTRACT.exists():
         print("openapi-drift: SKIPPED (contracts/openapi.yaml not present yet)")
         return 0
