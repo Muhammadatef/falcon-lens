@@ -1,0 +1,166 @@
+# Falcon Lens alert rules. Every rule carries runbook_url -> docs/RUNBOOK.md#<anchor>.
+# Rules aggregate `by (source)` where the metric has it, so replayed data stays labelled
+# (a redteam/replay run is expected to trip the spike alerts; see the runbook).
+# Thresholds are starting points (DECISIONS.md), to be tuned from live traffic.
+
+groups:
+  - name: falcon-sentinel
+    rules:
+      - alert: CampaignSurge
+        expr: sum by (source) (increase(fl_rule_fired_total{rule="R1"}[5m])) > 0
+        labels: { severity: warning }
+        annotations:
+          summary: "Sentinel rule R1 fired (campaign surge, source={{ $labels.source }})"
+          runbook_url: docs/RUNBOOK.md#campaign-surge
+      - alert: NewHighIncident
+        expr: sum by (source) (increase(fl_incidents_total{severity=~"high|critical"}[5m])) > 0
+        labels: { severity: warning }
+        annotations:
+          summary: "New high-severity incident opened (source={{ $labels.source }})"
+          runbook_url: docs/RUNBOOK.md#campaign-surge
+      - alert: SentinelLag
+        expr: max(fl_event_lag_seconds) > 60
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Sentinel is {{ $value | humanizeDuration }} behind the event bus"
+          runbook_url: docs/RUNBOOK.md#sentinel-lag
+      - alert: SentinelDeadLetter
+        expr: sum(increase(fl_sentinel_dead_letter_total[10m])) > 0
+        labels: { severity: critical }
+        annotations:
+          summary: "Events were moved to the dead-letter stream"
+          runbook_url: docs/RUNBOOK.md#sentinel-dlq
+      - alert: ApprovalsWaiting
+        expr: max(fl_approvals_pending) > 0
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value }} external draft(s) waiting for approval for over 30 minutes"
+          runbook_url: docs/RUNBOOK.md#approvals-waiting
+
+  - name: falcon-slo
+    rules:
+      # SLO: 95% of checks finish in under 8 s (stage="total" is the end-to-end stage).
+      # Error budget = 5%; burn rate = bad ratio / 0.05. Multi-window, multi-burn-rate.
+      - record: fl:check_slow_ratio:rate5m
+        expr: |
+          1 - (
+            sum(rate(fl_stage_latency_seconds_bucket{stage="total",le="8.0"}[5m]))
+            / sum(rate(fl_stage_latency_seconds_count{stage="total"}[5m]))
+          )
+      - record: fl:check_slow_ratio:rate30m
+        expr: |
+          1 - (
+            sum(rate(fl_stage_latency_seconds_bucket{stage="total",le="8.0"}[30m]))
+            / sum(rate(fl_stage_latency_seconds_count{stage="total"}[30m]))
+          )
+      - record: fl:check_slow_ratio:rate1h
+        expr: |
+          1 - (
+            sum(rate(fl_stage_latency_seconds_bucket{stage="total",le="8.0"}[1h]))
+            / sum(rate(fl_stage_latency_seconds_count{stage="total"}[1h]))
+          )
+      - record: fl:check_slow_ratio:rate6h
+        expr: |
+          1 - (
+            sum(rate(fl_stage_latency_seconds_bucket{stage="total",le="8.0"}[6h]))
+            / sum(rate(fl_stage_latency_seconds_count{stage="total"}[6h]))
+          )
+      - alert: LatencyBurnFast
+        expr: |
+          fl:check_slow_ratio:rate1h > (14.4 * 0.05)
+          and fl:check_slow_ratio:rate5m > (14.4 * 0.05)
+        labels: { severity: critical }
+        annotations:
+          summary: "p95 < 8 s objective burning 14.4x (1h and 5m windows)"
+          runbook_url: docs/RUNBOOK.md#latency-burn
+      - alert: LatencyBurnSlow
+        expr: |
+          fl:check_slow_ratio:rate6h > (6 * 0.05)
+          and fl:check_slow_ratio:rate30m > (6 * 0.05)
+        labels: { severity: warning }
+        annotations:
+          summary: "p95 < 8 s objective burning 6x (6h and 30m windows)"
+          runbook_url: docs/RUNBOOK.md#latency-burn
+
+  - name: falcon-health
+    rules:
+      - alert: ErrorRateHigh
+        expr: |
+          sum(rate(fl_http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(fl_http_requests_total[5m])), 0.001) > 0.05
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "More than 5% of API requests return 5xx"
+          runbook_url: docs/RUNBOOK.md#error-rate
+      - alert: SandboxFailure
+        expr: sum(increase(fl_sandbox_timeouts_total[10m])) > 3
+        labels: { severity: warning }
+        annotations:
+          summary: "Sandbox visits are timing out ({{ $value }} in 10 min)"
+          runbook_url: docs/RUNBOOK.md#sandbox-failure
+      - alert: FeedStale
+        expr: max by (feed) (fl_feed_age_seconds) > 3600 and on (feed) fl_feed_enabled == 1
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Feed {{ $labels.feed }} has not refreshed for over 1 hour"
+          runbook_url: docs/RUNBOOK.md#feed-stale
+      - alert: LLMFallbackActive
+        expr: sum by (role) (increase(fl_llm_fallback_total[10m])) > 0
+        labels: { severity: warning }
+        annotations:
+          summary: "LLM role {{ $labels.role }} fell back to the local model"
+          runbook_url: docs/RUNBOOK.md#llm-fallback
+      - alert: RouteAgreementDrop
+        expr: min(fl_route_agreement_ratio) < 0.8
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Route agreement fell to {{ $value | humanizePercentage }}"
+          runbook_url: docs/RUNBOOK.md#route-agreement-drop
+
+  - name: falcon-security
+    rules:
+      - alert: InjectionSpike
+        expr: sum(increase(fl_injection_detected_total[5m])) > 10
+        labels: { severity: warning }
+        annotations:
+          summary: "Prompt-injection detections spiking (expected under redteam replay)"
+          runbook_url: docs/RUNBOOK.md#injection-spike
+      - alert: SSRFSpike
+        expr: sum(increase(fl_ssrf_blocked_total[5m])) > 10
+        labels: { severity: warning }
+        annotations:
+          summary: "SSRF guard blocking many requests (expected under redteam replay)"
+          runbook_url: docs/RUNBOOK.md#ssrf-spike
+      - alert: FalsePositiveSpike
+        expr: sum(increase(fl_user_feedback_total{type="false_positive"}[15m])) > 5
+        labels: { severity: warning }
+        annotations:
+          summary: "Users report many false positives"
+          runbook_url: docs/RUNBOOK.md#fp-spike
+
+  - name: falcon-quality
+    rules:
+      # Fires when a newer eval artifact is worse than the previous one by more than 0.02.
+      - alert: EvalRegression
+        expr: |
+          (
+            fl_eval_metric{name=~"f1|precision|recall|auc|pr_auc"}
+            - (fl_eval_metric{name=~"f1|precision|recall|auc|pr_auc"} offset 1h)
+          ) < -0.02
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Eval metric {{ $labels.name }} ({{ $labels.split }}/{{ $labels.route }}) regressed"
+          runbook_url: docs/RUNBOOK.md#eval-regression
+      - alert: ScoreDrift
+        expr: max(fl_score_drift_index) > 0.2
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "Score distribution drift index is {{ $value }}"
+          runbook_url: docs/RUNBOOK.md#score-drift

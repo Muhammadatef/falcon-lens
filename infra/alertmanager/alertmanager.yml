@@ -1,9 +1,11 @@
-# No Telegram/webhook configured (see DECISIONS.md): alerts stay in Grafana, Alertmanager and logs.
+# Reference config (null receiver). The running config is rendered by entrypoint.sh, which
+# adds a Telegram or webhook receiver only when TELEGRAM_BOT_TOKEN+TELEGRAM_CHAT_ID or
+# ALERT_WEBHOOK_URL are set. Kept so `amtool check-config` can validate the base shape.
 route:
-  receiver: default
+  receiver: 'null'
   group_by: [alertname, service]
   group_wait: 10s
   group_interval: 1m
   repeat_interval: 4h
 receivers:
-  - name: default
+  - name: 'null'

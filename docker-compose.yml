@@ -265,6 +265,7 @@ services:
   prometheus:
     profiles: [obs]
     image: prom/prometheus:v3.16.0
+    <<: *host-gateway
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -275,6 +276,7 @@ services:
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infra/prometheus/rules:/etc/prometheus/rules:ro
+      - ./infra/prometheus/demo:/etc/prometheus/demo:ro
       - prom_data:/prometheus
     networks: [observability, edge]
     security_opt:
@@ -293,11 +295,14 @@ services:
     profiles: [obs]
     image: prom/alertmanager:v0.35.0
     restart: unless-stopped
-    command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --storage.path=/alertmanager
+    # The entrypoint renders the config: Telegram/webhook only if configured, else a null receiver.
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
     volumes:
-      - ./infra/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./infra/alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
       - alertmanager_data:/alertmanager
     networks: [observability]
     security_opt:
@@ -365,6 +370,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
       GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_DEFAULT_THEME: dark
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_SERVER_ROOT_URL: http://localhost:3001
