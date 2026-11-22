@@ -3,6 +3,29 @@
 Everything is invented (.test domains, brand falcon_demo_bank) and every check and event carries
 source=replay. The campaign comes from sentinel_core.fixtures (same generator the Sentinel tests use),
 re-timed to "now" and re-keyed per run so the Sentinel treats the domains as new and an incident fires.
+
+What it does (details):
+    Builds a plan of invented checks at the given rate and, unless --no-campaign is used, a planted
+    campaign of Redis events so the Sentinel opens an incident. Then it plays the plan in real time and
+    prints progress. Ctrl-C stops it (exit 130).
+
+When to use it:
+    To make dashboards and the Sentinel incident view move during a demo or rehearsal.
+
+How to run:
+    make replay RATE=2/s DURATION=10m
+    PYTHONPATH=scripts uv run python -m falcon_demo replay --rate 2/s --duration 10m [--no-campaign] [--seed 7]
+
+Inputs:
+    Options above; .env values FL_RATE_LIMIT_PER_IP_PER_MIN (a warning is printed if the rate exceeds it,
+    the API then answers 429 for the surplus), FL_SANDBOX_API_KEY, FL_DEMO_REDIS_URL, ports.
+
+Outputs / side effects:
+    Sends checks to the local API and adds events to the Redis stream `fl:events`. All of it is labelled
+    source=replay, so alerts for it are routed to the null receiver. Nothing is written to disk.
+
+Safety notes:
+    Every domain is invented (.test) and nothing is sent to a real site.
 """
 
 from __future__ import annotations
@@ -37,6 +60,8 @@ CAMPAIGN_SPAN_FRACTION = 0.25  # and unfolds over 25% of it (the original takes 
 
 @dataclass(frozen=True)
 class Call:
+    """One planned action: a URL check or a Redis event, t seconds after the start, with the expected verdict."""
+
     t: float  # seconds after start
     kind: str  # url | event
     value: str = ""  # url for kind=url
@@ -107,6 +132,7 @@ def _tag_domain(d: str, tag: str, dot: str) -> str:
 
 
 def build_plan(rate: float, duration_s: float, start: datetime, seed: int = 7, campaign: bool = True) -> list[Call]:
+    """Plan steady background checks plus (optionally) the planted campaign for the given rate and length."""
     rng = random.Random(seed)
     n = round(rate * duration_s)
     classes = [c for c, _ in CLASS_WEIGHTS]
@@ -125,6 +151,8 @@ def build_plan(rate: float, duration_s: float, start: datetime, seed: int = 7, c
 
 @dataclass
 class Stats:
+    """Running counters of what the replay has sent so far."""
+
     checks: int = 0
     events: int = 0
     throttled: int = 0
@@ -132,6 +160,7 @@ class Stats:
     by_class: Counter[str] = field(default_factory=Counter)
 
     def line(self) -> str:
+        """One-line progress summary."""
         mix = " ".join(f"{k}={v}" for k, v in sorted(self.by_class.items()))
         return f"checks={self.checks} events={self.events} throttled={self.throttled} errors={self.errors} [{mix}]"
 
@@ -146,6 +175,7 @@ def run_plan(
     workers: int = 8,
     on_tick: Callable[[Stats], None] | None = None,
 ) -> Stats:
+    """Play the plan in real time against the API and the event sink, reporting progress."""
     st = Stats()
     t0 = clock()
     last_report = 0.0
@@ -191,6 +221,7 @@ def _collect(st: Stats, c: Call, exc: BaseException | None) -> None:
 
 
 def main(argv: list[str]) -> int:
+    """Parse options, warn about rate limits, build and run the plan; 130 on Ctrl-C."""
     import argparse
 
     from .common import Endpoints, default_sink, load_env
