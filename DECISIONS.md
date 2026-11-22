@@ -101,4 +101,8 @@
 - 2026-11-22 · L1 · Public OpenPhish manifest domain and URL hashes become **HMAC-SHA256 keyed** with a local secret `data/private/hash.key`, generated on first run and never committed. The same key gives stable grouping for splits.
 - 2026-11-22 · L1 · The synthetic batch qwen-msg-001 was REJECTED by the supervisor (31/32 wrong). The re-run uses `inkling-2-mini-chat` (not qwen3:4b), with script fixes: language verified by character-script detection, allowlist for links and phones. The demo brand Arabic name is «بنك الصقر التجريبي» everywhere.
 - 2026-11-22 · owner · The owner merged PRs #1, #2, #3 and #5 on GitHub before supervisor approval. The review findings in reviews/PR-4/5/6 are tracked as follow-up fix PRs.
+<<<<<<< Updated upstream
 - 2026-11-22 · L1 · injection.tool_provenance is +1.5 and llm.extraction is 0. contracts/extraction.schema.json is approved. When the extractor and the T-026 regex both flag instruction-like text, the cascade keeps only the higher-confidence injection.instruction_like_text evidence.
+=======
+- 2026-11-22 · owner · DSPy optimisation uses the **Anthropic API by default** (task model claude-haiku-5-5/sonnet-5-5, teacher claude-sonnet-5-5); local inkling-2-mini-chat is optional (--lm local). It still runs as a separate job (make dspy-optimize), and compiled prompts are frozen and used by both routes at runtime. The product runtime default is also cloud (FL_SOVEREIGN_MODE=false); sovereign mode is opt-in.
+>>>>>>> Stashed changes
