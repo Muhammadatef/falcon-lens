@@ -54,9 +54,7 @@ async def resolver(host: str) -> Sequence[str]:
         (PUBLIC_V4, 22, BlockReason.PORT),
     ],
 )
-async def test_pinned_backend_refuses(
-    host: str, port: int, reason: BlockReason
-) -> None:
+async def test_pinned_backend_refuses(host: str, port: int, reason: BlockReason) -> None:
     backend = PinnedNetworkBackend()
     with pytest.raises(SSRFBlocked) as ei:
         await backend.connect_tcp(host, port)
@@ -150,15 +148,11 @@ async def test_deflate_body_decoded() -> None:
 
 @pytest.mark.asyncio
 async def test_gzip_bomb_blocked() -> None:
-    bomb = gzip.compress(
-        b"\0" * (50 * 1024 * 1024)
-    )  # ~50 KB on the wire, 50 MB decoded
+    bomb = gzip.compress(b"\0" * (50 * 1024 * 1024))  # ~50 KB on the wire, 50 MB decoded
     assert len(bomb) < 1024 * 1024
 
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            200, headers={"content-encoding": "gzip"}, stream=httpx.ByteStream(bomb)
-        )
+        return httpx.Response(200, headers={"content-encoding": "gzip"}, stream=httpx.ByteStream(bomb))
 
     with pytest.raises(SSRFBlocked) as ei:
         await safe_fetch(
@@ -186,9 +180,7 @@ async def test_custom_smaller_cap() -> None:
 @pytest.mark.asyncio
 async def test_unsupported_encoding_fails() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            200, headers={"content-encoding": "br"}, stream=httpx.ByteStream(b"???")
-        )
+        return httpx.Response(200, headers={"content-encoding": "br"}, stream=httpx.ByteStream(b"???"))
 
     with pytest.raises(FetchFailed) as ei:
         await safe_fetch(
@@ -242,9 +234,7 @@ async def test_head_has_empty_body() -> None:
         "http://m.example.com/",
         method="HEAD",
         resolver=resolver,
-        transport=httpx.MockTransport(
-            lambda r: httpx.Response(200, stream=httpx.ByteStream(b"zzz"))
-        ),
+        transport=httpx.MockTransport(lambda r: httpx.Response(200, stream=httpx.ByteStream(b"zzz"))),
     )
     assert r.body == b""
 

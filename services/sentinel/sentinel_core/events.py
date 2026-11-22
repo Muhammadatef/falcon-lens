@@ -1,4 +1,5 @@
 """Typed event parsing and validation against contracts/event.schema.json."""
+
 from __future__ import annotations
 
 import json
