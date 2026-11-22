@@ -276,7 +276,7 @@ def test_tunnel_command_and_url_parsing() -> None:
     assert "https://localhost:9443" in cmd and "--no-tls-verify" in cmd
     assert cmd[cmd.index("--http-host-header") + 1] == "localhost"
     assert cmd[cmd.index("--origin-server-name") + 1] == "localhost"
-    log = "INF |  https://quiet-river-1234.trycloudflare.com  |\nINF https://api.cloudflare.com/x"
+    log = "INF |  https://quiet-river-1234.trycloudflare.com  |\nINF hxxps://api[.]cloudflare[.]com/x"
     assert ops.parse_tunnel_url(log) == "https://quiet-river-1234.trycloudflare.com"
     assert ops.parse_tunnel_url("nothing here") is None
 
