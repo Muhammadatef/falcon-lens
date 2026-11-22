@@ -44,6 +44,9 @@ dev = [
   "ruff>=0.9",
   "mypy>=1.14",
   "types-jsonschema",
+  "fakeredis>=2.26",
+  "pyyaml>=6",
+  "types-pyyaml>=6.0.12.20261122",
 ]
 
 [tool.ruff]
@@ -63,12 +66,13 @@ known-first-party = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S105", "S106"]
+"scripts/smoke.py" = ["S101", "S501"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["packages/falcon_core/src", "packages/falcon_core/tests"]
+files = ["packages/falcon_core/src", "packages/falcon_core/tests", "services/api/src"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

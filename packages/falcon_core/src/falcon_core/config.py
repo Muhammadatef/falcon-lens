@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     fl_operator_key: SecretStr | None = None
     fl_mcp_bearer_token: SecretStr | None = None
     fl_webhook_secret: SecretStr | None = None
-    fl_rate_limit_per_ip_per_min: int = 30
+    fl_rate_limit_per_ip_per_min: int = 60
 
     # Alerts
     telegram_bot_token: SecretStr | None = None
