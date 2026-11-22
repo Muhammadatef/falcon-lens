@@ -117,6 +117,10 @@ class SandboxFeatures(BaseModel):
     screenshot_phash: str | None = None
     dom_simhash: str | None = None
     cloaking: dict[str, Any] = Field(default_factory=dict)
+    # Sandbox-classified exfiltration targets: [{"origin", "category"}] (bot API, webhook, relay).
+    exfil_targets: list[dict[str, Any]] = Field(default_factory=list)
+    # Set by the sandbox when the visit failed (then there is no page to judge).
+    error: str | None = None
 
     @field_validator("visible_text")
     @classmethod

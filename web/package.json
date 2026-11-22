@@ -7,7 +7,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "node .next/standalone/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": ["esbuild"]
   },
   "dependencies": {
     "next": "16.4.6",
@@ -15,9 +20,13 @@
     "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^5.9"
+    "eslint": "^9.39.5",
+    "typescript": "^5.9",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^3.2.7"
   }
 }

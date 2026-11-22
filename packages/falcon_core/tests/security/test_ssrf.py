@@ -361,9 +361,7 @@ async def test_redirect_chain_followed_and_recorded() -> None:
         return ok_handler(request)
 
     res = static_resolver({"a.example.com": [PUBLIC_V4], "b.example.com": [PUBLIC_V4_B]})
-    r = await safe_fetch(
-        "http://a.example.com/", resolver=res, transport=httpx.MockTransport(handler)
-    )
+    r = await safe_fetch("http://a.example.com/", resolver=res, transport=httpx.MockTransport(handler))
     assert r.final_url == "https://b.example.com/final"
     assert [(h.url, h.status, h.ip) for h in r.redirect_chain] == [
         ("http://a.example.com/", 301, PUBLIC_V4),

@@ -83,9 +83,7 @@ class PgStore:
             import asyncpg  # type: ignore[import-untyped]
 
             try:
-                self._pool = await asyncpg.create_pool(
-                    self._dsn, min_size=0, max_size=5, timeout=5, command_timeout=5
-                )
+                self._pool = await asyncpg.create_pool(self._dsn, min_size=0, max_size=5, timeout=5, command_timeout=5)
             except (OSError, asyncpg.PostgresError, TimeoutError) as exc:
                 raise StoreError(type(exc).__name__) from exc
         return self._pool

@@ -42,9 +42,9 @@ def test_field_kind(descriptor: Any, kind: str | None) -> None:
 
 
 def test_target_kind() -> None:
-    assert target_kind("https://api.telegram.org") == "bot_api"
-    assert target_kind("https://discord.com/api/webhooks/1/x") == "webhook"
-    assert target_kind("https://discord.com/channels") is None
+    assert target_kind("api.telegram.org") == "bot_api"
+    assert target_kind("discord.com/api/webhooks/1/x") == "webhook"
+    assert target_kind("discord.com/channels") is None
     assert target_kind("https://cdn.community-garden-club.test") is None
 
 
@@ -73,9 +73,7 @@ def test_single_text_mention_stays_below_h1_threshold() -> None:
             "forms": [SandboxForm(fields=["password"])],
         }
     )
-    claim = _by_signal(page_evidence(feats, "community-garden-club.test", REG))[
-        "brand.claimed_not_owned"
-    ]
+    claim = _by_signal(page_evidence(feats, "community-garden-club.test", REG))["brand.claimed_not_owned"]
     assert claim.confidence < 0.7  # below theta: no H1 from one passing mention
 
 
@@ -90,26 +88,20 @@ def test_favicon_match_and_hotlink() -> None:
     feats = benign_features().model_copy(
         update={"favicon_sha256": fav, "hotlinked_origins": ["https://falcon-demo-bank.test"]}
     )
-    evs = _by_signal(
-        page_evidence(feats, "community-garden-club.test", REG, {fav: "falcon_demo_bank"})
-    )
+    evs = _by_signal(page_evidence(feats, "community-garden-club.test", REG, {fav: "falcon_demo_bank"}))
     assert evs["visual.favicon_match_brand"].observed["brand_id"] == "falcon_demo_bank"
-    assert evs["page.hotlinked_brand_assets"].observed["origins"] == [
-        "hxxps://falcon-demo-bank[.]test"
-    ]
+    assert evs["page.hotlinked_brand_assets"].observed["origins"] == ["hxxps://falcon-demo-bank[.]test"]
     assert "favicon" in evs["brand.claimed_not_owned"].observed["claimed_in"]
 
 
 def test_cross_origin_post_marks_credentials_and_bot() -> None:
     feats = benign_features().model_copy(
         update={
-            "forms": [SandboxForm(fields=["password"], action_origin="https://api.telegram.org")],
+            "forms": [SandboxForm(fields=["password"], action_origin="api.telegram.org")],
             "post_targets": ["https://collector.other-host.test/x"],
         }
     )
-    ev = _by_signal(page_evidence(feats, "community-garden-club.test", REG))[
-        "page.cross_origin_post"
-    ]
+    ev = _by_signal(page_evidence(feats, "community-garden-club.test", REG))["page.cross_origin_post"]
     assert ev.observed["bot"] is True and ev.observed["credentials"] is True
     assert ev.observed["target_kind"] == "bot_api"
     assert all("[.]" in t for t in ev.observed["targets"])
@@ -137,16 +129,14 @@ async def test_http_sandbox_client_posts_and_parses() -> None:
     def handler(req: httpx.Request) -> httpx.Response:
         seen["path"] = req.url.path
         seen["body"] = json.loads(req.content)
-        seen["key"] = req.headers.get("X-Sandbox-Key")
+        seen["key"] = req.headers.get("Authorization")
         return httpx.Response(200, json={"features": phish_features().model_dump()})
 
-    c = HttpSandboxClient(
-        "http://sandbox:8000", api_key="k", transport=httpx.MockTransport(handler)
-    )
+    c = HttpSandboxClient("http://sandbox:8000", token="k", transport=httpx.MockTransport(handler))
     feats = await c.render("https://falcon-demo-bank-login.test/", "vd_X")
     await c.aclose()
     assert seen == {"path": "/render", "body": {"url": "https://falcon-demo-bank-login.test/",
-                                                 "verdict_id": "vd_X"}, "key": "k"}  # fmt: skip
+                                                 "verdict_id": "vd_X"}, "key": "Bearer k"}  # fmt: skip
     assert feats.title.startswith("Falcon Demo Bank")
 
 

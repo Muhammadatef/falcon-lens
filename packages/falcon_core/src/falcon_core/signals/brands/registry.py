@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Brand registry loaded from data/brands.yaml (verified official domains; see that file for source URLs and dates)."""
 
 from __future__ import annotations
@@ -178,12 +179,7 @@ def _build(entry: dict[str, Any]) -> Brand:
     ar: list[str] = []
     for kw in [entry.get("name_ar", ""), *entry.get("keywords_ar", [])]:
         t = compact(str(kw))
-        if (
-            len(t) >= 3
-            and t not in GENERIC_AR
-            and t not in ar
-            and not all(w in GENERIC_AR for w in _words_ar(str(kw)))
-        ):
+        if len(t) >= 3 and t not in GENERIC_AR and t not in ar and not all(w in GENERIC_AR for w in _words_ar(str(kw))):
             ar.append(t)
     return Brand(
         brand_id=entry["brand_id"],

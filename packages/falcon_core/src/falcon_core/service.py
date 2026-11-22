@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
 import logging
 from collections.abc import Awaitable, Callable, Mapping
 from contextlib import AbstractAsyncContextManager
@@ -21,6 +22,7 @@ from prometheus_client import (
 
 from falcon_core import __version__
 from falcon_core.logging import configure_logging
+from falcon_core.telemetry.metrics import REGISTRY as FL_REGISTRY
 
 Lifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
 DepCheck = Callable[[], Awaitable[bool]]
@@ -53,11 +55,16 @@ def create_app(
     deps: Mapping[str, str | DepCheck] | None = None,
     lifespan: Lifespan | None = None,
     title: str | None = None,
+    protect: bool = False,
+    token: str | None = None,
 ) -> FastAPI:
     """Build a FastAPI app for one Falcon Lens service.
 
     ``deps`` maps a dependency name to a URL (TCP-checked) or an async callable;
     ``/readyz`` returns 503 until every configured dependency answers.
+
+    With ``protect=True`` every path except ``/healthz`` and ``/readyz`` needs
+    ``Authorization: Bearer <token>`` (fail-closed: 503 if no token is configured).
     """
     configure_logging(service)
     registry = CollectorRegistry()
@@ -67,22 +74,32 @@ def create_app(
         ["service", "method", "status"],
         registry=registry,
     )
-    Gauge(
-        "fl_service_info", "Service build info", ["service", "version"], registry=registry
-    ).labels(service, __version__).set(1)
+    Gauge("fl_service_info", "Service build info", ["service", "version"], registry=registry).labels(
+        service, __version__
+    ).set(1)
 
     checks: dict[str, DepCheck] = {
-        name: (tcp_check(dep) if isinstance(dep, str) else dep)
-        for name, dep in (deps or {}).items()
+        name: (tcp_check(dep) if isinstance(dep, str) else dep) for name, dep in (deps or {}).items()
     }
 
     app = FastAPI(title=title or service, version=__version__, lifespan=lifespan)
     app.state.registry = registry
 
+    if protect:
+
+        @app.middleware("http")
+        async def require_token(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+            if request.url.path in ("/healthz", "/readyz"):
+                return await call_next(request)
+            if not token:
+                return JSONResponse({"detail": "service token not configured"}, status_code=503)
+            supplied = request.headers.get("authorization", "")
+            if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):
+                return JSONResponse({"detail": "unauthorized"}, status_code=401)
+            return await call_next(request)
+
     @app.middleware("http")
-    async def count_requests(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def count_requests(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         response = await call_next(request)
         if request.url.path not in ("/healthz", "/readyz", "/metrics"):
             requests_total.labels(service, request.method, str(response.status_code)).inc()
@@ -94,9 +111,7 @@ def create_app(
 
     @app.get("/readyz", include_in_schema=False)
     async def readyz() -> Response:
-        results = dict(
-            zip(checks, await asyncio.gather(*(c() for c in checks.values())), strict=True)
-        )
+        results = dict(zip(checks, await asyncio.gather(*(c() for c in checks.values())), strict=True))
         ready = all(results.values())
         return JSONResponse(
             {"status": "ready" if ready else "not_ready", "service": service, "deps": results},
@@ -105,7 +120,9 @@ def create_app(
 
     @app.get("/metrics", include_in_schema=False)
     async def metrics() -> Response:
-        return Response(generate_latest(registry), media_type=CONTENT_TYPE_LATEST)
+        # fl_ metrics live in one shared registry (falcon_core.telemetry.metrics).
+        body = generate_latest(registry) + generate_latest(FL_REGISTRY)
+        return Response(body, media_type=CONTENT_TYPE_LATEST)
 
     return app
 

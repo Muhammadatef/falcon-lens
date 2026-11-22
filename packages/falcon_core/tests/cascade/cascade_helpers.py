@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator
+from prometheus_client import CollectorRegistry
 from referencing import Registry
 from referencing.jsonschema import DRAFT202012
 
@@ -55,7 +56,7 @@ def make_cascade(
     signals: Mapping[str, tuple[SignalSpec, SignalFn]] | None = None,
     **kw: Any,
 ) -> tuple[Cascade, CascadeMetrics]:
-    metrics = CascadeMetrics()
+    metrics = CascadeMetrics(CollectorRegistry())
     t1 = dict(signals if signals is not None else default_t1_signals())
     t1.update(extra_signals or {})
     kw.setdefault("guard_policy", FIXTURE_POLICY)

@@ -6,7 +6,6 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
-from falcon_core.cascade.ids import new_event_id
 from falcon_core.contracts.event import PlatformEvent
 from falcon_core.signals.url.textutil import defang
 
@@ -53,7 +52,8 @@ def verdict_created(doc: Mapping[str, Any], meta: Mapping[str, Any]) -> dict[str
         "degraded": doc["degraded"],
     }
     event = PlatformEvent(
-        event_id=new_event_id(),
+        # Deterministic per verdict: a retried publish re-sends the same event (Sentinel dedupes on id).
+        event_id="evt_" + str(doc["verdict_id"]).removeprefix("vd_"),
         type="verdict.created",
         occurred_at=datetime.now(UTC),
         source=doc.get("source", "live"),

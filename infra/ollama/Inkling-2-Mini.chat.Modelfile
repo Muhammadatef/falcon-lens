@@ -1,0 +1,7 @@
+FROM inkling-2-mini
+TEMPLATE """{{- range .Messages }}{{- if eq .Role "system" }}<|message_system|><|content_text|>{{ .Content }}<|end_message|>{{- end }}{{- end }}<|message_system|><|content_text|>Thinking effort level: 0<|end_message|>{{- range .Messages }}{{- if eq .Role "user" }}<|message_user|><|content_text|>{{ .Content }}<|end_message|>{{- else if eq .Role "assistant" }}<|message_model|><|content_text|>{{ .Content }}<|end_message|><|content_model_end_sampling|>{{- end }}{{- end }}<|message_model|><|content_text|>"""
+PARAMETER stop "<|end_message|>"
+PARAMETER stop "<|content_model_end_sampling|>"
+PARAMETER stop "<|message_user|>"
+PARAMETER temperature 0.4
+PARAMETER num_ctx 32768

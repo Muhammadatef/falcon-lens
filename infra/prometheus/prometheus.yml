@@ -27,7 +27,12 @@ scrape_configs:
         labels: { service: sentinel }
       - targets: ["mcp:8000"]
         labels: { service: mcp }
-      - targets: ["sandbox:8000"]
+
+  # The sandbox is not reachable from Prometheus (isolation): the worker relays its metrics.
+  - job_name: sandbox-via-worker
+    metrics_path: /metrics/sandbox
+    static_configs:
+      - targets: ["worker:8000"]
         labels: { service: sandbox }
 
   - job_name: egress-proxy
@@ -59,3 +64,9 @@ scrape_configs:
     static_configs:
       - targets: ["grafana:3000"]
         labels: { service: grafana }
+
+  # Synthetic demo emitter (scripts/emit_demo_metrics.py). The script writes the target file
+  # while it runs and removes it on exit, so this job never shows a DOWN target.
+  - job_name: falcon-demo
+    file_sd_configs:
+      - files: [/etc/prometheus/demo/*.yml]

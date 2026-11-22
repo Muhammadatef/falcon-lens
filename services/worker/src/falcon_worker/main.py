@@ -1,4 +1,10 @@
-"""Falcon Lens worker: health server + ``fl:jobs`` consumer running the cascade (T-012)."""
+"""Falcon Lens worker: health server + ``fl:jobs`` consumer running the cascade (T-012).
+
+Network note: the worker is the only service besides egress-proxy that shares a network with the
+sandbox (`sandbox_ctl`). Docker networks are not directional, so the sandbox can reach this port.
+The worker therefore exposes ONLY /healthz, /readyz and /metrics (plus /metrics/sandbox) on it:
+never a job or control API. Jobs arrive through Redis only.
+"""
 
 from __future__ import annotations
 
@@ -9,7 +15,9 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, suppress
 from typing import Any
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Response
+from fastapi.responses import PlainTextResponse
 
 from falcon_core.cascade import Cascade, CascadeDeps, CascadeMetrics, HttpSandboxClient
 from falcon_core.cascade.favicons import load_brand_favicons
@@ -25,6 +33,7 @@ settings = get_settings()
 
 REDIS_URL = settings.redis_url or "redis://redis:6379/0"
 SANDBOX_URL = os.environ.get("FL_SANDBOX_URL", "http://sandbox:8000")
+SANDBOX_METRICS_URL = f"{SANDBOX_URL}/metrics"
 
 
 def guard_policy() -> GuardPolicy:
@@ -40,13 +49,21 @@ def guard_policy() -> GuardPolicy:
     return GuardPolicy(allow_hosts=hosts)
 
 
-def build_worker(app: FastAPI, redis: Any) -> tuple[Worker, VerdictStore, HttpSandboxClient]:
-    metrics = CascadeMetrics(app.state.registry)
+def sandbox_token() -> str | None:
+    for secret in (settings.fl_sandbox_token, settings.fl_sandbox_api_key):
+        if secret is not None:
+            return secret.get_secret_value()
+    return None
+
+
+def build_worker(
+    app: FastAPI, redis: Any, metrics: CascadeMetrics | None = None
+) -> tuple[Worker, VerdictStore, HttpSandboxClient]:
+    metrics = metrics or CascadeMetrics()
     set_default_on_block(metrics.on_ssrf_block)
     dsn = settings.database_url.get_secret_value() if settings.database_url else None
     store: VerdictStore = PgStore(dsn) if dsn else MemoryStore()
-    key = settings.fl_sandbox_api_key.get_secret_value() if settings.fl_sandbox_api_key else None
-    sandbox = HttpSandboxClient(SANDBOX_URL, api_key=key)
+    sandbox = HttpSandboxClient(SANDBOX_URL, token=sandbox_token())
     registry = default_registry()
     deps = CascadeDeps(
         registry=registry,
@@ -86,6 +103,22 @@ if settings.database_url:
     deps["postgres"] = settings.database_url.get_secret_value()
 
 app = create_app("worker", deps=deps, lifespan=lifespan, title="Falcon Lens worker")
+
+
+@app.get("/metrics/sandbox", include_in_schema=False)
+async def sandbox_metrics() -> Response:
+    """Relay the sandbox's metrics so Prometheus never needs a route into the sandbox network."""
+    token = settings.fl_sandbox_token
+    headers = {"Authorization": f"Bearer {token.get_secret_value()}"} if token else {}
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            resp = await client.get(SANDBOX_METRICS_URL, headers=headers)
+        resp.raise_for_status()
+    except httpx.HTTPError as exc:
+        log.warning("sandbox metrics relay failed: %s", exc)
+        return PlainTextResponse("# sandbox metrics unavailable\n", status_code=503)
+    return PlainTextResponse(resp.text, media_type=resp.headers.get("content-type", "text/plain"))
+
 
 if __name__ == "__main__":
     run(app)

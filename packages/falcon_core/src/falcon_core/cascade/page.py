@@ -49,6 +49,9 @@ _BOT_HOSTS: dict[str, str] = {
     "script.google.com": "form_relay",
     "submit-form.com": "form_relay",
 }
+EXFIL_KINDS = frozenset(["bot_api", "messaging_bot", "webhook", "webhook_relay", "form_relay"])
+# signals/page/exfil.py categories (sandbox) -> hard_rules.BOT_TARGET_KINDS
+SANDBOX_CATEGORY = {"messaging_bot_api": "messaging_bot"}
 _WEBHOOK_PATHS: dict[str, str] = {"discord.com": "/api/webhooks", "discordapp.com": "/api/webhooks"}
 
 
@@ -60,9 +63,7 @@ def field_kind(descriptor: str | Mapping[str, Any]) -> str | None:
     t = text.lower()[:300]
     for kind, needles in _FIELD_KINDS:
         for n in needles:
-            if (len(n) <= 3 and re.search(rf"(?<![a-z]){re.escape(n)}(?![a-z])", t)) or (
-                len(n) > 3 and n in t
-            ):
+            if (len(n) <= 3 and re.search(rf"(?<![a-z]){re.escape(n)}(?![a-z])", t)) or (len(n) > 3 and n in t):
                 return kind
     return None
 
@@ -113,9 +114,7 @@ class BrandMatcher:
     arabic: re.Pattern[str] | None  # over normalised Arabic text
 
 
-def _alternation(
-    phrases: list[str], left: str, right: str, flexible_space: bool
-) -> re.Pattern[str] | None:
+def _alternation(phrases: list[str], left: str, right: str, flexible_space: bool) -> re.Pattern[str] | None:
     if not phrases:
         return None
     parts = []
@@ -197,9 +196,7 @@ CONF_TEXT_ONCE = 0.5
 CONF_COMBINED = 0.95
 
 
-def claimed_brands(
-    features: SandboxFeatures, reg: BrandRegistry, favicons: Mapping[str, str]
-) -> list[BrandClaim]:
+def claimed_brands(features: SandboxFeatures, reg: BrandRegistry, favicons: Mapping[str, str]) -> list[BrandClaim]:
     claims: list[BrandClaim] = []
     fav_brand = favicons.get((features.favicon_sha256 or "").lower())
     for m in _matchers(reg):
@@ -273,8 +270,16 @@ def page_evidence(
     for p in features.post_targets:
         if _registrable(p) not in ("", page_reg):
             targets.setdefault(p, {"credentials": False})
+    sandbox_kinds: dict[str, str] = {}
+    for x in features.exfil_targets:  # sandbox's own exfil classification (origins only)
+        origin = x.get("origin")
+        if isinstance(origin, str) and origin:
+            cat = str(x.get("category") or "")
+            cat = SANDBOX_CATEGORY.get(cat, cat)
+            sandbox_kinds[origin] = cat if cat in EXFIL_KINDS else "webhook_relay"
+            targets.setdefault(origin, {"credentials": False})
     if targets:
-        tkinds = {k: target_kind(k) for k in targets}
+        tkinds = {k: target_kind(k) or sandbox_kinds.get(k) for k in targets}
         bot_kind = next((v for v in tkinds.values() if v), None)
         out.append(
             make_evidence(
@@ -315,11 +320,7 @@ def page_evidence(
 
     # page.cloaking
     if features.cloaking.get("detected") is True:
-        obs = {
-            str(k)[:40]: v
-            for k, v in list(features.cloaking.items())[:10]
-            if isinstance(v, bool | int | float)
-        }
+        obs = {str(k)[:40]: v for k, v in list(features.cloaking.items())[:10] if isinstance(v, bool | int | float)}
         out.append(
             make_evidence(
                 "page.cloaking",

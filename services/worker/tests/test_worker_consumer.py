@@ -10,6 +10,7 @@ from typing import Any
 import fakeredis
 import pytest
 from jsonschema import Draft202012Validator
+from prometheus_client import CollectorRegistry
 from referencing import Registry
 from referencing.jsonschema import DRAFT202012
 
@@ -49,9 +50,7 @@ def _validator(name: str) -> Draft202012Validator:
         schema = json.loads(path.read_text())
         resources.append((schema["$id"], DRAFT202012.create_resource(schema)))
     registry: Registry[Any] = Registry().with_resources(resources)
-    return Draft202012Validator(
-        json.loads((CONTRACTS / f"{name}.schema.json").read_text()), registry=registry
-    )
+    return Draft202012Validator(json.loads((CONTRACTS / f"{name}.schema.json").read_text()), registry=registry)
 
 
 VERDICT = _validator("verdict")
@@ -59,11 +58,11 @@ EVENT = _validator("event")
 
 
 class Rig:
-    def __init__(self, sandbox: SandboxClient) -> None:
+    def __init__(self, sandbox: SandboxClient, **wkw: Any) -> None:
         self.server = fakeredis.FakeServer()
         self.r: Any = fakeredis.FakeAsyncRedis(server=self.server, decode_responses=True)
         self.store = MemoryStore()
-        self.metrics = CascadeMetrics()
+        self.metrics = CascadeMetrics(CollectorRegistry())
         registry = default_registry()
         self.sandbox = sandbox
         deps = CascadeDeps(
@@ -74,9 +73,8 @@ class Rig:
             guard_policy=FIXTURE_POLICY,
             resolver=stub_resolver,
         )
-        self.worker = Worker(
-            self.r, Cascade(deps), self.store, registry, self.metrics, consumer="w1", poll_s=0.02
-        )
+        wkw.setdefault("consumer", "w1")
+        self.worker = Worker(self.r, Cascade(deps), self.store, registry, self.metrics, poll_s=0.02, **wkw)
 
     async def submit(self, url: str, input_type: str = "url", **payload: Any) -> str:
         vid = new_verdict_id()
@@ -196,10 +194,7 @@ async def test_single_flight_two_concurrent_identical_checks_share_one_run() -> 
     assert d1["verdict"] == d2["verdict"] == "dangerous"
     assert d1["evidence"] == d2["evidence"]
     assert json.loads(await rig.r.get(keys.last_key(v2)))["final"] is True
-    assert (
-        rig.metrics.registry.get_sample_value("fl_cache_hits_total", {"layer": "single_flight"})
-        == 1
-    )
+    assert rig.metrics.registry.get_sample_value("fl_cache_hits_total", {"layer": "single_flight"}) == 1
     # Lock released by the leader.
     fp = url_sha256(canonicalize(DEMO_LOOKALIKE_URL))
     assert await rig.r.get(keys.worker_single_flight(fp)) is None

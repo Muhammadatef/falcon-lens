@@ -41,3 +41,13 @@ def worker_single_flight(fingerprint: str) -> str:
 def claim_key(verdict_id: str) -> str:
     """Idempotency claim: which stream entry is processing this verdict_id."""
     return f"fl:wclaim:{verdict_id}"
+
+
+def meta_key(verdict_id: str) -> str:
+    """Event metadata of a final (registrable domain, fingerprints): reused by re-issued verdicts."""
+    return f"fl:wmeta:{verdict_id}"
+
+
+def done_key(verdict_id: str) -> str:
+    """Completion marker: final stored, published, cached and its event emitted."""
+    return f"fl:wdone:{verdict_id}"

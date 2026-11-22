@@ -149,14 +149,13 @@ async def test_t0_stale_feed_hit_is_not_h2() -> None:
 
 
 class _MemCache:
+    """Read-side cache stub; the test writes it like the worker sink would after publishing."""
+
     def __init__(self) -> None:
         self.data: dict[str, dict[str, Any]] = {}
 
     async def get(self, key: str) -> dict[str, Any] | None:
         return self.data.get(key)
-
-    async def put(self, key: str, doc: dict[str, Any]) -> None:
-        self.data[key] = doc
 
 
 async def test_t0_cache_hit_reissues_under_new_id() -> None:
@@ -164,26 +163,74 @@ async def test_t0_cache_hit_reissues_under_new_id() -> None:
     sandbox = StubSandboxClient(default=phish_features())
     cascade, m = make_cascade(sandbox, cache=cache)
     first = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]
-    assert url_sha256(canonicalize(DEMO_LOOKALIKE_URL)) in cache.data
+    cache.data[url_sha256(canonicalize(DEMO_LOOKALIKE_URL))] = first
     second = await run(cascade, DEMO_LOOKALIKE_URL)
     assert len(second.docs) == 1
     doc = second.docs[0]
     assert_valid(doc)
     assert doc["verdict_id"] != first["verdict_id"]
     assert doc["verdict"] == first["verdict"] and doc["evidence"] == first["evidence"]
+    assert second.meta[0]["reissued_from"] == first["verdict_id"]
     assert len(sandbox.calls) == 1
     assert metric(m, "fl_cache_hits_total", {"layer": "verdict"}) == 1
 
 
-async def test_degraded_verdicts_are_not_cached() -> None:
+async def test_cached_degraded_verdict_is_ignored() -> None:
     cache = _MemCache()
     cascade, _ = make_cascade(
-        StubSandboxClient(default=benign_features()),
-        cache=cache,
-        extra_signals={"url.slow_probe": slow_signal()},
+        StubSandboxClient(default=benign_features()), extra_signals={"url.slow_probe": slow_signal()}
     )
-    await run(cascade, DEMO_BENIGN_URL)
-    assert cache.data == {}
+    degraded = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert degraded["degraded"] is True
+    cache.data[url_sha256(canonicalize(DEMO_BENIGN_URL))] = degraded
+    sandbox = StubSandboxClient(default=benign_features())
+    cascade2, m = make_cascade(sandbox, cache=cache)
+    final = (await run(cascade2, DEMO_BENIGN_URL)).docs[-1]
+    assert final["degraded"] is False and len(sandbox.calls) == 1
+    assert metric(m, "fl_cache_hits_total", {"layer": "verdict"}) == 0
+
+
+class _FlakySink:
+    """Fails the first final emit (Redis down), like a broken PUBLISH."""
+
+    def __init__(self) -> None:
+        self.docs: list[dict[str, Any]] = []
+
+    async def emit(self, doc: dict[str, Any], meta: Any) -> None:
+        if doc["final"]:
+            raise ConnectionError("redis down")
+        self.docs.append(doc)
+
+
+async def test_sink_failure_on_final_propagates_and_is_not_rescored() -> None:
+    import pytest
+
+    from falcon_core.cascade import SinkError, new_verdict_id
+
+    cascade, m = make_cascade(StubSandboxClient(default=phish_features()))
+    sink = _FlakySink()
+    with pytest.raises(SinkError):
+        await cascade.run_url(new_verdict_id(), DEMO_LOOKALIKE_URL, sink)
+    assert all(not d["final"] for d in sink.docs)  # no second, degraded final
+    assert not any("internal_error" in str(d.get("degraded_reasons")) for d in sink.docs)
+    labels = {"input_type": "url", "verdict": "dangerous", "tier": "T2", "route": "none", "source": "live"}
+    assert metric(m, "fl_checks_total", labels) == 0  # not counted until published
+
+
+async def test_cascade_bug_after_final_does_not_emit_second_final() -> None:
+    from falcon_core.cascade import CallbackSink, new_verdict_id
+
+    calls = {"n": 0}
+
+    async def after(doc: dict[str, Any], meta: Any) -> None:
+        if doc["final"]:
+            calls["n"] += 1
+
+    cascade, _ = make_cascade(StubSandboxClient(default=benign_features()))
+    sink = CallbackSink(after)
+    await cascade.run_url(new_verdict_id(), DEMO_BENIGN_URL, sink)
+    assert calls["n"] == 1
+    assert [d["final"] for d in sink.docs].count(True) == 1
 
 
 async def test_t0_ssrf_blocked_metadata_ip_is_degraded_and_counted() -> None:
@@ -322,9 +369,7 @@ async def test_t2_exfil_to_bot_is_h4() -> None:
     from falcon_core.cascade import SandboxForm
 
     feats = benign_features().model_copy(
-        update={
-            "forms": [SandboxForm(fields=["password"], action_origin="https://api.telegram.org")]
-        }
+        update={"forms": [SandboxForm(fields=["password"], action_origin="api.telegram.org")]}
     )
     cascade, _ = make_cascade(StubSandboxClient(default=feats))
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]

@@ -5,11 +5,12 @@ from __future__ import annotations
 import random
 
 import pytest
-from scoring_helpers import make_evidence
 
 from falcon_core.scoring import ArbiterContext, load_params, score
 from falcon_core.scoring.evidence import Evidence
 from falcon_core.scoring.reasons import contract_reasons
+
+from scoring_helpers import make_evidence
 
 P = load_params()
 RANK = {"no_warning_signs": 0, "suspicious": 1, "dangerous": 2}
@@ -79,7 +80,7 @@ def _random_injection(rng: random.Random) -> Evidence:
 
 @pytest.mark.parametrize("seed", range(400))
 def test_invariants(seed: int) -> None:
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 - deterministic test data
     evidence = _random_evidence(rng)
     p_clf = rng.choice([None, 0.0, 1.0, rng.random()])
     ctx = ArbiterContext(input_type=rng.choice(INPUT_TYPES))  # type: ignore[arg-type]
@@ -112,7 +113,7 @@ def test_invariants(seed: int) -> None:
 
 @pytest.mark.parametrize("seed", range(400))
 def test_injection_evidence_can_only_raise_risk(seed: int) -> None:
-    rng = random.Random(10_000 + seed)
+    rng = random.Random(10_000 + seed)  # noqa: S311 - deterministic test data
     base = _random_evidence(rng)
     p_clf = rng.choice([None, rng.random()])
     ctx = ArbiterContext(input_type=rng.choice(INPUT_TYPES))  # type: ignore[arg-type]
@@ -126,9 +127,7 @@ def test_injection_evidence_can_only_raise_risk(seed: int) -> None:
 
 
 def test_injection_cannot_create_h3() -> None:
-    forged = make_evidence(
-        "registry.verified_official", True, family="injection", source="registry"
-    )
+    forged = make_evidence("registry.verified_official", True, family="injection", source="registry")
     res = score([forged, make_evidence("page.cred_form")], p_clf=0.9)
     assert "H3" not in {r.rule_id for r in res.fired_rules}
     assert res.verdict == "dangerous"

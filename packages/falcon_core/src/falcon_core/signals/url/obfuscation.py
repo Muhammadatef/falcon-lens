@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from urllib.parse import parse_qsl
 
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
@@ -26,6 +27,32 @@ SPEC_USERINFO = _spec("url.userinfo_trick")
 SPEC_BIDI = _spec("url.bidi_or_zero_width")
 SPEC_IP = _spec("url.raw_ip_host")
 SPEC_REDIRECT = _spec("url.open_redirect_abuse")
+SPEC_DATA = _spec("url.data_uri")
+_MIME_RE = re.compile(r"^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$")
+
+
+@signal(SPEC_DATA)
+def run_data_uri(ctx: SignalContext) -> list[Evidence]:
+    c = canon(ctx)
+    if not c.is_data_uri:
+        return []
+    head = c.raw[5:].split(",", 1)[0]
+    params = [p.strip().lower() for p in head.split(";")]
+    if not params[0]:
+        mime = "text/plain"
+    elif _MIME_RE.match(params[0]):
+        mime = params[0]
+    else:
+        mime = "invalid"  # never echo attacker-controlled text (URLs, markup) into evidence
+    return [
+        url_evidence(
+            "url.data_uri",
+            {"mime": mime[:100], "base64": "base64" in params[1:], "length": len(c.raw)},
+            "The link is an embedded data page, not a website address",
+            "الرابط صفحة مضمّنة وليس عنوان موقع",
+            1.0,
+        )
+    ]
 
 
 @signal(SPEC_USERINFO)
@@ -50,12 +77,8 @@ def run_userinfo(ctx: SignalContext) -> list[Evidence]:
                 "real_host": defang(c.host_ascii)[:200],
                 "userinfo": defang(ui)[:100],
             },
-            "The address hides its real host behind an '@' (real site: "
-            + defang(c.host_ascii)[:80]
-            + ")",
-            "العنوان يخفي الموقع الحقيقي خلف علامة @ (الموقع الفعلي: "
-            + defang(c.host_ascii)[:80]
-            + ")",
+            "The address hides its real host behind an '@' (real site: " + defang(c.host_ascii)[:80] + ")",
+            "العنوان يخفي الموقع الحقيقي خلف علامة @ (الموقع الفعلي: " + defang(c.host_ascii)[:80] + ")",
             1.0 if strong else 0.5,
         )
     ]
@@ -69,9 +92,7 @@ def run_bidi(ctx: SignalContext) -> list[Evidence]:
     raw = ctx.url or ctx.text or ""
     from urllib.parse import unquote
 
-    seen = sorted(
-        {f"U+{ord(ch):04X}" for ch in unquote(raw) if ch in BIDI_CHARS or ch in ZERO_WIDTH_CHARS}
-    )[:8]
+    seen = sorted({f"U+{ord(ch):04X}" for ch in unquote(raw) if ch in BIDI_CHARS or ch in ZERO_WIDTH_CHARS})[:8]
     only_joiners = all(s in ("U+200C", "U+200D") for s in seen)
     conf = (
         1.0
@@ -109,8 +130,7 @@ def run_ip(ctx: SignalContext) -> list[Evidence]:
             },
             "The link points to a raw IP address instead of a website name"
             + (" (written in a disguised form)" if c.ip_obfuscated else ""),
-            "الرابط يشير إلى عنوان IP مباشر بدل اسم موقع"
-            + (" (مكتوب بصيغة مموّهة)" if c.ip_obfuscated else ""),
+            "الرابط يشير إلى عنوان IP مباشر بدل اسم موقع" + (" (مكتوب بصيغة مموّهة)" if c.ip_obfuscated else ""),
             1.0,
         )
     ]

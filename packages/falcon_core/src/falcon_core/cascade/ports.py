@@ -59,11 +59,12 @@ class HttpSandboxClient:
     def __init__(
         self,
         base_url: str,
-        api_key: str | None = None,
+        token: str | None = None,
         timeout_s: float = 7.0,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
-        headers = {"X-Sandbox-Key": api_key} if api_key else {}
+        # The sandbox (and service.protect) accept "Authorization: Bearer <FL_SANDBOX_TOKEN>".
+        headers = {"Authorization": f"Bearer {token}", "X-Sandbox-Key": token} if token else {}
         self._client = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
             headers=headers,

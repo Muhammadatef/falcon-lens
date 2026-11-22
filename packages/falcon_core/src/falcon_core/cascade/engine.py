@@ -21,7 +21,7 @@ import logging
 import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, TypeGuard
 
 from falcon_core.cascade.assemble import TraceStep, build_verdict, reissue
 from falcon_core.cascade.evidence import dedupe, from_signal, make_evidence
@@ -66,23 +66,37 @@ FEED_SOURCE = {"openphish": "openphish", "gsb": "gsb", "urlhaus": "urlhaus"}
 
 
 class VerdictSink(Protocol):
-    async def emit(self, doc: dict[str, Any], meta: Mapping[str, Any]) -> None:
-        """``meta`` carries non-contract data for events: registrable_domain, fingerprints."""
+    """Publishes one verdict doc. Errors must propagate (the worker retries the job).
+
+    ``meta`` carries non-contract data for events: registrable_domain, fingerprints,
+    ``reissued_from`` (cache hit / single-flight follower).
+    """
+
+    async def emit(self, doc: dict[str, Any], meta: Mapping[str, Any]) -> None: ...
 
 
 class VerdictCache(Protocol):
-    """T0 verdict cache. ``get`` returns a previous *final* verdict doc for this key, or None."""
+    """T0 verdict cache (read side). ``get`` returns a previous *final, non-degraded* verdict doc.
+
+    The write side belongs to the publisher: ``vc:`` is written only after the final was published
+    (worker ``RedisSink``), never by the cascade.
+    """
 
     async def get(self, key: str) -> dict[str, Any] | None: ...
-    async def put(self, key: str, doc: dict[str, Any]) -> None: ...
 
 
 class NullCache:
     async def get(self, key: str) -> dict[str, Any] | None:
         return None
 
-    async def put(self, key: str, doc: dict[str, Any]) -> None:
-        return None
+
+class SinkError(Exception):
+    """Publishing a verdict failed. Never turned into a re-scored verdict; the worker retries."""
+
+
+def usable_cached(doc: dict[str, Any] | None) -> TypeGuard[dict[str, Any]]:
+    """A cached doc is reusable only if it is a final, non-degraded verdict."""
+    return doc is not None and doc.get("final") is True and doc.get("degraded") is False
 
 
 @dataclass
@@ -101,9 +115,7 @@ class SignalCtx:
 
 def default_t1_signals() -> dict[str, tuple[SignalSpec, SignalFn]]:
     return {
-        name: (spec, fn)
-        for name, (spec, fn) in REGISTRY.items()
-        if spec.tier == "T1" and "url" in spec.input_types
+        name: (spec, fn) for name, (spec, fn) in REGISTRY.items() if spec.tier == "T1" and "url" in spec.input_types
     }
 
 
@@ -145,6 +157,7 @@ class _Run:
     degraded_reasons: list[str] = field(default_factory=list)
     blocked: str | None = None  # SSRF block reason: never render
     meta: dict[str, Any] = field(default_factory=dict)  # for platform events, never published
+    final_emitted: bool = False  # structural guard: at most one final per verdict_id
 
     def ms(self) -> int:
         return int((time.perf_counter() - self.t_start) * 1000)
@@ -187,17 +200,22 @@ class Cascade:
             source=run.source,
             channels=self.d.channels,
         )
+        await self._publish(sink, run, doc)
         if final:
-            self.d.metrics.checks.labels("url", doc["verdict"], tier, "none", run.source).inc()
+            self.d.metrics.record_final("url", doc["verdict"], tier, "none", run.source)
             if doc["degraded"]:
                 self.d.metrics.degraded.inc()
-            if run.cache_key and not doc["degraded"]:
-                try:
-                    await self.d.cache.put(run.cache_key, doc)
-                except Exception:  # noqa: BLE001 - cache is best effort
-                    log.warning("verdict cache put failed", extra={"verdict_id": run.verdict_id})
-        await sink.emit(doc, run.meta)
         return doc
+
+    async def _publish(self, sink: VerdictSink, run: _Run, doc: dict[str, Any]) -> None:
+        if run.final_emitted:
+            raise RuntimeError("a final verdict was already emitted for this run")
+        if doc["final"]:
+            run.final_emitted = True  # set first: a failed final must not be re-scored into another
+        try:
+            await sink.emit(doc, run.meta)
+        except Exception as exc:
+            raise SinkError(f"{type(exc).__name__}") from exc
 
     def _observe(self, stage: str, t0: float) -> int:
         dt = time.perf_counter() - t0
@@ -228,7 +246,11 @@ class Cascade:
                 return done
             tier = "T2"
             return await self._t2(run, sink)
-        except Exception as exc:  # noqa: BLE001 - always end with a final verdict
+        except SinkError:
+            raise  # transport failure: the worker leaves the job pending and retries
+        except Exception as exc:  # noqa: BLE001 - a cascade bug still ends with one final verdict
+            if run.final_emitted:
+                raise
             log.exception("cascade failed", extra={"verdict_id": verdict_id})
             run.degraded_reasons.append(f"internal_error:{type(exc).__name__}")
             run.trace.append(TraceStep(tier, "Check stopped by an internal error", ms=run.ms()))
@@ -236,9 +258,7 @@ class Cascade:
 
     # --- T0 --------------------------------------------------------------------------------
 
-    async def _t0(
-        self, run: _Run, url: str, sink: VerdictSink, cache_key: str | None
-    ) -> dict[str, Any] | None:
+    async def _t0(self, run: _Run, url: str, sink: VerdictSink, cache_key: str | None) -> dict[str, Any] | None:
         t0 = time.perf_counter()
         c = canonicalize(url)
         if not c.ok or c.scheme not in ("http", "https") or not c.host:
@@ -255,7 +275,7 @@ class Cascade:
             cached = await self.d.cache.get(run.cache_key)
         except Exception:  # noqa: BLE001 - cache is best effort
             log.warning("verdict cache get failed", extra={"verdict_id": run.verdict_id})
-        if cached is not None and cached.get("final"):
+        if usable_cached(cached):
             self.d.metrics.cache_hits.labels("verdict").inc()
             return await self._emit_cached(run, cached, sink)
 
@@ -300,8 +320,7 @@ class Cascade:
                             "hit": True,
                             "match": h.match,
                             "feed_age_s": h.feed_age_s,
-                            "fresh": h.feed_age_s is not None
-                            and h.feed_age_s < self.params.h2_max_feed_age_s,
+                            "fresh": h.feed_age_s is not None and h.feed_age_s < self.params.h2_max_feed_age_s,
                         },
                         tier="T0",
                         source=FEED_SOURCE.get(h.feed, h.feed),
@@ -325,8 +344,7 @@ class Cascade:
         run.trace.append(
             TraceStep(
                 "T0",
-                "Canonical URL, official registry and feed mirror checked"
-                + ("; fresh feed hit" if h2 else ""),
+                "Canonical URL, official registry and feed mirror checked" + ("; fresh feed hit" if h2 else ""),
                 tuple(e.id for e in added),
                 ms,
             )
@@ -336,9 +354,7 @@ class Cascade:
         await self._emit(sink, run, result, "T0", final=False)
         return None
 
-    async def _emit_cached(
-        self, run: _Run, cached: dict[str, Any], sink: VerdictSink
-    ) -> dict[str, Any]:
+    async def _emit_cached(self, run: _Run, cached: dict[str, Any], sink: VerdictSink) -> dict[str, Any]:
         doc = reissue(
             cached,
             verdict_id=run.verdict_id,
@@ -347,10 +363,9 @@ class Cascade:
             note=f"Verdict cache hit (from {str(cached.get('verdict_id'))[:32]})",
             input_fingerprint=run.fingerprint,
         )
-        self.d.metrics.checks.labels(
-            "url", doc["verdict"], doc["tier_reached"], doc["model_route"], run.source
-        ).inc()
-        await sink.emit(doc, run.meta)
+        run.meta["reissued_from"] = str(cached.get("verdict_id"))
+        await self._publish(sink, run, doc)
+        self.d.metrics.record_final("url", doc["verdict"], doc["tier_reached"], doc["model_route"], run.source)
         return doc
 
     # --- T1 --------------------------------------------------------------------------------
@@ -382,9 +397,7 @@ class Cascade:
         ctx = SignalCtx(url=run.canonical.raw, brands=self.d.registry, http=self.d.signal_http)
         tasks = [self._run_signal(spec, fn, ctx) for spec, fn in signals.values()]
         try:
-            groups: Sequence[list[Evidence]] = await asyncio.wait_for(
-                asyncio.gather(*tasks), self.d.t1_budget_s + 0.5
-            )
+            groups: Sequence[list[Evidence]] = await asyncio.wait_for(asyncio.gather(*tasks), self.d.t1_budget_s + 0.5)
         except TimeoutError:  # belt and braces: per-signal timeouts should fire first
             groups = []
             run.degraded_reasons.append("t1_budget_exceeded")
@@ -395,9 +408,7 @@ class Cascade:
         fired = {r.rule_id for r in result.fired_rules}
         conflict = has_brand_conflict(run.evidence)
         exit_now = (
-            t1_should_exit(result.p_clf, conflict, self.params)
-            or bool(fired & {"H2", "H3"})
-            or run.blocked is not None
+            t1_should_exit(result.p_clf, conflict, self.params) or bool(fired & {"H2", "H3"}) or run.blocked is not None
         )
         why = (
             "not rendered (blocked target)"
@@ -436,6 +447,8 @@ class Cascade:
                 self.d.sandbox.render(run.canonical.url, run.verdict_id),
                 self.d.sandbox_timeout_s,
             )
+            if features.error and not features.final_url:
+                raise SandboxError("render_failed")
         except (TimeoutError, SandboxError) as exc:
             reason = "timeout" if isinstance(exc, TimeoutError) else exc.reason
             if reason == "timeout":
@@ -446,9 +459,7 @@ class Cascade:
             run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
             summary = "Sandbox could not render the page"
         else:
-            added.extend(
-                page_evidence(features, run.canonical.registrable, self.d.registry, self.d.favicons)
-            )
+            added.extend(page_evidence(features, run.canonical.registrable, self.d.registry, self.d.favicons))
             final_reg = canonicalize(features.final_url).registrable if features.final_url else ""
             run.meta["fingerprints"] = {
                 "dom_simhash": features.dom_simhash,
@@ -458,9 +469,7 @@ class Cascade:
                 run.meta["final_registrable_domain"] = final_reg
             if self.d.extractor is not None:  # T-024: quarantined extractor hook
                 try:
-                    extra = await asyncio.wait_for(
-                        self.d.extractor.extract(features, run.verdict_id), 4.0
-                    )
+                    extra = await asyncio.wait_for(self.d.extractor.extract(features, run.verdict_id), 4.0)
                     added.extend(extra)
                 except Exception as exc:  # noqa: BLE001 - extractor is optional
                     self.d.metrics.tool_errors.labels("extractor", type(exc).__name__[:40]).inc()

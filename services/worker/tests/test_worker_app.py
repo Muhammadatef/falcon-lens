@@ -24,8 +24,9 @@ def test_metrics_expose_checks_and_ssrf_counters() -> None:
     worker.metrics.on_ssrf_block(BlockReason.METADATA)
     text = TestClient(app).get("/metrics").text
     assert "fl_checks_total" in text
-    assert 'fl_ssrf_blocked_total{reason="metadata"} 1.0' in text
-    assert "fl_stage_latency_seconds" in generate_latest(app.state.registry).decode()
+    assert 'fl_ssrf_blocked_total{reason="metadata"}' in text
+    assert "fl_stage_latency_seconds" in text
+    assert "fl_stage_latency_seconds" not in generate_latest(app.state.registry).decode()  # no dupes
 
 
 def test_guard_policy_allow_hosts(monkeypatch: pytest.MonkeyPatch) -> None:

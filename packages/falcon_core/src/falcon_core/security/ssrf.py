@@ -40,6 +40,8 @@ __all__ = [
     "Resolver",
     "SSRFBlocked",
     "check_host_port",
+    "ip_reason_for_host",
+    "resolve_host_port",
     "ip_block_reason",
     "is_ip_allowed",
     "resolve_and_check",
@@ -76,7 +78,9 @@ class BlockReason(StrEnum):
     RESERVED = "reserved"
     DNS_FAILURE = "dns_failure"
     NOT_PINNED = "not_pinned"
-    METHOD = "method"
+    METHOD_NOT_ALLOWED = "method_not_allowed"
+    REQUEST_TOO_LARGE = "request_too_large"
+    EGRESS_DENIED = "egress_denied"  # the egress proxy refused (proxy mode)
     TOO_MANY_REDIRECTS = "too_many_redirects"
     RESPONSE_TOO_LARGE = "response_too_large"
 
@@ -96,9 +100,17 @@ class GuardPolicy:
     fixture network may widen ``allow_hosts`` explicitly, never implicitly."""
 
     allowed_ports: frozenset[int] = frozenset({80, 443})
-    #: Exact hostnames exempt from internal-name and IP checks. Only for the
-    #: internal "Falcon Demo Bank" fixture host. Empty in production.
+    #: Exact hostnames exempt from the internal-name check whose addresses may
+    #: be private (RFC 1918, IPv6 ULA, CGNAT). Only for the internal
+    #: "Falcon Demo Bank" fixture host. Empty in production.
     allow_hosts: frozenset[str] = field(default_factory=frozenset)
+    #: Exact IPs an allow-listed host may additionally resolve to even though
+    #: they are loopback, link-local, metadata or reserved. Empty by default:
+    #: listing a host never opens metadata or loopback on its own.
+    allow_host_ips: frozenset[str] = field(default_factory=frozenset)
+    #: Exact hostnames that ``GuardedHTTPClient.post`` may POST to (https only).
+    #: Empty by default; the reputation module passes its two API hosts.
+    post_allow_hosts: frozenset[str] = field(default_factory=frozenset)
 
 
 DEFAULT_POLICY = GuardPolicy()
@@ -182,6 +194,7 @@ _V6_RULES: tuple[tuple[_V6, BlockReason], ...] = (
     (_V6("100::/64"), BlockReason.RESERVED),  # discard-only
 )
 _V6_GLOBAL_UNICAST = _V6("2000::/3")
+_V6_COMPAT = _V6("::/96")  # deprecated IPv4-compatible, not routable
 _NAT64_WKP = _V6("64:ff9b::/96")
 
 
@@ -223,7 +236,14 @@ def ip_block_reason(ip: str | IPAddress) -> BlockReason | None:
             return BlockReason.LINK_LOCAL
         inner = _embedded_v4(addr)
         if inner is not None:
-            return ip_block_reason(inner)
+            # Unwrapping may only make the decision stricter: judge the inner
+            # IPv4 first, then still refuse the non-routable compat range.
+            inner_reason = ip_block_reason(inner)
+            if inner_reason is not None:
+                return inner_reason
+            if addr in _V6_COMPAT:
+                return BlockReason.RESERVED
+            return None
         for net6, reason in _V6_RULES:
             if addr in net6:
                 return reason
@@ -241,6 +261,31 @@ def ip_block_reason(ip: str | IPAddress) -> BlockReason | None:
 def is_ip_allowed(ip: str | IPAddress) -> bool:
     """True only for publicly routable unicast addresses. For the egress proxy."""
     return ip_block_reason(ip) is None
+
+
+#: Reasons an allow-listed (fixture) host may override. Never metadata,
+#: loopback, link-local or reserved, unless the exact IP is in allow_host_ips.
+_LISTED_HOST_OVERRIDABLE = frozenset({BlockReason.PRIVATE, BlockReason.IPV6_ULA, BlockReason.CGNAT})
+
+
+def ip_reason_for_host(host: str, ip: str | IPAddress, policy: GuardPolicy = DEFAULT_POLICY) -> BlockReason | None:
+    """Like ``ip_block_reason`` but honours ``policy.allow_hosts`` for ``host``.
+
+    This is the one function every layer (URL, socket, proxy) uses to decide
+    whether ``ip`` may be dialled on behalf of ``host``.
+    """
+    reason = ip_block_reason(ip)
+    if reason is None or host not in policy.allow_hosts:
+        return reason
+    if reason in _LISTED_HOST_OVERRIDABLE:
+        return None
+    try:
+        addr = _coerce_ip(ip)
+        if any(addr == _coerce_ip(x) for x in policy.allow_host_ips):
+            return None
+    except ValueError:
+        return reason
+    return reason
 
 
 # ------------------------------------------------------------------------- hosts
@@ -273,9 +318,7 @@ _INTERNAL_SUFFIXES: tuple[str, ...] = (
 _LABEL_RE = re.compile(r"^[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9_])?$")
 # inet_aton() accepts each part as decimal, 0-prefixed octal or 0x hex.
 _NUMERIC_PART_RE = re.compile(r"^(?:0x[0-9a-f]*|[0-9]+)$")
-_CANONICAL_V4_RE = re.compile(
-    r"^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$"
-)
+_CANONICAL_V4_RE = re.compile(r"^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$")
 
 
 def _is_internal_name(host: str) -> bool:
@@ -309,9 +352,7 @@ def _check_host(host: str, policy: GuardPolicy) -> IPAddress | None:
             ip6 = ipaddress.IPv6Address(host)
         except ValueError as exc:
             raise SSRFBlocked(BlockReason.INVALID_URL, "bad IPv6 literal") from exc
-        if host in policy.allow_hosts:
-            return ip6
-        reason = ip_block_reason(ip6)
+        reason = ip_reason_for_host(host, ip6, policy)
         if reason is not None:
             raise SSRFBlocked(reason, host)
         return ip6
@@ -319,9 +360,7 @@ def _check_host(host: str, policy: GuardPolicy) -> IPAddress | None:
     labels = host.split(".")
     if _CANONICAL_V4_RE.match(host):
         ip4 = ipaddress.IPv4Address(host)
-        if host in policy.allow_hosts:
-            return ip4
-        reason = ip_block_reason(ip4)
+        reason = ip_reason_for_host(host, ip4, policy)
         if reason is not None:
             raise SSRFBlocked(reason, host)
         return ip4
@@ -342,6 +381,10 @@ def check_host_port(host: str, port: int, policy: GuardPolicy = DEFAULT_POLICY) 
     Returns the IP for IP-literal hosts, ``None`` for names (which the caller
     must then pass through ``resolve_and_check``).
     """
+    return _check_host(_normalise_host_port(host, port, policy), policy)
+
+
+def _normalise_host_port(host: str, port: int, policy: GuardPolicy) -> str:
     if port not in policy.allowed_ports:
         raise SSRFBlocked(BlockReason.PORT, str(port))
     h = host.strip().lower()
@@ -354,7 +397,7 @@ def check_host_port(host: str, port: int, policy: GuardPolicy = DEFAULT_POLICY) 
             h = httpx.URL(f"http://{h}/").raw_host.decode("ascii").lower()
     except (httpx.InvalidURL, UnicodeError) as exc:
         raise SSRFBlocked(BlockReason.INVALID_URL, "bad host") from exc
-    return _check_host(h, policy)
+    return h
 
 
 # --------------------------------------------------------------------------- URLs
@@ -477,10 +520,30 @@ async def resolve_and_check(
             raise SSRFBlocked(BlockReason.DNS_FAILURE, "bad address in answer") from exc
     if not ips:
         raise SSRFBlocked(BlockReason.DNS_FAILURE, target.host)
-    if target.host in policy.allow_hosts:
-        return ips
     for ip in ips:
-        reason = ip_block_reason(ip)
+        reason = ip_reason_for_host(target.host, ip, policy)
         if reason is not None:
             raise SSRFBlocked(reason, f"{target.host} -> {ip.compressed}")
     return ips
+
+
+async def resolve_host_port(
+    host: str,
+    port: int,
+    resolver: Resolver | None = None,
+    policy: GuardPolicy = DEFAULT_POLICY,
+) -> list[IPAddress]:
+    """Check ``host:port`` and resolve it ourselves (the egress proxy's CONNECT
+    path). Returns the addresses to dial; the caller must dial one of these,
+    never the name."""
+    h = _normalise_host_port(host, port, policy)
+    ip = _check_host(h, policy)
+    target = CanonicalTarget(
+        url="",
+        scheme="https" if port == 443 else "http",
+        host=h,
+        port=port,
+        request_target="/",
+        ip=ip,
+    )
+    return await resolve_and_check(target, resolver, policy)

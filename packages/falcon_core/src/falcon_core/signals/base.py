@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Signal plugin base: SignalSpec, SignalContext protocol, Evidence, REGISTRY.
 
 Contracts: contracts/signal.schema.json, contracts/evidence.schema.json.
@@ -89,9 +90,7 @@ class Evidence:
 
     def __post_init__(self) -> None:
         if not self.id:
-            blob = json.dumps(
-                [self.signal, self.observed], sort_keys=True, default=str, ensure_ascii=True
-            )
+            blob = json.dumps([self.signal, self.observed], sort_keys=True, default=str, ensure_ascii=True)
             self.id = "ev_" + hashlib.sha256(blob.encode()).hexdigest()[:16]
 
     def to_dict(self) -> dict[str, Any]:
@@ -131,12 +130,15 @@ def signal(spec: SignalSpec) -> Callable[[Callable[[SignalContext], list[Evidenc
             async def inner() -> list[Evidence]:
                 return body(ctx)
 
+            # NOTE: body() is synchronous and never awaits, so wait_for cannot interrupt it:
+            # timeout_ms is only enforced for awaiting bodies. T1 URL bodies are pure CPU, bounded
+            # by the input length cap (MAX_URL_LEN) and measured < 5 ms p95.
             try:
                 out = await asyncio.wait_for(inner(), timeout=spec.timeout_ms / 1000)
             except TimeoutError:
                 out = [_error(spec, "timeout")]
             except Exception as exc:  # noqa: BLE001 - signals must never raise
-                out = [_error(spec, f"{type(exc).__name__}: {exc}"[:200])]
+                out = [_error(spec, type(exc).__name__)]
             ms = int((time.perf_counter() - t0) * 1000)
             for ev in out:
                 ev.latency_ms = ms

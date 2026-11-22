@@ -40,9 +40,7 @@ async def consume(url: str) -> None:
                     if "BUSYGROUP" not in str(exc):
                         raise
                 while True:
-                    batches = await client.xreadgroup(
-                        GROUP, CONSUMER, {STREAM: ">"}, count=10, block=5000
-                    )
+                    batches = await client.xreadgroup(GROUP, CONSUMER, {STREAM: ">"}, count=10, block=5000)
                     for _stream, entries in batches:
                         for entry_id, _fields in entries:
                             log.info("event received (stub, ignored)", extra={"entry_id": entry_id})
