@@ -61,3 +61,33 @@
 - 2026-11-22 · builder-platform · The egress stub `guard.check` is fail-closed (ports 80/443 and `ipaddress.is_global` only) until builder-security plugs the real SSRF guard into `services/egress/src/falcon_egress/guard.py`.
 - 2026-11-22 · builder-platform · `DATABASE_URL` is composed in docker-compose.yml from POSTGRES_*, so a changed password cannot drift from the value in `.env`.
 - 2026-11-22 · builder-platform · Incident pydantic model is root-strict only (nested models permissive), matching the schema, which sets `additionalProperties: false` only at the root.
+- 2026-11-22 · owner · All frontend work (design vision, layout, palette, typography, motion, PWA, boards, extension UI) is led by **Fable 5.2**: `builder-frontend` now runs on `model: fable`, overriding the spec's Sonnet. The owner asked for a niche, state-of-the-art site with rich animated visuals.
+- 2026-11-22 · owner · Approved the Ollama upgrade 0.40.13 → 0.40.17 (brew; service restarted) and Inkling-2-Mini as the local model, pending the capability check.
+- 2026-11-22 · L1 · OpenPhish (checked by builder-evals at openphish.com/terms.html): the feed is the GitHub raw `public_feed/main/feed.txt`, updated every 12 h. Terms allow personal or academic research only; commercial use (including security operations) and redistribution need written consent. Decisions:
+  - (a) The public manifest is **hash-only**: no URLs, defanged or not.
+  - (b) OpenPhish is used for the research or eval dataset and for the non-commercial hackathon prototype. A production or police deployment needs an OpenPhish licence, and the README says so.
+  - (c) The feed has no per-entry timestamps, so `first_seen` = poll time.
+- 2026-11-22 · L1 · `first_poll`: 300 rows at 2026-11-22 ~16:00 GST. Next poll is allowed about 12 h later, so the loop runs in the background.
+
+## T-011 arbiter (builder-agent-core, feat/core-arbiter)
+- 2026-11-22 · agent-core · Versions used (PyPI checked 2026-11-22): PyYAML 6.0.4 (`yaml.safe_load` only), pytest 9.2.0, jsonschema 4.26.0 (optional, schema tests skip without it), ruff 0.17.6, mypy 2.4.1 + types-PyYAML 6.0.12.20261122.
+- 2026-11-22 · agent-core · Branch is `feat/core-arbiter` per the dispatcher (TASKS.md says `feat/scoring-arbiter`). Scope is H1–H6 (the dispatcher widened the card's H1–H4).
+- 2026-11-22 · agent-core · `scoring/params.yaml` was created by hand with the SCORING.md draft values, as the dispatcher instructed, and is labelled `draft: true`. From now on only `make fit-thresholds` writes it.
+- 2026-11-22 · agent-core · No `falcon_core/__init__.py` in this PR. It is a PEP 420 namespace package, to avoid a conflict with T-001's skeleton.
+- 2026-11-22 · agent-core · Evidence in families url/domain/reputation feeds `p_clf`. Only the other families (page, visual, brand, message, email, image, injection, llm) go into the log-odds adjustment, so nothing is counted twice when a fitted `p_clf` is passed.
+- 2026-11-22 · agent-core · T-022's fitted classifier must include reputation hits as features. Otherwise a stale (non-H2) feed hit adds nothing once `p_clf` is fitted.
+- 2026-11-22 · agent-core · Draft classifier when `p_clf=None`: `logit = -2.2 + Σ w·c` over url/domain/reputation evidence, using the SCORING §2 weights. The prior is about 0.10. The result is flagged `p_clf_draft=True`.
+- 2026-11-22 · agent-core · `Evidence.weight` = `w·c`, the log-odds contribution after confidence and the message-rule cap. It is also filled for T1 families as attribution for ordering reasons.
+- 2026-11-22 · agent-core · The `registry.verified_official` −4.0 trust weight counts only when H3 holds. With open-redirect abuse or a feed hit it is 0, so an abused official redirector can't lower the score.
+- 2026-11-22 · agent-core · Negative weights are zeroed for evidence from `llm*` or `user` sources and from the llm/injection families. Evidence whose family doesn't match its signal prefix gets weight 0 and triggers no rule. This is the "injection can only raise risk" guard.
+- 2026-11-22 · agent-core · H3 overrides any co-firing H1/H4/H6 floor, which keeps zero `dangerous` on verified-official. The overridden rules are reported in `suppressed_rules`. H3 applies only when `input_type=url`.
+- 2026-11-22 · agent-core · The H3 cap sets p ≤ 0.05 (draft), so the score matches the capped verdict. Floors: H1 p ≥ 0.95; H2/H4/H5 p ≥ τ_high; H6 p ≥ τ_low.
+- 2026-11-22 · agent-core · H1 θ is 0.70 (draft) on the `brand.claimed_not_owned` confidence. "Payment request" = `message.rule.payment`. If the caller passes `registrable_domain` + `verified_domains`, both H1 and H3 are cross-checked against the registry.
+- 2026-11-22 · agent-core · H2 requires an explicit `observed.fresh=true` or `observed.feed_age_s` < 21600, plus `match` ∈ {url, host} when `match` is present. A feed hit with no freshness info is not H2, but its +6.0 weight still applies.
+- 2026-11-22 · agent-core · H4 = `page.cross_origin_post` with `bot=true` or a bot/webhook `target_kind`, AND either `credentials=true` or a present `page.cred_form`.
+- 2026-11-22 · agent-core · H5 is driven by new evidence `message.link_verdict` / `email.link_verdict` (`observed.verdict`), weight 0. I'm proposing to L1 that these be added to SCORING.md.
+- 2026-11-22 · agent-core · H6 impersonation = `message.rule.authority` | `email.display_name_impersonation` | `brand.claimed_not_owned`.
+- 2026-11-22 · agent-core · Degraded = an errored T0/T1 evidence item, or `ctx.extra_degraded_reasons` from the cascade. T2 errors degrade only if the cascade passes a reason. `p` is not inflated; only the shown verdict moves to suspicious. This also applies over H3 (CONTRACTS invariant 4).
+- 2026-11-22 · agent-core · Cascade ε_low = 0.05 and ε_high = 0.98 are draft values (SCORING gives none). "Brand conflict" = any present homograph/typosquat/combosquat/brand-in-path/claimed_not_owned/favicon-match evidence.
+- 2026-11-22 · agent-core · Template reasons: the degraded reason comes first when it caused the verdict, then hard-rule reasons, then by |w| (max 3). `no_warning_signs` shows trust reasons only, and risk verdicts show risk reasons only.
+- 2026-11-22 · agent-core · Report channels are shown only when the config has an https `source_url` and an ISO `retrieved_at`. Otherwise the config's `generic_fallback` is used, then the i18n generic line.

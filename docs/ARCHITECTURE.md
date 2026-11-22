@@ -57,7 +57,10 @@ Synchronous mode: `?wait=8` blocks up to 8 s and returns the best verdict so far
 ## Code ownership
 | Path | Owner |
 |---|---|
-| `packages/falcon_core/{contracts,scoring,cascade,llm,agent}` | builder-agent-core |
+| `packages/falcon_core/{contracts,scoring,cascade,llm,agent,tools}`, `services/worker` | builder-agent-core (sentinel-only tools: builder-sentinel) |
+| `packages/falcon_core/scoring/params.yaml` | written **only** by builder-evals' `make fit-thresholds` |
+| `packages/falcon_core/telemetry` | builder-observability |
+| `services/fixtures` content (Falcon Demo Bank) | builder-sandbox |
 | `packages/falcon_core/{signals,brands}` | builder-signals |
 | `packages/falcon_core/security`, `services/egress`, `evals/redteam` | builder-security |
 | `services/sandbox` | builder-sandbox |
