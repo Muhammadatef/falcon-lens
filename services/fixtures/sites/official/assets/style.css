@@ -1,0 +1,6 @@
+body { font-family: sans-serif; margin: 0; background: #f4f7fb; color: #12263f; }
+.fl-banner { background: #c00; color: #fff; padding: 12px; font-weight: bold; text-align: center; }
+header { display: flex; gap: 16px; align-items: center; padding: 16px; background: #0e3460; color: #fff; }
+main { padding: 16px; max-width: 480px; }
+label { display: block; margin: 12px 0; }
+input { display: block; width: 100%; padding: 8px; }
