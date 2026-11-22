@@ -6,8 +6,9 @@ NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
 .PHONY: eval-baseline fit-thresholds help up down smoke openapi test eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
 
-help:
-	@echo "Targets: up down smoke test eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard"
+help: ## List every make target with a one-line description (this list)
+	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
+	@grep -hE '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
 	@echo "Parallel stacks: COMPOSE_PROJECT_NAME=x FL_GATEWAY_PORT=.. FL_PROMETHEUS_PORT=.. FL_GRAFANA_PORT=.. make up"
 
 up: ## Start core + obs, wait until every service is healthy
@@ -19,11 +20,11 @@ up: ## Start core + obs, wait until every service is healthy
 down: ## Stop everything (data volumes are kept; use 'docker compose down -v' to wipe)
 	docker compose --profile core --profile obs --profile tools --profile stretch down --remove-orphans
 
-lint:
+lint: ## ruff check + ruff format --check over the whole repo (writes nothing)
 	uv run ruff check .
 	uv run ruff format --check .
 
-typecheck:
+typecheck: ## mypy over the typed packages (configured in pyproject.toml)
 	uv run mypy
 
 test: lint typecheck ## ruff + mypy (falcon_core) + pytest
@@ -38,7 +39,7 @@ guard: ## defensive-only guard: no live URLs, no data/private in git
 
 # Merge gate for detection quality. Becomes real when builder-evals lands evals/baseline.json:
 # until then it says so loudly and does NOT claim a pass.
-eval-gate:
+eval-gate: ## merge gate: latest eval vs evals/baseline.json (SKIPPED, not a pass, without private data)
 	uv run python -m evals.gate --run
 
 eval-baseline: ## write evals/baseline.json from the latest result (review the diff in the PR)
@@ -69,9 +70,9 @@ openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on 
 	uv run python scripts/gen_openapi.py
 eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/results/
 	uv run python -m evals.harness.run
-redteam:
+redteam: ## not implemented yet (exits 1): will run the red-team cases
 	$(NYI)
-submission:
+submission: ## not implemented yet (exits 1): will build the hackathon submission files
 	$(NYI)
 
 # ---- demo tooling (gate G6) ---------------------------------------------------------------------------
