@@ -50,6 +50,8 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | email.reply_to_mismatch | email | +1.0 | |
 | email.link_text_mismatch | email | +2.0 | |
 | message.link_verdict / email.link_verdict | message/email | 0 (informational) | child URL verdict; drives H5 |
+| injection.tool_provenance | injection | +1.5 | an LLM tool call tried to use an off-chain URL/domain (blocked) |
+| llm.extraction | llm | 0 (informational) | quarantined extractor output |
 | injection.instruction_like_text | injection | +1.5 | evidence of manipulation, **never obeyed** |
 | registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |
 | domain.age_days > 3650 + no other risk | domain | −1.0 | |
