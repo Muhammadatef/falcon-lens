@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """url.free_host_or_tunnel evidence and the numeric lexical feature vector for the T1 classifier."""
 
 from __future__ import annotations
@@ -20,8 +21,38 @@ SPEC_FREE = SignalSpec(
 )
 
 RISKY_TLDS = frozenset(
-    "xyz top icu click shop live site online vip cfd sbs cyou rest buzz monster work support fit zip mov "
-    "gq ml cf tk ga link life today world bond".split()
+    [
+        "xyz",
+        "top",
+        "icu",
+        "click",
+        "shop",
+        "live",
+        "site",
+        "online",
+        "vip",
+        "cfd",
+        "sbs",
+        "cyou",
+        "rest",
+        "buzz",
+        "monster",
+        "work",
+        "support",
+        "fit",
+        "zip",
+        "mov",
+        "gq",
+        "ml",
+        "cf",
+        "tk",
+        "ga",
+        "link",
+        "life",
+        "today",
+        "world",
+        "bond",
+    ]
 )
 
 FEATURE_NAMES: tuple[str, ...] = (
