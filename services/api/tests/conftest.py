@@ -15,6 +15,7 @@ from falcon_api.jobs import channel, last_key
 from falcon_core.config import Settings
 
 SANDBOX_KEY = "test-sandbox-key"
+OPERATOR_KEY = "test-operator-key"
 
 
 class FakeStore:
@@ -73,6 +74,9 @@ def make_settings(**kw: Any) -> Settings:
     return Settings(
         _env_file=None,  # type: ignore[call-arg]
         fl_sandbox_api_key=SecretStr(SANDBOX_KEY),
+        fl_operator_key=SecretStr(OPERATOR_KEY),
+        fl_api_key_pepper=SecretStr("test-pepper"),
+        fl_webhook_secret=SecretStr("test-webhook-secret"),
         fl_public_base_url="https://app.example.test",
         **kw,
     )

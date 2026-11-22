@@ -178,7 +178,7 @@ async def test_get_verdict(client: httpx.AsyncClient, store: FakeStore) -> None:
     authed = await client.get(f"/v1/verdicts/{vid}", headers={"X-API-Key": SANDBOX_KEY})
     assert authed.json()["screenshot_url"] == "http://internal/shot.png"
     wrong = await client.get(f"/v1/verdicts/{vid}", headers={"X-API-Key": "nope"})
-    assert wrong.json()["screenshot_url"] is None
+    assert wrong.status_code == 401 and wrong.headers["content-type"].startswith(PROBLEM)
     assert (await client.get("/v1/verdicts/not-an-id")).status_code == 422
 
 
