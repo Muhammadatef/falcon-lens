@@ -46,6 +46,9 @@ dev = [
   "types-jsonschema",
   "types-PyYAML",
   "pytest-cov>=6",
+  "scikit-learn>=1.9.1",
+  "joblib>=1.6.0",
+  "numpy>=2.5.5",
 ]
 
 [tool.ruff]
@@ -82,4 +85,9 @@ mypy_path = "packages/falcon_core/src"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["packages/falcon_core/tests", "services"]
+testpaths = ["packages/falcon_core/tests", "services", "evals"]
+pythonpath = ["."]
+
+[[tool.mypy.overrides]]
+module = ["joblib", "joblib.*", "sklearn", "sklearn.*"]
+ignore_missing_imports = true
