@@ -16,7 +16,13 @@ def fire(rule_id, events, vectors=None):
 
 def test_rules_file_defines_r1_to_r5():
     assert list(RULES) == ["R1", "R2", "R3", "R4", "R5"]
-    assert {r.type for r in RULES.values()} == {"campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"}
+    assert {r.type for r in RULES.values()} == {
+        "campaign",
+        "kit_reuse",
+        "report_burst",
+        "reputation_flip",
+        "quality",
+    }
 
 
 def test_bad_rule_config_rejected(tmp_path):
@@ -36,7 +42,10 @@ def test_r1_fires_on_three_lookalikes_in_window():
 
 
 def test_r1_not_fire_two_domains_or_outside_window_or_other_brand():
-    assert not fire("R1", [observed_ev("falcon-demo-bank-a.test", 0), observed_ev("falcon-demo-bank-b.test", 10)])
+    assert not fire(
+        "R1",
+        [observed_ev("falcon-demo-bank-a.test", 0), observed_ev("falcon-demo-bank-b.test", 10)],
+    )
     spread = [observed_ev(f"falcon-demo-bank-{i}.test", i * 90) for i in range(3)]
     assert not fire("R1", spread)
     unrelated = [observed_ev(f"unrelated-{i}.test", i) for i in range(5)]
@@ -77,7 +86,12 @@ def test_r2_not_fire_two_domains_distant_hash_or_one_domain_repeated():
 
 # ---- R3 report burst
 def test_r3_fires_five_reports_in_30_min_via_cosine_cluster():
-    vecs = {"s1": [1.0, 0.0, 0.1], "s2": [0.98, 0.05, 0.1], "s3": [1.0, 0.02, 0.0], "z": [0.0, 1.0, 0.0]}
+    vecs = {
+        "s1": [1.0, 0.0, 0.1],
+        "s2": [0.98, 0.05, 0.1],
+        "s3": [1.0, 0.02, 0.0],
+        "z": [0.0, 1.0, 0.0],
+    }
     evs = [report_ev(fp, i * 5, i) for i, fp in enumerate(["s1", "s2", "s3", "s1", "s2"])]
     (m,) = fire("R3", evs, vecs)
     assert len(m.features) == 5
@@ -109,7 +123,11 @@ def test_r4_not_fire_other_transitions_or_stale_or_other_domain():
     assert not fire("R4", [verdict_ev("a.test", 0, "dangerous"), verdict_ev("a.test", 5, "no_warning_signs")])
     assert not fire("R4", [verdict_ev("a.test", 0, "no_warning_signs"), verdict_ev("b.test", 5, "dangerous")])
     assert not fire(
-        "R4", [verdict_ev("a.test", 0, "no_warning_signs"), verdict_ev("a.test", 60 * 24 * 40, "dangerous")]
+        "R4",
+        [
+            verdict_ev("a.test", 0, "no_warning_signs"),
+            verdict_ev("a.test", 60 * 24 * 40, "dangerous"),
+        ],
     )
 
 
