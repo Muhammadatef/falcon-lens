@@ -52,12 +52,20 @@ Synchronous mode: `?wait=8` blocks up to 8 s and returns the best verdict so far
 - A separate service with a warm pool of Chromium contexts. Every visit gets a fresh context, with downloads blocked, a 6 s total timeout, at most 10 redirects and a 5 MB response cap. Fonts and media are blocked unless a visual match is needed.
 - The page is loaded twice for cloaking detection: once with an Android/Arabic profile, once desktop/English.
 - The sandbox returns **features only**: form fields, form-action origins, script-post targets, hot-linked asset origins, title, visible text (≤ 4 KB, for the extractor), favicon and screenshot hashes, `dom_simhash` and the redirect chain. The screenshot is stored in `data/private/snapshots` (local) and served only to authenticated keys.
-- Its only network is `sandbox`, whose only peer is `egress-proxy`. The proxy blocks RFC1918, loopback, link-local, metadata and internal service names, and allows only ports 80 and 443.
+- Its networks are `sandbox` (peers: `egress-proxy`, plus the fixtures server under the `tools` profile) and `sandbox_ctl` (peer: `worker`). Both are `internal: true`, so there is no route to the internet or to any other service, and the sandbox is NOT on the observability network.
+  - Docker networks are not directional, so the sandbox can open connections to `worker` on `sandbox_ctl`. The worker therefore listens there only for `/healthz`, `/readyz` and `/metrics` (including `/metrics/sandbox`), never for a job or control API.
+  - The sandbox API requires a shared bearer token (`FL_SANDBOX_TOKEN`) on everything except the health probes, so a stray peer cannot drive visits.
+  - Metrics: Prometheus scrapes the worker's `/metrics/sandbox`, which relays the sandbox's metrics over `sandbox_ctl`. Logs: Alloy tails container stdout through the Docker socket. Traces: the worker opens the spans around sandbox calls.
+  - Acceptance check: from inside the sandbox container only `egress-proxy:3128` and `worker:8000` accept connections.
+- The proxy blocks RFC1918, loopback, link-local, metadata and internal service names, and allows only ports 80 and 443.
 
 ## Code ownership
 | Path | Owner |
 |---|---|
-| `packages/falcon_core/{contracts,scoring,cascade,llm,agent}` | builder-agent-core |
+| `packages/falcon_core/{contracts,scoring,cascade,llm,agent,tools}`, `services/worker` | builder-agent-core (sentinel-only tools: builder-sentinel) |
+| `packages/falcon_core/scoring/params.yaml` | written **only** by builder-evals' `make fit-thresholds` |
+| `packages/falcon_core/telemetry` | builder-observability |
+| `services/fixtures` content (Falcon Demo Bank) | builder-sandbox |
 | `packages/falcon_core/{signals,brands}` | builder-signals |
 | `packages/falcon_core/security`, `services/egress`, `evals/redteam` | builder-security |
 | `services/sandbox` | builder-sandbox |

@@ -74,12 +74,9 @@ def install_handlers(app: FastAPI) -> None:
     async def _validation(request: Request, exc: RequestValidationError) -> JSONResponse:
         # Only location + error type: never the submitted value.
         errors = [
-            {"loc": ".".join(str(x) for x in e.get("loc", ())), "type": str(e.get("type", ""))}
-            for e in exc.errors()
+            {"loc": ".".join(str(x) for x in e.get("loc", ())), "type": str(e.get("type", ""))} for e in exc.errors()
         ]
-        return problem_response(
-            request, Problem(422, "invalid-request", "Invalid request", errors=errors)
-        )
+        return problem_response(request, Problem(422, "invalid-request", "Invalid request", errors=errors))
 
     @app.exception_handler(Exception)
     async def _unhandled(request: Request, exc: Exception) -> JSONResponse:

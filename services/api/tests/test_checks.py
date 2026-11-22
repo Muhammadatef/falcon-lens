@@ -17,9 +17,7 @@ PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 EML = b"From: a@example.test\r\nTo: b@example.test\r\nSubject: hi\r\n\r\nbody\r\n"
 
 
-async def post_url(
-    c: httpx.AsyncClient, url: str = "http://fixtures/a", **kw: Any
-) -> httpx.Response:
+async def post_url(c: httpx.AsyncClient, url: str = "http://fixtures/a", **kw: Any) -> httpx.Response:
     return await c.post("/v1/check/url", json={"url": url}, **kw)
 
 
@@ -40,9 +38,7 @@ async def test_url_accepted_enqueues_job(client: httpx.AsyncClient, redis: Any) 
 
 
 async def test_single_flight_same_canonical_url(client: httpx.AsyncClient, redis: Any) -> None:
-    rs = await asyncio.gather(
-        post_url(client, "http://Fixtures/a#x"), post_url(client, "HTTP://fixtures:80/a")
-    )
+    rs = await asyncio.gather(post_url(client, "http://Fixtures/a#x"), post_url(client, "HTTP://fixtures:80/a"))
     assert rs[0].json()["verdict_id"] == rs[1].json()["verdict_id"]
     assert await redis.xlen(STREAM) == 1
 
@@ -94,9 +90,7 @@ async def test_email_size_cap(client: httpx.AsyncClient) -> None:
 async def test_image_magic(client: httpx.AsyncClient) -> None:
     ok = await client.post("/v1/check/image", files={"file": ("a.png", PNG, "image/png")})
     assert ok.status_code == 202
-    bad = await client.post(
-        "/v1/check/image", files={"file": ("a.png", b"GIF89a" + b"0" * 20, "image/png")}
-    )
+    bad = await client.post("/v1/check/image", files={"file": ("a.png", b"GIF89a" + b"0" * 20, "image/png")})
     assert bad.status_code == 415 and bad.headers["content-type"].startswith(PROBLEM)
     webp = b"RIFF\x00\x00\x00\x00WEBPVP8 " + b"0" * 8
     resp = await client.post("/v1/check/image", files={"file": ("a.webp", webp, "image/webp")})
@@ -163,9 +157,7 @@ async def test_wait_no_progress_returns_accepted(client: httpx.AsyncClient) -> N
     assert r.status_code == 202 and "events_url" in r.json()
 
 
-async def test_cached_final_returns_200(
-    client: httpx.AsyncClient, redis: Any, store: FakeStore
-) -> None:
+async def test_cached_final_returns_200(client: httpx.AsyncClient, redis: Any, store: FakeStore) -> None:
     first = await post_url(client, "http://x.test/c")
     vid = first.json()["verdict_id"]
     store.docs[vid] = make_doc(vid, final=True, verdict="dangerous")
@@ -230,7 +222,5 @@ async def test_content_length_required(client: httpx.AsyncClient) -> None:
     async def gen() -> AsyncIterator[bytes]:
         yield b'{"url": "http://x.test/"}'
 
-    r = await client.post(
-        "/v1/check/url", content=gen(), headers={"content-type": "application/json"}
-    )
+    r = await client.post("/v1/check/url", content=gen(), headers={"content-type": "application/json"})
     assert r.status_code == 411

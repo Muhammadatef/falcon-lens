@@ -99,9 +99,7 @@ class Jobs:
                 if doc is not None and doc.get("final"):
                     return cached_id, "cached"
             verdict_id = new_verdict_id()
-            if not await self.r.set(
-                f"sf:{fingerprint}", verdict_id, nx=True, ex=SINGLE_FLIGHT_TTL_S
-            ):
+            if not await self.r.set(f"sf:{fingerprint}", verdict_id, nx=True, ex=SINGLE_FLIGHT_TTL_S):
                 existing = await self.r.get(f"sf:{fingerprint}")
                 if existing:
                     return str(existing), "attached"
@@ -134,15 +132,11 @@ class Jobs:
             fp = await self.r.get(f"fl:job:{doc['verdict_id']}")
             fingerprint = fp.decode() if isinstance(fp, bytes) else fp
             if fingerprint:
-                await self.r.set(
-                    f"vc:{fingerprint}", doc["verdict_id"], ex=VC_TTL_S[doc["verdict"]]
-                )
+                await self.r.set(f"vc:{fingerprint}", doc["verdict_id"], ex=VC_TTL_S[doc["verdict"]])
         except RedisError:
             pass
 
-    async def watch(
-        self, verdict_id: str, poll_s: float = 1.0
-    ) -> AsyncIterator[dict[str, Any] | None]:
+    async def watch(self, verdict_id: str, poll_s: float = 1.0) -> AsyncIterator[dict[str, Any] | None]:
         """Yield each distinct verdict doc until final; yield None on idle ticks (~0.25 s).
 
         Combines Redis pub/sub (low latency) with a periodic poll of the last-known/final

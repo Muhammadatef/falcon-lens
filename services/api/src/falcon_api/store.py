@@ -30,9 +30,7 @@ class PgVerdictStore:
             import asyncpg  # type: ignore[import-untyped]
 
             try:
-                self._pool = await asyncpg.create_pool(
-                    self._dsn, min_size=0, max_size=5, timeout=3, command_timeout=3
-                )
+                self._pool = await asyncpg.create_pool(self._dsn, min_size=0, max_size=5, timeout=3, command_timeout=3)
             except (OSError, asyncpg.PostgresError, TimeoutError) as exc:
                 raise StoreUnavailableError(type(exc).__name__) from exc
         return self._pool

@@ -32,9 +32,7 @@ def defang(url: str) -> str:
     return url.replace("http", "hxxp", 1).replace(".", "[.]")
 
 
-def _evidence(
-    signal: str, family: str, tier: str, polarity: str, rule: str | None
-) -> dict[str, Any]:
+def _evidence(signal: str, family: str, tier: str, polarity: str, rule: str | None) -> dict[str, Any]:
     return {
         "id": "ev_" + re.sub(r"[^a-z0-9]", "", signal)[:16].ljust(8, "0"),
         "signal": signal,
@@ -92,13 +90,10 @@ def build_doc(
         "canonical_url": defang(url) if url else None,
         "verdict": verdict,
         "risk_score": {"dangerous": 95, "suspicious": 50, "no_warning_signs": 10}[verdict],
-        "calibrated_probability": {"dangerous": 0.97, "suspicious": 0.5, "no_warning_signs": 0.05}[
-            verdict
-        ],
+        "calibrated_probability": {"dangerous": 0.97, "suspicious": 0.5, "no_warning_signs": 0.05}[verdict],
         "evidence": evidence,
         "reasons": [
-            {"ar": "إشارة اختبار", "en": "Test-double signal", "evidence_ids": [e["id"]]}
-            for e in evidence[:3]
+            {"ar": "إشارة اختبار", "en": "Test-double signal", "evidence_ids": [e["id"]]} for e in evidence[:3]
         ],
         "actions": {
             "now": {"ar": [], "en": []},

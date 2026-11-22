@@ -11,9 +11,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """All variables are optional; empty values behave as unset."""
 
-    model_config = SettingsConfigDict(
-        env_file=".env", env_ignore_empty=True, extra="ignore", case_sensitive=False
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore", case_sensitive=False)
 
     # Runtime mode
     fl_env: str = "local"
@@ -30,7 +28,7 @@ class Settings(BaseSettings):
 
     # Local LLM
     ollama_base_url: str = "http://host.docker.internal:11434"
-    fl_local_model: str = "gemma3:27b"
+    fl_local_model: str = "inkling-2-mini-chat"
     fl_local_vision_model: str = "gemma3:27b"
     fl_local_worker_model: str = "qwen3:4b"
     fl_embed_model: str = "qwen3-embedding:4b"
@@ -51,6 +49,7 @@ class Settings(BaseSettings):
     # API auth
     fl_api_key_pepper: SecretStr | None = None
     fl_sandbox_api_key: SecretStr | None = None
+    fl_sandbox_token: SecretStr | None = None  # worker -> sandbox service auth
     fl_operator_key: SecretStr | None = None
     fl_mcp_bearer_token: SecretStr | None = None
     fl_webhook_secret: SecretStr | None = None

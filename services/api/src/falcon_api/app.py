@@ -147,9 +147,7 @@ def build_app(
         ["scope"],
         registry=registry,
     )
-    enqueued = Counter(
-        "fl_api_jobs_enqueued_total", "Jobs put on fl:jobs", ["input_type"], registry=registry
-    )
+    enqueued = Counter("fl_api_jobs_enqueued_total", "Jobs put on fl:jobs", ["input_type"], registry=registry)
 
     def jobs() -> Jobs:
         j = state["jobs"]
@@ -172,9 +170,7 @@ def build_app(
 
     # ---- middleware (added last = outermost) ------------------------------------------------
     @app.middleware("http")
-    async def guards(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def guards(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         rid = request.headers.get("x-request-id", "")
         request.state.request_id = rid if _REQ_ID_RE.match(rid) else f"req_{uuid.uuid4().hex[:16]}"
         path = request.url.path
@@ -182,13 +178,9 @@ def build_app(
         if request.method == "POST" and limit is not None:
             length = request.headers.get("content-length")
             if length is None:
-                resp: Response = problem_response(
-                    request, Problem(411, "length-required", "Content-Length required")
-                )
+                resp: Response = problem_response(request, Problem(411, "length-required", "Content-Length required"))
             elif not length.isdigit() or int(length) > limit:
-                resp = problem_response(
-                    request, Problem(413, "payload-too-large", "Payload too large")
-                )
+                resp = problem_response(request, Problem(413, "payload-too-large", "Payload too large"))
             else:
                 resp = await _rate_limited_call(request, call_next)
         else:
@@ -196,9 +188,7 @@ def build_app(
         resp.headers["X-Request-ID"] = request.state.request_id
         return resp
 
-    async def _rate_limited_call(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def _rate_limited_call(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         per_min = settings.fl_rate_limit_per_ip_per_min
         r = state["redis"]
         if r is not None and per_min > 0:
@@ -249,20 +239,14 @@ def build_app(
         if raw:
             saved = json.loads(raw)
             if saved["h"] != body_hash:
-                raise Problem(
-                    422, "idempotency-key-reuse", "Idempotency-Key reused with a different body"
-                )
-            return rk, JSONResponse(
-                saved["body"], status_code=saved["status"], headers={"Idempotent-Replay": "true"}
-            )
+                raise Problem(422, "idempotency-key-reuse", "Idempotency-Key reused with a different body")
+            return rk, JSONResponse(saved["body"], status_code=saved["status"], headers={"Idempotent-Replay": "true"})
         return rk, None
 
     async def idem_save(rk: str | None, body_hash: str, status: int, body: dict[str, Any]) -> None:
         if rk is not None:
             with contextlib.suppress(RedisError):
-                await state["redis"].set(
-                    rk, json.dumps({"h": body_hash, "status": status, "body": body}), ex=86400
-                )
+                await state["redis"].set(rk, json.dumps({"h": body_hash, "status": status, "body": body}), ex=86400)
 
     def source_for(request: Request) -> str:
         src = request.headers.get("x-falcon-source", "live")
@@ -478,9 +462,7 @@ def build_app(
         if doc is None:
             raise Problem(404, "verdict-not-found", "Verdict not found")
         await jobs().note_final(doc)
-        return JSONResponse(
-            public_doc(doc, is_authed(request)), status_code=200 if doc.get("final") else 202
-        )
+        return JSONResponse(public_doc(doc, is_authed(request)), status_code=200 if doc.get("final") else 202)
 
     async def known_verdict(verdict_id: VerdictId) -> str:
         try:
@@ -516,9 +498,7 @@ def build_app(
                     yield ServerSentEvent(comment="heartbeat")
                 continue
             await j.note_final(doc)
-            yield ServerSentEvent(
-                data=public_doc(doc, authenticated), event="verdict", id=f"{verdict_id}.{n}"
-            )
+            yield ServerSentEvent(data=public_doc(doc, authenticated), event="verdict", id=f"{verdict_id}.{n}")
             n += 1
             last_hb = now
 

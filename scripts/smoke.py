@@ -67,8 +67,7 @@ def worker_metric(name: str) -> float | None:
 
 def validator() -> jsonschema.Draft202012Validator:
     resources = [
-        (f.name, Resource.from_contents(json.loads(f.read_text())))
-        for f in (ROOT / "contracts").glob("*.schema.json")
+        (f.name, Resource.from_contents(json.loads(f.read_text()))) for f in (ROOT / "contracts").glob("*.schema.json")
     ]
     registry: Registry = Registry().with_resources(resources)  # type: ignore[assignment]
     schema = json.loads((ROOT / "contracts" / "verdict.schema.json").read_text())
@@ -213,8 +212,7 @@ def main() -> int:
     skipped = [r for r in results if r[1] == "SKIP"]
     print(
         f"\nsmoke: {len(results) - len(failed) - len(skipped)} passed, "
-        f"{len(failed)} failed, {len(skipped)} skipped"
-        + ("  [FAKE WORKER: NOT a G1 result]" if FAKE else "")
+        f"{len(failed)} failed, {len(skipped)} skipped" + ("  [FAKE WORKER: NOT a G1 result]" if FAKE else "")
     )
     return 1 if failed else 0
 

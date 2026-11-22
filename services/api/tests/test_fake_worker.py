@@ -19,10 +19,7 @@ CONTRACTS = Path(__file__).resolve().parents[3] / "contracts"
 
 
 def validate_contract(doc: dict[str, Any]) -> None:
-    resources = [
-        (f.name, Resource.from_contents(json.loads(f.read_text())))
-        for f in CONTRACTS.glob("*.schema.json")
-    ]
+    resources = [(f.name, Resource.from_contents(json.loads(f.read_text()))) for f in CONTRACTS.glob("*.schema.json")]
     registry: Registry = Registry().with_resources(resources)  # type: ignore[assignment]
     schema = json.loads((CONTRACTS / "verdict.schema.json").read_text())
     jsonschema.Draft202012Validator(schema, registry=registry).validate(doc)
