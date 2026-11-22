@@ -2,6 +2,27 @@
 
 Internal service, reachable from the worker over ``sandbox_ctl`` only; every call needs the demo
 key. Raw HTML and screenshots never appear in a response: they go to the snapshot volume.
+
+What it does:
+    Builds the sandbox app. It drives a headless browser to visit a URL and returns page features
+    (POST /render) or stores a snapshot for eval replay (POST /capture). Every route except /healthz and
+    /readyz needs the sandbox key. Each target URL is checked against the SSRF policy before the visit.
+
+When to use it:
+    You do not run it by hand; the `sandbox` container starts it, and only the worker calls it.
+
+How to run:
+    make up                                   (direct: uv run python -m falcon_sandbox.main)
+
+Inputs:
+    Env FL_SANDBOX_TOKEN (the key; if empty the service answers 503), FL_SANDBOX_PROXY (egress proxy for all
+    browser traffic), FL_SNAPSHOT_DIR (default /data/snapshots), FL_SANDBOX_CONCURRENCY (default 3),
+    FL_SANDBOX_RECYCLE_AFTER (default 150 visits per browser), and FL_SSRF_ALLOW_HOSTS (only honoured when
+    FL_ENV is local, demo or ci).
+
+Outputs / side effects:
+    Opens web pages through the egress proxy. /render returns features only. /capture writes the page DOM and
+    screenshot to the snapshot folder and returns hashes and a snapshot id, never the raw HTML.
 """
 
 from __future__ import annotations

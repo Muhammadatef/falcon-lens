@@ -60,16 +60,17 @@ def url_table(env: Mapping[str, str]) -> list[tuple[str, str]]:
     ep = Endpoints.from_env(env)
     rows = [
         ("Web app", ep.gateway + "/"),
-        ("Incident board", ep.gateway + "/board"),
-        ("Incidents", ep.gateway + "/incidents"),
+        # Routes the web app serves (web/app/campaigns, web/app/ops). Keep in step with docs/DEMO.md.
+        ("Campaign board", ep.gateway + "/campaigns"),
+        ("Operator incident board", ep.gateway + "/ops"),
         ("MCP endpoint", ep.gateway + "/mcp"),
     ]
     names = (
         "Command overview",
         "Detection quality",
         "Pipeline performance",
-        "Signals and feeds",
-        "LLM and cost",
+        "AI operations",
+        "Security",
         "Sentinel",
     )
     rows += [(f"Grafana {i}: {n}", f"{ep.grafana}/dashboards?query={quote(n)}") for i, n in enumerate(names, 1)]

@@ -54,8 +54,8 @@ from falcon_api.canon import canonicalize_url, sha256_hex
 ROOT = Path(__file__).resolve().parents[1]
 BASE = os.environ.get("FL_GATEWAY_URL", "https://localhost:8443").rstrip("/")
 FAKE = os.environ.get("FL_SMOKE_FAKE_WORKER") == "1"
-PHISH = os.environ.get("FL_SMOKE_PHISH_URL", "http://fixtures/phish/")
-OFFICIAL = os.environ.get("FL_SMOKE_OFFICIAL_URL", "http://fixtures/official/")
+PHISH = os.environ.get("FL_SMOKE_PHISH_URL", "http://falcon-demo-bank-secure.test/login")
+OFFICIAL = os.environ.get("FL_SMOKE_OFFICIAL_URL", "http://falcon-demo-bank.test/")
 SSRF_URL = "http://169.254.169.254/"
 FINAL_TIMEOUT_S = 90
 
@@ -174,21 +174,36 @@ def main() -> int:
         host = "synthetic-openphish.test"
         # feed:openphish stores sha256 hex of the canonical URL and of the host, never plaintext
         hashes = [sha256_hex(canonicalize_url(url)), sha256_hex(host)]
-        compose("exec", "-T", "redis", "redis-cli", "SADD", "feed:openphish", *hashes)
-        d = final_verdict(c, url)
-        assert d["verdict"] == "dangerous", d["verdict"]
-        assert has_rule(d, "H2"), "H2 not cited"
-        assert any(e["tier"] == "T0" for e in d["evidence"]), "not decided at T0"
+        rc = ("exec", "-T", "redis", "redis-cli")
+        prior_ts = compose(*rc, "GET", "feed:openphish:updated_at").strip()
+        prior_members = set(compose(*rc, "SMEMBERS", "feed:openphish").split())
+        added = [h for h in hashes if h not in prior_members]
+        try:
+            compose(*rc, "SADD", "feed:openphish", *hashes)
+            # H2 needs a fresh mirror (< 6 h): mark the mirror as just refreshed for the duration of this step.
+            compose(*rc, "SET", "feed:openphish:updated_at", str(time.time()))
+            d = final_verdict(c, url)
+            assert d["verdict"] == "dangerous", d["verdict"]
+            assert has_rule(d, "H2"), "H2 not cited"
+            assert any(e["tier"] == "T0" for e in d["evidence"]), "not decided at T0"
+        finally:  # restore the mirror exactly as found
+            if added:
+                compose(*rc, "SREM", "feed:openphish", *added)
+            if prior_ts:
+                compose(*rc, "SET", "feed:openphish:updated_at", prior_ts)
+            else:
+                compose(*rc, "DEL", "feed:openphish:updated_at")
         return d["verdict_id"]
 
     def t_ssrf() -> str:
         """Step 4: the cloud-metadata address is rejected and fl_ssrf_blocked_total increases."""
         before = None if FAKE else worker_metric("fl_ssrf_blocked_total")
-        r = submit(c, SSRF_URL)
+        url = fresh(SSRF_URL)  # fresh: a cached verdict would not re-trigger the guard
+        r = submit(c, url)
         if r.status_code in (400, 403, 422):
             note = f"rejected at API ({r.status_code})"
         else:
-            d = final_verdict(c, SSRF_URL)
+            d = final_verdict(c, url)
             assert d["verdict"] != "no_warning_signs", "metadata IP not rejected"
             assert d["degraded"] or d["verdict"] == "dangerous", "expected degraded or dangerous"
             note = f"verdict={d['verdict']} degraded={d['degraded']}"

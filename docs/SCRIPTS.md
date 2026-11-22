@@ -22,6 +22,7 @@ Rules that apply to everything below:
 | lint | Style and lint check (ruff); writes nothing | `make lint` | platform |
 | typecheck | Static type check (mypy) | `make typecheck` | platform |
 | test | Runs lint, typecheck and the pytest suite; run before every PR | `make test` | platform |
+| test-web | Web checks: typecheck, eslint, vitest, build, Playwright e2e against a mock gateway | `make test-web` | frontend |
 | guard | Fails if a tracked file has a live URL or sits under `data/private/` | `make guard` | platform |
 | openapi | Regenerates `contracts/openapi.yaml` from the API code | `make openapi` | platform |
 | smoke | End-to-end check against the running stack (starts it if needed) | `make smoke` or `FL_SMOKE_FAKE_WORKER=1 make smoke` (not a G1 pass) | platform |
@@ -39,7 +40,7 @@ Rules that apply to everything below:
 | eval-gate | Compares the latest eval with the baseline (prints SKIPPED, which is not a pass, without private data) | `make eval-gate` | evals |
 | eval-baseline | Writes `evals/baseline.json` from the latest result; review the diff | `make eval-baseline` | evals |
 | redteam | Not implemented yet (exits 1) | `make redteam` | security |
-| submission | Not implemented yet (exits 1) | `make submission` | docs |
+| submission | Builds submission/ (fields, deck, PDF, checklist) and traces every number | `make submission` | docs |
 
 ## Scripts in `scripts/`
 
@@ -100,6 +101,6 @@ You do not run these by hand; the containers start them (`make up`).
 | `services/egress/src/falcon_egress/main.py` | Filtering proxy that keeps the sandbox away from internal addresses | security |
 | `infra/alertmanager/entrypoint.sh` | Picks the alert receiver (Telegram, webhook or none) when the container starts | observability |
 | `infra/grafana/gen_dashboards.py` | Regenerates the six Grafana dashboard JSON files | observability |
+| `services/sandbox/src/falcon_sandbox/main.py` | Headless-browser service: `/render` (page features) and `/capture` (snapshots) | sandbox |
 
-The sandbox entrypoint (`services/sandbox/src/falcon_sandbox/main.py`, owner: sandbox) and the submission scripts
-(`scripts/submission/`, `scripts/scan.sh`) are documented in their own files and by their own owners.
+The submission scripts (`scripts/submission/`, `scripts/scan.sh`) are documented in their own files by their owners.

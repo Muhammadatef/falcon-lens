@@ -46,6 +46,10 @@ x-app-env: &app-env
   FL_OPERATOR_KEY: ${FL_OPERATOR_KEY:-change-me-operator}
   FL_MCP_BEARER_TOKEN: ${FL_MCP_BEARER_TOKEN:-change-me-mcp}
   FL_WEBHOOK_SECRET: ${FL_WEBHOOK_SECRET:-change-me-webhook}
+  FL_WEBHOOK_TARGETS: ${FL_WEBHOOK_TARGETS:-}
+  FL_MCP_SERVICE_KEY: ${FL_MCP_SERVICE_KEY:-change-me-mcp-service}
+  FL_SENTINEL_URL: ${FL_SENTINEL_URL:-http://sentinel:8000}
+  FL_API_URL: ${FL_API_URL:-http://api:8000}
   FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-60}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
@@ -134,7 +138,19 @@ services:
     build: { context: ., dockerfile: services/worker/Dockerfile }
     image: falcon-lens/worker:0.1.0
     <<: [*hardened, *host-gateway]
-    environment: *app-env
+    environment:
+      <<: *app-env
+      # Stable consumer name in the fl:jobs group (XAUTOCLAIM reclaims idle entries either way).
+      FL_WORKER_ID: ${FL_WORKER_ID:-worker-1}
+      # Network signals (RDAP, crt.sh, GSB, URLhaus) go through the filtering egress proxy.
+      # FL_SANDBOX_URL / FL_SANDBOX_TOKEN / FL_SSRF_ALLOW_HOSTS come from x-app-env (allow-list honoured
+      # only when FL_ENV is local, demo or ci, same rule as the sandbox).
+      FL_EGRESS_PROXY: ${FL_EGRESS_PROXY:-http://egress-proxy:3128}
+      FL_OPENPHISH_FEED_DIR: /app/data/private/feeds/openphish
+    volumes:
+      # Private OpenPhish rows (gitignored). The worker's refresh job loads them into the hash-only
+      # Redis mirror every FL_OPENPHISH_REFRESH_S. Missing dir = mirror unavailable (degraded checks).
+      - ${FL_OPENPHISH_HOST_DIR:-./data/private/feeds/openphish}:/app/data/private/feeds/openphish:ro
     networks: [app, data, sandbox_ctl, observability]
     depends_on:
       postgres: { condition: service_healthy }
