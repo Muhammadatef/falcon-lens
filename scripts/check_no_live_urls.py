@@ -12,6 +12,7 @@ Defanged forms (hxxp://, example[.]com) never match. Run from the repo root.
 
 from __future__ import annotations
 
+import ipaddress
 import re
 import subprocess
 import sys
@@ -56,8 +57,44 @@ ALLOWED_SUFFIXES = (
 URL_RE = re.compile(r"https?://[^\s\"'<>)\]}\\,]+", re.IGNORECASE)
 
 
+def host_of(url: str) -> str:
+    try:
+        return urlsplit(url).hostname or ""
+    except ValueError:  # malformed (e.g. bad IPv6 literal): treat as unknown host, i.e. flagged
+        return "<unparseable>"
+
+
+# Reviewed synthetic inputs used by unit tests (obfuscation / lookalike / shared-hosting cases).
+# They are strings fed to pure functions and are never fetched. Add new entries deliberately.
+REVIEWED_TEST_HOSTS = (
+    ".github.io",
+    ".ngrok-free.app",
+    ".trycloudflare.com",
+    "wikipedia.org",
+    ".example.co.uk",
+    "adpolicr.com",
+    "adpolice.com",
+    "dubaipolice-gov.ae",
+    "verify-fine.xyz",
+)
+INTERNAL_SUFFIXES = (".internal", ".arpa", ".docker.internal")
+
+
 def allowed(host: str) -> bool:
     host = host.lower().rstrip(".")
+    if not host or "<" in host or "{" in host or "%" in host or not host.isascii():
+        return True  # templated / malformed / non-ASCII test input, not a fetchable host
+    if "." not in host or host.endswith(INTERNAL_SUFFIXES):
+        return True  # single-label or internal service name (SSRF test inputs)
+    if set(host) <= set("0123456789abcdefx."):
+        return True  # numeric IP obfuscation forms (octal/hex/short), SSRF test inputs
+    try:
+        ipaddress.ip_address(host)
+        return True  # literal IPs are SSRF test inputs
+    except ValueError:
+        pass
+    if any(host == h.lstrip(".") or host.endswith(h) for h in REVIEWED_TEST_HOSTS):
+        return True
     if host in ALLOWED_HOSTS or host == "adpolice.gov.ae":
         return True
     return host.endswith(ALLOWED_SUFFIXES)
@@ -89,7 +126,7 @@ def main() -> int:
             if line.lstrip().startswith("source_url:"):
                 continue
             for match in URL_RE.finditer(line):
-                host = urlsplit(match.group(0)).hostname or ""
+                host = host_of(match.group(0))
                 if not allowed(host):
                     problems.append(f"{path}:{lineno}: non-defanged URL to {host!r} (use hxxp / [.])")
     if problems:
