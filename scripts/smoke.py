@@ -27,8 +27,8 @@ from falcon_api.canon import canonicalize_url, sha256_hex
 ROOT = Path(__file__).resolve().parents[1]
 BASE = os.environ.get("FL_GATEWAY_URL", "https://localhost:8443").rstrip("/")
 FAKE = os.environ.get("FL_SMOKE_FAKE_WORKER") == "1"
-PHISH = os.environ.get("FL_SMOKE_PHISH_URL", "http://fixtures/phish/")
-OFFICIAL = os.environ.get("FL_SMOKE_OFFICIAL_URL", "http://fixtures/official/")
+PHISH = os.environ.get("FL_SMOKE_PHISH_URL", "http://falcon-demo-bank-secure.test/login")
+OFFICIAL = os.environ.get("FL_SMOKE_OFFICIAL_URL", "http://falcon-demo-bank.test/")
 SSRF_URL = "http://169.254.169.254/"
 FINAL_TIMEOUT_S = 90
 
@@ -145,11 +145,12 @@ def main() -> int:
 
     def t_ssrf() -> str:
         before = None if FAKE else worker_metric("fl_ssrf_blocked_total")
-        r = submit(c, SSRF_URL)
+        url = fresh(SSRF_URL)  # fresh: a cached verdict would not re-trigger the guard
+        r = submit(c, url)
         if r.status_code in (400, 403, 422):
             note = f"rejected at API ({r.status_code})"
         else:
-            d = final_verdict(c, SSRF_URL)
+            d = final_verdict(c, url)
             assert d["verdict"] != "no_warning_signs", "metadata IP not rejected"
             assert d["degraded"] or d["verdict"] == "dangerous", "expected degraded or dangerous"
             note = f"verdict={d['verdict']} degraded={d['degraded']}"
