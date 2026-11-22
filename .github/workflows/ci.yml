@@ -18,6 +18,7 @@ concurrency:
 env:
   UV_VERSION: "0.13.7"
   GITLEAKS_VERSION: "8.30.1"
+  TRIVY_VERSION: "0.76.2"
 
 jobs:
   lint:
@@ -151,13 +152,9 @@ jobs:
         run: pnpm audit --prod
         working-directory: web
       - name: trivy fs
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
-        with:
-          scan-type: fs
-          scanners: vuln,secret,misconfig
-          severity: HIGH,CRITICAL
-          exit-code: "1"
-          skip-dirs: web/node_modules
+        run: |
+          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" | tar -xz trivy
+          ./trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 --skip-dirs web/node_modules --skip-dirs .venv .
       - name: defensive-only guard (no live URLs, no data/private)
         run: python3 scripts/check_no_live_urls.py
 
