@@ -76,6 +76,12 @@ REVIEWED_TEST_HOSTS = (
     "adpolice.com",
     "dubaipolice-gov.ae",
     "verify-fine.xyz",
+    # T-008 domain/reputation tests: public service endpoints (mocked, never fetched) and invented hosts
+    "crt.sh",
+    "data.iana.org",
+    "safebrowsing.googleapis.com",
+    "falcon-demo-shop.com",
+    "falcon-demo-shop.ae",
 )
 INTERNAL_SUFFIXES = (".internal", ".arpa", ".docker.internal")
 

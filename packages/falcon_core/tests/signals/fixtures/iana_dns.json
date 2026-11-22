@@ -1,0 +1,6 @@
+{"description": "synthetic trimmed IANA RDAP DNS bootstrap (test fixture)", "publication": "2026-11-01T00:00:00Z", "version": "1.0",
+ "services": [
+  [["com", "net"], ["https://rdap.registry.test/com/v1/"]],
+  [["xn--mgbaam7a8h"], ["http://insecure.test/rdap/", "https://rdap.imaginary-ae.test/"]],
+  [["org"], []]
+ ]}

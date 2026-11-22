@@ -266,6 +266,14 @@ L1 also needs to paste the build-prompt §11 `fl_` metric list into docs/OBSERVA
 - scope: Phoenix OTLP traces with verdict_id; "AI operations" + "Detection quality" dashboards fed by fl_eval_metric.
 - acceptance: one T3 run visible in Phoenix; dashboards provision with no errors. · files: `infra/**`.
 
+### T-029 qwen_task per-stratum variant rotation + task-id guard · builder-evals · P1 · `fix/qwen-rotation` · depends_on: PR #7
+- scope: `scripts/qwen_task.py:304` uses a global `call_idx` for `variants[...]`, so each stratum is locked to one subtype
+  (reviews/PR-7.md finding 1; QWEN-qwen-msg-002 skew). Use a per-stratum counter. Validate `--task` with
+  `[a-z0-9][a-z0-9-]{0,63}`. Move the hard-coded language-strip regex (`:181`) into the spec.
+- acceptance: a recording fake `model_fn` test shows that every variant of every stratum is requested within len(variants) calls
+  of that stratum; `--task ../x` exits non-zero and writes nothing; `make test` and `pytest scripts/tests` pass.
+- eval impact: must land before synthetic batch `qwen-msg-003`; accepted batches report subtype × language counts.
+
 ---
 ## Backlog — Phases 3–6 (cards written when the phase opens)
 - P3 (G3 Mon 22:00): message pipeline (normalise AR/Arabizi, rule features, embeddings + pgvector kNN, H5/H6) ·

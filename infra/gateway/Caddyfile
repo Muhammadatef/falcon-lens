@@ -4,6 +4,11 @@
 	skip_install_trust
 	servers {
 		metrics
+		# Behind the cloudflared tunnel every request arrives from a private (docker/host) address.
+		# Trust only private ranges and take the real caller from Cloudflare's header, so the API's
+		# per-IP rate limit sees one bucket per visitor, not one for the whole tunnel.
+		trusted_proxies static private_ranges
+		client_ip_headers Cf-Connecting-Ip X-Forwarded-For
 	}
 }
 
@@ -44,13 +49,22 @@ https://localhost:8443 {
 	# answers are data, never documents: they get a deny-all policy here.
 	handle /v1/* {
 		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
-		reverse_proxy api:8000
+		reverse_proxy api:8000 {
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 	handle /mcp* {
 		header Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
 		reverse_proxy mcp:8000
 	}
 	handle {
-		reverse_proxy web:3000
+		# Paths the app's CSP proxy does not match (static files, /api/health, their 404 pages)
+		# still get a policy: `?` sets it only when the app did not, so there is always exactly one.
+		header ?Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		# The share target (/share) starts checks on the API from the web container and forwards
+		# this header, so it must carry the real visitor, exactly as on /v1 (per-visitor rate limit).
+		reverse_proxy web:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 }

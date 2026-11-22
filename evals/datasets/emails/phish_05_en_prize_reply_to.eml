@@ -1,0 +1,27 @@
+Return-Path: <bounce@falcon-demo-bank-rewards.test>
+Received: from mail.falcon-demo-bank-rewards.test ([192.0.2.15]) by
+ mx.example.test with ESMTPS; Fri, 20 Nov 2026 23:35:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank-rewards.test; dkim=pass
+ header.d=falcon-demo-bank-rewards.test; dmarc=pass
+ header.from=falcon-demo-bank-rewards.test
+From: "Falcon Demo Bank Rewards" <rewards@falcon-demo-bank-rewards.test>
+To: Customer <customer@example.test>
+Reply-To: claims@prize-desk.example.test
+Subject: Congratulations! You have won AED 50,000 in our year-end draw
+Date: Fri, 20 Nov 2026 23:35:00 +0400
+Message-ID: <c05-05.fixture@falcon-demo-bank-rewards.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciB2YWx1ZWQgY3VzdG9tZXIsCgpZb3VyIGFj
+Y291bnQgd2FzIHNlbGVjdGVkIGluIHRoZSBGYWxjb24gRGVtbyBCYW5rIHllYXItZW5kIGRyYXcg
+YW5kIHlvdSBoYXZlIHdvbiBBRUQgNTAsMDAwLgoKVG8gY2xhaW0geW91ciBwcml6ZSwgcmVwbHkg
+dG8gdGhpcyBlbWFpbCB3aXRoIHlvdXIgZnVsbCBuYW1lLCB5b3VyIGNhcmQgbnVtYmVyIGFuZCB0
+aGUgb25lLXRpbWUgcGFzc3dvcmQgd2Ugd2lsbCBzZW5kIHRvIHlvdXIgbW9iaWxlLiBUaGlzIG9m
+ZmVyIGV4cGlyZXMgdG9kYXkuCgpGYWxjb24gRGVtbyBCYW5rIFJld2FyZHMKClRFU1QgRklYVFVS
+RSwgbm90IGEgcmVhbCBtZXNzYWdlIC8g2LHYs9in2YTYqSDYp9iu2KrYqNin2LEg2YjZhNmK2LPY
+qiDYrdmC2YrZgtmK2KkK

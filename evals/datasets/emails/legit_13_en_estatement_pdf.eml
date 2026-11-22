@@ -1,0 +1,39 @@
+Return-Path: <bounce@falcon-demo-bank.test>
+Received: from mail.falcon-demo-bank.test ([192.0.2.48]) by mx.example.test
+ with ESMTPS; Wed, 25 Nov 2026 06:26:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank.test; dkim=pass
+ header.d=falcon-demo-bank.test; dmarc=pass header.from=falcon-demo-bank.test
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=falcon-demo-bank.test;
+ s=fixture; h=from:to:subject:date; bh=FIXTURE; b=FIXTURE-NOT-A-REAL-SIGNATURE
+From: "Falcon Demo Bank" <estatements@falcon-demo-bank.test>
+To: Customer <customer@example.test>
+Subject: Your e-statement for November 2026
+Date: Wed, 25 Nov 2026 06:26:00 +0400
+Message-ID: <c05-38.fixture@falcon-demo-bank.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============3225976124435920888=="
+
+--===============3225976124435920888==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBjdXN0b21lciwKCllvdXIgZS1zdGF0ZW1l
+bnQgZm9yIE5vdmVtYmVyIDIwMjYgaXMgYXR0YWNoZWQgYXMgYSBQREYuIFlvdSBjYW4gYWxzbyB2
+aWV3IGl0IGluIHRoZSBGYWxjb24gRGVtbyBCYW5rIGFwcC4KCkZhbGNvbiBEZW1vIEJhbmsKClRF
+U1QgRklYVFVSRSwgbm90IGEgcmVhbCBtZXNzYWdlIC8g2LHYs9in2YTYqSDYp9iu2KrYqNin2LEg
+2YjZhNmK2LPYqiDYrdmC2YrZgtmK2KkK
+
+--===============3225976124435920888==
+Content-Type: application/pdf
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="eStatement_Nov2026.pdf"
+MIME-Version: 1.0
+
+JVBERi0xLjQKJSBURVNUIEZJWFRVUkUsIG5vdCBhIHJlYWwgbWVzc2FnZQoxIDAgb2JqPDwvVHlw
+ZS9DYXRhbG9nL1BhZ2VzIDIgMCBSPj5lbmRvYmoKMiAwIG9iajw8L1R5cGUvUGFnZXMvS2lkc1td
+L0NvdW50IDA+PmVuZG9iagp0cmFpbGVyPDwvUm9vdCAxIDAgUj4+CiUlRU9GCg==
+
+--===============3225976124435920888==--

@@ -1,0 +1,45 @@
+Return-Path: <bounce@road-toll.example.test>
+Received: from mail.road-toll.example.test ([192.0.2.31]) by mx.example.test
+ with ESMTPS; Mon, 23 Nov 2026 01:27:00 +0400
+Authentication-Results: mx.example.test; spf=fail
+ smtp.mailfrom=road-toll.example.test; dkim=none
+ header.d=road-toll.example.test; dmarc=fail
+ header.from=road-toll.example.test
+From: "Road Toll Notices" <notices@road-toll.example.test>
+To: Customer <customer@example.test>
+Subject: Unpaid toll: your AED 50 fine increases tomorrow
+Date: Mon, 23 Nov 2026 01:27:00 +0400
+Message-ID: <c05-21.fixture@road-toll.example.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============0350470673938707340=="
+
+--===============0350470673938707340==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBtb3RvcmlzdCwKCk91ciByZWNvcmRzIHNo
+b3cgYW4gdW5wYWlkIHRvbGwgb24geW91ciB2ZWhpY2xlLiBBIGZpbmUgb2YgQUVEIDUwIGhhcyBi
+ZWVuIGlzc3VlZCBhbmQgd2lsbCBpbmNyZWFzZSB0b21vcnJvdyBpZiBpdCBpcyBub3QgcGFpZC4K
+ClBheSBub3c6IGh0dHBzOi8vcm9hZC10b2xsLXBheS5pbnZhbGlkL3BheQoKUm9hZCBUb2xsIE5v
+dGljZXMKClRFU1QgRklYVFVSRSwgbm90IGEgcmVhbCBtZXNzYWdlIC8g2LHYs9in2YTYqSDYp9iu
+2KrYqNin2LEg2YjZhNmK2LPYqiDYrdmC2YrZgtmK2KkK
+
+--===============0350470673938707340==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYt
+OCI+PHRpdGxlPkZhbGNvbiBEZW1vIEJhbms8L3RpdGxlPjwvaGVhZD4KPGJvZHk+CjxwPjxzdHJv
+bmc+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio
+2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqTwvc3Ryb25nPjwvcD4KPHA+RGVhciBtb3Rvcmlz
+dCw8L3A+PHA+T3VyIHJlY29yZHMgc2hvdyBhbiB1bnBhaWQgdG9sbCBvbiB5b3VyIHZlaGljbGUu
+IEEgZmluZSBvZiBBRUQgNTAgaGFzIGJlZW4gaXNzdWVkIGFuZCB3aWxsIGluY3JlYXNlIHRvbW9y
+cm93IGlmIGl0IGlzIG5vdCBwYWlkLjwvcD48cD5WaWV3IHlvdXIgYWNjb3VudDogPGEgaHJlZj0i
+aHR0cHM6Ly9yb2FkLXRvbGwtcGF5LmludmFsaWQvcGF5Ij5odHRwczovL3JvYWQtdG9sbC5leGFt
+cGxlLnRlc3QvYWNjb3VudDwvYT48L3A+CjwvYm9keT48L2h0bWw+Cg==
+
+--===============0350470673938707340==--
