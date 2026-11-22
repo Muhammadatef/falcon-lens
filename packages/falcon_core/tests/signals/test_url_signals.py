@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """T-007 acceptance + edge cases. All hosts are invented or reserved (.test/.example); no live URLs."""
 
 import json
@@ -75,6 +76,20 @@ def test_typosquat_transposition():
 def test_combosquat():
     n = names("https://falcon-demo-bank-secure-pay.test/")
     assert "url.combosquat" in n and "url.typosquat" not in n
+    assert "url.combosquat" in names("https://falcon-demo-bank-gov-fines.test/")
+    assert "url.combosquat" in names("https://falcon-demo-bank-gov.example/")
+
+
+def test_data_uri_evidence():
+    ev = run_signal("url.data_uri", "data:text/html;base64,PGh0bWw+AAAA")
+    assert ev and ev[0].observed == {"mime": "text/html", "base64": True, "length": 34}
+    assert "PGh0" not in str(ev[0].to_dict())  # never the payload
+    assert run_signal("url.data_uri", "DATA:,hello")[0].observed["mime"] == "text/plain"
+    for bad in ("data:https://evil.example/login.php,x", "data:<script>alert(1)</script>,x"):
+        ev = run_signal("url.data_uri", bad)
+        assert ev and ev[0].observed["mime"] == "invalid"
+        assert "evil" not in str(ev[0].to_dict()) and "<script>" not in str(ev[0].to_dict())
+    assert not run_signal("url.data_uri", "https://falcon-demo-bank.test/")
 
 
 def test_official_domain_is_clean():
@@ -83,19 +98,19 @@ def test_official_domain_is_clean():
 
 
 def test_free_host_judged_per_subdomain():
-    ev = run_signal("url.free_host_or_tunnel", "https://someuser.github.io/x")
-    assert ev and ev[0].observed["tenant"] == "someuser"
-    assert not run_signal("url.free_host_or_tunnel", "https://adpolice.gov.ae/")
+    ev = run_signal("url.free_host_or_tunnel", "https://fl-fixture-0000.github.io/x")
+    assert ev and ev[0].observed["tenant"] == "fl-fixture-0000"
+    assert not run_signal("url.free_host_or_tunnel", "https://falcon-demo-bank.test/")
     # a brand-named tenant on a free host is still caught by the squat plugins
     assert "url.brand_in_subdomain_or_path" in names("https://falcon-demo-bank-login.github.io/")
-    assert "url.free_host_or_tunnel" in names("https://abc123.ngrok-free.app/")
-    assert "url.free_host_or_tunnel" in names("https://abc.trycloudflare.com/")
+    assert "url.free_host_or_tunnel" in names("https://fl-fixture-0001.ngrok-free.app/")
+    assert "url.free_host_or_tunnel" in names("https://fl-fixture-0002.trycloudflare.com/")
 
 
 def test_rlo_bidi():
-    assert "url.bidi_or_zero_width" in names("https://example.test/‮gpj.exe")
+    assert "url.bidi_or_zero_width" in names("https://example.test/\u202egpj.exe")
     assert "url.bidi_or_zero_width" in names("https://example.test/%E2%80%AEfdp")
-    assert "url.bidi_or_zero_width" in names("https://fal​con-demo-bank.test/")
+    assert "url.bidi_or_zero_width" in names("https://fal\u200bcon-demo-bank.test/")
     assert not names("https://example.test/plain", ("url.bidi_or_zero_width",))
 
 
@@ -142,13 +157,13 @@ def test_arabic_idn_brand_in_label():
 
 
 def test_official_domain_as_subdomain_prefix():
-    ev = run_signal("url.brand_in_subdomain_or_path", "https://adpolice.gov.ae.verify-fine.test/pay")
+    ev = run_signal("url.brand_in_subdomain_or_path", "https://falcon-demo-bank.test.verify-fine.test/pay")
     assert ev and ev[0].observed["official_domain_in_host"] is True
-    assert "url.brand_in_subdomain_or_path" in names("https://adpolice.gov.ae.verify-fine.xyz/")
+    assert "url.brand_in_subdomain_or_path" in names("https://falcon-demo-bank.test.verify-fine.invalid/")
 
 
 def test_userinfo_trick():
-    ev = run_signal("url.userinfo_trick", "https://adpolice.gov.ae@evil.example/login")
+    ev = run_signal("url.userinfo_trick", "https://falcon-demo-bank.test@evil.example/login")
     assert ev and ev[0].confidence == 1.0 and "evil[.]example" in ev[0].observed["real_host"]
     assert not run_signal("url.userinfo_trick", "https://example.test/")
 
@@ -160,9 +175,12 @@ def test_raw_ip(host):
 
 
 def test_open_redirect():
-    ev = run_signal("url.open_redirect_abuse", "https://example.test/redirect?url=https%3A%2F%2Fevil.example%2Fx")
+    ev = run_signal(
+        "url.open_redirect_abuse",
+        "https://example.test/redirect?url=https%3A%2F%2Fevil.example%2Fx",
+    )
     assert ev and ev[0].observed["target_host"] == "evil[.]example"
-    assert run_signal("url.open_redirect_abuse", "https://adpolice.gov.ae/out?next=//evil.example/")
+    assert run_signal("url.open_redirect_abuse", "https://falcon-demo-bank.test/out?next=//evil.example/")
     # same-site and relative targets are fine
     assert not run_signal("url.open_redirect_abuse", "https://example.test/login?next=/home")
     assert not run_signal("url.open_redirect_abuse", "https://example.test/login?next=https://example.test/home")
@@ -181,7 +199,11 @@ def test_all_official_domains_clean():
 
 
 def test_ordinary_sites_clean():
-    for u in ["https://example.com/", "https://www.wikipedia.org/wiki/Abu_Dhabi", "https://news.example.test/a"]:
+    for u in [
+        "https://example.com/",
+        "https://www.wikipedia.org/wiki/Abu_Dhabi",
+        "https://news.example.test/a",
+    ]:
         assert not names(u, SQUAT), u
 
 
@@ -192,12 +214,9 @@ def test_short_brand_labels_not_typosquatted():
 
 
 def test_real_brand_typo_and_tld_swap_and_keyboard():
-    assert "url.typosquat" in names("https://adpolicr.com/")  # r next to e on QWERTY
-    ev = run_signal("url.typosquat", "https://adpolice.com/")
+    assert "url.typosquat" in names("https://falcon-demo-bamk.test/")  # n next to m on QWERTY
+    ev = run_signal("url.typosquat", "https://falcon-demo-bank.example/")
     assert ev and ev[0].observed["kind"] == "tld_swap"
-    assert "url.typosquat" in names("https://dubaipolice-gov.ae/") or "url.combosquat" in names(
-        "https://dubaipolice-gov.ae/"
-    )
     assert "url.typosquat" in names("https://falcondemobank.test/")  # hyphen removed
 
 
@@ -214,7 +233,7 @@ def test_real_brand_typo_and_tld_swap_and_keyboard():
         "http://%zz.test/%",
         "data:text/html,<x>",
         "javascript:alert(1)",
-        "http://‮‮/",
+        "http://\u202e\u202e/",
         "http://" + "a." * 500 + "test",
     ],
 )
@@ -230,7 +249,13 @@ def test_timeout_yields_error_evidence(monkeypatch):
     from falcon_core.signals.base import SignalSpec, signal
 
     spec = SignalSpec(
-        name="url.slow_test", family="url", tier="T1", input_types=("url",), timeout_ms=10, network="none", emits=()
+        name="url.slow_test",
+        family="url",
+        tier="T1",
+        input_types=("url",),
+        timeout_ms=10,
+        network="none",
+        emits=(),
     )
 
     @signal(spec)
@@ -238,7 +263,7 @@ def test_timeout_yields_error_evidence(monkeypatch):
         raise RuntimeError("boom")
 
     out = asyncio.run(slow(Ctx(url="http://x.test")))
-    assert out[0].error and "boom" in out[0].error
+    assert out[0].error and out[0].error == "RuntimeError"
     del REGISTRY["url.slow_test"]
 
 
@@ -254,7 +279,7 @@ def test_brand_registry_loads_all_yaml_entries():
     raw = yaml.safe_load((Path(__file__).resolve().parents[4] / "data" / "brands.yaml").read_text(encoding="utf-8"))
     assert len(reg.brands) == len(raw["brands"]) >= 20
     assert reg.is_official("adpolice.gov.ae") and reg.is_official("falcon-demo-bank.test")
-    assert not reg.is_official("adpolice.com")
+    assert not reg.is_official("falcon-demo-bank.example")
     assert reg.is_official_host("login.adpolice.gov.ae")
     for b in reg.brands:
         assert b.retrieved_at and b.source_url
@@ -273,9 +298,9 @@ def test_features_fixed_numeric():
 
 def test_p95_under_5ms():
     urls = [
-        "https://adpolice.gov.ae.verify-fine.test/pay?next=https://evil.example/a",
+        "https://falcon-demo-bank.test.verify-fine.test/pay?next=https://evil.example/a",
         "https://falcon-demo-bаnk-secure.test/login",
-        "https://someuser.github.io/a/b/c?x=1&y=2",
+        "https://fl-fixture-0000.github.io/a/b/c?x=1&y=2",
         "https://شرطة-ابوظبي-مخالفات.test/",
         "http://3232235521/x",
     ] * 4

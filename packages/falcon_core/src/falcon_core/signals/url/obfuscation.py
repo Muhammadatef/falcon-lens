@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from urllib.parse import parse_qsl
 
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
@@ -26,6 +27,32 @@ SPEC_USERINFO = _spec("url.userinfo_trick")
 SPEC_BIDI = _spec("url.bidi_or_zero_width")
 SPEC_IP = _spec("url.raw_ip_host")
 SPEC_REDIRECT = _spec("url.open_redirect_abuse")
+SPEC_DATA = _spec("url.data_uri")
+_MIME_RE = re.compile(r"^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$")
+
+
+@signal(SPEC_DATA)
+def run_data_uri(ctx: SignalContext) -> list[Evidence]:
+    c = canon(ctx)
+    if not c.is_data_uri:
+        return []
+    head = c.raw[5:].split(",", 1)[0]
+    params = [p.strip().lower() for p in head.split(";")]
+    if not params[0]:
+        mime = "text/plain"
+    elif _MIME_RE.match(params[0]):
+        mime = params[0]
+    else:
+        mime = "invalid"  # never echo attacker-controlled text (URLs, markup) into evidence
+    return [
+        url_evidence(
+            "url.data_uri",
+            {"mime": mime[:100], "base64": "base64" in params[1:], "length": len(c.raw)},
+            "The link is an embedded data page, not a website address",
+            "الرابط صفحة مضمّنة وليس عنوان موقع",
+            1.0,
+        )
+    ]
 
 
 @signal(SPEC_USERINFO)
@@ -75,7 +102,12 @@ def run_bidi(ctx: SignalContext) -> list[Evidence]:
     return [
         url_evidence(
             "url.bidi_or_zero_width",
-            {"codepoints": seen, "in_host": c.invisible_in_host, "bidi": c.has_bidi, "zero_width": c.has_zero_width},
+            {
+                "codepoints": seen,
+                "in_host": c.invisible_in_host,
+                "bidi": c.has_bidi,
+                "zero_width": c.has_zero_width,
+            },
             "The address contains hidden or text-direction-changing characters",
             "العنوان يحتوي على أحرف مخفية أو تغيّر اتجاه النص",
             conf,
@@ -105,9 +137,44 @@ def run_ip(ctx: SignalContext) -> list[Evidence]:
 
 
 REDIRECT_PARAMS = frozenset(
-    "url uri redirect redirect_url redirect_uri redirecturl redirecturi return return_url returnurl returnto "
-    "return_to next continue dest destination goto go target link to out u r forward redir rurl back "
-    "backurl back_url service callback_url successurl success_url checkout_url image_url".split()
+    [
+        "url",
+        "uri",
+        "redirect",
+        "redirect_url",
+        "redirect_uri",
+        "redirecturl",
+        "redirecturi",
+        "return",
+        "return_url",
+        "returnurl",
+        "returnto",
+        "return_to",
+        "next",
+        "continue",
+        "dest",
+        "destination",
+        "goto",
+        "go",
+        "target",
+        "link",
+        "to",
+        "out",
+        "u",
+        "r",
+        "forward",
+        "redir",
+        "rurl",
+        "back",
+        "backurl",
+        "back_url",
+        "service",
+        "callback_url",
+        "successurl",
+        "success_url",
+        "checkout_url",
+        "image_url",
+    ]
 )
 REDIRECTOR_PATHS = (
     "/redirect",
