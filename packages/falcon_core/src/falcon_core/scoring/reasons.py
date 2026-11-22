@@ -4,7 +4,7 @@ Reasons: at most three, hard-rule reasons first (they decide the verdict), then 
 Every reason cites evidence ids taken from ``result.weighted_evidence``, so it always cites
 existing ids. The LLM responder may replace these, but the verifier falls back to them.
 
-TODO(T-002): return pydantic ``Reason`` / ``Actions`` models once ``falcon_core.contracts`` merges.
+TODO(T-002): return the pydantic ``Reason`` / ``Actions`` models from ``falcon_core.contracts``.
 """
 
 from __future__ import annotations
@@ -96,9 +96,7 @@ def select_reasons(result: ArbiterResult) -> list[ReasonSlot]:
             continue  # below the threshold: explain with trust evidence only
         groups.setdefault(template_key(ev), []).append(ev)
     for key, evs in groups.items():
-        push(
-            2, max(abs(e.weight) for e in evs), ReasonSlot("reasons", key, tuple(e.id for e in evs))
-        )
+        push(2, max(abs(e.weight) for e in evs), ReasonSlot("reasons", key, tuple(e.id for e in evs)))
 
     if result.degraded and not result.degraded_override:
         push(3, 0.0, ReasonSlot("degraded", "degraded", errored))
@@ -117,10 +115,7 @@ def _render(slot: ReasonSlot, cat: Catalog) -> str:
 
 def template_reasons(result: ArbiterResult, lang: Lang) -> list[TemplateReason]:
     cat = load_catalog(lang)
-    return [
-        TemplateReason(_render(s, cat), s.evidence_ids, f"{s.section}.{s.key}")
-        for s in select_reasons(result)
-    ]
+    return [TemplateReason(_render(s, cat), s.evidence_ids, f"{s.section}.{s.key}") for s in select_reasons(result)]
 
 
 def contract_reasons(result: ArbiterResult) -> list[dict[str, object]]:
@@ -186,14 +181,7 @@ def parse_reporting_channels(raw: object) -> ReportingChannels:
                 continue
             e = cast(dict[str, object], entry)
             la, le, val = e.get("label_ar"), e.get("label_en"), e.get("value")
-            if (
-                isinstance(la, str)
-                and isinstance(le, str)
-                and isinstance(val, str)
-                and la
-                and le
-                and val
-            ):
+            if isinstance(la, str) and isinstance(le, str) and isinstance(val, str) and la and le and val:
                 channels.append(
                     {
                         "label_ar": la,
@@ -238,10 +226,8 @@ def report_block(channels: ReportingChannels) -> dict[str, object]:
     }
 
 
-def template_actions(
-    verdict: Verdict, channels: ReportingChannels | None = None
-) -> dict[str, object]:
-    """Actions in the verdict.schema.json shape. ``caution`` always present for no_warning_signs."""
+def template_actions(verdict: Verdict, channels: ReportingChannels | None = None) -> dict[str, object]:
+    """Actions in verdict.schema.json shape. ``caution`` is always set for no_warning_signs."""
     ch = channels if channels is not None else load_reporting_channels()
     ar, en = load_catalog("ar"), load_catalog("en")
     out: dict[str, object] = {
@@ -257,10 +243,8 @@ def template_actions(
     return out
 
 
-def verdict_core_fields(
-    result: ArbiterResult, channels: ReportingChannels | None = None
-) -> dict[str, object]:
-    """The arbiter-owned part of a verdict.schema.json object; the cascade adds the rest."""
+def verdict_core_fields(result: ArbiterResult, channels: ReportingChannels | None = None) -> dict[str, object]:
+    """Arbiter-owned part of a verdict.schema.json object. The cascade adds ids, timing, tier."""
     out: dict[str, object] = {
         "verdict": result.verdict,
         "risk_score": result.risk_score,

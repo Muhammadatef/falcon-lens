@@ -3,8 +3,10 @@
 Pipeline (SCORING §1):
 1. hard rules first (``hard_rules.evaluate``): floors for H1/H2/H4/H5/H6, cap for H3;
 2. classifier probability ``p_clf`` (T1 features). Until T-022 ships a fitted model, ``p_clf=None``
-   uses a draft logistic: ``logit = intercept + sum(w_i * c_i)`` over url/domain/rep evidence;
-3. ``logit(p) = logit(p_clf) + sum(w_i * c_i)`` over evidence above T1 (page, visual, brand, msg,
+   uses a draft logistic: ``logit = intercept + sum(w_i * c_i)`` over url/domain/reputation
+   evidence;
+3. ``logit(p) = logit(p_clf) + sum(w_i * c_i)`` over evidence above T1 (page, visual, brand,
+   message,
    email, image, injection, llm), clipped to [-clip, clip];
 4. final calibrator (identity while draft); ``risk_score = round(100 p)``;
 5. bands, then hard-rule floors/cap; a degraded verdict is never ``no_warning_signs``.
@@ -26,6 +28,7 @@ from falcon_core.scoring.evidence import (
     confidence_of,
     family_matches,
     is_present,
+    observed_get,
     observed_number,
     untrusted_origin,
 )
@@ -58,7 +61,8 @@ class ArbiterContext:
     registrable_domain: str | None = None
     # brand_id -> registrable verified domains (data/brands.yaml). Optional cross-check for H1/H3.
     verified_domains: Mapping[str, frozenset[str]] | None = None
-    # Degradation reported by the cascade itself (e.g. sandbox down), on top of errored evidence.
+    # Degradation reported by the cascade itself (e.g. sandbox unreachable), on top of
+    # errored evidence.
     extra_degraded_reasons: tuple[str, ...] = ()
     params: ScoringParams | None = None
 
@@ -79,6 +83,7 @@ class ArbiterResult:
     band_verdict: Verdict = "no_warning_signs"  # verdict from p alone, before the degraded override
     degraded_override: bool = False  # True when a degraded low-p verdict was raised to suspicious
     params_draft: bool = True
+    # Evidence that caused degradation (errored T0/T1 signals, invalid input); reasons cite these.
     errored_evidence_ids: tuple[str, ...] = field(default=())
 
 
@@ -124,16 +129,21 @@ def _base_weight(ev: Evidence, params: ScoringParams) -> float:
     if ev.signal.startswith("message.rule."):
         name = ev.signal.removeprefix("message.rule.")
         return params.message_rule_weight if name in params.message_rule_names else 0.0
+    if ev.signal == "email.attachment":
+        detected = observed_get(ev, "detected_type")
+        risky = observed_get(ev, "risky") is True or (
+            isinstance(detected, str) and detected in params.attachment_executable_types
+        )
+        return params.attachment_risky_weight if risky else params.weights.get(ev.signal, 0.0)
     return params.weights.get(ev.signal, 0.0)
 
 
-def _contributions(
-    evidence: Sequence[Evidence], params: ScoringParams, h3_holds: bool
-) -> list[float]:
+def _contributions(evidence: Sequence[Evidence], params: ScoringParams, h3_holds: bool) -> list[float]:
     """Per-evidence contribution ``w_i * c_i`` in log-odds points (same order as ``evidence``).
 
-    ``registry.verified_official`` trust counts only when H3 holds: with open-redirect abuse/a feed
-    hit the official domain must not lower the score (the redirect is judged on its target).
+    ``registry.verified_official`` trust counts only when H3 holds: with open-redirect abuse or
+    a feed hit the official domain must not lower the score (the redirect is judged on its
+    target).
     """
     contrib: list[float] = []
     for ev in evidence:
@@ -178,19 +188,13 @@ def score(
 
     # 1. Hard rules over present evidence.
     present = [e for e in evidence if is_present(e)]
-    outcome = hard_rules.evaluate(
-        present, params, ctx.input_type, ctx.registrable_domain, ctx.verified_domains
-    )
+    outcome = hard_rules.evaluate(present, params, ctx.input_type, ctx.registrable_domain, ctx.verified_domains)
 
     # 2-3. Classifier probability plus log-odds adjustment.
     h3_holds = any(r.rule_id == "H3" for r in outcome.fired)
     contrib = _contributions(evidence, params, h3_holds)
-    t1_sum = sum(
-        c for e, c in zip(evidence, contrib, strict=True) if e.family in CLASSIFIER_FAMILIES
-    )
-    adj = sum(
-        c for e, c in zip(evidence, contrib, strict=True) if e.family not in CLASSIFIER_FAMILIES
-    )
+    t1_sum = sum(c for e, c in zip(evidence, contrib, strict=True) if e.family in CLASSIFIER_FAMILIES)
+    adj = sum(c for e, c in zip(evidence, contrib, strict=True) if e.family not in CLASSIFIER_FAMILIES)
 
     if p_clf is None:
         draft = True
@@ -222,10 +226,18 @@ def score(
     verdict = band(p, params)
 
     # Degradation (SCORING §4).
-    errored = [e for e in evidence if e.error is not None and e.tier in DEGRADING_TIERS]
+    # Expected configuration states (feed_disabled, rdap_unsupported_tld) are informational.
+    errored = [
+        e
+        for e in evidence
+        if e.error is not None and e.tier in DEGRADING_TIERS and e.error not in params.informational_errors
+    ]
+    invalid = [e for e in present if e.signal in params.degrading_signals and family_matches(e)]
     reasons = tuple(
         dict.fromkeys(
-            [f"signal_error:{e.signal}" for e in errored] + list(ctx.extra_degraded_reasons)
+            [f"signal_error:{e.signal}" for e in errored]
+            + [f"invalid_input:{e.signal}" for e in invalid]
+            + list(ctx.extra_degraded_reasons)
         )
     )
     degraded = bool(reasons)
@@ -260,15 +272,13 @@ def score(
         band_verdict=band_verdict,
         degraded_override=override,
         params_draft=params.draft,
-        errored_evidence_ids=tuple(e.id for e in errored),
+        errored_evidence_ids=tuple(dict.fromkeys(e.id for e in [*errored, *invalid])),
     )
 
 
 def has_brand_conflict(evidence: Sequence[Evidence]) -> bool:
     """True when T1 evidence says the input resembles or claims a brand (needs T2 brand check)."""
-    return any(
-        e.signal in BRAND_CONFLICT_SIGNALS and family_matches(e) and is_present(e) for e in evidence
-    )
+    return any(e.signal in BRAND_CONFLICT_SIGNALS and family_matches(e) and is_present(e) for e in evidence)
 
 
 def t1_should_exit(p_clf: float, brand_conflict: bool, params: ScoringParams | None = None) -> bool:

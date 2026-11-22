@@ -58,6 +58,10 @@ reasons:
   email.reply_to_mismatch: "الرد يذهب إلى عنوان غير عنوان المرسل."
   email.link_text_mismatch: "رابط في البريد يُظهر عنواناً ويفتح عنواناً آخر."
   email.link_verdict: "البريد فيه رابط وجدنا أنه خطير."
+  url.data_uri: "الرابط يحمل صفحة مخفية بدل عنوان موقع حقيقي."
+  message.brand_mention: "الرسالة تذكر اسم جهة معروفة."
+  message.brand_url_mismatch: "الرسالة تذكر جهة معروفة، لكن رابطها يفتح موقعاً آخر."
+  email.attachment: "البريد فيه مرفق يمكنه تشغيل برامج على جهازك."
   injection.instruction_like_text: "المحتوى فيه نص مخفي يحاول خداع أدوات الفحص."
 
 actions:

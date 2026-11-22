@@ -55,9 +55,7 @@ def load_catalog(lang: Lang) -> Catalog:
         if not isinstance(block, dict):
             raise TypeError(f"i18n: actions.{verdict} must be a mapping")
         b = cast(dict[str, object], block)
-        actions[verdict] = {
-            k: _str_list(b.get(k), f"actions.{verdict}.{k}") for k in ("now", "if_already_acted")
-        }
+        actions[verdict] = {k: _str_list(b.get(k), f"actions.{verdict}.{k}") for k in ("now", "if_already_acted")}
     degraded = data.get("degraded")
     if not isinstance(degraded, str):
         raise TypeError("i18n: 'degraded' must be a string")
