@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.git
+.venv
+.mypy_cache
+.ruff_cache
+.pytest_cache
+**/__pycache__
+**/node_modules
+**/.next
+data
+work
+evals/results
+reviews
+.claude
+docs

@@ -1,0 +1,52 @@
+{
+	admin off
+	auto_https disable_redirects
+	skip_install_trust
+	servers {
+		metrics
+	}
+}
+
+# Internal plain-HTTP listener: health + metrics for compose/Prometheus only (not published).
+http://:8080 {
+	handle /healthz {
+		respond "ok" 200
+	}
+	handle /metrics {
+		metrics
+	}
+	handle {
+		respond "not found" 404
+	}
+}
+
+# Public entry point (host 127.0.0.1:8443). Local CA via `tls internal`; the Cloudflare
+# tunnel terminates real TLS in front of this for the public demo.
+https://localhost:8443 {
+	tls internal
+
+	header {
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+
+	request_body {
+		max_size 6MB
+	}
+
+	handle /v1/* {
+		reverse_proxy api:8000
+	}
+	handle /mcp* {
+		reverse_proxy mcp:8000
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}
