@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """URL canonicalisation + registrable-domain extraction (PSL incl. private section). Pure/offline, never raises."""
 
 from __future__ import annotations

@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" width="1200" height="440" role="img" aria-labelledby="t d">
+<title id="t">Falcon Lens | عدسة الصقر</title>
+<desc id="d">Falcon Lens is an Arabic-first AI agent that checks suspicious links, messages, emails and images and answers with evidence. The banner maps the product: inputs, answers, surfaces, integrations and proof. The lowest verdict is "no warning signs found"; the product never says "safe".</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
+.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.b{font-size:15px;fill:#aeb8cc}
+.c{font-size:12.5px;fill:#8794ae}
+.ch{font-size:13px;fill:#f2eee6}
+.tag{font-size:11.5px;fill:#3fe0c5;letter-spacing:.1em}
+.in{fill:#16203a;stroke:#2a3757}
+.glow{fill:#3fe0c5;fill-opacity:.12;stroke:#3fe0c5;stroke-width:1.6;opacity:0}
+.wave{animation:wave 9s ease-in-out infinite}
+.sweep{transform-origin:130px 170px;animation:spin 9s linear infinite}
+.ping{transform-origin:130px 170px;animation:ping 4.5s ease-out infinite}
+.pupil{animation:look 9s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes ping{0%{opacity:.5;transform:scale(1)}70%,100%{opacity:0;transform:scale(1.45)}}
+@keyframes look{0%,40%,100%{transform:translate(0,0)}50%,70%{transform:translate(7px,-3px)}80%,90%{transform:translate(-5px,2px)}}
+@keyframes wave{0%,22%,100%{opacity:0}6%,12%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.ping{display:none}}
+</style>
+<defs>
+<pattern id="lat" width="48" height="48" patternUnits="userSpaceOnUse">
+<path d="M24 4l6 14 14 6-14 6-6 14-6-14-14-6 14-6z" fill="none" stroke="#16203a" stroke-width="1"/>
+</pattern>
+<radialGradient id="halo" cx="11%" cy="38%" r="55%">
+<stop offset="0" stop-color="#3fe0c5" stop-opacity=".16"/><stop offset="1" stop-color="#3fe0c5" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="glass" cx="38%" cy="32%" r="75%">
+<stop offset="0" stop-color="#1f2c4c"/><stop offset="1" stop-color="#070b14"/>
+</radialGradient>
+<clipPath id="lens"><circle cx="130" cy="170" r="58"/></clipPath>
+</defs>
+<rect width="1200" height="440" rx="22" fill="#070b14"/>
+<rect width="1200" height="440" rx="22" fill="url(#lat)" opacity=".6"/>
+<rect width="1200" height="440" rx="22" fill="url(#halo)"/>
+
+<!-- the mark: ring, pupil, brow stroke, malar stripe (original identity) -->
+<g>
+<circle class="ping" cx="130" cy="170" r="62" fill="none" stroke="#3fe0c5" stroke-width="2"/>
+<circle cx="130" cy="170" r="62" fill="url(#glass)" stroke="#3fe0c5" stroke-width="7"/>
+<g clip-path="url(#lens)"><path class="sweep" d="M130 170L130 108A62 62 0 0 1 183.700 139z" fill="#3fe0c5" opacity=".2"/></g>
+<g class="pupil"><circle cx="130" cy="170" r="22" fill="#3fe0c5"/><circle cx="122" cy="162" r="6" fill="#7df0dc"/></g>
+<path d="M56 118q74-52 152-4" fill="none" stroke="#e7d7b6" stroke-width="9" stroke-linecap="round"/>
+<path d="M96 228q-6 34-34 54" fill="none" stroke="#e7d7b6" stroke-width="12" stroke-linecap="round"/>
+</g>
+
+<text x="232" y="166" font-size="46" font-weight="700" letter-spacing="-.5">Falcon Lens</text>
+<text x="232" y="222" font-size="42" font-weight="600" fill="#e7d7b6">عدسة الصقر</text>
+
+<text x="40" y="322" class="b">An Arabic-first AI agent that checks suspicious links, messages</text>
+<text x="40" y="344" class="b">and emails, then answers with evidence: what, why, what to do.</text>
+
+<g font-size="13">
+<rect x="40" y="364" width="124" height="30" rx="15" fill="#2b0f15" stroke="#8c2630"/><text x="102" y="384" text-anchor="middle" fill="#ff8589">Dangerous</text>
+<rect x="172" y="364" width="124" height="30" rx="15" fill="#2a1d07" stroke="#8a6416"/><text x="234" y="384" text-anchor="middle" fill="#ffc55c">Suspicious</text>
+<rect x="304" y="364" width="172" height="30" rx="15" fill="#111c3d" stroke="#34488c"/><text x="390" y="384" text-anchor="middle" fill="#a9c0ff">No warning signs found</text>
+</g>
+<text x="40" y="416" class="c">Three verdicts. The lowest one is never the word "safe".</text>
+
+<path d="M496 96V400" stroke="#2a3757" stroke-dasharray="4 6"/>
+<text x="520" y="124" class="m tag">CHECK</text>
+<rect class="in" x="606" y="104" width="52" height="30" rx="15"/><rect class="glow wave" style="animation-delay:0.00s" x="606" y="104" width="52" height="30" rx="15"/><text x="632" y="123.5" text-anchor="middle" class="ch">URL</text>
+<rect class="in" x="666" y="104" width="52" height="30" rx="15"/><rect class="glow wave" style="animation-delay:0.28s" x="666" y="104" width="52" height="30" rx="15"/><text x="692" y="123.5" text-anchor="middle" class="ch">SMS</text>
+<rect class="in" x="726" y="104" width="110" height="30" rx="15"/><rect class="glow wave" style="animation-delay:0.56s" x="726" y="104" width="110" height="30" rx="15"/><text x="781" y="123.5" text-anchor="middle" class="ch">WhatsApp text</text>
+<rect class="in" x="844" y="104" width="57" height="30" rx="15"/><rect class="glow wave" style="animation-delay:0.84s" x="844" y="104" width="57" height="30" rx="15"/><text x="872.5" y="123.5" text-anchor="middle" class="ch">Email</text>
+<rect class="in" x="909" y="104" width="90" height="30" rx="15"/><rect class="glow wave" style="animation-delay:1.12s" x="909" y="104" width="90" height="30" rx="15"/><text x="954" y="123.5" text-anchor="middle" class="ch">Image + QR</text>
+<text x="520" y="180" class="m tag">ANSWER</text>
+<rect class="in" x="606" y="160" width="156" height="30" rx="15"/><rect class="glow wave" style="animation-delay:1.40s" x="606" y="160" width="156" height="30" rx="15"/><text x="684" y="179.5" text-anchor="middle" class="ch">Arabic-first verdict</text>
+<rect class="in" x="770" y="160" width="116" height="30" rx="15"/><rect class="glow wave" style="animation-delay:1.68s" x="770" y="160" width="116" height="30" rx="15"/><text x="828" y="179.5" text-anchor="middle" class="ch">Cited evidence</text>
+<rect class="in" x="894" y="160" width="116" height="30" rx="15"/><rect class="glow wave" style="animation-delay:1.96s" x="894" y="160" width="116" height="30" rx="15"/><text x="952" y="179.5" text-anchor="middle" class="ch">What to do now</text>
+<rect class="in" x="1018" y="160" width="64" height="30" rx="15"/><rect class="glow wave" style="animation-delay:2.24s" x="1018" y="160" width="64" height="30" rx="15"/><text x="1050" y="179.5" text-anchor="middle" class="ch">Report</text>
+<text x="520" y="236" class="m tag">USE</text>
+<rect class="in" x="606" y="216" width="143" height="30" rx="15"/><rect class="glow wave" style="animation-delay:2.52s" x="606" y="216" width="143" height="30" rx="15"/><text x="677.5" y="235.5" text-anchor="middle" class="ch">PWA + share target</text>
+<rect class="in" x="757" y="216" width="130" height="30" rx="15"/><rect class="glow wave" style="animation-delay:2.80s" x="757" y="216" width="130" height="30" rx="15"/><text x="822" y="235.5" text-anchor="middle" class="ch">Chrome extension</text>
+<rect class="in" x="895" y="216" width="116" height="30" rx="15"/><rect class="glow wave" style="animation-delay:3.08s" x="895" y="216" width="116" height="30" rx="15"/><text x="953" y="235.5" text-anchor="middle" class="ch">Campaign board</text>
+<rect class="in" x="1019" y="216" width="116" height="30" rx="15"/><rect class="glow wave" style="animation-delay:3.36s" x="1019" y="216" width="116" height="30" rx="15"/><text x="1077" y="235.5" text-anchor="middle" class="ch">Incident board</text>
+<text x="520" y="292" class="m tag">CONNECT</text>
+<rect class="in" x="606" y="272" width="70" height="30" rx="15"/><rect class="glow wave" style="animation-delay:3.64s" x="606" y="272" width="70" height="30" rx="15"/><text x="641" y="291.5" text-anchor="middle" class="ch">REST v1</text>
+<rect class="in" x="684" y="272" width="52" height="30" rx="15"/><rect class="glow wave" style="animation-delay:3.92s" x="684" y="272" width="52" height="30" rx="15"/><text x="710" y="291.5" text-anchor="middle" class="ch">MCP</text>
+<rect class="in" x="744" y="272" width="77" height="30" rx="15"/><rect class="glow wave" style="animation-delay:4.20s" x="744" y="272" width="77" height="30" rx="15"/><text x="782.5" y="291.5" text-anchor="middle" class="ch">STIX 2.1</text>
+<rect class="in" x="829" y="272" width="77" height="30" rx="15"/><rect class="glow wave" style="animation-delay:4.48s" x="829" y="272" width="77" height="30" rx="15"/><text x="867.5" y="291.5" text-anchor="middle" class="ch">Webhooks</text>
+<rect class="in" x="914" y="272" width="116" height="30" rx="15"/><rect class="glow wave" style="animation-delay:4.76s" x="914" y="272" width="116" height="30" rx="15"/><text x="972" y="291.5" text-anchor="middle" class="ch">Sovereign mode</text>
+<text x="520" y="348" class="m tag">PROVE</text>
+<rect class="in" x="606" y="328" width="149" height="30" rx="15"/><rect class="glow wave" style="animation-delay:5.04s" x="606" y="328" width="149" height="30" rx="15"/><text x="680.5" y="347.5" text-anchor="middle" class="ch">Deterministic score</text>
+<rect class="in" x="763" y="328" width="116" height="30" rx="15"/><rect class="glow wave" style="animation-delay:5.32s" x="763" y="328" width="116" height="30" rx="15"/><text x="821" y="347.5" text-anchor="middle" class="ch">Red-team suite</text>
+<rect class="in" x="887" y="328" width="90" height="30" rx="15"/><rect class="glow wave" style="animation-delay:5.60s" x="887" y="328" width="90" height="30" rx="15"/><text x="932" y="347.5" text-anchor="middle" class="ch">Dashboards</text>
+<rect class="in" x="985" y="328" width="116" height="30" rx="15"/><rect class="glow wave" style="animation-delay:5.88s" x="985" y="328" width="116" height="30" rx="15"/><text x="1043" y="347.5" text-anchor="middle" class="ch">Eval artifacts</text>
+<text x="520" y="404" class="c">Feature map of the design. The status table in the README says what is built today.</text>
+</svg>

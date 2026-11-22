@@ -41,7 +41,7 @@ x-app-env: &app-env
   FL_OPERATOR_KEY: ${FL_OPERATOR_KEY:-change-me-operator}
   FL_MCP_BEARER_TOKEN: ${FL_MCP_BEARER_TOKEN:-change-me-mcp}
   FL_WEBHOOK_SECRET: ${FL_WEBHOOK_SECRET:-change-me-webhook}
-  FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-30}
+  FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-60}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
   ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
@@ -247,7 +247,11 @@ services:
     image: falcon-lens/sentinel:0.1.0
     <<: [*hardened, *host-gateway]
     restart: always
-    environment: *app-env
+    environment:
+      <<: *app-env
+      ALERTMANAGER_URL: http://alertmanager:9093
+      LANGSMITH_TRACING: "false"  # langsmith ships transitively with langgraph: never export incident data
+      LANGCHAIN_TRACING_V2: "false"
     networks: [app, data, observability]
     depends_on:
       redis: { condition: service_healthy }
@@ -272,6 +276,7 @@ services:
   prometheus:
     profiles: [obs]
     image: prom/prometheus:v3.16.0
+    <<: *host-gateway
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -282,6 +287,7 @@ services:
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infra/prometheus/rules:/etc/prometheus/rules:ro
+      - ./infra/prometheus/demo:/etc/prometheus/demo:ro
       - prom_data:/prometheus
     networks: [observability, edge]
     security_opt:
@@ -300,11 +306,14 @@ services:
     profiles: [obs]
     image: prom/alertmanager:v0.35.0
     restart: unless-stopped
-    command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --storage.path=/alertmanager
+    # The entrypoint renders the config: Telegram/webhook only if configured, else a null receiver.
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
     volumes:
-      - ./infra/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./infra/alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
       - alertmanager_data:/alertmanager
     networks: [observability]
     security_opt:
@@ -372,6 +381,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
       GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_DEFAULT_THEME: dark
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_SERVER_ROOT_URL: http://localhost:${FL_GRAFANA_PORT:-3001}
@@ -421,6 +431,25 @@ services:
     mem_limit: 1g
     cpus: 1
     pids_limit: 256
+
+  # TEST DOUBLE, never part of `make up`. Only `FL_SMOKE_FAKE_WORKER=1 make smoke` starts it
+  # (and stops the real worker first) to exercise API + SSE before the real cascade exists.
+  fake-worker:
+    profiles: [smoke-fake]
+    image: falcon-lens/api:0.1.0
+    <<: *hardened
+    restart: "no"
+    command: ["python", "-m", "falcon_api.fake_worker"]
+    environment: *app-env
+    healthcheck:
+      disable: true
+    networks: [data]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
 
   # ───────────────────────────── tools ────────────────────────────
   # Placeholder fixture server: invented brand only, internal network only, never published.

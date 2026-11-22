@@ -3,6 +3,7 @@
 from .http import (
     DEFAULT_MAX_BYTES,
     DEFAULT_MAX_REDIRECTS,
+    DEFAULT_MAX_REQUEST_BYTES,
     DEFAULT_TIMEOUT_S,
     FetchFailed,
     FetchFailReason,
@@ -22,8 +23,10 @@ from .ssrf import (
     SSRFBlocked,
     check_host_port,
     ip_block_reason,
+    ip_reason_for_host,
     is_ip_allowed,
     resolve_and_check,
+    resolve_host_port,
     system_resolver,
     validate_url,
 )
@@ -31,6 +34,7 @@ from .ssrf import (
 __all__ = [
     "DEFAULT_MAX_BYTES",
     "DEFAULT_MAX_REDIRECTS",
+    "DEFAULT_MAX_REQUEST_BYTES",
     "DEFAULT_POLICY",
     "DEFAULT_TIMEOUT_S",
     "BlockReason",
@@ -46,8 +50,10 @@ __all__ = [
     "SSRFBlocked",
     "check_host_port",
     "ip_block_reason",
+    "ip_reason_for_host",
     "is_ip_allowed",
     "resolve_and_check",
+    "resolve_host_port",
     "safe_fetch",
     "set_default_on_block",
     "system_resolver",
