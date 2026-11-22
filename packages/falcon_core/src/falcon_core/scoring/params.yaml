@@ -1,0 +1,103 @@
+# DRAFT, NOT FITTED. Fitted by `make fit-thresholds` on the validation split.
+# Every value below is the initial draft from docs/SCORING.md (§1 bands, §2 weights, §3 hard rules).
+# Values not given in SCORING.md are marked "draft (not in SCORING.md)" and logged in DECISIONS.md.
+# `make fit-thresholds` (builder-evals) overwrites this file using the validation split only and
+# fills `fit` with the dataset hash, git SHA and fit date. Do not hand-tune these numbers.
+draft: true
+fit:
+  dataset_hash: null
+  git_sha: null
+  fit_date: null
+
+bands:
+  tau_high: 0.80
+  tau_low: 0.35
+
+cascade:
+  eps_low: 0.05             # draft (not in SCORING.md)
+  eps_high: 0.98            # draft (not in SCORING.md)
+  t2_margin_low: 0.10       # T2 exits if p < tau_low - 0.10
+  t2_margin_high: 0.05      # ... or p > tau_high + 0.05
+
+logit_clip: 8.0
+
+# Used only when no fitted classifier probability is passed (until T-022 lands).
+# logit(p_clf) = intercept + sum(w_i * confidence_i) over url/domain/reputation evidence.
+draft_classifier:
+  intercept: -2.2           # draft (not in SCORING.md): prior p ~= 0.10
+
+# Final calibrator over the full-cascade output. identity until fitted.
+calibrator:
+  kind: identity
+
+hard_rules:
+  h1_brand_claim_min_confidence: 0.70   # theta; draft (not in SCORING.md)
+  h1_p_floor: 0.95
+  h2_max_feed_age_s: 21600              # 6 h
+  h3_p_cap: 0.05                        # draft (not in SCORING.md): keeps score consistent with the cap
+
+domain_age:
+  lt7_days: 2.5
+  lt30_days: 1.5
+  gt3650_days: -1.0          # only when no other risk evidence fired
+
+cert_age:
+  lt7_days: 0.8
+
+# email.attachment is informational (0) unless the attachment is executable/script-like.
+email_attachment:
+  risky_weight: 1.5
+  executable_types: [exe, elf, macho, lnk, msi, jar, script, js, vbs, bat, cmd, ps1, hta, html, ole2]
+
+# Signal errors that are expected configuration states, not failures: weight 0, not degraded.
+informational_errors: [feed_disabled, rdap_unsupported_tld]
+
+# Present evidence from these signals marks the verdict degraded (SCORING §2: 'sets degraded').
+degrading_signals: [email.invalid, image.invalid]
+
+message_rules:
+  weight_each: 0.6
+  cap: 3.0
+  names: [urgency, secrecy, otp_request, remote_access, payment, authority, prize, job, investment, delivery_fee, fine]
+
+weights:
+  rep.openphish: 6.0
+  rep.gsb: 6.0
+  rep.urlhaus: 6.0
+  url.homograph: 3.0
+  url.typosquat: 2.5
+  url.combosquat: 2.0
+  url.brand_in_subdomain_or_path: 1.5
+  url.userinfo_trick: 3.0
+  url.bidi_or_zero_width: 3.0
+  url.raw_ip_host: 1.5
+  url.data_uri: 2.0
+  url.free_host_or_tunnel: 1.0
+  url.open_redirect_abuse: 2.0
+  page.cred_form: 1.5
+  page.cross_origin_post: 3.0
+  page.hotlinked_brand_assets: 2.0
+  page.cloaking: 2.5
+  page.js_obfuscation: 1.0
+  page.anti_inspection: 1.0
+  visual.favicon_match_brand: 1.0
+  brand.claimed_not_owned: 3.0
+  message.script_match: 2.5
+  message.brand_mention: 0.5
+  message.brand_url_mismatch: 1.0
+  email.auth_fail: 1.5
+  email.display_name_impersonation: 2.0
+  email.reply_to_mismatch: 1.0
+  email.link_text_mismatch: 2.0
+  injection.instruction_like_text: 1.5
+  registry.verified_official: -4.0
+  # informational (weight 0), listed so SCORING §2 and this file stay in sync
+  message.contains_url: 0.0
+  message.contains_phone: 0.0
+  message.link_verdict: 0.0
+  email.link_verdict: 0.0
+  email.attachment: 0.0          # see email_attachment.risky_weight
+  email.return_path_mismatch: 0.0
+  email.invalid: 0.0
+  image.invalid: 0.0
+  image.qr_decoded: 0.0

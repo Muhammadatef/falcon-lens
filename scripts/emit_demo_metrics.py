@@ -5,8 +5,8 @@ before the real pipeline exists. Nothing here is a detection result: the values 
 Usage:  uv run python scripts/emit_demo_metrics.py [--port 9199] [--seconds 0]
 
 It serves /metrics on 127.0.0.1:<port> (set FL_DEMO_EMITTER_BIND to change; Linux Docker needs
-0.0.0.0) from the real metric registry (so names/labels are the contract's) and writes infra/prometheus/demo/targets.yml so Prometheus (file_sd, refreshed
-automatically) scrapes it at host.docker.internal:<port>. The file is removed on exit.
+0.0.0.0) from the real metric registry (so names/labels are the contract's) and writes
+infra/prometheus/demo/targets.yml so Prometheus (file_sd, refreshed automatically) scrapes it at host.docker.internal:<port>. The file is removed on exit.
 """
 
 from __future__ import annotations
