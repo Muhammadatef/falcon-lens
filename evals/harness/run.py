@@ -23,7 +23,7 @@ from typing import Any
 import numpy as np
 
 from evals.common import ITEMS_MANIFEST, PARAMS_YAML, RESULTS_DIR, SEED, git_sha, read_jsonl
-from evals.datasets.build import Item, load_private_items
+from evals.datasets.build import CacheMismatch, Item, load_private_items, verify_private_items
 from evals.harness import metrics as M
 from evals.harness.report import render_html, render_prom
 from evals.splits import check_rows, load_lock
@@ -146,7 +146,7 @@ def evaluate_split(
         out["zero_day"] = {
             "n": int(zm.sum()),
             "recall_system": M.with_ci(lambda yy, ww: float(np.mean(ww)), y[zm], warn[zm], n_boot, seed + 30),
-            "recall_blocklist_only_baseline": 0.0,
+            "recall_blocklist_only_baseline": {"value": 0.0, "status": "by_construction"},
             "baseline_note": "zero-day items are by definition on no enabled blocklist, so the baseline recall is 0",
         }
     else:
@@ -174,7 +174,10 @@ def evaluate_split(
         "t3_escalation_share_by_thresholds": round(t3_share(p, r["p_clf"], r["conflict"], th, r["fired"]), 4),
         "t3_budget": 0.15,
     }
-    out["cost_per_check_usd"] = {"T1_offline": 0.0, "llm": not_evaluated(LLM_NOT_WIRED)}
+    out["cost_per_check_usd"] = {
+        "T1_offline": {"value": 0.0, "status": "by_construction", "reason": "T1 makes no paid calls; not measured"},
+        "llm": not_evaluated(LLM_NOT_WIRED),
+    }
     out["routes"] = {
         "cloud": not_evaluated(LLM_NOT_WIRED),
         "sovereign": not_evaluated(LLM_NOT_WIRED),
@@ -222,9 +225,10 @@ def run_eval(splits: Sequence[str], n_boot: int, seed: int) -> dict[str, Any]:
     if errs or lock is None:
         raise SystemExit("split check failed, refusing to evaluate: " + "; ".join(errs))
     items = load_private_items()
-    # the private cache must agree with the public manifest
-    if {i.item_id: i.split for i in items} != {str(r["item_id"]): str(r["split"]) for r in rows}:
-        raise SystemExit("private item cache does not match the public manifest: rerun evals.datasets.build")
+    try:
+        verify_private_items(items, rows)
+    except CacheMismatch as exc:
+        raise SystemExit(f"refusing to evaluate: {exc}") from exc
     model = load_t1_model()
     params = load_params(PARAMS_YAML)
     meta = model.meta

@@ -162,6 +162,25 @@ def load_private_items() -> list[Item]:
     return [Item(**r) for r in read_jsonl(items_path())]  # type: ignore[arg-type]
 
 
+class CacheMismatch(RuntimeError):
+    """The private item cache disagrees with the public manifest (e.g. a relabelled test item)."""
+
+
+def verify_private_items(items: list[Item], rows: list[dict[str, object]]) -> None:
+    """Every cached item must match the manifest row of the same id on split, label and domain; no extras."""
+    by_id = {str(r["item_id"]): r for r in rows}
+    seen = set()
+    for i in items:
+        r = by_id.get(i.item_id)
+        if r is None:
+            raise CacheMismatch("private cache holds an item that is not in the public manifest")
+        if (r["split"], r["label"], r["domain_hmac"]) != (i.split, i.label, i.domain_hmac):
+            raise CacheMismatch("private cache split/label/domain disagrees with the public manifest")
+        seen.add(i.item_id)
+    if seen != set(by_id):
+        raise CacheMismatch("private cache is missing manifest items: rerun evals.datasets.build")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--seed", type=int, default=SEED)

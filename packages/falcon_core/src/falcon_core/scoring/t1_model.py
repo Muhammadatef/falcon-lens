@@ -8,6 +8,7 @@ Features come from ``falcon_core.signals.url.lexical.extract_features`` (pure, o
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 from dataclasses import dataclass
 from functools import lru_cache
@@ -64,7 +65,7 @@ def _load(directory: str) -> T1Model:
         raise ModelError("T1 model sha256 does not match its metadata; refusing to unpickle")
     if list(meta.get("feature_names", [])) != list(FEATURE_NAMES):
         raise ModelError("T1 model was trained on a different feature set; refit")
-    obj = joblib.load(d / MODEL_FILE)  # noqa: S301 - integrity checked above
+    obj = joblib.load(io.BytesIO(blob))  # noqa: S301 - the exact bytes whose sha256 was verified above
     return T1Model(hgb=obj["hgb"], platt=obj["platt"], meta=meta)
 
 

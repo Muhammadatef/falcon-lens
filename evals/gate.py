@@ -48,6 +48,8 @@ def compare(baseline: dict[str, Any], doc: dict[str, Any]) -> tuple[list[str], l
     cur = headline(doc)
     fails: list[str] = []
     skipped: list[str] = []
+    if baseline.get("dataset_hash") != doc.get("dataset_hash"):
+        fails.append("baseline was made on a different dataset hash: rerun `make eval-baseline` and review the diff")
     if cur["recall"] is None or baseline["recall"] is None:
         fails.append("recall undefined")
     elif baseline["recall"] - cur["recall"] > RECALL_DROP + 1e-12:

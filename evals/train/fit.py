@@ -28,8 +28,10 @@ from datetime import UTC, datetime
 
 import numpy as np
 
-from evals.common import MODEL_DIR, PARAMS_YAML, SEED, git_sha, load_lock_dataset_hash
-from evals.datasets.build import Item, load_private_items
+from evals.common import ITEMS_MANIFEST, MODEL_DIR, PARAMS_YAML, SEED, git_sha, read_jsonl, sha256_hex
+from evals.datasets.build import CacheMismatch, Item, load_private_items, verify_private_items
+from evals.splits import check_rows, load_lock
+from evals.splits import dataset_hash as manifest_dataset_hash
 from evals.train.pipeline import feature_matrix, score_url
 from falcon_core.scoring.params import load_params, params_from_mapping
 from falcon_core.signals.url.lexical import FEATURE_NAMES
@@ -42,16 +44,48 @@ MODEL_FILE = "t1_hgb.joblib"
 META_FILE = "t1_hgb.meta.json"
 
 
+class SplitIntegrityError(RuntimeError):
+    """The data to be fitted on does not match the frozen, verified split."""
+
+
 class TestSplitAccess(RuntimeError):
     """Raised when fitting code asks for the frozen test split."""
 
     __test__ = False
 
 
-def load_items(splits: Sequence[str]) -> list[Item]:
+def load_items(
+    splits: Sequence[str],
+    items: list[Item] | None = None,
+    rows: list[dict[str, object]] | None = None,
+    lock: dict[str, object] | None = None,
+) -> list[Item]:
+    """Items of the requested splits, after checking the private cache against the public manifest and the lock.
+
+    Refuses the test split, a manifest that fails the split invariants or the lock, and any cached item whose
+    split/label/domain differs from the manifest (a relabelled-cache attack that would put test items in train).
+    """
     if "test" in splits:
         raise TestSplitAccess("fit-thresholds must never read the test split (docs/EVALS.md: never tune on test)")
-    return [i for i in load_private_items() if i.split in splits]
+    rows = read_jsonl(ITEMS_MANIFEST) if rows is None else rows
+    lock = load_lock() if lock is None else lock
+    errs = check_rows(rows, lock)
+    if errs:
+        raise SplitIntegrityError("; ".join(errs))
+    cache = load_private_items() if items is None else items
+    try:
+        verify_private_items(cache, rows)
+    except CacheMismatch as exc:
+        raise SplitIntegrityError(str(exc)) from exc
+    test_ids = {str(r["item_id"]) for r in rows if r["split"] == "test"}
+    out = [i for i in cache if i.split in splits]
+    if any(i.item_id in test_ids for i in out):
+        raise SplitIntegrityError("a test item appears in the requested splits")
+    return out
+
+
+def items_hash(items: Sequence[Item]) -> str:
+    return sha256_hex("\n".join(sorted(f"{i.item_id}:{i.label}:{i.split}" for i in items)))
 
 
 HGB_PARAMS = {
@@ -218,10 +252,12 @@ def main(argv: list[str] | None = None) -> int:
     if share > T3_BUDGET:
         th.notes.append(f"T3 share {share:.3f} exceeds the {T3_BUDGET:.0%} budget on validation (reported, not forced)")
 
-    dataset_hash = load_lock_dataset_hash()
+    dataset_hash = manifest_dataset_hash(read_jsonl(ITEMS_MANIFEST))  # recomputed from the verified manifest
+    fit_hash = items_hash([*train, *val])  # hash of the items actually loaded for fitting
     sha = git_sha(dirty=False)
     meta: dict[str, object] = {
         "dataset_hash": dataset_hash,
+        "fit_items_hash": fit_hash,
         "git_sha": sha,
         "fit_date": args.date,
         "seed": args.seed,
@@ -257,6 +293,7 @@ def main(argv: list[str] | None = None) -> int:
         "feature_names": list(FEATURE_NAMES),
         "seed": args.seed,
         "dataset_hash": dataset_hash,
+        "fit_items_hash": fit_hash,
         "git_sha": sha,
         "fit_date": args.date,
         "n_train": len(train),

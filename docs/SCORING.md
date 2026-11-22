@@ -72,7 +72,8 @@ If any T1 signal errors or times out, the verdict sets `degraded=true` and lists
 ## 5. Explanations
 The responder picks at most three reasons, ordered by |w|. Each must cite existing evidence ids. A verifier rejects anything else and falls back to the templates in `i18n/{ar,en}.yaml`.
 
-## 6. Draft values (accepted 2026-11-22; refit on validation)
+## 6. Draft values (accepted 2026-11-22)
+tau_*, eps_* and the T1 classifier are now fitted on validation (see `params.yaml` metadata); the evidence weights, hard-rule values and margins below remain draft.
 ε_low 0.05 · ε_high 0.98 · H1 brand-claim θ 0.70 · H3 p cap 0.05 · draft intercept −2.2 (used only while `p_clf` is not yet fitted; flagged `p_clf_draft`).
 Precedence: **degraded beats H3** (an official URL with a failed check shows `suspicious`). **H3 beats H1, H4 and H6** on verified-official domains; the overridden rules are recorded in `suppressed_rules`. The registry trust weight (−4.0) applies only when H3 holds.
 Typosquat tiers (T-007): brand labels shorter than 5 characters get no edit-distance matching; 5–7 characters allow distance 1, or 2 if both edits are QWERTY-adjacent; 8 or more allow distance 2. The same label on a different TLD counts as `tld_swap` at confidence 0.8.
