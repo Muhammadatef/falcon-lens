@@ -3,7 +3,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose --profile core --profile obs
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: help up down smoke openapi test eval eval-gate redteam seed replay demo scan submission guard lint typecheck
+.PHONY: help up down smoke openapi test eval eval-gate redteam seed replay demo scan submission guard lint typecheck unblock
 
 help:
 	@echo "Targets: up down smoke test eval eval-gate redteam seed replay demo scan submission guard"
@@ -27,6 +27,10 @@ typecheck:
 
 test: lint typecheck ## ruff + mypy (falcon_core) + pytest
 	uv run pytest -q
+
+unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL and REDIS_URL, host-reachable)
+	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
+	uv run python -m falcon_sentinel.unblock $(ID)
 
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py

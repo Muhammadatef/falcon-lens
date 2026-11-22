@@ -82,8 +82,6 @@ REVIEWED_TEST_HOSTS = (
     "safebrowsing.googleapis.com",
     "falcon-demo-shop.com",
     "falcon-demo-shop.ae",
-    "falcon-demo-other.com",
-    "another-demo-site.net",
 )
 INTERNAL_SUFFIXES = (".internal", ".arpa", ".docker.internal")
 

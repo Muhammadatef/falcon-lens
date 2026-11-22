@@ -160,6 +160,8 @@ async def test_gsb_hit_miss_and_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     validate([ev])
     assert ev.observed == {"hit": True, "feed": "gsb", "threat_types": ["SOCIAL_ENGINEERING"]}
     assert ev.polarity == "risk"
+    assert http.posts[0][0] == "https://safebrowsing.googleapis.com/v4/threatMatches:find"  # no key in URL
+    assert http.posts[0][1]["headers"] == {"X-Goog-Api-Key": "test-key"}
     body = http.posts[0][1]["json"]
     assert body["threatInfo"]["threatEntries"][0]["url"].startswith("https://fake-bank-login.test")
     assert metrics.FEED_ENABLED.labels(feed="gsb")._value.get() == 1
@@ -310,3 +312,11 @@ def test_mirror_members_are_bare_sha256_hex() -> None:
     assert all(re.fullmatch(r"[0-9a-f]{64}", m) for m in members)
     assert hashlib.sha256(b"bare-host-phish.test").hexdigest() in members
     assert hashlib.sha256(BAD.encode()).hexdigest() in members
+
+
+async def test_unexpected_exception_maps_to_fixed_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GOOGLE_SAFE_BROWSING_API_KEY", "secret-key-123")
+    http = FakeHTTP({"https://safebrowsing": RuntimeError("boom secret-key-123")})
+    (ev,) = await run("rep.gsb", Ctx(url=BAD, http=http))
+    assert ev.error == "gsb_unexpected_error"
+    assert "secret-key-123" not in json.dumps(ev.to_dict())

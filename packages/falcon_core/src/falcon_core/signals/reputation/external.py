@@ -4,10 +4,10 @@ Both are implemented but stay disabled unless their key is in the environment
 (``GOOGLE_SAFE_BROWSING_API_KEY`` / ``URLHAUS_AUTH_KEY``, see DECISIONS: no keys yet). Disabled means
 ``fl_feed_enabled{feed}=0`` and a ``feed_disabled`` evidence error, with no network call.
 
-Both APIs are POST-only, while ``GuardedHTTPClient.fetch`` allows GET/HEAD only. The adapters therefore call
-``ctx.http.post(url, json=..., data=..., headers=..., timeout=...)`` when the guarded client offers it, and report
-``post_unsupported`` otherwise. Proposal to builder-security: add a POST method restricted to an allow-list of
-JSON API hosts (safebrowsing.googleapis.com, urlhaus-api.abuse.ch). The signal never builds its own client.
+Both APIs are POST-only. The adapters call ``ctx.http.post(url, json=|data=, headers=, timeout=)`` on the
+guarded client, whose policy must list ``FEED_POST_HOSTS`` in ``post_allow_hosts``; without ``post`` the evidence
+error is ``post_unsupported``. Keys travel in headers (``X-Goog-Api-Key``, ``Auth-Key``), never in a URL, and
+unexpected exceptions map to the fixed code ``unexpected_error`` so no key can reach evidence or logs.
 """
 
 from __future__ import annotations
@@ -45,6 +45,8 @@ URLHAUS_SPEC = SignalSpec(
     cache_ttl_s=300,
 )
 GSB_URL = "https://safebrowsing.googleapis.com/v4/threatMatches:find"
+# Hosts to pass as GuardPolicy(post_allow_hosts=FEED_POST_HOSTS) where the shared ctx.http is built.
+FEED_POST_HOSTS = frozenset({"safebrowsing.googleapis.com", "urlhaus-api.abuse.ch"})
 URLHAUS_HOST_URL = "https://urlhaus-api.abuse.ch/v1/host/"
 GSB_THREATS = (
     "MALWARE",
@@ -85,6 +87,8 @@ async def _post_json(ctx: SignalContext, url: str, **kw: Any) -> Any:
         raise _Fail(f"ssrf_blocked:{exc.reason.value}") from exc
     except FetchFailed as exc:
         raise _Fail(exc.reason.value) from exc
+    except Exception as exc:  # noqa: BLE001 - never put exception text (may echo a key) into evidence
+        raise _Fail("unexpected_error") from exc
     if res.status == 429:
         raise _Fail("rate_limited")
     if res.status >= 400:
@@ -141,7 +145,7 @@ async def run_gsb(ctx: SignalContext) -> list[Evidence]:
         matches = cached.get("matches", [])
     else:
         try:
-            doc = await _post_json(ctx, f"{GSB_URL}?key={key}", json=gsb_request_body(c.url))
+            doc = await _post_json(ctx, GSB_URL, json=gsb_request_body(c.url), headers={"X-Goog-Api-Key": key})
         except _Fail as exc:
             return [error_evidence(GSB_SPEC, f"gsb_{exc.code}", "gsb")]
         matches = doc.get("matches", []) if isinstance(doc, dict) else []

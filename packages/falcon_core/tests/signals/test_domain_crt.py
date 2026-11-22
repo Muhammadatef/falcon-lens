@@ -79,7 +79,7 @@ async def test_rate_limit_triggers_backoff_without_hammering() -> None:
     http = FakeHTTP({"https://crt.sh/": result("slow down", 429)})
     (ev,) = await run(Ctx(url="https://falcon-demo-shop.com/", http=http))
     assert ev.error == "crt_rate_limited"
-    (ev2,) = await run(Ctx(url="https://falcon-demo-other.com/", http=http))  # different domain, breaker open
+    (ev2,) = await run(Ctx(url="https://example.org/", http=http))  # different domain, breaker open
     assert ev2.error == "crt_backoff" and len(http.calls) == 1
 
 

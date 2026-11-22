@@ -69,7 +69,7 @@ async def test_bootstrap_cached_across_domains() -> None:
     http = FakeHTTP(routes())
     cache = Ctx().cache
     await run(Ctx(url="https://falcon-demo-shop.com/", http=http, cache=cache))
-    await run(Ctx(url="https://another-demo-site.net/", http=http, cache=cache))
+    await run(Ctx(url="https://example.net/", http=http, cache=cache))
     assert sum(1 for c in http.calls if c == BOOT) == 1
 
 
