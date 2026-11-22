@@ -73,7 +73,9 @@ def _problem() -> Section:
         "The problem",
         lead="A blocklist can only list a scam page after someone has reported it.",
         lines=(
-            Line("The challenge targets fake fine, delivery-fee, bank one-time-code and UAE Pass links sent by SMS, WhatsApp and email."),
+            Line(
+                "The challenge targets fake fine, delivery-fee, bank one-time-code and UAE Pass links sent by SMS, WhatsApp and email."
+            ),
             Line("A page that copies an official site and has not been reported yet is on no blocklist."),
             Line("A warning written in English and in security jargon is hard to act on for a reader of neither."),
             Line("People need one clear answer in Arabic: is this a scam, why, and what do I do now?"),
@@ -142,7 +144,7 @@ def _architecture() -> Section:
             Line("Gateway to API; jobs and verdict events travel on Redis streams.", "pipeline"),
             Line("Worker cascade T0 to T3 exits as early as the evidence allows.", "url_check"),
             Line(
-                "The sandbox reaches the internet only through a filtering egress proxy and returns features, never raw pages.",
+                "The sandbox reaches the internet only through the egress proxy and returns features only.",
                 "brand_check",
             ),
             Line("PostgreSQL stores verdicts and their evidence.", "pipeline"),
@@ -192,11 +194,24 @@ def _results(artifact: artifact_mod.Artifact | None) -> Section:
             note="Method: docs/EVALS.md (temporal split, frozen test split, bootstrap confidence intervals).",
         )
     metrics = artifact.metrics
-    rows = tuple((key, artifact_mod.show(value)) for key, value in metrics[:MAX_RESULT_ROWS])
+    if any(key.startswith("test.") for key, _ in metrics):  # the frozen test split is the headline
+        metrics = [(key, value) for key, value in metrics if key.startswith("test.")]
+    intervals = {key: value for key, value in metrics if key.endswith("_ci95")}
+    rows_list = []
+    for key, value in metrics:
+        if key in intervals:
+            continue
+        shown = artifact_mod.show(value)
+        if f"{key}_ci95" in intervals:
+            shown += f"   ci95 {artifact_mod.show(intervals[f'{key}_ci95'])}"
+        rows_list.append((key, shown))
+    rows = tuple(rows_list[:MAX_RESULT_ROWS])
     provenance = " · ".join(f"{key}: {artifact_mod.show(value)}" for key, value in artifact.provenance)
-    more = len(metrics) - len(rows)
-    note = f"Source: evals/results/published/{artifact.path.name}. Values are copied verbatim."
-    if more > 0:
+    note = (
+        f"Source: evals/results/published/{artifact.path.name}. Values are copied verbatim; "
+        "ci95 is the bootstrap interval from the same file."
+    )
+    if len(artifact.metrics) > len(metrics) or len(rows_list) > len(rows):
         note += " More metrics are in the artifact."
     if not rows:
         return Section(
@@ -205,14 +220,16 @@ def _results(artifact: artifact_mod.Artifact | None) -> Section:
             lead=f"{artifact_mod.NO_ARTIFACT}. The published artifact has no `metrics` object yet.",
             note=note,
         )
-    return Section(
-        "results",
-        "Results",
-        lead="Measured by `make eval`. Nothing on this page is typed by hand.",
-        table=rows,
-        note=note,
-        extra={"provenance": provenance},
-    )
+    if artifact.scope:
+        scope = (
+            f"Scope of this run, in the artifact's words: {artifact.scope}. It is not a measurement of the full system."
+        )
+    else:
+        scope = "Measured by `make eval`."
+    extra = {"provenance": provenance}
+    if artifact.not_evaluated:
+        extra["not_evaluated"] = "Not evaluated yet: " + ", ".join(artifact.not_evaluated) + "."
+    return Section("results", "Results", lead=scope, table=rows, note=note, extra=extra)
 
 
 def _security() -> Section:

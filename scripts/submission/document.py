@@ -80,6 +80,8 @@ def _section(section: content_mod.Section) -> str:
         )
         if section.extra.get("provenance"):
             out.append(f'<p class="note">{_esc(section.extra["provenance"])}</p>')
+        if section.extra.get("not_evaluated"):
+            out.append(f'<p class="note">{_esc(section.extra["not_evaluated"])}</p>')
     if section.lines:
         items = []
         for line in section.lines:

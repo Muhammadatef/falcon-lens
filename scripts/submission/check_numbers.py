@@ -78,19 +78,31 @@ ALLOWED_CONTEXTS: tuple[tuple[str, str], ...] = (
     (r"\bPython 3\.\d+\b", "language version from .python-version"),
     (r"\bManifest V3\b", "Chrome extension platform name"),
     (r"\bFable 5\.2\b|\bInkling-2-Mini\b", "model names as recorded in DECISIONS.md"),
-    (rf"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,? \d{{1,2}} {_MONTH}(?: \d{{4}})?(?: \d{{2}}:\d{{2}})?", "calendar date, with an optional clock time"),
+    (
+        rf"\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,? \d{{1,2}} {_MONTH}(?: \d{{4}})?(?: \d{{2}}:\d{{2}})?",
+        "calendar date, with an optional clock time",
+    ),
     (rf"\b\d{{1,2}} {_MONTH} \d{{4}}\b", "calendar date"),
     (r"\b\d{4}-\d{2}-\d{2}\b", "ISO date"),
     (r"\b\d:\d{2} to \d:\d{2}\b|من \d:\d{2} إلى \d:\d{2}", "shot-list or pitch timestamp range in docs/DEMO.md"),
-    (r"\b60-second (?:video|shot list)\b|\b3-minute pitch\b", "length of the video and of the pitch, set by the organiser format"),
-    (r"(?:≤|at most) ?600 characters\b|\b600 code points\b", "description field limit of the submission form"),
-    (r"(?:≤|at most|limit:?|under) ?20 MB\b|\b20 MB limit\b", "file size limit of the submission form"),
+    (
+        r"\b60-second (?:video|shot list)\b|\b3-minute pitch\b",
+        "length of the video and of the pitch, set by the organiser format",
+    ),
+    (r"(?i:≤|at most) ?600 characters\b|\b600 code points\b", "description field limit of the submission form"),
+    (r"(?i:≤|at most|limit:?|under) ?20 MB\b|\b20 MB limit\b", "file size limit of the submission form"),
     (r"#\d+\b", "pull request or issue reference"),
     (r"\b[A-Z]{1,5}-\d+\b", "document, task or review identifier such as ADR-001 or T-012"),
     (r"\bPhase \d(?: (?:to|→) \d)?\b", "project phase from STATUS.md"),
     (rf"{_DUR} \(design budget\)", "tier budget from ADR-001, labelled as a design budget in the text"),
-    (rf"design budgets?(?::| ·)? {_DUR}(?:(?: ·|,| and) {_DUR})*", "tier budgets from ADR-001, labelled as design budgets in the text"),
-    (r"(?:≤|at most) ?6 tool calls\b", "investigator bound enforced by code (contracts/tools.schema.json), not a measurement"),
+    (
+        rf"design budgets?(?::| ·)? {_DUR}(?:(?: ·|,| and) {_DUR})*",
+        "tier budgets from ADR-001, labelled as design budgets in the text",
+    ),
+    (
+        r"(?i:≤|at most) ?6 tool calls\b",
+        "investigator bound enforced by code (contracts/tools.schema.json), not a measurement",
+    ),
     (r"\bports 80 and 443\b", "egress proxy port allow-list (configuration)"),
     (r"\b[A-Z]\d\s?(?:to|–|-|→)\s?[A-Z]?\d\b", "identifier range such as T0 to T3 or R1-R5"),
     (r"\b[Ss]cenarios? [1-6](?:(?:,| to| and) [1-6])*\b(?! ?(?:%|percent))", "scenario label in docs/DEMO.md"),
@@ -194,7 +206,9 @@ def pptx_text(path: Path) -> str:
     """All text runs of every slide and notes page in deck order, one paragraph per line."""
     parts: list[str] = []
     with zipfile.ZipFile(path) as archive:
-        names = sorted((n for n in archive.namelist() if re.match(r"ppt/(slides|notesSlides)/[^/]+\.xml$", n)), key=_natural)
+        names = sorted(
+            (n for n in archive.namelist() if re.match(r"ppt/(slides|notesSlides)/[^/]+\.xml$", n)), key=_natural
+        )
         for name in names:
             xml = archive.read(name).decode("utf-8")
             for paragraph in re.findall(r"<a:p\b.*?</a:p>", xml, flags=re.DOTALL):
@@ -221,7 +235,9 @@ def pdf_text(path: Path) -> str | None:
     except ImportError:
         return None
     reader = PdfReader(str(path))
-    return "\n".join(page.extract_text() or "" for page in reader.pages)
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    # Text extraction can put spaces around a decimal point ("0 . 98"); rejoin so the number is read whole.
+    return re.sub(r"(?<=\d) ?\. ?(?=\d)", ".", text)
 
 
 # ── tracing ──────────────────────────────────────────────────────────────────
@@ -235,9 +251,10 @@ def _decimal(text: str) -> Decimal | None:
 class Traceable:
     """What the newest published artifact can vouch for: its metric values and its whole strings."""
 
-    def __init__(self, data: dict[str, Any] | None) -> None:
+    def __init__(self, data: dict[str, Any] | None, names: tuple[str, ...] = ()) -> None:
+        """`names`: the artifact's own file name and stem, which a "Source:" line may quote."""
         self.values: list[Decimal] = []
-        self.strings: set[str] = set()
+        self.strings: set[str] = {name.lower() for name in names if name}
         if data is None:
             return
         for _key, leaf in artifact_mod.flatten(data.get("metrics") if isinstance(data.get("metrics"), dict) else {}):
@@ -278,8 +295,16 @@ class Traceable:
         if word in self.strings:
             return True
         if len(word) >= 7 and re.fullmatch(r"[0-9a-f]+", word):
-            return any(re.fullmatch(r"[0-9a-f]+", s) and s.startswith(word) for s in self.strings)
+            # a prefix of a hash value; a suffix such as "-dirty" after the hash is ignored
+            heads = (re.match(r"[0-9a-f]+", s) for s in self.strings)
+            return any(len(m.group()) >= 7 and m.group().startswith(word) for m in heads if m)
         return False
+
+
+def traceable_for(loaded: artifact_mod.Artifact | None) -> Traceable:
+    if loaded is None:
+        return Traceable(None)
+    return Traceable(loaded.data, names=(loaded.path.name, loaded.path.stem))
 
 
 def find_untraceable(text: str, traceable: Traceable, source: str) -> list[Finding]:
@@ -337,7 +362,10 @@ def collect_sources(root: Path, submission: Path, require_package: bool) -> tupl
     if pdf.is_file():
         text = pdf_text(pdf)
         if text is None:
-            print("note: pypdf is not installed, so description.pdf is checked through description.html only", file=sys.stderr)
+            print(
+                "note: pypdf is not installed, so description.pdf is checked through description.html only",
+                file=sys.stderr,
+            )
         else:
             sources.append((pdf.name, text))
     elif require_package:
@@ -361,7 +389,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--submission", type=Path, default=None, help="default: <root>/submission")
     parser.add_argument("--published", type=Path, default=None, help="default: <root>/evals/results/published")
-    parser.add_argument("--allow-missing", action="store_true", help="do not fail when the deck or the PDF is not built yet")
+    parser.add_argument(
+        "--allow-missing", action="store_true", help="do not fail when the deck or the PDF is not built yet"
+    )
     args = parser.parse_args(argv)
 
     root = args.root.resolve()
@@ -369,7 +399,7 @@ def main(argv: list[str] | None = None) -> int:
     published = (args.published or root / "evals" / "results" / "published").resolve()
 
     loaded = artifact_mod.load(published)
-    traceable = Traceable(loaded.data if loaded else None)
+    traceable = traceable_for(loaded)
     if loaded:
         print(f"artifact: {loaded.path}")
     else:

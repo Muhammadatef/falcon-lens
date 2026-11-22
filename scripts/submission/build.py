@@ -137,8 +137,18 @@ def checklist(
     lines += ["## Numbers", ""]
     if artifact:
         lines.append(
-            f"- Source artifact: `evals/results/published/{artifact.path.name}`. Every number in the deck, the PDF and the README was traced to it by `scripts/submission/check_numbers.py`."
+            f"- Source artifact: `evals/results/published/{artifact.path.name}`. Every number in the deck, the PDF, the architecture diagram text, the README and docs/DEMO.md was traced to its metric values by `scripts/submission/check_numbers.py`."
         )
+        if artifact.scope:
+            lines.append(
+                f'- The artifact\'s own scope statement: "{artifact.scope}". Do not present these numbers as a measurement of the full system.'
+            )
+        if artifact.not_evaluated:
+            lines.append(
+                "- Not evaluated yet (say so if asked): "
+                + ", ".join(f"`{item}`" for item in artifact.not_evaluated)
+                + "."
+            )
     else:
         lines.append(
             '- No published eval artifact. The deck and the PDF say "Evaluation in progress" and contain no statistic. Rebuild after `make eval` has published one.'
@@ -241,7 +251,7 @@ def main(argv: list[str] | None = None) -> int:
             if not ok:
                 problems.append(f"{name} is {human}, over the 20 MB limit")
 
-        traceable = check_numbers.Traceable(artifact.data if artifact else None)
+        traceable = check_numbers.traceable_for(artifact)
         sources, missing = check_numbers.collect_sources(root, out, require_package=True)
         problems += missing
         for name, text in sources:

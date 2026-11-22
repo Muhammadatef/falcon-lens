@@ -293,7 +293,7 @@ def build(sections: list[content_mod.Section], out: Path, architecture_png: Path
                     picture.height, picture.width = int(limit), int(picture.width * ratio)
             else:
                 _fallback_diagram(slide, MARGIN, y, left, bottom - y)
-            _lines(slide, section.lines, MARGIN + left + Inches(0.3), y, full - left - Inches(0.3), bottom, size=12)
+            _lines(slide, section.lines, MARGIN + left + Inches(0.3), y, full - left - Inches(0.3), bottom, size=11.5)
         elif section.key == "results" and section.table:
             row_h = min(Inches(0.42), int((bottom - y - Inches(0.5)) / len(section.table)))
             for index, (label, value) in enumerate(section.table):
@@ -332,6 +332,17 @@ def build(sections: list[content_mod.Section], out: Path, architecture_png: Path
                     section.extra["provenance"],
                     10.5,
                     "faint",
+                )
+            if section.extra.get("not_evaluated"):
+                _text(
+                    slide,
+                    MARGIN,
+                    y + len(section.table) * row_h + Inches(0.42),
+                    full,
+                    Inches(0.5),
+                    section.extra["not_evaluated"],
+                    10.5,
+                    "warn",
                 )
         elif section.key == "results":
             card = _box(slide, MARGIN, y + Inches(0.4), full, Inches(2.2), "surface1", "border")

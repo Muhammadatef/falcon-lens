@@ -69,7 +69,12 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "message_check",
         "Message check (SMS and chat text, Arabic and English)",
-        (*E2E, f"path:{CORE}/signals/message/analyze.py", "grep:services/api/src/**/*.py::check/message", WORKER_KIND_STUB),
+        (
+            *E2E,
+            f"path:{CORE}/signals/message/analyze.py",
+            "grep:services/api/src/**/*.py::check/message",
+            WORKER_KIND_STUB,
+        ),
         "Scenario 3",
     ),
     Capability(
@@ -179,7 +184,7 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "extension",
         "Chrome extension (Manifest V3)",
-        ("path:extension/manifest.json",),
+        (*E2E, "path:extension/**/manifest.json"),
     ),
     Capability(
         "redteam",
