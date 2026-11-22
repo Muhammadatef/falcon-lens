@@ -1,0 +1,348 @@
+# Falcon Lens brand registry: commonly impersonated UAE entities.
+# Purpose: lets the domain/lexical signals test whether a URL claims or resembles a known brand
+#   while not being on that brand's official domains.
+# Domains are REGISTRABLE domains (eTLD+1 per the Public Suffix List), e.g. "adpolice.gov.ae";
+#   subdomains (login., online., smartservices.) are covered by the registrable domain.
+# Verification date: 2026-11-22 (retrieved_at). Each domain was seen on the entity's own page
+#   (or on another official UAE government page that links to it) at source_url.
+#   Domains that could not be verified are OMITTED and explained in unverified_notes.
+# This file contains NO logos or images. logo_ref and favicon_hash are filled later by the
+#   sandbox builder from data/private/.
+# name_ar values marked in unverified_notes were not confirmed on the fetched page.
+# This is a defensive allow-list; it implies no endorsement by, or integration with, any entity.
+brands:
+  - brand_id: abu_dhabi_police
+    name_en: Abu Dhabi Police
+    name_ar: القيادة العامة لشرطة ابوظبي
+    category: police
+    verified_domains: [adpolice.gov.ae]
+    source_url: https://www.adpolice.gov.ae
+    retrieved_at: 2026-11-22
+    keywords_en: [abu dhabi police, adp, fine, traffic fine, violation, case, report, aman]
+    keywords_ar: [شرطة ابوظبي, شرطة أبوظبي, مخالفة, مخالفات, بلاغ, قضية, أمان]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "name_ar copied as written on the site banner (without hamza)."
+
+  - brand_id: dubai_police
+    name_en: Dubai Police
+    name_ar: القيادة العامة لشرطة دبي
+    category: police
+    verified_domains: [dubaipolice.gov.ae]
+    source_url: https://www.dubaipolice.gov.ae
+    retrieved_at: 2026-11-22
+    verification_l1: "TLS cert (OV/EV) subject O=Dubai Police; HTTPS visit from host 2026-11-22 returned 200."
+    keywords_en: [dubai police, fine, traffic fine, violation, case, report, clearance]
+    keywords_ar: [شرطة دبي, مخالفة, مخالفات, بلاغ, قضية]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "dubaipolice.gov.ae is cited by secondary sources (Gulf News, dubai.ae search results) but the fetched page exposed no domain or links; omitted pending manual check. name_ar not confirmed on page."
+
+  - brand_id: moi_uae
+    name_en: Ministry of Interior UAE
+    name_ar: وزارة الداخلية
+    category: government
+    verified_domains: [moi.gov.ae]
+    source_url: https://www.moi.gov.ae
+    retrieved_at: 2026-11-22
+    verification_l1: "TLS cert (OV/EV) subject O=Ministry of Interior (EV, Government Entity); HTTPS visit from host 2026-11-22 returned 200."
+    keywords_en: [moi, ministry of interior, fine, visa, residency, traffic file]
+    keywords_ar: [وزارة الداخلية, مخالفة, تأشيرة, إقامة]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "moi.gov.ae page returned only a loader (no content/links); domain omitted pending manual check. name_ar not confirmed on page."
+
+  - brand_id: uae_pass
+    name_en: UAE PASS
+    name_ar: الهوية الرقمية (UAE PASS)
+    category: government
+    verified_domains: [uaepass.ae]
+    source_url: https://u.ae/en/about-the-uae/digital-uae/digital-transformation/platforms-and-apps/the-uae-pass-app
+    retrieved_at: 2026-11-22
+    verification_l1: "TLS cert (OV/EV) subject O=Government of Dubai; HTTPS visit from host 2026-11-22 returned 200."
+    keywords_en: [uae pass, uaepass, digital id, verify identity, account suspended, login]
+    keywords_ar: [الهوية الرقمية, يو ايه اي باس, تحقق, تعليق الحساب]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "uaepass.ae (and docs.uaepass.ae) appear in search/App Store listing only; uaepass.ae page returned no content to the fetcher, u.ae page not fetched successfully. Omitted pending manual check. name_ar is a descriptive form, not confirmed."
+
+  - brand_id: tamm_abu_dhabi
+    name_en: TAMM (Abu Dhabi Government Services)
+    name_ar: تم
+    category: government
+    verified_domains: [tamm.abudhabi]
+    source_url: https://www.adpolice.gov.ae
+    retrieved_at: 2026-11-22
+    verification_l1: "TLS cert (OV/EV) subject O=Department of Government Enablement; HTTPS visit from host 2026-11-22 returned 200."
+    keywords_en: [tamm, abu dhabi government, pay fines, traffic fines, services, renew]
+    keywords_ar: [تم, حكومة أبوظبي, دفع المخالفات, خدمات]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "tamm.abudhabi verified only via the official Abu Dhabi Police page linking to it as the government services/fine-payment portal; tamm.abudhabi itself failed to fetch (header overflow). name_ar not confirmed on page."
+
+  - brand_id: icp_uae
+    name_en: Federal Authority for Identity, Citizenship, Customs & Port Security (ICP)
+    name_ar: الهيئة الاتحادية للهوية والجنسية والجمارك وأمن المنافذ
+    category: government
+    verified_domains: [icp.gov.ae]
+    source_url: https://icp.gov.ae
+    retrieved_at: 2026-11-22
+    keywords_en: [icp, identity, emirates id, visa, residency, renew, smart services, customs]
+    keywords_ar: [الهوية والجنسية, الهوية الإماراتية, تأشيرة, إقامة, تجديد, جمارك]
+    logo_ref: null
+    favicon_hash: null
+
+  - brand_id: emirates_post
+    name_en: Emirates Post
+    name_ar: بريد الإمارات
+    category: postal
+    verified_domains: [emiratespost.ae, epg.ae]
+    source_url: https://www.emiratespost.ae
+    retrieved_at: 2026-11-22
+    keywords_en: [emirates post, parcel, package, delivery, customs fee, redelivery, tracking]
+    keywords_ar: [بريد الإمارات, طرد, شحنة, توصيل, رسوم جمركية, تتبع]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "name_ar not confirmed on page. epg.ae is linked from the official page as the Emirates Post Group site. The site states it never asks for card details via SMS/WhatsApp/email."
+
+  - brand_id: salik
+    name_en: Salik
+    name_ar: سالك
+    category: transport
+    verified_domains: [salik.ae]
+    source_url: https://www.rta.ae
+    retrieved_at: 2026-11-22
+    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested."
+    keywords_en: [salik, toll, recharge, balance, tag, fine, unpaid]
+    keywords_ar: [سالك, رسوم, شحن, رصيد, مخالفة]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "Could not verify. salik.gov.ae did not resolve, www.salik.ae returned 403, sources conflict (salik.ae vs salik.gov.ae). Omitted pending manual check."
+
+  - brand_id: rta_dubai
+    name_en: Roads and Transport Authority (RTA) Dubai
+    name_ar: هيئة الطرق والمواصلات
+    category: transport
+    verified_domains: [rta.ae, rta.gov.ae, nol.ae]
+    source_url: https://www.rta.ae/wps/portal/rta/ae/home
+    retrieved_at: 2026-11-22
+    verification_l1: "TLS cert (OV/EV) subject O=Roads and Transport Authority (SAN incl. rta.gov.ae, nol.ae); HTTPS visit from host 2026-11-22 returned 200."
+    keywords_en: [rta, dubai, fine, parking, nol, vehicle renewal, traffic, salik]
+    keywords_ar: [هيئة الطرق والمواصلات, مخالفة, مواقف, نول, تجديد]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "rta.ae seen only through search-result listings of rta.ae portal pages (direct fetch returned empty). name_ar not confirmed on page."
+
+  - brand_id: itc_abu_dhabi_darb
+    name_en: Abu Dhabi Mobility (formerly Integrated Transport Centre, ITC) - Darb tolls
+    name_ar: أبوظبي للتنقل
+    category: transport
+    verified_domains: [admobility.gov.ae, itc.gov.ae]
+    source_url: https://admobility.gov.ae/
+    retrieved_at: 2026-11-22
+    keywords_en: [darb, toll, itc, abu dhabi mobility, integrated transport centre, recharge, fine, gate]
+    keywords_ar: [درب, رسوم, مركز النقل المتكامل, أبوظبي للتنقل, مخالفة, شحن]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "itc.gov.ae confirmed as a 301 redirect to admobility.gov.ae (legacy domain). No dedicated Darb web domain found; Darb is linked only via app stores. Former Arabic name: مركز النقل المتكامل."
+
+  - brand_id: addc_taqa_distribution
+    name_en: Abu Dhabi Distribution Company (ADDC) / TAQA Distribution
+    name_ar: شركة أبوظبي للتوزيع
+    category: utility
+    verified_domains: [addc.ae, taqadistribution.com]
+    source_url: https://taqadistribution.com/addc/en-us/residential/overview
+    retrieved_at: 2026-11-22
+    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested. addc.ae 301→taqadistribution.com/addc."
+    keywords_en: [addc, taqa, taqa distribution, electricity, water, bill, disconnection, payment]
+    keywords_ar: [أبوظبي للتوزيع, طاقة, كهرباء, ماء, فاتورة, فصل الخدمة, سداد]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "Weak verification: addc.ae returned a 301 redirect to taqadistribution.com/addc, whose fetched content showed only the title 'TAQA Distribution'. name_ar not confirmed on page. Re-check payment/login domains manually."
+
+  - brand_id: dewa
+    name_en: Dubai Electricity and Water Authority (DEWA)
+    name_ar: هيئة كهرباء ومياه دبي
+    category: utility
+    verified_domains: [dewa.gov.ae]
+    source_url: https://www.dewa.gov.ae
+    retrieved_at: 2026-11-22
+    verification_l1: "TLS cert (OV/EV) subject O=Dubai Electricity and Water Authority; HTTPS visit from host 2026-11-22 returned 403 to automated clients."
+    keywords_en: [dewa, electricity, water, bill, disconnection, payment, refund]
+    keywords_ar: [ديوا, هيئة كهرباء ومياه دبي, فاتورة, فصل, سداد, استرداد]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "dewa.gov.ae returned HTTP 403 to the fetcher; omitted pending manual check. name_ar not confirmed on page."
+
+  - brand_id: sewa
+    name_en: Sharjah Electricity, Water and Gas Authority (SEWA)
+    name_ar: هيئة كهرباء ومياه وغاز الشارقة
+    category: utility
+    verified_domains: [sewa.gov.ae]
+    source_url: https://www.sewa.gov.ae
+    retrieved_at: 2026-11-22
+    keywords_en: [sewa, sharjah, electricity, water, gas, bill, disconnection, payment]
+    keywords_ar: [سيوا, كهرباء الشارقة, فاتورة, فصل, سداد]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "Site shows eservice./eservices./complaints. subdomains of sewa.gov.ae. Full Arabic name not confirmed on page (only the short form 'كهرباء الشارقة' appeared)."
+
+  - brand_id: etisalat_by_eand
+    name_en: Etisalat by e&
+    name_ar: اتصالات من e&
+    category: telecom
+    verified_domains: [etisalat.ae, eand.ae, eand.com]
+    source_url: https://www.eand.ae/en/index.html
+    retrieved_at: 2026-11-22
+    keywords_en: [etisalat, e&, eand, sim, bill, recharge, points, rewards, suspended]
+    keywords_ar: [اتصالات, إي آند, فاتورة, شحن, نقاط, إيقاف الخدمة]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "etisalat.ae redirects (302) to www.eand.ae; the page links etisalat.ae, eand.ae and eand.com (group). name_ar not confirmed on page. eim.ae (mail) and eanduniverse.com were linked but not included."
+
+  - brand_id: du
+    name_en: du (Emirates Integrated Telecommunications)
+    name_ar: دو
+    category: telecom
+    verified_domains: [du.ae, du.com]
+    source_url: https://www.du.ae/personal
+    retrieved_at: 2026-11-22
+    verification_l1: "TLS cert (OV/EV) subject O=EMIRATES INTEGRATED TELECOMMUNICATIONS COMPANY P.J.S.C. (SAN incl. du.com); HTTPS visit from host 2026-11-22 returned 200."
+    keywords_en: [du, sim, bill, recharge, rewards, suspended, mobile]
+    keywords_ar: [دو, فاتورة, شحن, مكافآت, إيقاف]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "du.ae redirects to www.du.ae/personal but fetched content exposed no domain/links; omitted pending manual check. name_ar not confirmed on page."
+
+  - brand_id: cbuae
+    name_en: Central Bank of the UAE
+    name_ar: مصرف الإمارات العربية المتحدة المركزي
+    category: regulator
+    verified_domains: [centralbank.ae]
+    source_url: https://www.centralbank.ae
+    retrieved_at: 2026-11-22
+    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested."
+    keywords_en: [central bank, cbuae, account frozen, compliance, sanctions, verification]
+    keywords_ar: [المصرف المركزي, حساب مجمد, امتثال, تحقق]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "centralbank.ae returned HTTP 403; omitted pending manual check. name_ar not confirmed on page. Public reports say CBUAE does not contact individuals by phone/social media."
+
+  - brand_id: fab
+    name_en: First Abu Dhabi Bank (FAB)
+    name_ar: بنك أبوظبي الأول
+    category: bank
+    verified_domains: [bankfab.com, securitiesfab.com]
+    source_url: https://www.bankfab.com
+    retrieved_at: 2026-11-22
+    keywords_en: [fab, first abu dhabi bank, online banking, otp, card blocked, verify, account]
+    keywords_ar: [بنك أبوظبي الأول, الخدمات المصرفية عبر الإنترنت, بطاقة موقوفة, تحقق, حساب]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "name_ar not confirmed on page. securitiesfab.com is linked from the bank page as FABS Online."
+
+  - brand_id: adcb
+    name_en: Abu Dhabi Commercial Bank (ADCB)
+    name_ar: بنك أبوظبي التجاري
+    category: bank
+    verified_domains: [adcb.com]
+    source_url: https://www.adcb.com
+    retrieved_at: 2026-11-22
+    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested."
+    keywords_en: [adcb, abu dhabi commercial bank, online banking, otp, card blocked, verify]
+    keywords_ar: [بنك أبوظبي التجاري, بطاقة موقوفة, تحقق, حساب]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "adcb.com returned HTTP 403; omitted pending manual check. name_ar not confirmed on page."
+
+  - brand_id: emirates_nbd
+    name_en: Emirates NBD
+    name_ar: بنك الإمارات دبي الوطني
+    category: bank
+    verified_domains: [emiratesnbd.com, emiratesnbdsecurities.com]
+    source_url: https://www.emiratesnbd.com
+    retrieved_at: 2026-11-22
+    keywords_en: [emirates nbd, enbd, online banking, otp, card blocked, verify, account]
+    keywords_ar: [بنك الإمارات دبي الوطني, بطاقة موقوفة, تحقق, حساب]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "name_ar not confirmed on page. emiratesnbdsecurities.com linked as Brokerage; emiratesnbdresearch.com also linked but not included."
+
+  - brand_id: dib
+    name_en: Dubai Islamic Bank
+    name_ar: بنك دبي الإسلامي
+    category: bank
+    verified_domains: [dib.ae]
+    source_url: https://www.dib.ae
+    retrieved_at: 2026-11-22
+    keywords_en: [dib, dubai islamic bank, online banking, otp, card blocked, kyc update, verify]
+    keywords_ar: [بنك دبي الإسلامي, بطاقة موقوفة, تحديث البيانات, تحقق]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "Page self-identified by name and footer and linked dib.ae subdomains (istatement.dib.ae); page text did not show its own URL. name_ar not confirmed on page."
+
+  - brand_id: mashreq
+    name_en: Mashreq
+    name_ar: بنك المشرق
+    category: bank
+    verified_domains: [mashreq.com, mashreqbank.com, mashreqalislami.com]
+    source_url: http://mashreq.com/en/uae/neo/
+    retrieved_at: 2026-11-22
+    keywords_en: [mashreq, neo, online banking, otp, card blocked, verify, account]
+    keywords_ar: [بنك المشرق, نيو, بطاقة موقوفة, تحقق, حساب]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "www.mashreq.com 301-redirects to mashreq.com/en/uae/neo; mashreqbank.com and mashreqalislami.com linked from that page. name_ar not confirmed on page."
+
+  - brand_id: adib
+    name_en: Abu Dhabi Islamic Bank (ADIB)
+    name_ar: مصرف أبوظبي الإسلامي
+    category: bank
+    verified_domains: [adib.ae, adib.com]
+    source_url: https://www.adib.ae
+    retrieved_at: 2026-11-22
+    keywords_en: [adib, abu dhabi islamic bank, online banking, otp, card blocked, verify]
+    keywords_ar: [مصرف أبوظبي الإسلامي, بطاقة موقوفة, تحقق, حساب]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "Page showed adib.ae subdomains and links to adib.com; page text did not show its own URL. name_ar not confirmed on page. Subsidiary domains (adibsecurities.ae, adibdirect.com, adibwealth.ae, adibsmartdeals.com) and foreign affiliates (adib.iq, adib.eg) not included."
+
+  - brand_id: rakbank
+    name_en: RAKBANK
+    name_ar: بنك رأس الخيمة الوطني
+    category: bank
+    verified_domains: [rakbank.ae]
+    source_url: https://www.rakbank.ae
+    retrieved_at: 2026-11-22
+    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested."
+    keywords_en: [rakbank, national bank of ras al khaimah, online banking, otp, card blocked, verify]
+    keywords_ar: [راك بنك, بنك رأس الخيمة الوطني, بطاقة موقوفة, تحقق]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "Weak verification: page titled 'Rakbank' and linked apps.rakbank.ae only; name_ar not confirmed on page."
+
+  - brand_id: emirates_islamic
+    name_en: Emirates Islamic
+    name_ar: الإمارات الإسلامي
+    category: bank
+    verified_domains: [emiratesislamic.ae]
+    source_url: https://www.emiratesislamic.ae
+    retrieved_at: 2026-11-22
+    keywords_en: [emirates islamic, ei, online banking, otp, card blocked, kyc update, verify]
+    keywords_ar: [الإمارات الإسلامي, بطاقة موقوفة, تحديث البيانات, تحقق]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "name_ar not confirmed on page."
+
+  - brand_id: falcon_demo_bank
+    name_en: Falcon Demo Bank
+    name_ar: بنك الصقر التجريبي
+    category: demo
+    verified_domains: [falcon-demo-bank.test]
+    source_url: internal fixture
+    retrieved_at: 2026-11-22
+    keywords_en: [falcon demo bank, demo bank, falcon bank]
+    keywords_ar: [بنك الصقر, بنك الصقر التجريبي]
+    logo_ref: null
+    favicon_hash: null
+    note: "INVENTED BRAND — TEST FIXTURE ONLY"
