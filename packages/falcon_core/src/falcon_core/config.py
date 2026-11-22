@@ -11,9 +11,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """All variables are optional; empty values behave as unset."""
 
-    model_config = SettingsConfigDict(
-        env_file=".env", env_ignore_empty=True, extra="ignore", case_sensitive=False
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore", case_sensitive=False)
 
     # Runtime mode
     fl_env: str = "local"

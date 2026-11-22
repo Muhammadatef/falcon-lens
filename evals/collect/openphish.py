@@ -14,6 +14,7 @@ Data dir: env FL_DATA_DIR (the `data` dir), default main checkout's data/.
 Run: uv run --no-project --with httpx --with tldextract python evals/collect/openphish.py
 Exit codes: 0 ok, 3 refused by rate guard, 4 corrupt state.json, 1 fetch error.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -40,7 +41,10 @@ def data_dir() -> Path:
     try:
         out = subprocess.run(
             ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
-            cwd=ROOT, capture_output=True, text=True, check=True,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
         ).stdout.strip()
         return Path(out).parent / "data"
     except (OSError, subprocess.CalledProcessError):
@@ -146,9 +150,7 @@ def known_hashes(feed_dir: Path) -> set[str]:
     return seen
 
 
-def process_feed(
-    text: str, now: datetime, feed_dir: Path, manifest: Path, queue: Path | None = None
-) -> int:
+def process_feed(text: str, now: datetime, feed_dir: Path, manifest: Path, queue: Path | None = None) -> int:
     """Dedup against history, append raw rows (private) and manifest rows (public)."""
     feed_dir.mkdir(parents=True, exist_ok=True)
     state_path = feed_dir / "state.json"
@@ -177,9 +179,7 @@ def process_feed(
         f.writelines(json.dumps(r) + "\n" for r in man_rows)
     if queue is not None:  # consumed by snapshot_queue.py (blocked on T-004)
         with queue.open("a") as f:
-            f.writelines(
-                json.dumps({"url": r["url"], "sha256": r["sha256"]}) + "\n" for r in raw_rows
-            )
+            f.writelines(json.dumps({"url": r["url"], "sha256": r["sha256"]}) + "\n" for r in raw_rows)
     state_path.write_text(json.dumps({"last_poll_utc": now.isoformat(), "new_rows": len(raw_rows)}))
     return len(raw_rows)
 
@@ -192,9 +192,7 @@ def poll(now: datetime | None = None) -> int:
     check_rate_guard(FEED_DIR / "state.json", now)
     chunks: list[bytes] = []
     size = 0
-    with httpx.stream(
-        "GET", FEED_URL, timeout=30, headers={"User-Agent": "research-feed-poller/1.0"}
-    ) as r:
+    with httpx.stream("GET", FEED_URL, timeout=30, headers={"User-Agent": "research-feed-poller/1.0"}) as r:
         r.raise_for_status()
         for chunk in r.iter_bytes():
             size += len(chunk)

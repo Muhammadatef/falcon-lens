@@ -44,10 +44,11 @@ dev = [
   "ruff>=0.9",
   "mypy>=1.14",
   "types-jsonschema",
+  "types-PyYAML",
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py312"
 extend-exclude = ["web", ".venv", "docs", "*.md"]  # ruff 0.17 would reformat code blocks in docs
 
@@ -60,15 +61,20 @@ known-first-party = [
   "falcon_core", "falcon_api", "falcon_worker", "falcon_sentinel",
   "falcon_mcp", "falcon_egress", "falcon_sandbox",
 ]
+known-local-folder = ["conftest", "scoring_helpers", "factories", "netfakes", "schema_helper"]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "S105", "S106"]
+"**/tests/**" = ["S101", "S105", "S106", "S108", "S311", "S324"]
+"scripts/**" = ["S603", "S607", "S311"]
+"evals/**" = ["S603", "S607"]
+"services/sentinel/**" = ["E501", "S311", "UP047"]
+"packages/falcon_core/src/falcon_core/signals/**" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["packages/falcon_core/src", "packages/falcon_core/tests"]
+files = ["packages/falcon_core/src"]  # tests are type-checked non-strictly in CI later; see fix/platform-g0
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

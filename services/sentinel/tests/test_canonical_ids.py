@@ -3,10 +3,11 @@ from __future__ import annotations
 import random
 
 import pytest
-from factories import observed_ev
 from sentinel_core.events import parse_event
 from sentinel_core.fixtures import generate
 from sentinel_core.incidents import InMemoryIncidentStore, Sentinel
+
+from factories import observed_ev
 
 FX = generate()
 EVENTS = [parse_event(e) for e in FX.events]

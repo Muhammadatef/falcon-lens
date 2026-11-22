@@ -67,22 +67,19 @@ def create_app(
         ["service", "method", "status"],
         registry=registry,
     )
-    Gauge(
-        "fl_service_info", "Service build info", ["service", "version"], registry=registry
-    ).labels(service, __version__).set(1)
+    Gauge("fl_service_info", "Service build info", ["service", "version"], registry=registry).labels(
+        service, __version__
+    ).set(1)
 
     checks: dict[str, DepCheck] = {
-        name: (tcp_check(dep) if isinstance(dep, str) else dep)
-        for name, dep in (deps or {}).items()
+        name: (tcp_check(dep) if isinstance(dep, str) else dep) for name, dep in (deps or {}).items()
     }
 
     app = FastAPI(title=title or service, version=__version__, lifespan=lifespan)
     app.state.registry = registry
 
     @app.middleware("http")
-    async def count_requests(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def count_requests(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         response = await call_next(request)
         if request.url.path not in ("/healthz", "/readyz", "/metrics"):
             requests_total.labels(service, request.method, str(response.status_code)).inc()
@@ -94,9 +91,7 @@ def create_app(
 
     @app.get("/readyz", include_in_schema=False)
     async def readyz() -> Response:
-        results = dict(
-            zip(checks, await asyncio.gather(*(c() for c in checks.values())), strict=True)
-        )
+        results = dict(zip(checks, await asyncio.gather(*(c() for c in checks.values())), strict=True))
         ready = all(results.values())
         return JSONResponse(
             {"status": "ready" if ready else "not_ready", "service": service, "deps": results},

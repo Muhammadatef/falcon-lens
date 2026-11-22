@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from factories import observed_ev, verdict_ev
 from sentinel_core.correlate import extract, registrable_domain
 from sentinel_core.events import parse_time
 from sentinel_core.rules import evaluate, load_rules
+
+from factories import observed_ev, verdict_ev
 
 RULES = {r.id: r for r in load_rules()}
 B = "falcon_demo_bank"

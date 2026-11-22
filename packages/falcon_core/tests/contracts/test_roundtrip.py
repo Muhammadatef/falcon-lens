@@ -119,9 +119,7 @@ CASES: list[tuple[str, type[BaseModel], dict[str, Any]]] = [
 
 
 @pytest.mark.parametrize(("name", "model", "sample"), CASES, ids=[c[0] for c in CASES])
-def test_sample_valid_against_schema(
-    name: str, model: type[BaseModel], sample: dict[str, Any]
-) -> None:
+def test_sample_valid_against_schema(name: str, model: type[BaseModel], sample: dict[str, Any]) -> None:
     errors = list(_validator(name).iter_errors(sample))
     assert errors == []
 

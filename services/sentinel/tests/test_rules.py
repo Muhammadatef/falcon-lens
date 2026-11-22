@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pytest
-from factories import feedback_ev, observed_ev, report_ev, verdict_ev
 from sentinel_core.correlate import domain_pattern, extract, hamming, registrable_domain
 from sentinel_core.incidents import InMemoryIncidentStore, Sentinel
 from sentinel_core.rules import RuleConfigError, evaluate, load_rules
+
+from factories import feedback_ev, observed_ev, report_ev, verdict_ev
 
 RULES = {r.id: r for r in load_rules()}
 B = "falcon_demo_bank"
@@ -21,7 +22,9 @@ def test_rules_file_defines_r1_to_r5():
 
 def test_bad_rule_config_rejected(tmp_path):
     p = tmp_path / "r.yaml"
-    p.write_text("rules:\n  - {id: X, type: nope, detector: threshold, event_types: [], group_by: a, window_minutes: 1, severity_floor: low}\n")
+    p.write_text(
+        "rules:\n  - {id: X, type: nope, detector: threshold, event_types: [], group_by: a, window_minutes: 1, severity_floor: low}\n"
+    )
     with pytest.raises(RuleConfigError):
         load_rules(p)
 
@@ -42,8 +45,12 @@ def test_r1_not_fire_two_domains_or_outside_window_or_other_brand():
 
 
 def test_r1_same_domain_counted_once_across_event_types():
-    evs = [observed_ev("falcon-demo-bank-a.test", 0), verdict_ev("falcon-demo-bank-a.test", 2, brand=B),
-           observed_ev("falcon-demo-bank-b.test", 5), verdict_ev("falcon-demo-bank-b.test", 7, brand=B)]
+    evs = [
+        observed_ev("falcon-demo-bank-a.test", 0),
+        verdict_ev("falcon-demo-bank-a.test", 2, brand=B),
+        observed_ev("falcon-demo-bank-b.test", 5),
+        verdict_ev("falcon-demo-bank-b.test", 7, brand=B),
+    ]
     assert not fire("R1", evs)
 
 
@@ -87,7 +94,10 @@ def test_r3_not_fire_four_reports_or_slow_reports():
 
 # ---- R4 flip
 def test_r4_fires_on_flip_and_on_previous_verdict_field():
-    evs = [verdict_ev("flip.test", 0, "no_warning_signs"), verdict_ev("flip.test", 600, "dangerous", type_="verdict.upgraded")]
+    evs = [
+        verdict_ev("flip.test", 0, "no_warning_signs"),
+        verdict_ev("flip.test", 600, "dangerous", type_="verdict.upgraded"),
+    ]
     (m,) = fire("R4", evs)
     assert m.rule.type == "reputation_flip"
     up = verdict_ev("other.test", 5, "dangerous", type_="verdict.upgraded")
@@ -99,7 +109,9 @@ def test_r4_not_fire_other_transitions_or_stale_or_other_domain():
     assert not fire("R4", [verdict_ev("a.test", 0, "suspicious"), verdict_ev("a.test", 5, "dangerous")])
     assert not fire("R4", [verdict_ev("a.test", 0, "dangerous"), verdict_ev("a.test", 5, "no_warning_signs")])
     assert not fire("R4", [verdict_ev("a.test", 0, "no_warning_signs"), verdict_ev("b.test", 5, "dangerous")])
-    assert not fire("R4", [verdict_ev("a.test", 0, "no_warning_signs"), verdict_ev("a.test", 60 * 24 * 40, "dangerous")])
+    assert not fire(
+        "R4", [verdict_ev("a.test", 0, "no_warning_signs"), verdict_ev("a.test", 60 * 24 * 40, "dangerous")]
+    )
 
 
 # ---- R5 quality
