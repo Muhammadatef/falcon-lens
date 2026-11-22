@@ -4,7 +4,12 @@ import json
 
 import pytest
 from jsonschema import Draft202012Validator
-from sentinel_core.events import INCIDENT_SCHEMA_PATH, EventValidationError, find_raw_text, parse_event
+from sentinel_core.events import (
+    INCIDENT_SCHEMA_PATH,
+    EventValidationError,
+    find_raw_text,
+    parse_event,
+)
 from sentinel_core.fixtures import generate
 from sentinel_core.incidents import InMemoryIncidentStore, Sentinel, validate_incident
 from sentinel_core.replay import load_jsonl, replay

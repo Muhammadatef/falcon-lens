@@ -30,7 +30,7 @@ def _validator() -> Draft202012Validator:
 
 
 def parse_time(value: str) -> datetime:
-    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    dt = datetime.fromisoformat(value)  # py3.12 accepts "Z"
     return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 

@@ -123,7 +123,7 @@ def test_domain_pattern_and_registrable():
     assert not domain_pattern("falcon-demo-bank-x.test", B, frozenset({"falcon-demo-bank-x.test"}))[0]
     assert not domain_pattern("example.test", B)[0]
     assert registrable_domain("a.b.falcon[.]test") == "falcon.test"
-    assert registrable_domain("x.gov.ae") == "x.gov.ae"
+    assert registrable_domain("x.gov.zz") == "x.gov.zz"
 
 
 # ---- idempotence per rule

@@ -5,6 +5,7 @@
 # where:    feature -> value | {in: [...]} | {not_in: [...]} | {exists: bool}
 # group_by: brand_id | dom_simhash (Hamming<=6 cluster) | script_cluster (cosine>=0.88 cluster) | signal | domain
 # distinct: feature or "event_id" counted distinct inside one window
+# new_domains: only count domains whose first observation (any event) is within `window` of the counted event
 # merge_into: if the match overlaps an existing incident of these rules, fold into it (adds rule id)
 rules:
   - id: R1
@@ -18,6 +19,7 @@ rules:
     group_by: brand_id
     window_minutes: 60
     distinct: domain
+    new_domains: true   # domain first observed within the window (ADR-002 "new")
     min_count: 3
     severity_floor: high
 

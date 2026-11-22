@@ -36,6 +36,7 @@ class Rule:
     merge_into: tuple[str, ...] = ()
     from_verdicts: tuple[str, ...] = ()
     to_verdicts: tuple[str, ...] = ()
+    new_domains: bool = False
 
 
 @dataclass(frozen=True)
@@ -66,6 +67,7 @@ def load_rules(path: Path | str = DEFAULT_RULES_PATH) -> list[Rule]:
                 merge_into=tuple(r.get("merge_into", ())),
                 from_verdicts=tuple(r.get("from_verdicts", ())),
                 to_verdicts=tuple(r.get("to_verdicts", ())),
+                new_domains=bool(r.get("new_domains", False)),
             )
         except KeyError as exc:
             raise RuleConfigError(f"rule {r.get('id')}: missing {exc}") from exc
@@ -88,9 +90,7 @@ def _cond_ok(value: Any, cond: Any) -> bool:
             return False
         if "not_in" in cond and value in cond["not_in"]:
             return False
-        if "exists" in cond and (value not in (None, "", False)) != bool(cond["exists"]):
-            return False
-        return True
+        return not ("exists" in cond and (value not in (None, "", False)) != bool(cond["exists"]))
     return bool(value == cond)
 
 
@@ -102,11 +102,38 @@ def _selected(rule: Rule, feats: Sequence[Features]) -> list[Features]:
     ]
 
 
-def _unit(f: Features, name: str) -> str:
+def _unit(f: Features, name: str) -> str | None:
+    """Distinct-counting unit; None = the event lacks the feature and must not count."""
     if name == "event_id":
         return f.event.event_id
     v = f.get(name)
-    return str(v) if v not in (None, "") else f.event.event_id
+    return str(v) if v not in (None, "") else None
+
+
+def _flip_matches(rule: Rule, sel: Sequence[Features]) -> list[Match]:
+    """R4: any `to` verdict preceded (within window) by a `from` verdict on the same domain, or carrying
+    previous_verdict in `from`. One match per flip: later `to` events with the same from-event are skipped."""
+    by_dom: dict[str, list[Features]] = defaultdict(list)
+    for f in sel:
+        if f.domain and f.verdict:
+            by_dom[f.domain].append(f)
+    out: list[Match] = []
+    for dom, fs in by_dom.items():
+        fs.sort(key=lambda x: (x.event.occurred_at, x.event.event_id))
+        used: set[str] = set()
+        for i, cur in enumerate(fs):
+            if cur.verdict not in rule.to_verdicts:
+                continue
+            prevs = [p for p in fs[:i] if p.verdict in rule.from_verdicts and cur.event.occurred_at - p.event.occurred_at <= rule.window]
+            if prevs:
+                if prevs[0].event.event_id in used:
+                    continue
+                used.add(prevs[0].event.event_id)
+                out.append(Match(rule, f"domain:{dom}", (prevs[0], cur), cur.event.occurred_at))
+            elif cur.prev_verdict in rule.from_verdicts and cur.event.event_id not in used:
+                used.add(cur.event.event_id)
+                out.append(Match(rule, f"domain:{dom}", (cur,), cur.event.occurred_at))
+    return out
 
 
 def evaluate(rule: Rule, feats: Sequence[Features], vectors: dict[str, list[float]] | None = None) -> list[Match]:
@@ -114,23 +141,15 @@ def evaluate(rule: Rule, feats: Sequence[Features], vectors: dict[str, list[floa
     sel = _selected(rule, feats)
     matches: list[Match] = []
     if rule.detector == "flip":
-        by_dom: dict[str, list[Features]] = defaultdict(list)
-        for f in sel:
-            if f.domain and f.verdict:
-                by_dom[f.domain].append(f)
-        for dom, fs in by_dom.items():
-            fs.sort(key=lambda x: (x.event.occurred_at, x.event.event_id))
-            for prev, cur in zip(fs, fs[1:], strict=False):
-                if (
-                    prev.verdict in rule.from_verdicts
-                    and cur.verdict in rule.to_verdicts
-                    and cur.event.occurred_at - prev.event.occurred_at <= rule.window
-                ):
-                    matches.append(Match(rule, f"domain:{dom}", (prev, cur), cur.event.occurred_at))
-            first = fs[0]
-            if first.prev_verdict in rule.from_verdicts and first.verdict in rule.to_verdicts:
-                matches.append(Match(rule, f"domain:{dom}", (first,), first.event.occurred_at))
+        matches = _flip_matches(rule, sel)
     else:
+        if rule.new_domains:
+            # "new" = first observed (any event type) no earlier than one window before this event
+            first: dict[str, datetime] = {}
+            for f in feats:
+                if f.domain and (f.domain not in first or f.event.occurred_at < first[f.domain]):
+                    first[f.domain] = f.event.occurred_at
+            sel = [f for f in sel if f.domain and f.event.occurred_at - first[f.domain] <= rule.window]
         labels = group_label(sel, rule.group_by, vectors)
         groups: dict[str, list[Features]] = defaultdict(list)
         for f in sel:
@@ -139,7 +158,7 @@ def evaluate(rule: Rule, feats: Sequence[Features], vectors: dict[str, list[floa
                 groups[lab].append(f)
         for lab, fs in groups.items():
             for sess in sessions(fs, rule.window):
-                times = [(f.event.occurred_at, _unit(f, rule.distinct)) for f in sess]
+                times = [(f.event.occurred_at, u) for f in sess if (u := _unit(f, rule.distinct)) is not None]
                 trig = window_trigger(times, rule.window, rule.min_count)
                 if trig is not None:
                     matches.append(Match(rule, lab, tuple(sess), trig))

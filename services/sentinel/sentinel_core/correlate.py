@@ -23,8 +23,16 @@ _SLD_PREFIXES = {"co", "com", "gov", "net", "org", "ac", "edu"}
 T = TypeVar("T")
 
 
+_SCHEME = re.compile(r"^[a-z][a-z0-9+.-]*://")
+_HOST = re.compile(r"^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$")
+
+
 def refang(value: str) -> str:
-    return value.strip().lower().replace("[.]", ".").replace("(.)", ".").removeprefix("hxxps://").removeprefix("hxxp://")
+    """Lowercase, un-defang, strip scheme/path/port/userinfo. Returns "" if what is left is not a hostname."""
+    v = value.strip().lower().replace("[.]", ".").replace("(.)", ".")
+    v = _SCHEME.sub("", v)
+    v = re.split(r"[/?#]", v, maxsplit=1)[0].rsplit("@", 1)[-1].split(":", 1)[0]
+    return v if _HOST.match(v) else ""
 
 
 def defang(domain: str) -> str:
@@ -32,8 +40,10 @@ def defang(domain: str) -> str:
 
 
 def registrable_domain(host: str) -> str:
-    """Small heuristic (no PSL dependency): last two labels, three for co.ae style."""
-    labels = [p for p in refang(host).split("/")[0].split(".") if p]
+    """Small heuristic (no PSL dependency): last two labels, three for co.xx style. "" if not a hostname."""
+    labels = [p for p in refang(host).split(".") if p]
+    if len(labels) < 2:
+        return ""
     if len(labels) >= 3 and labels[-2] in _SLD_PREFIXES and len(labels[-1]) == 2:
         return ".".join(labels[-3:])
     return ".".join(labels[-2:])
@@ -150,11 +160,11 @@ def extract(event: Event, official: frozenset[str] = frozenset()) -> Features:
     brand: str | None = p.get("brand_id")
     if event.type == "domain.observed":
         if p.get("domain_defanged"):
-            domain = registrable_domain(p["domain_defanged"])
+            domain = registrable_domain(p["domain_defanged"]) or None
         cands = p.get("brand_candidates") or []
         brand = brand or (cands[0] if cands else None)
     elif p.get("registrable_domain"):
-        domain = registrable_domain(p["registrable_domain"])
+        domain = registrable_domain(p["registrable_domain"]) or None
     look, affix = domain_pattern(domain, brand, official) if domain else (False, None)
     asn = fp.get("asn")
     return Features(
