@@ -86,4 +86,4 @@ mypy_path = "packages/falcon_core/src:services/api/src"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["packages/falcon_core/tests", "services"]
+testpaths = ["packages/falcon_core/tests", "services", "scripts/tests"]
