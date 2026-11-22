@@ -3,7 +3,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose --profile core --profile obs
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: help up down smoke test eval redteam seed replay demo scan submission
+.PHONY: help up down smoke test eval redteam seed replay demo scan submission unblock
 
 help:
 	@echo "Targets: up down smoke test eval redteam seed replay demo scan submission"
@@ -26,6 +26,10 @@ test: ## ruff + mypy (falcon_core) + pytest
 	uv run ruff format --check .
 	uv run mypy
 	uv run pytest -q
+
+unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL and REDIS_URL, host-reachable)
+	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
+	uv run python -m falcon_sentinel.unblock $(ID)
 
 scan: ## gitleaks, pip-audit, pnpm audit, trivy, syft (a missing tool only warns locally)
 	@rc=0; \

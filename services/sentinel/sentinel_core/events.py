@@ -1,4 +1,5 @@
 """Typed event parsing and validation against contracts/event.schema.json."""
+
 from __future__ import annotations
 
 import json
@@ -16,7 +17,17 @@ INCIDENT_SCHEMA_PATH = REPO_ROOT / "contracts" / "incident.schema.json"
 
 # Payload keys that would carry raw page or message text. Never allowed (contract + PRIVACY).
 RAW_TEXT_KEYS = frozenset(
-    {"text", "raw_text", "body", "html", "message", "message_text", "page_text", "email_body", "content"}
+    {
+        "text",
+        "raw_text",
+        "body",
+        "html",
+        "message",
+        "message_text",
+        "page_text",
+        "email_body",
+        "content",
+    }
 )
 
 
@@ -70,7 +81,9 @@ def parse_event(data: dict[str, Any]) -> Event:
     """Validate against the JSON schema (plus time parsing and the no-raw-text rule)."""
     errors = sorted(_validator().iter_errors(data), key=lambda e: list(e.path))
     if errors:
-        raise EventValidationError("; ".join(f"{'/'.join(map(str, e.path))}: {e.message}" for e in errors[:3]))
+        raise EventValidationError(
+            "; ".join(f"{'/'.join(map(str, e.path))}: {e.message}" for e in errors[:3])
+        )
     try:
         occurred = parse_time(data["occurred_at"])
     except ValueError as exc:

@@ -44,6 +44,8 @@ dev = [
   "ruff>=0.9",
   "mypy>=1.14",
   "types-jsonschema",
+  "fakeredis>=2.26",
+  "types-pyyaml",
 ]
 
 [tool.ruff]
@@ -63,6 +65,10 @@ known-first-party = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "S105", "S106"]
+"services/sentinel/**" = ["E501"]  # bilingual strings and SQL read better unwrapped
+"packages/falcon_core/src/falcon_core/tools/**" = ["E501"]
+"services/sentinel/sentinel_core/**" = ["S311", "S324", "UP047"]
+"services/sentinel/tests/**" = ["S311", "S324"]  # deterministic fixtures/ids, not crypto
 
 [tool.mypy]
 python_version = "3.12"
@@ -74,3 +80,4 @@ files = ["packages/falcon_core/src", "packages/falcon_core/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["packages/falcon_core/tests", "services"]
+markers = ["integration: needs a real Postgres (FL_TEST_PG_DSN)"]

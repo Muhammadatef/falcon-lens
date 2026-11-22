@@ -1,4 +1,5 @@
 """Rules engine: evaluates services/sentinel/rules.yaml over correlation features."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -98,7 +99,8 @@ def _selected(rule: Rule, feats: Sequence[Features]) -> list[Features]:
     return [
         f
         for f in feats
-        if f.event.type in rule.event_types and all(_cond_ok(f.get(k), c) for k, c in rule.where.items())
+        if f.event.type in rule.event_types
+        and all(_cond_ok(f.get(k), c) for k, c in rule.where.items())
     ]
 
 
@@ -124,7 +126,12 @@ def _flip_matches(rule: Rule, sel: Sequence[Features]) -> list[Match]:
         for i, cur in enumerate(fs):
             if cur.verdict not in rule.to_verdicts:
                 continue
-            prevs = [p for p in fs[:i] if p.verdict in rule.from_verdicts and cur.event.occurred_at - p.event.occurred_at <= rule.window]
+            prevs = [
+                p
+                for p in fs[:i]
+                if p.verdict in rule.from_verdicts
+                and cur.event.occurred_at - p.event.occurred_at <= rule.window
+            ]
             if prevs:
                 if prevs[0].event.event_id in used:
                     continue
@@ -136,7 +143,9 @@ def _flip_matches(rule: Rule, sel: Sequence[Features]) -> list[Match]:
     return out
 
 
-def evaluate(rule: Rule, feats: Sequence[Features], vectors: dict[str, list[float]] | None = None) -> list[Match]:
+def evaluate(
+    rule: Rule, feats: Sequence[Features], vectors: dict[str, list[float]] | None = None
+) -> list[Match]:
     """Pure function: same features in, same matches out (sorted by trigger time then group)."""
     sel = _selected(rule, feats)
     matches: list[Match] = []
@@ -149,7 +158,9 @@ def evaluate(rule: Rule, feats: Sequence[Features], vectors: dict[str, list[floa
             for f in feats:
                 if f.domain and (f.domain not in first or f.event.occurred_at < first[f.domain]):
                     first[f.domain] = f.event.occurred_at
-            sel = [f for f in sel if f.domain and f.event.occurred_at - first[f.domain] <= rule.window]
+            sel = [
+                f for f in sel if f.domain and f.event.occurred_at - first[f.domain] <= rule.window
+            ]
         labels = group_label(sel, rule.group_by, vectors)
         groups: dict[str, list[Features]] = defaultdict(list)
         for f in sel:
@@ -158,7 +169,11 @@ def evaluate(rule: Rule, feats: Sequence[Features], vectors: dict[str, list[floa
                 groups[lab].append(f)
         for lab, fs in groups.items():
             for sess in sessions(fs, rule.window):
-                times = [(f.event.occurred_at, u) for f in sess if (u := _unit(f, rule.distinct)) is not None]
+                times = [
+                    (f.event.occurred_at, u)
+                    for f in sess
+                    if (u := _unit(f, rule.distinct)) is not None
+                ]
                 trig = window_trigger(times, rule.window, rule.min_count)
                 if trig is not None:
                     matches.append(Match(rule, lab, tuple(sess), trig))

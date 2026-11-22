@@ -4,6 +4,7 @@ Keys: dom_simhash (Hamming <= 6), brand, registrable-domain pattern (brand skele
 ASN, registrar, cert issuer, script embedding cluster (cosine >= 0.88), time window.
 No randomness, no LLM; same input gives the same buckets.
 """
+
 from __future__ import annotations
 
 import math
@@ -17,7 +18,9 @@ from .events import Event
 
 SIMHASH_MAX_HAMMING = 6
 SCRIPT_MIN_COSINE = 0.88
-_LEET = str.maketrans({"0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"})
+_LEET = str.maketrans(
+    {"0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"}
+)
 _SLD_PREFIXES = {"co", "com", "gov", "net", "org", "ac", "edu"}
 
 T = TypeVar("T")
@@ -65,7 +68,9 @@ def _levenshtein(a: str, b: str, cap: int = 3) -> int:
     return prev[-1]
 
 
-def domain_pattern(domain: str, brand_id: str | None, official: frozenset[str] = frozenset()) -> tuple[bool, str | None]:
+def domain_pattern(
+    domain: str, brand_id: str | None, official: frozenset[str] = frozenset()
+) -> tuple[bool, str | None]:
     """(is_lookalike, affix). Lookalike = brand skeleton + affix inside the registrable label,
     or a label within edit distance 1 of the skeleton (typosquat). Official domains are excluded."""
     if not brand_id:
@@ -107,7 +112,9 @@ def cosine(a: Sequence[float], b: Sequence[float]) -> float:
     return sum(x * y for x, y in zip(a, b, strict=False)) / (na * nb)
 
 
-def cluster(items: Sequence[T], linked: Callable[[T, T], bool], key: Callable[[T], Hashable]) -> dict[Hashable, str]:
+def cluster(
+    items: Sequence[T], linked: Callable[[T, T], bool], key: Callable[[T], Hashable]
+) -> dict[Hashable, str]:
     """Single-linkage clustering (union-find). Returns item-key -> cluster label (min member key as str).
     Order independent, so replays produce identical labels."""
     keys = sorted({key(i) for i in items}, key=str)
@@ -199,7 +206,9 @@ def group_label(
             key=lambda f: f.dom_simhash,
         )
         for f in feats:
-            out[f.event.event_id] = None if f.dom_simhash is None else f"sh:{int(lab[f.dom_simhash]):016x}"
+            out[f.event.event_id] = (
+                None if f.dom_simhash is None else f"sh:{int(lab[f.dom_simhash]):016x}"
+            )
     elif group_by == "script_cluster":
         have = [f for f in feats if f.script_fp]
 
@@ -217,7 +226,9 @@ def group_label(
     return out
 
 
-def window_trigger(times: Sequence[tuple[datetime, str]], window: timedelta, min_count: int) -> datetime | None:
+def window_trigger(
+    times: Sequence[tuple[datetime, str]], window: timedelta, min_count: int
+) -> datetime | None:
     """Time at which some span <= window first holds >= min_count distinct units, else None.
     times = [(datetime, unit)] sorted by time."""
     lo = 0

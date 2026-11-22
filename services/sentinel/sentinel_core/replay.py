@@ -1,4 +1,5 @@
 """Load a JSONL event stream and run it through the deterministic core."""
+
 from __future__ import annotations
 
 import json
@@ -44,7 +45,11 @@ def main(argv: list[str]) -> int:
     events, _ = load_jsonl(argv[1])
     store = replay(events)
     for inc in store.all():
-        print(json.dumps({k: inc[k] for k in ("incident_id", "type", "severity", "rule_ids", "source")}))
+        print(
+            json.dumps(
+                {k: inc[k] for k in ("incident_id", "type", "severity", "rule_ids", "source")}
+            )
+        )
     return 0
 
 
