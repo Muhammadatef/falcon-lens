@@ -31,8 +31,17 @@ def _esc(v: str) -> str:
     return v.replace("\\", "\\\\").replace("'", "\\'")
 
 
-def _pattern(kind: str, value: str) -> str | None:
-    refanged = value.replace("[.]", ".")
+def refang_value(value: str) -> str:
+    """Undo the project's defanging: hxxp(s) -> http(s), [.] -> ., [:] -> :, [://] -> ://."""
+    v = value.replace("[://]", "://").replace("[:]", ":").replace("[.]", ".").replace("(.)", ".")
+    low = v.lower()
+    if low.startswith("hxxp"):
+        v = "http" + v[4:]
+    return v
+
+
+def _pattern(kind: str, value: str, refang: bool = True) -> str | None:
+    refanged = refang_value(value) if refang else value
     if kind == "domain":
         return f"[domain-name:value = '{_esc(refanged)}']"
     if kind == "url":
@@ -43,7 +52,9 @@ def _pattern(kind: str, value: str) -> str | None:
     return None  # dom_hash / script_cluster are Falcon-internal fingerprints: not STIX observables
 
 
-def build_bundle(incident: dict[str, Any]) -> dict[str, Any]:
+def build_bundle(incident: dict[str, Any], *, refang: bool = True) -> dict[str, Any]:
+    """`refang=True` gives valid STIX patterns. That is a documented exception to CONTRACTS invariant 5 and may be
+    served only to `intel`-scope callers of /v1/intel/stix. `refang=False` keeps patterns defanged (not valid STIX)."""
     iid = incident["incident_id"]
     created = _ts(incident["created_at"])
     modified = _ts(incident["updated_at"])
@@ -61,7 +72,7 @@ def build_bundle(incident: dict[str, Any]) -> dict[str, Any]:
     ]
     refs: list[str] = []
     for ind in incident["indicators"]:
-        pat = _pattern(ind["kind"], ind["value_defanged"])
+        pat = _pattern(ind["kind"], ind["value_defanged"], refang)
         if pat is None:
             continue
         oid = _id("indicator", iid, ind["kind"], ind["value_defanged"])
