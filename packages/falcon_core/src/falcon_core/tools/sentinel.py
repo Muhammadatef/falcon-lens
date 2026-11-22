@@ -19,6 +19,7 @@ from typing import Any, Literal, Protocol
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from ulid import ULID
 
 from .stix import build_bundle
 
@@ -133,6 +134,7 @@ class ToolRepo(Protocol):
     async def block_get(self, action_id: str) -> dict[str, Any] | None: ...
     async def block_revert(self, action_id: str, at: datetime) -> None: ...
     async def query_features(self, since: datetime | None, limit: int) -> list[dict[str, Any]]: ...
+    async def stix_put(self, incident_id: str, bundle: dict[str, Any]) -> None: ...
 
 
 class RedisPort(Protocol):
@@ -303,24 +305,30 @@ async def _feed_status(ctx: ToolContext, a: NoArgs) -> dict[str, Any]:
 # ---------------------------------------------------------------- internal_auto
 
 
-async def _requeue(ctx: ToolContext, incident_id: str, a: RequeueArgs) -> dict[str, Any]:
+async def _requeue(ctx: ToolContext, incident_id: str, action_id: str, a: RequeueArgs) -> dict[str, Any]:
+    """XADD fl:jobs in the ratified shape (docs/CONTRACTS.md, Internal messages). Only url/domain indicators."""
     ind = find_indicator(_inc(ctx, incident_id), a.url)
+    if ind["kind"] not in ("domain", "url"):
+        raise ToolError("provenance", f"cannot re-check a {ind['kind']} indicator")
+    value = refang(ind["value_defanged"])
+    url = value if ind["kind"] == "url" else f"https://{value}/"
+    now = ctx.now()
+    # deterministic id: re-executing the same action yields the same verdict_id (worker can dedupe)
+    ms = int(now.timestamp() * 1000).to_bytes(6, "big")
+    verdict_id = "vd_" + str(ULID.from_bytes(ms + hashlib.sha256(action_id.encode()).digest()[:10]))
     await ctx.redis.xadd(
         JOBS_STREAM,
         {
-            "data": json.dumps(
-                {
-                    "kind": "requeue_check",
-                    "indicator": refang(ind["value_defanged"]),
-                    "indicator_kind": ind["kind"],
-                    "incident_id": incident_id,
-                }
-            )
+            "verdict_id": verdict_id,
+            "input_type": "url",
+            "payload_json": json.dumps({"url": url, "canonical_sha256": hashlib.sha256(url.encode()).hexdigest()}),
+            "submitted_at": iso(now),
+            "source": "sentinel",
         },
-        maxlen=10000,
+        maxlen=5000,
         approximate=True,
     )
-    return {"queued": ind["value_defanged"]}
+    return {"queued": ind["value_defanged"], "verdict_id": verdict_id}
 
 
 async def _block(ctx: ToolContext, incident_id: str, action_id: str, a: BlockArgs) -> dict[str, Any]:
@@ -402,11 +410,19 @@ async def _upsert(ctx: ToolContext, a: UpsertArgs) -> dict[str, Any]:
     return {"patched": sorted(a.patch)}
 
 
+def headline(inc: dict[str, Any]) -> str:
+    return (
+        f"{inc['type']} incident, severity {inc['severity']}, brand {inc.get('brand_id') or 'unknown'}, "
+        f"{len(inc['indicators'])} indicators, rules {', '.join(inc['rule_ids'])}, source {inc['source']}"
+    )
+
+
 async def _raise_alert(ctx: ToolContext, a: RaiseAlertArgs) -> dict[str, Any]:
     inc = _inc(ctx, a.incident_id)
     if not ctx.alertmanager_url or ctx.http is None:
         raise ToolError("not_configured", "ALERTMANAGER_URL not set")
-    summary = (inc.get("summary") or {}).get("en") or f"{inc['type']} incident"
+    # Template fields only: LLM text must never reach an external channel (Telegram/webhook receivers).
+    summary = headline(inc)
     body = [
         {
             "labels": {
@@ -416,7 +432,7 @@ async def _raise_alert(ctx: ToolContext, a: RaiseAlertArgs) -> dict[str, Any]:
                 "type": inc["type"],
                 "source": inc["source"],
             },
-            "annotations": {"summary": summary[:300]},
+            "annotations": {"summary": summary},
             "startsAt": inc["created_at"],
         }
     ]
@@ -436,7 +452,7 @@ async def _board(ctx: ToolContext, a: IncidentOnlyArgs) -> dict[str, Any]:
         "source": inc["source"],
         "indicator_count": len(inc["indicators"]),
         "updated_at": inc["updated_at"],
-        "summary": inc.get("summary"),
+        "headline": headline(inc),  # template fields only, never LLM text
     }
     await ctx.redis.xadd(BOARD_STREAM, {"data": json.dumps(card)}, maxlen=1000, approximate=True)
     return {"published": inc["incident_id"]}
@@ -444,6 +460,7 @@ async def _board(ctx: ToolContext, a: IncidentOnlyArgs) -> dict[str, Any]:
 
 async def _stix(ctx: ToolContext, a: IncidentOnlyArgs) -> dict[str, Any]:
     bundle = build_bundle(_inc(ctx, a.incident_id))
+    await ctx.repo.stix_put(a.incident_id, bundle)  # stored so analysts can fetch it (GET .../stix)
     return {"bundle": bundle, "objects": len(bundle["objects"])}
 
 
@@ -520,7 +537,7 @@ async def run_action(
     error: str | None = None
     try:
         if isinstance(p, RequeueArgs):
-            result = await _requeue(ctx, incident_id, p)
+            result = await _requeue(ctx, incident_id, action_id, p)
         elif isinstance(p, BlockArgs):
             result = await _block(ctx, incident_id, action_id, p)
         elif isinstance(p, UpsertArgs):

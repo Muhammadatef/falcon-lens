@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Signal plugin base: SignalSpec, SignalContext protocol, Evidence, REGISTRY.
 
 Contracts: contracts/signal.schema.json, contracts/evidence.schema.json.
@@ -15,7 +16,18 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
-Family = Literal["url", "domain", "reputation", "page", "visual", "brand", "message", "email", "image", "injection"]
+Family = Literal[
+    "url",
+    "domain",
+    "reputation",
+    "page",
+    "visual",
+    "brand",
+    "message",
+    "email",
+    "image",
+    "injection",
+]
 
 
 @dataclass(frozen=True)
@@ -118,8 +130,42 @@ def signal(spec: SignalSpec) -> Callable[[Callable[[SignalContext], list[Evidenc
             async def inner() -> list[Evidence]:
                 return body(ctx)
 
+            # NOTE: body() is synchronous and never awaits, so wait_for cannot interrupt it:
+            # timeout_ms is only enforced for awaiting bodies. T1 URL bodies are pure CPU, bounded
+            # by the input length cap (MAX_URL_LEN) and measured < 5 ms p95.
             try:
                 out = await asyncio.wait_for(inner(), timeout=spec.timeout_ms / 1000)
+            except TimeoutError:
+                out = [_error(spec, "timeout")]
+            except Exception as exc:  # noqa: BLE001 - signals must never raise
+                out = [_error(spec, type(exc).__name__)]
+            ms = int((time.perf_counter() - t0) * 1000)
+            for ev in out:
+                ev.latency_ms = ms
+            return out
+
+        run.spec = spec  # type: ignore[attr-defined]
+        run.sync = body  # type: ignore[attr-defined]
+        if spec.name in REGISTRY:
+            raise ValueError(f"duplicate signal {spec.name}")
+        REGISTRY[spec.name] = (spec, run)
+        return run
+
+    return deco
+
+
+def async_signal(spec: SignalSpec) -> Callable[[SignalFn], SignalFn]:
+    """Register a network signal whose body is already ``async def body(ctx)``.
+
+    Same guarantees as :func:`signal`: ``timeout_ms`` is enforced with ``asyncio.wait_for``, nothing is
+    raised (errors become ``Evidence.error``) and ``latency_ms`` is stamped. Network I/O inside the body
+    must go through ``ctx.http`` / ``ctx.cache`` / ``ctx.mirror`` only."""
+
+    def deco(body: SignalFn) -> SignalFn:
+        async def run(ctx: SignalContext) -> list[Evidence]:
+            t0 = time.perf_counter()
+            try:
+                out = await asyncio.wait_for(body(ctx), timeout=spec.timeout_ms / 1000)
             except TimeoutError:
                 out = [_error(spec, "timeout")]
             except Exception as exc:  # noqa: BLE001 - signals must never raise
@@ -130,7 +176,7 @@ def signal(spec: SignalSpec) -> Callable[[Callable[[SignalContext], list[Evidenc
             return out
 
         run.spec = spec  # type: ignore[attr-defined]
-        run.sync = body  # type: ignore[attr-defined]
+        run.body = body  # type: ignore[attr-defined]
         if spec.name in REGISTRY:
             raise ValueError(f"duplicate signal {spec.name}")
         REGISTRY[spec.name] = (spec, run)

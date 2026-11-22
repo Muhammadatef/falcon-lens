@@ -35,13 +35,22 @@ x-app-env: &app-env
   REDIS_URL: redis://redis:6379/0
   FL_API_KEY_PEPPER: ${FL_API_KEY_PEPPER:-change-me}
   FL_SANDBOX_API_KEY: ${FL_SANDBOX_API_KEY:-fl_sandbox_demo_key}
+  FL_SANDBOX_URL: ${FL_SANDBOX_URL:-http://sandbox:8000}
+  # Demo/test fixture hosts exempt from the SSRF internal-name check. Honoured only when FL_ENV is local, demo or ci.
+  FL_SSRF_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test}
+  FL_SMOKE_OFFICIAL_URL: ${FL_SMOKE_OFFICIAL_URL:-http://falcon-demo-bank.test/}
+  FL_SMOKE_PHISH_URL: ${FL_SMOKE_PHISH_URL:-http://falcon-demo-bank-secure.test/login}
   FL_SANDBOX_TOKEN: ${FL_SANDBOX_TOKEN:-change-me-sandbox}
   FALCON_BRANDS_YAML: /app/data/brands.yaml
   FL_REPORTING_CHANNELS: /app/config/reporting_channels.yaml
   FL_OPERATOR_KEY: ${FL_OPERATOR_KEY:-change-me-operator}
   FL_MCP_BEARER_TOKEN: ${FL_MCP_BEARER_TOKEN:-change-me-mcp}
   FL_WEBHOOK_SECRET: ${FL_WEBHOOK_SECRET:-change-me-webhook}
-  FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-30}
+  FL_WEBHOOK_TARGETS: ${FL_WEBHOOK_TARGETS:-}
+  FL_MCP_SERVICE_KEY: ${FL_MCP_SERVICE_KEY:-change-me-mcp-service}
+  FL_SENTINEL_URL: ${FL_SENTINEL_URL:-http://sentinel:8000}
+  FL_API_URL: ${FL_API_URL:-http://api:8000}
+  FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-60}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
   ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
@@ -151,6 +160,14 @@ services:
       HTTP_PROXY: http://egress-proxy:3128
       HTTPS_PROXY: http://egress-proxy:3128
       NO_PROXY: localhost,127.0.0.1
+      FL_SANDBOX_PROXY: http://egress-proxy:3128
+      FL_SNAPSHOT_DIR: /data/snapshots
+      # Internal Falcon Demo Bank fixture hosts (tools profile): bypass the proxy and are exempt from
+      # the internal-name check; honoured only when FL_ENV is local, demo or ci. Extra *.test hosts (cloaked, injection,
+      # bot relay) are appended for the fixture tests.
+      FL_SSRF_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test},falcon-demo-bank-cloak.test,falcon-demo-bank-injection.test,falcon-bot-relay.test
+    volumes:
+      - ./data/private/snapshots:/data/snapshots
     # No `observability` here: the sandbox must not reach Prometheus/Loki/Alertmanager/etc.
     # Metrics are relayed by the worker (/metrics/sandbox) over sandbox_ctl.
     networks: [sandbox, sandbox_ctl]
@@ -166,6 +183,9 @@ services:
     build: { context: ., dockerfile: services/egress/Dockerfile }
     image: falcon-lens/egress:0.1.0
     <<: *hardened
+    environment:
+      FL_ENV: ${FL_ENV:-local}
+      FL_EGRESS_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test}
     # `app` is the non-internal network that gives the proxy its route to the internet.
     networks: [sandbox, app, observability]
     mem_limit: 128m
@@ -250,6 +270,8 @@ services:
     environment:
       <<: *app-env
       ALERTMANAGER_URL: http://alertmanager:9093
+      LANGSMITH_TRACING: "false"  # langsmith ships transitively with langgraph: never export incident data
+      LANGCHAIN_TRACING_V2: "false"
     networks: [app, data, observability]
     depends_on:
       redis: { condition: service_healthy }
@@ -274,6 +296,7 @@ services:
   prometheus:
     profiles: [obs]
     image: prom/prometheus:v3.16.0
+    <<: *host-gateway
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -284,6 +307,7 @@ services:
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infra/prometheus/rules:/etc/prometheus/rules:ro
+      - ./infra/prometheus/demo:/etc/prometheus/demo:ro
       - prom_data:/prometheus
     networks: [observability, edge]
     security_opt:
@@ -302,11 +326,14 @@ services:
     profiles: [obs]
     image: prom/alertmanager:v0.35.0
     restart: unless-stopped
-    command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --storage.path=/alertmanager
+    # The entrypoint renders the config: Telegram/webhook only if configured, else a null receiver.
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
     volumes:
-      - ./infra/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./infra/alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
       - alertmanager_data:/alertmanager
     networks: [observability]
     security_opt:
@@ -374,6 +401,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
       GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_DEFAULT_THEME: dark
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_SERVER_ROOT_URL: http://localhost:${FL_GRAFANA_PORT:-3001}
@@ -424,22 +452,51 @@ services:
     cpus: 1
     pids_limit: 256
 
+  # TEST DOUBLE, never part of `make up`. Only `FL_SMOKE_FAKE_WORKER=1 make smoke` starts it
+  # (and stops the real worker first) to exercise API + SSE before the real cascade exists.
+  fake-worker:
+    profiles: [smoke-fake]
+    image: falcon-lens/api:0.1.0
+    <<: *hardened
+    restart: "no"
+    command: ["python", "-m", "falcon_api.fake_worker"]
+    environment: *app-env
+    healthcheck:
+      disable: true
+    networks: [data]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+
   # ───────────────────────────── tools ────────────────────────────
-  # Placeholder fixture server: invented brand only, internal network only, never published.
+  # Falcon Demo Bank fixtures: invented brand only, internal `sandbox` network only, never published.
+  # One nginx answers for every fixture host via network aliases (*.test never resolves outside Docker).
   fixtures:
     profiles: [tools]
     image: nginxinc/nginx-unprivileged:1.29-alpine
     <<: *hardened
     volumes:
-      - ./services/fixtures/html:/usr/share/nginx/html:ro
+      - ./services/fixtures/conf/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./services/fixtures/conf/redirs.inc:/etc/nginx/conf.d/redirs.inc:ro
+      - ./services/fixtures/sites:/srv:ro
     tmpfs:
       - /tmp
       - /var/cache/nginx
     networks:
       sandbox:
-        aliases: [fixtures]
+        aliases:
+          - fixtures
+          - falcon-demo-bank.test
+          - falcon-demo-bank-secure.test
+          - falcon-demo-bank-login.test
+          - falcon-demo-bank-cloak.test
+          - falcon-demo-bank-injection.test
+          - falcon-bot-relay.test
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/"]
       interval: 10s
       timeout: 3s
       retries: 5

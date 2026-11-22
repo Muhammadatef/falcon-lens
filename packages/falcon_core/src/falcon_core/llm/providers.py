@@ -99,9 +99,7 @@ class AnthropicProvider:
             raise ProviderError("timeout", type(exc).__name__) from exc
         except anthropic.APIError as exc:
             raise ProviderError("error", type(exc).__name__) from exc
-        text = "".join(
-            getattr(b, "text", "") for b in msg.content if getattr(b, "type", None) == "text"
-        )
+        text = "".join(getattr(b, "text", "") for b in msg.content if getattr(b, "type", None) == "text")
         u = msg.usage
         usage = Usage(
             input_tokens=int(getattr(u, "input_tokens", 0) or 0),
@@ -152,6 +150,4 @@ class OllamaProvider:
             input_tokens=int(u.get("prompt_tokens", 0) or 0),
             output_tokens=int(u.get("completion_tokens", 0) or 0),
         )
-        return ProviderResponse(
-            text=strip_special_tokens(str(content)), usage=usage, model=req.model
-        )
+        return ProviderResponse(text=strip_special_tokens(str(content)), usage=usage, model=req.model)

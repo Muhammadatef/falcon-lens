@@ -45,8 +45,13 @@ dev = [
   "mypy>=1.14",
   "types-jsonschema",
   "types-PyYAML",
-  "pytest-cov>=6",
   "fakeredis>=2.26",
+  "pyyaml>=6",
+  "pytest-cov>=6",
+  "scikit-learn>=1.9.1",
+  "joblib>=1.6.0",
+  "numpy>=2.5.5",
+  "qrcode>=8",
 ]
 
 # Offline prompt optimisation only (ADR-002). NOT a runtime dependency: production never imports dspy.
@@ -58,7 +63,7 @@ target-version = "py312"
 extend-exclude = ["web", ".venv", "docs", "*.md"]  # ruff 0.17 would reformat code blocks in docs
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "S"]
+select = ["E", "F", "I", "UP", "B", "SIM", "S", "PLE2502", "PLE2515"]
 ignore = ["S104", "SIM905", "UP047"]  # S104: services bind 0.0.0.0 in containers; SIM905: `"a b".split()` word lists are deliberate
 
 [tool.ruff.lint.isort]
@@ -73,9 +78,11 @@ known-first-party = [
 "evals/**" = ["S603", "S607"]
 "evals/dspy/*.py" = ["E501", "E402", "S101", "S311"]  # flat modules; optimize.py sets sys.path before importing
 "**/fixtures.py" = ["S311"]
+"scripts/falcon_demo/**" = ["S311", "S603", "S607"]
 "services/sentinel/**" = ["E501"]  # bilingual strings and SQL read better unwrapped
 "packages/falcon_core/src/falcon_core/tools/**" = ["E501"]
 "services/sentinel/sentinel_core/**" = ["S311", "S324", "UP047"]
+"scripts/smoke.py" = ["S101", "S501"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -83,12 +90,17 @@ strict = true
 plugins = ["pydantic.mypy"]
 # Strict applies to falcon_core itself (CLAUDE.md). Tests are linted by ruff but not type-checked:
 # several test dirs ship a `conftest.py` and mypy reports them as duplicate modules.
-files = ["packages/falcon_core/src"]
+files = ["packages/falcon_core/src", "services/api/src", "services/worker/src", "services/mcp/src"]
 explicit_package_bases = true
-mypy_path = "packages/falcon_core/src"
+mypy_path = "packages/falcon_core/src:services/api/src:services/worker/src:services/mcp/src"
+
+[[tool.mypy.overrides]]
+module = ["joblib", "joblib.*"]
+ignore_missing_imports = true  # joblib ships no stubs; used only by the T1 model loader
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["packages/falcon_core/tests", "services", "evals/dspy/tests"]
-markers = ["integration: needs a real Postgres (FL_TEST_PG_DSN)"]
+testpaths = ["packages/falcon_core/tests", "services", "scripts/tests", "scripts/falcon_demo", "evals"]
+pythonpath = ["scripts", "."]
+markers = ["integration: needs the compose stack (FL_INTEGRATION=1) or a real Postgres (FL_TEST_PG_DSN)"]

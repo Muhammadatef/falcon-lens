@@ -18,6 +18,7 @@ RUN groupadd --system --gid 10001 app \
 COPY --from=builder /opt/venv /opt/venv
 COPY data/brands.yaml /app/data/brands.yaml
 COPY config/reporting_channels.yaml /app/config/reporting_channels.yaml
+COPY scripts/create_api_key.py /app/scripts/create_api_key.py
 ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 ENV FALCON_BRANDS_YAML=/app/data/brands.yaml FL_REPORTING_CHANNELS=/app/config/reporting_channels.yaml
 USER 10001:10001

@@ -1,0 +1,45 @@
+Return-Path: <bounce@parcel-ae.example.test>
+Received: from mail.parcel-ae.example.test ([192.0.2.32]) by mx.example.test
+ with ESMTPS; Mon, 23 Nov 2026 04:34:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=parcel-ae.example.test; dkim=none
+ header.d=parcel-ae.example.test; dmarc=none
+ header.from=parcel-ae.example.test
+From:
+ =?utf-8?b?2K7Yr9mF2Kkg2KfZhNiq2YjYtdmK2YQ=?= <delivery@parcel-ae.example.test>
+To: Customer <customer@example.test>
+Reply-To: pay@parcel-help.invalid
+Subject: =?utf-8?b?2LTYrdmG2KrZgyDZhdi52YTZkdmC2Kkg2KjYs9io2Kgg2LHYs9mI2YUg?=
+ =?utf-8?b?2KjYs9mK2LfYqQ==?=
+Date: Mon, 23 Nov 2026 04:34:00 +0400
+Message-ID: <c05-22.fixture@parcel-ae.example.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9
+
+=D9=85=D8=B1=D8=AD=D8=A8=D8=A7=D8=8C
+
+=D8=B9=D9=86=D8=AF=D9=83 =D8=B4=D8=AD=D9=86=D8=A9 =D9=88=D8=A7=D8=B5=D9=84=D8=
+=A9 =D8=A8=D8=B3 =D9=85=D8=B9=D9=84=D9=91=D9=82=D8=A9 =D8=B9=D9=86=D8=AF=D9=
+=86=D8=A7 =D9=84=D8=A3=D9=86 =D8=B1=D8=B3=D9=88=D9=85 =D8=A7=D9=84=D8=AA=D9=
+=88=D8=B5=D9=8A=D9=84 =D9=85=D8=A7 =D8=A7=D9=86=D8=B3=D8=AF=D9=91=D8=AA (5 =
+=D8=AF=D8=B1=D8=A7=D9=87=D9=85 =D8=A8=D8=B3).
+=D8=A7=D8=AF=D9=81=D8=B9 =D8=A7=D9=84=D8=B1=D8=B3=D9=88=D9=85 =D8=A7=D9=84=D8=
+=AD=D9=8A=D9=86 =D9=85=D9=86 =D8=A7=D9=84=D8=B1=D8=A7=D8=A8=D8=B7 =D9=88=D8=
+=A8=D9=86=D9=88=D8=B5=D9=91=D9=84=D9=83 =D8=A7=D9=84=D8=B4=D8=AD=D9=86=D8=A9 =
+=D8=A8=D8=A7=D9=83=D8=B1:
+https://parcel-ae.example.test/fee
+
+=D8=A5=D8=B0=D8=A7 =D9=85=D8=A7 =D8=A7=D9=86=D8=B3=D8=AF=D9=91=D8=AA =D8=A7=
+=D9=84=D8=B1=D8=B3=D9=88=D9=85 =D8=AE=D9=84=D8=A7=D9=84 =D9=8A=D9=88=D9=85=D9=
+=8A=D9=86=D8=8C =D8=A7=D9=84=D8=B4=D8=AD=D9=86=D8=A9 =D8=A8=D8=AA=D8=B1=D8=AC=
+=D8=B9 =D9=84=D9=84=D9=85=D8=B1=D8=B3=D9=84.
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9

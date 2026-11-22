@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any, Protocol
@@ -43,12 +44,31 @@ BEGIN RAISE EXCEPTION 'audit_log is append-only'; END; $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS audit_log_immutable ON audit_log;
 CREATE TRIGGER audit_log_immutable BEFORE UPDATE OR DELETE ON audit_log
   FOR EACH ROW EXECUTE FUNCTION fl_audit_immutable();
+DROP TRIGGER IF EXISTS audit_log_no_truncate ON audit_log;
+CREATE TRIGGER audit_log_no_truncate BEFORE TRUNCATE ON audit_log
+  FOR EACH STATEMENT EXECUTE FUNCTION fl_audit_immutable();
+CREATE TABLE IF NOT EXISTS stix_bundles (
+  incident_id text PRIMARY KEY, bundle jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS blocks (
   action_id text PRIMARY KEY, incident_id text NOT NULL, kind text NOT NULL,
   value_defanged text NOT NULL, sha256 text NOT NULL, redis_key text NOT NULL,
   blocked_at timestamptz NOT NULL, expires_at timestamptz NOT NULL, reverted_at timestamptz
 );
 """
+
+
+# Run by the table OWNER (migration role), never by the service role. The service role gets INSERT/SELECT on
+# audit_log only, so it can neither rewrite the log nor disable its triggers (it does not own the table).
+# See services/sentinel/migrations/001_roles.sql.
+GRANTS = """
+GRANT USAGE, CREATE ON SCHEMA public TO {role};
+GRANT SELECT, INSERT, UPDATE, DELETE ON incidents, incident_actions, sentinel_features, blocks, stix_bundles TO {role};
+GRANT SELECT, INSERT ON audit_log TO {role};
+REVOKE UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON audit_log FROM {role};
+GRANT USAGE, SELECT ON SEQUENCE audit_log_id_seq TO {role};
+"""
+ROLE_RE = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
 
 
 class Repo(Protocol):
@@ -66,6 +86,8 @@ class Repo(Protocol):
     async def block_get(self, action_id: str) -> dict[str, Any] | None: ...
     async def block_revert(self, action_id: str, at: datetime) -> None: ...
     async def list_actions(self, incident_id: str) -> list[dict[str, Any]]: ...
+    async def stix_put(self, incident_id: str, bundle: dict[str, Any]) -> None: ...
+    async def stix_get(self, incident_id: str) -> dict[str, Any] | None: ...
 
 
 class MemoryRepo:
@@ -77,6 +99,7 @@ class MemoryRepo:
         self.audit: list[dict[str, Any]] = []
         self.blocks: dict[str, dict[str, Any]] = {}
         self.actions: dict[str, dict[str, Any]] = {}
+        self.stix: dict[str, dict[str, Any]] = {}
 
     async def init(self) -> None:
         return None
@@ -127,18 +150,35 @@ class MemoryRepo:
     async def list_actions(self, incident_id: str) -> list[dict[str, Any]]:
         return [a for a in self.actions.values() if a["incident_id"] == incident_id]
 
+    async def stix_put(self, incident_id: str, bundle: dict[str, Any]) -> None:
+        self.stix[incident_id] = copy.deepcopy(bundle)
+
+    async def stix_get(self, incident_id: str) -> dict[str, Any] | None:
+        return copy.deepcopy(self.stix.get(incident_id))
+
 
 class PgRepo:
-    def __init__(self, dsn: str) -> None:
+    def __init__(self, dsn: str, owner_dsn: str | None = None, app_role: str | None = None) -> None:
         from psycopg_pool import AsyncConnectionPool
 
+        if owner_dsn and not (app_role and ROLE_RE.match(app_role)):
+            raise ValueError("owner_dsn needs a valid app_role")
         self.dsn = dsn
+        self.owner_dsn = owner_dsn
+        self.app_role = app_role
         self.pool = AsyncConnectionPool(dsn, min_size=1, max_size=5, open=False, kwargs={"autocommit": True})
 
     async def init(self) -> None:
+        import psycopg
+
         await self.pool.open()
-        async with self.pool.connection() as c:
-            await c.execute(DDL)  # type: ignore[call-overload]
+        if self.owner_dsn:  # production: schema + grants by the owner role, service role stays unprivileged
+            async with await psycopg.AsyncConnection.connect(self.owner_dsn, autocommit=True) as oc:
+                await oc.execute(DDL)  # type: ignore[call-overload]
+                await oc.execute(GRANTS.format(role=self.app_role))  # type: ignore[call-overload]
+        else:  # dev/test: one role owns everything (audit_log can then be altered by that role)
+            async with self.pool.connection() as c:
+                await c.execute(DDL)  # type: ignore[call-overload]
 
     async def close(self) -> None:
         await self.pool.close()
@@ -298,6 +338,22 @@ class PgRepo:
     async def block_revert(self, action_id: str, at: datetime) -> None:
         async with self.pool.connection() as c:
             await c.execute("UPDATE blocks SET reverted_at=%s WHERE action_id=%s", (at, action_id))
+
+    async def stix_put(self, incident_id: str, bundle: dict[str, Any]) -> None:
+        from psycopg.types.json import Jsonb
+
+        async with self.pool.connection() as c:
+            await c.execute(
+                "INSERT INTO stix_bundles (incident_id,bundle) VALUES (%s,%s)"
+                " ON CONFLICT (incident_id) DO UPDATE SET bundle=EXCLUDED.bundle, created_at=now()",
+                (incident_id, Jsonb(bundle)),
+            )
+
+    async def stix_get(self, incident_id: str) -> dict[str, Any] | None:
+        async with self.pool.connection() as c:
+            cur = await c.execute("SELECT bundle FROM stix_bundles WHERE incident_id=%s", (incident_id,))
+            r = await cur.fetchone()
+            return r[0] if r else None
 
     async def list_actions(self, incident_id: str) -> list[dict[str, Any]]:
         async with self.pool.connection() as c:

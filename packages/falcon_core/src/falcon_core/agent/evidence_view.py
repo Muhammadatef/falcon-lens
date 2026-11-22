@@ -59,8 +59,6 @@ def evidence_item(ev: Evidence, *, with_weight: bool = False) -> dict[str, Any]:
     return item
 
 
-def evidence_json(
-    evidence: Sequence[Evidence], *, with_weight: bool = False, limit: int = 60
-) -> str:
+def evidence_json(evidence: Sequence[Evidence], *, with_weight: bool = False, limit: int = 60) -> str:
     items = [evidence_item(e, with_weight=with_weight) for e in evidence[:limit]]
     return json.dumps(items, ensure_ascii=False, separators=(",", ":"))

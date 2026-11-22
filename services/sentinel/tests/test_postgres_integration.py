@@ -8,6 +8,7 @@ import uuid
 from typing import Any
 
 import psycopg
+import psycopg.conninfo
 import pytest
 from graph_helpers import make_env
 
@@ -46,6 +47,8 @@ async def test_repo_roundtrip_and_audit_is_append_only(repo):
             c.execute("UPDATE audit_log SET actor='x'")
         with pytest.raises(psycopg.errors.RaiseException):
             c.execute("DELETE FROM audit_log")
+        with pytest.raises(psycopg.errors.RaiseException):
+            c.execute("TRUNCATE audit_log")
         assert c.execute("SELECT count(*) FROM blocks").fetchone() == (1,)
 
 
@@ -91,3 +94,42 @@ async def test_restart_resume_with_postgres_checkpointer(repo):
 
 def test_thread_ids_are_incident_ids():
     assert uuid.uuid4()  # placeholder keeps module importable when skipped
+
+
+async def test_service_role_cannot_tamper_with_audit_log_when_owner_role_is_separate():
+    """Owner creates schema + grants; the service role only gets INSERT/SELECT on audit_log."""
+    from falcon_sentinel.llm import StubLLM
+
+    assert DSN
+    with psycopg.connect(DSN, autocommit=True) as c:
+        c.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+        c.execute("DROP ROLE IF EXISTS fl_test_app")
+        c.execute("CREATE ROLE fl_test_app LOGIN PASSWORD 'apppw'")
+    base = psycopg.conninfo.conninfo_to_dict(DSN)
+    app_dsn = psycopg.conninfo.make_conninfo(
+        user="fl_test_app", password="apppw", **{k: v for k, v in base.items() if k not in ("user", "password")}
+    )
+    repo = PgRepo(app_dsn, owner_dsn=DSN, app_role="fl_test_app")
+    await repo.init()
+    try:
+        env = await make_env(repo=repo)
+        await env.runner(StubLLM()).run(env.campaign_id())
+        assert await repo.audit_list(env.campaign_id())  # INSERT + SELECT work
+        assert await repo.stix_get(env.campaign_id()) is not None
+        with psycopg.connect(app_dsn, autocommit=True) as c:
+            for stmt in (
+                "UPDATE audit_log SET actor='x'",
+                "DELETE FROM audit_log",
+                "TRUNCATE audit_log",
+                "ALTER TABLE audit_log DISABLE TRIGGER audit_log_immutable",
+                "DROP TRIGGER audit_log_no_truncate ON audit_log",
+                "DROP TABLE audit_log",
+            ):
+                with pytest.raises((psycopg.errors.InsufficientPrivilege, psycopg.errors.RaiseException)):
+                    c.execute(stmt)
+            assert c.execute("SELECT count(*) FROM audit_log").fetchone()[0] > 0
+    finally:
+        await repo.close()
+        with psycopg.connect(DSN, autocommit=True) as c:
+            c.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+            c.execute("DROP OWNED BY fl_test_app; DROP ROLE fl_test_app")

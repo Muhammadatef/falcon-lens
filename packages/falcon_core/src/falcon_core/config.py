@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     fl_cloud_model_extractor: str = "claude-haiku-5-5"
     fl_cloud_model_responder: str = "claude-haiku-5-5"
     fl_llm_timeout_s: float = 12
+    fl_shadow_rate: float = 0.0
 
     # Local LLM
     ollama_base_url: str = "http://host.docker.internal:11434"
@@ -33,6 +34,8 @@ class Settings(BaseSettings):
     fl_local_worker_model: str = "qwen3:4b"
     fl_embed_model: str = "qwen3-embedding:4b"
     fl_embed_dim: int = 2560
+    fl_local_llm_timeout_s: float = 60
+    fl_brands_path: str | None = None
 
     # Feeds
     google_safe_browsing_api_key: SecretStr | None = None
@@ -53,7 +56,7 @@ class Settings(BaseSettings):
     fl_operator_key: SecretStr | None = None
     fl_mcp_bearer_token: SecretStr | None = None
     fl_webhook_secret: SecretStr | None = None
-    fl_rate_limit_per_ip_per_min: int = 30
+    fl_rate_limit_per_ip_per_min: int = 60
 
     # Alerts
     telegram_bot_token: SecretStr | None = None

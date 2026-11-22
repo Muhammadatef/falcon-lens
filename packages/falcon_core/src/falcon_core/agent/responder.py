@@ -9,6 +9,7 @@ On rejection the template reasons from ``scoring.reasons`` are returned (``gener
 
 from __future__ import annotations
 
+import html
 import json
 import re
 from collections.abc import Sequence
@@ -21,18 +22,63 @@ from falcon_core.agent.evidence_view import evidence_item
 from falcon_core.contracts.evidence import Evidence
 from falcon_core.contracts.verdict import Reason
 from falcon_core.llm.router import JsonRequest, LLMRouter
+from falcon_core.llm.textnorm import normalise_text
 from falcon_core.prompts import RESPONDER_TASK
+from falcon_core.signals.url.skeleton import skeleton_ci
 
 VerdictLabel = Literal["dangerous", "suspicious", "no_warning_signs"]
 MAX_REASONS = 3
 
-_ARABIC_RE = re.compile(r"[؀-ۿ]")
+_ARABIC_RE = re.compile(r"[\u0600-\u06ff]")
 _LATIN_RE = re.compile(r"[A-Za-z]")
-_SAFE_EN_RE = re.compile(r"(?i)\bsafe\b")
-_SAFE_AR_RE = re.compile(r"(?<!\w)(?:آمن|آمنة|آمنا|امن|امنة)(?!\w)")
-_LINK_RE = re.compile(r"(?i)(?:\b[a-z][a-z0-9+.-]*://|\bwww\.|\b[a-z0-9-]+\.(?:[a-z]{2,24})\b)")
-_FORBIDDEN_CHARS = set("<>%")
-_SCORE_RE = re.compile(r"(?i)\b(?:score|probability)\b|نسبة|درجة الخطورة")
+_LINK_RE = re.compile(r"(?i)(?:\b[a-z][a-z0-9+.-]*://|\bwww\.|\b[a-z0-9-]+\s*\.\s*[a-z]{2,24}\b)")
+_FORBIDDEN_CHARS = set("<>%&[]{}`\\")
+_DIGIT_RE = re.compile(r"[0-9]")
+_SCORE_RE = re.compile(r"(?i)\b(?:score|probability|percent|out of)\b|نسبة|درجة الخطورة|من مئة|من مائة")
+_AR_MARKS_RE = re.compile(r"[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06ed\u0640]")  # harakat, tatweel
+_AR_ALEF = str.maketrans({"\u0623": "\u0627", "\u0625": "\u0627", "\u0622": "\u0627", "\u0671": "\u0627"})
+# "safe" family (product rule: never say safe). Matched as substrings after normalisation, so
+# prefixes (و ف ب ل ال, un-, ...) and inflections are covered. Arabic forms are alef-normalised.
+_SAFE_EN_STEMS = ("safe", "secure", "trustworth", "guarantee", "legitimate", "harmless")
+_SAFE_EN_RE = re.compile(r"(?i)\b(?:no|zero|without)\s+risks?\b|\brisk\s*-?\s*free\b")
+_SAFE_AR_STEMS = ("امن", "امان", "مامون", "سليم", "مضمون", "موثوق")
+_SAFE_EN_KEYS = tuple(skeleton_ci(w) for w in _SAFE_EN_STEMS)
+
+
+def normalise_reason_text(text: str) -> str:
+    """Decode HTML entities (twice), NFKC, drop format chars, fold digits/dots, drop Arabic marks."""
+    t = html.unescape(html.unescape(text))
+    t = normalise_text(t)
+    t = _AR_MARKS_RE.sub("", t)
+    return t.translate(_AR_ALEF)
+
+
+def _says_safe(norm: str) -> bool:
+    sk = skeleton_ci(norm)
+    if any(k in sk for k in _SAFE_EN_KEYS) or _SAFE_EN_RE.search(norm) or _SAFE_EN_RE.search(sk):
+        return True
+    return any(stem in norm for stem in _SAFE_AR_STEMS)
+
+
+def _text_errors(i: int, d: ReasonDraft) -> list[str]:
+    errs: list[str] = []
+    ar_n, en_n = normalise_reason_text(d.ar), normalise_reason_text(d.en)
+    if not _ARABIC_RE.search(ar_n):
+        errs.append(f"reason[{i}].ar is not Arabic")
+    if not _LATIN_RE.search(en_n):
+        errs.append(f"reason[{i}].en is not English")
+    for lang, raw, norm in (("ar", d.ar, ar_n), ("en", d.en, en_n)):
+        if _says_safe(norm):
+            errs.append(f"reason[{i}].{lang} says safe")
+        if _LINK_RE.search(norm):
+            errs.append(f"reason[{i}].{lang} contains a link or domain")
+        if _FORBIDDEN_CHARS & (set(raw) | set(norm)):
+            errs.append(f"reason[{i}].{lang} contains forbidden characters")
+        if _DIGIT_RE.search(norm):
+            errs.append(f"reason[{i}].{lang} contains digits")
+        if _SCORE_RE.search(norm):
+            errs.append(f"reason[{i}].{lang} mentions a score")
+    return errs
 
 
 class ReasonDraft(BaseModel):
@@ -49,27 +95,7 @@ class ResponderOutput(BaseModel):
     reasons: list[ReasonDraft] = Field(min_length=1, max_length=MAX_REASONS)
 
 
-def _text_errors(i: int, d: ReasonDraft) -> list[str]:
-    errs: list[str] = []
-    if not _ARABIC_RE.search(d.ar):
-        errs.append(f"reason[{i}].ar is not Arabic")
-    if not _LATIN_RE.search(d.en):
-        errs.append(f"reason[{i}].en is not English")
-    for lang, text in (("ar", d.ar), ("en", d.en)):
-        if _SAFE_EN_RE.search(text) or _SAFE_AR_RE.search(text):
-            errs.append(f"reason[{i}].{lang} says safe")
-        if _LINK_RE.search(text):
-            errs.append(f"reason[{i}].{lang} contains a link or domain")
-        if _FORBIDDEN_CHARS & set(text):
-            errs.append(f"reason[{i}].{lang} contains forbidden characters")
-        if _SCORE_RE.search(text):
-            errs.append(f"reason[{i}].{lang} mentions a score")
-    return errs
-
-
-def verify_reasons(
-    drafts: Sequence[ReasonDraft], evidence: Sequence[Evidence], verdict: VerdictLabel
-) -> list[str]:
+def verify_reasons(drafts: Sequence[ReasonDraft], evidence: Sequence[Evidence], verdict: VerdictLabel) -> list[str]:
     """Return a list of problems; empty means the reasons are faithful to the evidence."""
     by_id = {e.id: e for e in evidence}
     errs: list[str] = []
@@ -131,10 +157,7 @@ class Responder:
         errs: Sequence[str] = (),
         cost: float = 0.0,
     ) -> ResponderResult:
-        reasons = tuple(
-            r.model_copy(update={"generated_by": "template"})
-            for r in inp.template_reasons[:MAX_REASONS]
-        )
+        reasons = tuple(r.model_copy(update={"generated_by": "template"}) for r in inp.template_reasons[:MAX_REASONS])
         return ResponderResult(reasons, "template", route, status, tuple(errs), cost)
 
     def _context(self, inp: ResponderInput) -> str:
@@ -145,8 +168,7 @@ class Responder:
             "degraded": inp.degraded,
             "evidence": [evidence_item(e, with_weight=True) for e in relevant[:20]],
             "template_reasons": [
-                {"en": r.en, "ar": r.ar, "evidence_ids": r.evidence_ids}
-                for r in inp.template_reasons
+                {"en": r.en, "ar": r.ar, "evidence_ids": r.evidence_ids} for r in inp.template_reasons
             ],
             "instructions": "Improve on the template reasons if you can, staying faithful to them.",
         }
@@ -167,9 +189,7 @@ class Responder:
         )
         res = await self.router.complete_json(req)
         if not res.ok or res.value is None:
-            return self._template(
-                inp, res.status, res.route, [res.error or res.status], res.cost_usd
-            )
+            return self._template(inp, res.status, res.route, [res.error or res.status], res.cost_usd)
         errs = verify_reasons(res.value.reasons, inp.evidence, inp.verdict)
         if errs:
             return self._template(inp, "rejected", res.route, errs, res.cost_usd)

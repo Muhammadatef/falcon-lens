@@ -151,9 +151,7 @@ SPECS: dict[str, ToolSpec] = {
     )
 }
 
-RejectReason = Literal[
-    "unknown_tool", "unavailable", "bad_args", "provenance", "unknown_brand", "budget", "duplicate"
-]
+RejectReason = Literal["unknown_tool", "unavailable", "bad_args", "provenance", "unknown_brand", "budget", "duplicate"]
 OutcomeStatus = Literal["ok", "rejected", "error", "timeout"]
 
 
@@ -195,7 +193,7 @@ class ToolRegistry:
     ) -> None:
         self.backends = backends
         self.brand_ids = brand_ids
-        self.metrics: m.MetricsSink = metrics or m.NullMetrics()
+        self.metrics: m.MetricsSink = metrics or m.default_metrics()
         self._ids = id_factory
         self._clock = clock
 
@@ -204,10 +202,7 @@ class ToolRegistry:
 
     def catalogue(self) -> list[dict[str, Any]]:
         """Tool list for the investigator prompt (trusted text built by us)."""
-        return [
-            {"tool": s.name, "args": dict(s.args_doc), "returns": s.returns}
-            for s in self.available()
-        ]
+        return [{"tool": s.name, "args": dict(s.args_doc), "returns": s.returns} for s in self.available()]
 
     def _violation(self, tool: str, arg: str, value: object) -> Evidence:
         self.metrics.inc(m.TOOL_ERRORS, tool=tool, reason="provenance")
@@ -240,14 +235,22 @@ class ToolRegistry:
             args = spec.args_model.model_validate(action.args)
         except ValidationError:
             return self._reject(spec.name, "bad_args")
+        # Only the on-chain canonical value that was checked is forwarded, never the model's string.
+        resolved: dict[str, str] = {}
         for a in spec.url_args:
             value = getattr(args, a)
-            if not ctx.allows_url(value):
+            url = ctx.resolve_url(value)
+            if url is None:
                 return self._reject(spec.name, "provenance", [self._violation(spec.name, a, value)])
+            resolved[a] = url
         for a in spec.domain_args:
             value = getattr(args, a)
-            if not ctx.allows_domain(value):
+            dom = ctx.resolve_domain(value)
+            if dom is None:
                 return self._reject(spec.name, "provenance", [self._violation(spec.name, a, value)])
+            resolved[a] = dom
+        if resolved:
+            args = args.model_copy(update=resolved)
         if isinstance(args, CompareBrandArgs) and args.brand_id not in self.brand_ids:
             return self._reject(spec.name, "unknown_brand")
         if isinstance(args, FingerprintArgs) and not ctx.allows_fingerprint(args.fingerprint):
@@ -271,9 +274,7 @@ class ToolRegistry:
         result: Awaitable[EvidenceList] = fn(value)
         return result
 
-    async def execute(
-        self, action: Action, ctx: ProvenanceContext, *, timeout_s: float | None = None
-    ) -> ToolOutcome:
+    async def execute(self, action: Action, ctx: ProvenanceContext, *, timeout_s: float | None = None) -> ToolOutcome:
         checked = self.validate(action, ctx)
         if isinstance(checked, ToolOutcome):
             return checked

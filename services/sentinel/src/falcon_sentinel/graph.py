@@ -46,6 +46,7 @@ from .llm import (
     SummaryOut,
     structured,
 )
+from .textsafe import vet
 
 MAX_STEPS = 8
 MAX_TOKENS = 20_000
@@ -186,7 +187,7 @@ def _budget(state: TriageState) -> dict[str, Any]:
 
 
 def _exhausted(b: dict[str, Any]) -> bool:
-    return b["steps"] > MAX_STEPS or b["tokens"] >= MAX_TOKENS or b["elapsed_s"] >= MAX_SECONDS
+    return b["steps"] >= MAX_STEPS or b["tokens"] >= MAX_TOKENS or b["elapsed_s"] >= MAX_SECONDS
 
 
 # ------------------------------------------------------------------ graph
@@ -303,12 +304,11 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         try:
             out = await ask(state, AssessOut, "assess", view, b)
             ids = _valid_ids(out.severity_reason.evidence_ids, view)
-            if ids:
-                reason = {
-                    "en": out.severity_reason.en,
-                    "ar": out.severity_reason.ar,
-                    "evidence_ids": ids,
-                }
+            en, ar = vet(out.severity_reason.en, view), vet(out.severity_reason.ar, view)
+            if ids and en is not None and ar is not None:  # URL/domain/number not in evidence -> template
+                reason = {"en": en, "ar": ar, "evidence_ids": ids}
+            elif ids:
+                degraded.append("assess_text_rejected")
         except (LLMOutputError, BudgetExceeded, TimeoutError):
             degraded.append("assess")
         if reason is None:
@@ -325,12 +325,16 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             claims = []
             for c in out.claims:  # verifier: drop every claim that cites no real evidence id
                 ids = _valid_ids(c.evidence_ids, view)
-                if ids:
-                    claims.append({"text_en": c.text_en, "evidence_ids": ids})
-            if claims:
+                text = vet(c.text_en, view)  # foreign URL/domain/number -> claim dropped; others defanged
+                if ids and text is not None:
+                    claims.append({"text_en": text, "evidence_ids": ids})
+            en, ar = vet(out.en, view), vet(out.ar, view)
+            if en is None or ar is None:
+                degraded.append("summarise_text_rejected")
+            elif claims:
                 summary = {
-                    "en": out.en,
-                    "ar": out.ar,
+                    "en": en,
+                    "ar": ar,
                     "claims": claims,
                     "generated_by": "llm",
                     "model_route": getattr(deps.llm, "route", "local"),
