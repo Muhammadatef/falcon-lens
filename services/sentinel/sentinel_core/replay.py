@@ -1,4 +1,5 @@
 """Load a JSONL event stream and run it through the deterministic core."""
+
 from __future__ import annotations
 
 import json

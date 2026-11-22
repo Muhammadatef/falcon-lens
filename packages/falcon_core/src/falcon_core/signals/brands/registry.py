@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
 from falcon_core.signals.url.canonical import psl_split
 from falcon_core.signals.url.textutil import compact, normalize_arabic
 
@@ -57,7 +58,7 @@ def _short_en(name: str) -> list[str]:
     out = []
     base = re.sub(r"\(.*?\)", " ", name)
     base = base.split(" - ")[0]
-    if (c := compact(base)):
+    if c := compact(base):
         out.append(c)
     for m in re.findall(r"\(([^)]*)\)", name):
         for part in re.split(r"[/,]", m):
@@ -92,11 +93,18 @@ def _build(entry: dict[str, Any]) -> Brand:
         if len(t) >= 3 and t not in GENERIC_AR and t not in ar and not all(w in GENERIC_AR for w in _words_ar(str(kw))):
             ar.append(t)
     return Brand(
-        brand_id=entry["brand_id"], name_en=entry.get("name_en", ""), name_ar=entry.get("name_ar", ""),
-        category=entry.get("category", ""), verified_domains=vd, source_url=str(entry.get("source_url", "")),
-        retrieved_at=str(entry.get("retrieved_at", "")), keywords_en=tuple(entry.get("keywords_en", [])),
-        keywords_ar=tuple(entry.get("keywords_ar", [])), domain_parts=tuple(parts),
-        tokens_en=tuple(toks), tokens_ar=tuple(ar),
+        brand_id=entry["brand_id"],
+        name_en=entry.get("name_en", ""),
+        name_ar=entry.get("name_ar", ""),
+        category=entry.get("category", ""),
+        verified_domains=vd,
+        source_url=str(entry.get("source_url", "")),
+        retrieved_at=str(entry.get("retrieved_at", "")),
+        keywords_en=tuple(entry.get("keywords_en", [])),
+        keywords_ar=tuple(entry.get("keywords_ar", [])),
+        domain_parts=tuple(parts),
+        tokens_en=tuple(toks),
+        tokens_ar=tuple(ar),
     )
 
 

@@ -10,8 +10,13 @@ from falcon_core.signals.url.textutil import compact
 from falcon_core.signals.url.textutil import scripts_in as _scripts_in
 
 SPEC = SignalSpec(
-    name="url.homograph", family="url", tier="T1", input_types=("url", "message", "email"),
-    timeout_ms=T1_TIMEOUT_MS, network="none", emits=("url.homograph",),
+    name="url.homograph",
+    family="url",
+    tier="T1",
+    input_types=("url", "message", "email"),
+    timeout_ms=T1_TIMEOUT_MS,
+    network="none",
+    emits=("url.homograph",),
 )
 
 
@@ -76,7 +81,8 @@ def run(ctx: SignalContext) -> list[Evidence]:
         return [url_evidence("url.homograph", obs, en, ar, 1.0 if len(reasons) > 1 or "non_ascii" in reasons else 0.9)]
     return [
         url_evidence(
-            "url.homograph", obs,
+            "url.homograph",
+            obs,
             "Domain name mixes different alphabets (possible look-alike)",
             "اسم النطاق يخلط بين أبجديات مختلفة وقد يكون منتحلاً",
             0.6,
