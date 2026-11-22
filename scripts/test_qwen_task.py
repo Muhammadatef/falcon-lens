@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-import qwen_task as q  # noqa: E402
+import qwen_task as q
 
 
 def test_normalise_arabic_variants_match() -> None:

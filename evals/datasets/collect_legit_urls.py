@@ -81,33 +81,10 @@ OFFICIAL_HARD = [
 ]
 
 # Tranco list TRANCO_ID (top-1m); user-facing sites picked by hand (CDN/infra domains excluded).
-POPULAR = """google.com facebook.com microsoft.com youtube.com apple.com instagram.com linkedin.com amazon.com
-wikipedia.org netflix.com github.com yahoo.com bing.com reddit.com x.com whatsapp.com zoom.us
-adobe.com wordpress.org wordpress.com paypal.com ebay.com cloudflare.com mozilla.org spotify.com tiktok.com
-pinterest.com tumblr.com medium.com dropbox.com salesforce.com oracle.com ibm.com intel.com nvidia.com
-bbc.com cnn.com nytimes.com theguardian.com reuters.com bloomberg.com aljazeera.com aljazeera.net
-khaleejtimes.com gulfnews.com thenationalnews.com arabianbusiness.com emirates.com etihad.com flydubai.com
-airarabia.com noon.com talabat.com careem.com dubizzle.com bayut.com propertyfinder.ae carrefouruae.com
-lulu.com namshi.com sharafdg.com amazon.ae amazon.sa python.org nodejs.org stackoverflow.com
-gitlab.com slack.com atlassian.com notion.so canva.com figma.com openai.com anthropic.com duckduckgo.com
-twitch.tv discord.com telegram.org signal.org skype.com office.com live.com outlook.com icloud.com
-booking.com airbnb.com tripadvisor.com expedia.com uber.com aliexpress.com alibaba.com temu.com shein.com
-walmart.com target.com bestbuy.com ikea.com nike.com adidas.com samsung.com sony.com hp.com dell.com lenovo.com
-huawei.com xiaomi.com cisco.com vmware.com docker.com kubernetes.io rust-lang.org golang.org php.net
-archive.org imdb.com quora.com vimeo.com soundcloud.com deezer.com anghami.com shahid.net
-who.int un.org worldbank.org imf.org nasa.gov nih.gov cdc.gov europa.eu gov.uk usa.gov
-mit.edu harvard.edu stanford.edu ox.ac.uk khalifa.ac.ae uaeu.ac.ae zu.ac.ae auc.edu
-visa.com mastercard.com americanexpress.com hsbc.com citi.com standardchartered.com barclays.com
-dhl.com fedex.com ups.com aramex.com""".split()
+POPULAR = ["google.com", "facebook.com", "microsoft.com", "youtube.com", "apple.com", "instagram.com", "linkedin.com", "amazon.com", "wikipedia.org", "netflix.com", "github.com", "yahoo.com", "bing.com", "reddit.com", "x.com", "whatsapp.com", "zoom.us", "adobe.com", "wordpress.org", "wordpress.com", "paypal.com", "ebay.com", "cloudflare.com", "mozilla.org", "spotify.com", "tiktok.com", "pinterest.com", "tumblr.com", "medium.com", "dropbox.com", "salesforce.com", "oracle.com", "ibm.com", "intel.com", "nvidia.com", "bbc.com", "cnn.com", "nytimes.com", "theguardian.com", "reuters.com", "bloomberg.com", "aljazeera.com", "aljazeera.net", "khaleejtimes.com", "gulfnews.com", "thenationalnews.com", "arabianbusiness.com", "emirates.com", "etihad.com", "flydubai.com", "airarabia.com", "noon.com", "talabat.com", "careem.com", "dubizzle.com", "bayut.com", "propertyfinder.ae", "carrefouruae.com", "lulu.com", "namshi.com", "sharafdg.com", "amazon.ae", "amazon.sa", "python.org", "nodejs.org", "stackoverflow.com", "gitlab.com", "slack.com", "atlassian.com", "notion.so", "canva.com", "figma.com", "openai.com", "anthropic.com", "duckduckgo.com", "twitch.tv", "discord.com", "telegram.org", "signal.org", "skype.com", "office.com", "live.com", "outlook.com", "icloud.com", "booking.com", "airbnb.com", "tripadvisor.com", "expedia.com", "uber.com", "aliexpress.com", "alibaba.com", "temu.com", "shein.com", "walmart.com", "target.com", "bestbuy.com", "ikea.com", "nike.com", "adidas.com", "samsung.com", "sony.com", "hp.com", "dell.com", "lenovo.com", "huawei.com", "xiaomi.com", "cisco.com", "vmware.com", "docker.com", "kubernetes.io", "rust-lang.org", "golang.org", "php.net", "archive.org", "imdb.com", "quora.com", "vimeo.com", "soundcloud.com", "deezer.com", "anghami.com", "shahid.net", "who.int", "un.org", "worldbank.org", "imf.org", "nasa.gov", "nih.gov", "cdc.gov", "europa.eu", "www.gov.uk", "usa.gov", "mit.edu", "harvard.edu", "stanford.edu", "ox.ac.uk", "khalifa.ac.ae", "uaeu.ac.ae", "zu.ac.ae", "auc.edu", "visa.com", "mastercard.com", "americanexpress.com", "hsbc.com", "citi.com", "standardchartered.com", "barclays.com", "dhl.com", "fedex.com", "ups.com", "aramex.com"]
 
 # Candidates for "legitimate newly registered domain": kept only if RDAP says registered >= 2024-01-01.
-NEW_DOMAIN_CANDIDATES = """claude.com sora.com thinkingmachines.ai ssi.inc lovable.dev bolt.new windsurf.com
-cognition.ai manus.im kimi.com z.ai genspark.ai base44.com grok.com meta.ai threads.com bsky.app
-truthsocial.com pump.fun kalshi.com mistral.ai x.ai deepseek.com cursor.com v0.dev
-gemini.google notebooklm.google ai.google linear.app zed.dev ghostty.org astral.sh bun.sh deno.com
-tailscale.com resend.com clerk.com neon.com turso.tech convex.dev trigger.dev railway.com render.com
-northflank.com cerebras.ai groq.com together.ai fireworks.ai elevenlabs.io suno.com udio.com
-runwayml.com pika.art ideogram.ai leonardo.ai character.ai poe.com phind.com""".split()
+NEW_DOMAIN_CANDIDATES = ["claude.com", "sora.com", "thinkingmachines.ai", "ssi.inc", "lovable.dev", "bolt.new", "windsurf.com", "cognition.ai", "manus.im", "kimi.com", "z.ai", "genspark.ai", "base44.com", "grok.com", "meta.ai", "threads.com", "bsky.app", "truthsocial.com", "pump.fun", "kalshi.com", "mistral.ai", "x.ai", "deepseek.com", "cursor.com", "v0.dev", "gemini.google", "notebooklm.google", "ai.google", "linear.app", "zed.dev", "ghostty.org", "astral.sh", "bun.sh", "deno.com", "tailscale.com", "resend.com", "clerk.com", "neon.com", "turso.tech", "convex.dev", "trigger.dev", "railway.com", "render.com", "northflank.com", "cerebras.ai", "groq.com", "together.ai", "fireworks.ai", "elevenlabs.io", "suno.com", "udio.com", "runwayml.com", "pika.art", "ideogram.ai", "leonardo.ai", "character.ai", "poe.com", "phind.com"]
 
 LOGIN = """https://accounts.google.com/signin|https://github.com/login|https://www.facebook.com/login/
 https://www.paypal.com/signin|https://appleid.apple.com/sign-in|https://login.live.com/|https://www.linkedin.com/login
@@ -187,7 +164,7 @@ https://youtu.be/kJQP7kiw5Fk|https://youtu.be/YE7VzlLtp-4|https://youtu.be/hTWKb
 https://aka.ms/terminal|https://aka.ms/getwinget|https://aka.ms/vscode|https://aka.ms/pscore6|https://aka.ms/wsl
 https://aka.ms/dotnet|https://aka.ms/windows11|https://aka.ms/edge|https://aka.ms/mscert|https://aka.ms/teams
 https://aka.ms/PowerToysOverview|https://aka.ms/azcli|https://aka.ms/devhome|https://aka.ms/mslearn
-https://aka.ms/winget-packages|https://aka.ms/installazurecliwindows|https://aka.ms/vs/17/release/vc_redist.x64.exe
+https://aka.ms/winget-packages|https://aka.ms/installazurecliwindows
 https://g.co/recover|https://g.co/gemini|https://g.co/help|https://g.co/pixel|https://g.co/checkup|https://g.co/ai
 https://g.co/workspace|https://g.co/chrome|https://g.co/kids|https://g.co/legal|https://g.co/offers
 https://apple.co/iphone|https://apple.co/support|https://apple.co/ipad|https://apple.co/mac
@@ -209,33 +186,33 @@ def build_candidates() -> list[dict[str, str]]:
     for bid, urls in OFFICIAL_PATHS.items():
         cat = "official_gov" if bid in GOV_BRANDS else "official_bank"
         for u in urls:
-            rows.append(dict(url=u, category=cat, brand_id=bid,
-                             source="verified_domains of data/brands.yaml; page on the entity's own site"))
+            rows.append({"url": u, "category": cat, "brand_id": bid,
+                             "source": "verified_domains of data/brands.yaml; page on the entity's own site"})
     for u, cat, bid in OFFICIAL_HARD:
-        rows.append(dict(url=u, category=cat, brand_id=bid,
-                         source="official login/payment/service page on a verified_domain of data/brands.yaml"))
+        rows.append({"url": u, "category": cat, "brand_id": bid,
+                         "source": "official login/payment/service page on a verified_domain of data/brands.yaml"})
     for d in POPULAR:
-        rows.append(dict(url=f"https://{d}/", category="popular", brand_id="",
-                         source=f"Tranco list {TRANCO_ID} (top-1m, retrieved {COLLECTED}); user-facing site picked by hand"))
+        rows.append({"url": f"https://{d}/", "category": "popular", "brand_id": "",
+                         "source": f"Tranco list {TRANCO_ID} (top-1m, retrieved {COLLECTED}); user-facing site picked by hand"})
     for d in NEW_DOMAIN_CANDIDATES:
-        rows.append(dict(url=f"https://{d}/", category="hard_negative_new_domain", brand_id="", source="candidate"))
+        rows.append({"url": f"https://{d}/", "category": "hard_negative_new_domain", "brand_id": "", "source": "candidate"})
     for u in LOGIN:
-        rows.append(dict(url=u, category="hard_negative_login", brand_id="",
-                         source="well-known login page of a legitimate service"))
+        rows.append({"url": u, "category": "hard_negative_login", "brand_id": "",
+                         "source": "well-known login page of a legitimate service"})
     for u in PAYMENT:
-        rows.append(dict(url=u, category="hard_negative_payment", brand_id="",
-                         source="payment/checkout/pricing page of a legitimate service"))
+        rows.append({"url": u, "category": "hard_negative_payment", "brand_id": "",
+                         "source": "payment/checkout/pricing page of a legitimate service"})
     for u in DEEPLINK:
-        rows.append(dict(url=u, category="hard_negative_deeplink", brand_id="",
-                         source="deep link (path/query/fragment) on a legitimate site"))
+        rows.append({"url": u, "category": "hard_negative_deeplink", "brand_id": "",
+                         "source": "deep link (path/query/fragment) on a legitimate site"})
     for u in SHORTENED:
         u = u.strip()
         if not u:
             continue
         if u.endswith("/") and u.count("/") == 3:
             continue  # bare shortener roots are not short links
-        rows.append(dict(url=u, category="hard_negative_shortened", brand_id="",
-                         source="short link on a shortener operated by the destination organisation itself"))
+        rows.append({"url": u, "category": "hard_negative_shortened", "brand_id": "",
+                         "source": "short link on a shortener operated by the destination organisation itself"})
     seen: set[str] = set()
     out = []
     for r in rows:

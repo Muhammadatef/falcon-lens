@@ -185,7 +185,7 @@ https://worldbank.org/,worldbank.org,popular,,"Tranco list 46YLX (top-1m, retrie
 https://nasa.gov/,nasa.gov,popular,,"Tranco list 46YLX (top-1m, retrieved 2026-11-22); user-facing site picked by hand",2026-11-22
 https://cdc.gov/,cdc.gov,popular,,"Tranco list 46YLX (top-1m, retrieved 2026-11-22); user-facing site picked by hand",2026-11-22
 https://europa.eu/,europa.eu,popular,,"Tranco list 46YLX (top-1m, retrieved 2026-11-22); user-facing site picked by hand",2026-11-22
-https://gov.uk/,gov.uk,popular,,"Tranco list 46YLX (top-1m, retrieved 2026-11-22); user-facing site picked by hand",2026-11-22
+https://www.gov.uk/,www.gov.uk,popular,,"Tranco list 46YLX (top-1m, retrieved 2026-11-22); user-facing site picked by hand",2026-11-22
 https://usa.gov/,usa.gov,popular,,"Tranco list 46YLX (top-1m, retrieved 2026-11-22); user-facing site picked by hand",2026-11-22
 https://mit.edu/,mit.edu,popular,,"Tranco list 46YLX (top-1m, retrieved 2026-11-22); user-facing site picked by hand",2026-11-22
 https://harvard.edu/,harvard.edu,popular,,"Tranco list 46YLX (top-1m, retrieved 2026-11-22); user-facing site picked by hand",2026-11-22
@@ -395,7 +395,6 @@ https://aka.ms/devhome,aka.ms,hard_negative_shortened,,short link on a shortener
 https://aka.ms/mslearn,aka.ms,hard_negative_shortened,,short link on a shortener operated by the destination organisation itself,2026-11-22
 https://aka.ms/winget-packages,aka.ms,hard_negative_shortened,,short link on a shortener operated by the destination organisation itself,2026-11-22
 https://aka.ms/installazurecliwindows,aka.ms,hard_negative_shortened,,short link on a shortener operated by the destination organisation itself,2026-11-22
-https://aka.ms/vs/17/release/vc_redist.x64.exe,aka.ms,hard_negative_shortened,,short link on a shortener operated by the destination organisation itself,2026-11-22
 https://g.co/recover,g.co,hard_negative_shortened,,short link on a shortener operated by the destination organisation itself,2026-11-22
 https://g.co/gemini,g.co,hard_negative_shortened,,short link on a shortener operated by the destination organisation itself,2026-11-22
 https://g.co/help,g.co,hard_negative_shortened,,short link on a shortener operated by the destination organisation itself,2026-11-22
