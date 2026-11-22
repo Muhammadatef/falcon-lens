@@ -1,0 +1,45 @@
+Return-Path: <bounce@falcon-demo-bnak.test>
+Received: from mail.falcon-demo-bnak.test ([192.0.2.16]) by mx.example.test
+ with ESMTPS; Sat, 21 Nov 2026 02:42:00 +0400
+Authentication-Results: mx.example.test; spf=softfail
+ smtp.mailfrom=falcon-demo-bnak.test; dkim=fail
+ header.d=falcon-demo-bnak.test; dmarc=fail header.from=falcon-demo-bnak.test
+From: "Falcon Demo Bank Security" <alerts@falcon-demo-bnak.test>
+To: Customer <customer@example.test>
+Subject: =?utf-8?b?2KrYrdiv2YrYqyDYqNmK2KfZhtin2KrZgyDYttix2YjYsdmKIC0g2Kc=?=
+ =?utf-8?b?2YXYs9itINix2YXYsg==?= QR
+Date: Sat, 21 Nov 2026 02:42:00 +0400
+Message-ID: <c05-06.fixture@falcon-demo-bnak.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============1109583719380296254=="
+
+--===============1109583719380296254==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoK2LnZhdmK2YTZhtinINin2YTYudiy2YrYstiMCgrY
+qNmK2KfZhtin2KrZgyDYudmG2K/ZhtinINmG2KfZgti12KnYjCDZiNmE2KfYstmFINiq2K3Yr9mR
+2KvZh9inINin2YTYrdmK2YYg2LnYtNin2YYg2YXYpyDZitiq2YjZgtmBINit2LPYp9io2YMuCtin
+2YXYs9itINix2YXYsiBRUiDYp9mE2YXYsdmB2YIg2KjZg9in2YXZitix2Kcg2KzZiNin2YTZgyDZ
+iNmD2YXZkdmEINin2YTYqtit2K/ZitirINiu2YTYp9mEIDI0INiz2KfYudipLgoK2YTYpyDYqti0
+2KfYsdmDINmH2KfZhNix2LPYp9mE2Kkg2YXYuSDYo9it2K8uCgrYqNmG2YMg2KfZhNi12YLYsSDY
+p9mE2KrYrNix2YrYqNmKCgpURVNUIEZJWFRVUkUsIG5vdCBhIHJlYWwgbWVzc2FnZSAvINix2LPY
+p9mE2Kkg2KfYrtiq2KjYp9ixINmI2YTZitiz2Kog2K3ZgtmK2YLZitipCg==
+
+--===============1109583719380296254==
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="update-qr.png"
+MIME-Version: 1.0
+
+iVBORw0KGgoAAAANSUhEUgAAAN4AAADeAQAAAAB6HIMaAAABR0lEQVR42u1YQQ7DIAyLxgN4El/n
+STwgUhY7UGmH7TpXKkJtRC5WahynFt+X25N8krpJwxoRcwcLr5bJl/1Y/0gCbQKLNaxPxCvRjjoU
+RbusAW0iTMATsQ11tBkv834PtCBwB4fV0ZK3buaWT3XelhRkSc+W1oRaqQkgLS7akTdhJjQSuMjg
+PFdFi6rmhibgJGVBF23dLMYTqrtMmQkfXYzylZiV0W69tc1e7c4LS+PVGgLszacs2sSJ1tDnBZ6W
+TLfzeuenR9vFXStB02UCeQtnCymjSujeMpKBjYwOh1vXJxy7SPYWfmEPhqqWV2wHqrJPgDdAVWcp
+gzITjgeLokGVN7T9rZO9fmYHccfox9+20OYt5zJ0XlIXpz3kp0iO57G7Q5OvLaVg+uUfhHlbsDn8
+DuXa7pm3VNf2D5DQ1tvnv+aTvE/yDebWIF1QJvc4AAAAAElFTkSuQmCC
+
+--===============1109583719380296254==--
