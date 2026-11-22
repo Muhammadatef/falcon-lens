@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """RedirectResolver interface. Shortener expansion / redirect-chain following needs network, so it belongs to the
 SSRF-guarded client (T-003). T1 lexical signals never fetch; this module only defines the contract and a stub."""
 

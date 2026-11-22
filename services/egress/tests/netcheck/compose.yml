@@ -1,0 +1,32 @@
+# T-003 network acceptance: a sandbox-like client on an internal-only network whose only
+# peer is the egress proxy. It mirrors docker-compose.yml (`sandbox` network internal: true,
+# egress-proxy also on a routed network). Run: services/egress/tests/netcheck/run.sh
+name: fl-t003-netcheck
+
+networks:
+  sbx:
+    internal: true
+  out: {}
+
+services:
+  egress-proxy:
+    build: { context: ../../../.., dockerfile: services/egress/Dockerfile }
+    image: falcon-lens/egress:netcheck
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [sbx, out]
+
+  probe:
+    image: falcon-lens/egress:netcheck
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [sbx]
+    depends_on:
+      egress-proxy: { condition: service_healthy }
+    volumes:
+      - ./probe.py:/probe/probe.py:ro
+    command: ["python", "-I", "/probe/probe.py"]
