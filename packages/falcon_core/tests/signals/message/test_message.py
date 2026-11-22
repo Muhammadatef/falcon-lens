@@ -37,7 +37,7 @@ def test_normalize_variants_digits_tatweel() -> None:
     assert normalize("مدرسة").text == normalize("مدرسه").text  # taa marbuta
     assert normalize("على").text == normalize("علي").text  # alef maqsura / yaa
     assert normalize("أحمد إبراهيم آدم").text == "احمد ابراهيم ادم"
-    assert normalize("هلااااا").text == "هلاا"  # elongation
+    assert normalize("هلااااا").text == "هلا"  # elongation collapses to one letter
     assert normalize("۱۲۳").text == "123"  # Persian-Indic digits
 
 
@@ -68,7 +68,7 @@ def test_arabizi_fold_only_mixed_tokens() -> None:
         ("حمل تطبيق AnyDesk وأعطنا الرقم", "remote_access"),
         ("Install TeamViewer QuickSupport now", "remote_access"),
         ("قم بالدفع عبر الرابط وحدث بيانات البطاقة", "payment"),
-        ("This is Dubai Police cyber crime unit", "authority"),
+        ("This is City Police, cyber crime unit", "authority"),
         ("معك قسم الاحتيال في البنك", "authority"),
         ("مبروك! فزت بجائزة قدرها مليون درهم", "prize"),
         ("Congratulations, you have won a prize", "prize"),
@@ -128,7 +128,7 @@ def test_spans_are_offsets_not_text() -> None:
 
 
 def test_h6_flag_otp_plus_authority() -> None:
-    res = analyze_message("هنا شرطة ابوظبي. ارسل رمز التحقق الان")
+    res = analyze_message("هنا الشرطة. ارسل رمز التحقق الان")
     flagged = {e.signal for e in res.evidence if e.hard_rule == "H6"}
     assert flagged == {"message.rule.otp_request"}
     plain = analyze_message("Send the OTP code to me")
@@ -136,7 +136,7 @@ def test_h6_flag_otp_plus_authority() -> None:
 
 
 def test_all_evidence_validates_against_schema() -> None:
-    res = analyze_message("عاجل شرطة ابوظبي ارسل رمز التحقق hxxps://falcon-demo[.]test/x 0500000000 بنك الصقر")
+    res = analyze_message("عاجل الشرطة ارسل رمز التحقق hxxps://falcon-demo[.]test/x 0500000000 بنك الصقر")
     assert res.evidence
     validate_evidence(res.evidence)
 
@@ -214,3 +214,113 @@ def test_oversized_message_is_truncated_not_crashing() -> None:
     res = analyze_message("عاجل " * 5000)
     assert res.truncated
     assert any(e.signal == "message.rule.urgency" for e in res.evidence)
+
+
+# ---- PR #8 review fixes ---------------------------------------------------------------------
+
+
+LEGIT_NOTIFICATIONS = [
+    "رمز التحقق الخاص بك هو 482913. لا تشارك هذا الرمز مع أي شخص. بنك الصقر التجريبي",
+    "482913 is your Falcon Demo Bank OTP. Do not share it with anyone. Bank staff will never ask for it.",
+    "Use code 482913 to log in to Falcon Demo Bank. Never share this code.",
+    "ramz el ta7a2o2 hwa 4821, la tshare-o ma3 ay 7ad. Falcon Demo Bank",
+    "كود التفعيل 4821 صالح لمدة 5 دقائق. لا تعطه لاي احد. بنك الصقر التجريبي",
+    "تم خصم 50 درهم من بطاقتك في بنك الصقر التجريبي. اذا لم تقم بالعملية اتصل بنا عبر التطبيق",
+    "Your Falcon Demo Bank statement is ready in the app.",
+    "your parcel was delivered to the reception desk. Thank you",
+    "ana fel bank now, 7abibi call me 3la the weekend",
+]
+
+
+@pytest.mark.parametrize("text", LEGIT_NOTIFICATIONS)
+def test_legit_otp_and_notifications_fire_no_otp_secrecy_or_h6(text: str) -> None:
+    got = rules(text)
+    assert not got & {"otp_request", "secrecy", "remote_access", "authority"}, got
+    assert not [e for e in analyze_message(text).evidence if e.hard_rule]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "معك موظف البنك. ارسل لنا رمز التحقق اللي وصلك",  # claim + ask (Gulf)
+        "نتواصل معك من بنك الصقر التجريبي، زودنا بالرمز الذي وصلك",
+        "هنا قسم الاحتيال. شاركنا الكود اللي وصلك الان",
+        "This is the bank fraud department. Please share the OTP you just received",
+        "I am calling from your bank, tell us the code we sent",
+        "ma3ak el bank, ersel el code ally wslk",
+    ],
+)
+def test_h6_needs_ask_plus_identity_claim(text: str) -> None:
+    flagged = {e.signal for e in analyze_message(text).evidence if e.hard_rule == "H6"}
+    assert flagged == {"message.rule.otp_request"}, text
+
+
+def test_h6_not_for_ask_without_claim_or_claim_without_ask() -> None:
+    assert not [e for e in analyze_message("send me the code please").evidence if e.hard_rule]
+    assert not [e for e in analyze_message("هنا بنك الصقر التجريبي. رمزك 4821").evidence if e.hard_rule]
+    assert "otp_request" not in rules("لا تشارك الرمز مع احد")  # warning, not an ask
+    assert "secrecy" not in rules("لا تشارك هذا الرمز مع أي شخص")
+    assert "otp_request" not in rules("Do not share the code with anyone")
+    assert "otp_request" not in rules("Never share your OTP")
+
+
+@pytest.mark.parametrize(
+    ("text", "rule"),
+    [
+        ("عاااااجل!! حسابك بيتم تعليقه", "urgency"),
+        ("حسابك بيتم تعليقه فووووراً", "urgency"),
+        ("uurrrgent!!! pay nowww", "urgency"),
+        ("مبرررروك فزززت", "prize"),
+    ],
+)
+def test_elongation_matches_and_offsets_stay_in_bounds(text: str, rule: str) -> None:
+    hit = next(h for h in find_rules(text) if h.rule == rule)
+    assert all(0 <= a < b <= len(text) for a, b in hit.spans)
+
+
+def test_arabic_word_boundaries() -> None:
+    assert rules("العجلة الأمامية للسيارة تحتاج تغيير") == set()
+    assert "urgency" not in rules("الحكومة عجلة التنمية")
+    assert "urgency" in rules("افعل ذلك بسرعة")
+    assert "fine" in rules("والمخالفات المرورية")  # attached و + ال prefix
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["ana men el bank, ersel el code", "mn bel bank ab3at el ramz", "ma3ak bil bank, ersal otp"],
+)
+def test_arabizi_gaps(text: str) -> None:
+    assert {"otp_request", "authority"} <= rules(text)
+
+
+@pytest.mark.parametrize("s", ["İİİİ urgent", "ßßßß urgent", "ﬃﬃ urgent", "ﷺﷺ otp", "İ" * 40 + " عاجل"])
+def test_casefold_expansions_keep_index_map_aligned(s: str) -> None:
+    n = normalize(s)
+    assert len(n.text) == len(n.index_map)
+    assert all(0 <= i < len(s) for i in n.index_map)
+    for h in find_rules(s):
+        assert all(0 <= a < b <= len(s) for a, b in h.spans)
+
+
+def test_normalizer_fuzz_random_unicode() -> None:
+    import random
+
+    rnd = random.Random(1234)
+    pool = list("İßﬃﬁﷺ﷽ǅǈΣςµ٠١٢٣ءآأإةىيـَُّ ​‏ abcXYZ٣7 \n\t.-") + [chr(c) for c in range(0x0600, 0x0700, 7)]
+    for _ in range(300):
+        s = "".join(rnd.choice(pool) for _ in range(rnd.randint(0, 60)))
+        n = normalize(s)
+        assert len(n.text) == len(n.index_map)
+        assert list(n.index_map) == sorted(n.index_map)
+        assert all(0 <= i < max(len(s), 1) for i in n.index_map)
+        for h in find_rules(s):
+            assert all(0 <= a <= b <= len(s) for a, b in h.spans)
+        analyze_message(s)  # must not raise
+
+
+def test_message_signals_emit_only_declared_names() -> None:
+    text = "عاجل معك موظف البنك ارسل رمز التحقق hxxps://example[.]test/p 0500000000 Falcon Demo Bank"
+    for name in ("message.rules", "message.children", "message.brand_mention"):
+        spec, fn = REGISTRY[name]
+        out = run_async(fn(Ctx(text=text)))
+        assert {e.signal for e in out} <= set(spec.emits), name

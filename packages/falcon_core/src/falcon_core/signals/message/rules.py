@@ -10,6 +10,8 @@ from functools import lru_cache
 from falcon_core.signals.message.lexicon import RULES
 from falcon_core.signals.message.normalize import Normalized, arabizi_fold, normalize
 
+_AR_PREFIX = "وال|بال|فال|كال|لل|ولل|ال|و|ف|ب|ل|ك"
+_AR_SUFFIX = "ات|ون|ين|ان|ها|هم|كم|نا|ه|ك|ي|ا|ت"
 MAX_SPANS = 8  # spans reported per rule
 
 
@@ -27,7 +29,9 @@ def _compile(frags: list[str], lang: str) -> re.Pattern[str]:
         norm = [arabizi_fold(f) for f in norm]
     body = "|".join(f"(?:{f})" for f in norm)
     if lang == "ar":
-        return re.compile(body)
+        # Arabic word boundaries: optional attached prefix (و ف ب ل ك ال ...) and suffix (ه ها ك كم ات ...),
+        # never a letter on either side, so «العجلة» does not hit an «عجل» term.
+        return re.compile(rf"(?<![ء-ي])(?:{_AR_PREFIX})?(?:{body})(?:{_AR_SUFFIX})?(?![ء-ي])")
     return re.compile(rf"(?<![a-z0-9])(?:{body})(?![a-z])")
 
 

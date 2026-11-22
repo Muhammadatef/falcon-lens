@@ -23,6 +23,7 @@ from falcon_core.signals.image.analyze import (
     analyze_image_with_ocr,
     sniff,
 )
+from falcon_core.signals.message.analyze import analyze_message
 
 
 def names(res: Any) -> set[str]:
@@ -111,14 +112,32 @@ def test_html_is_parsed_not_rendered_and_scripts_ignored() -> None:
     )
     res = analyze_email(mk(text=None, html=html).as_bytes())
     assert "alert" not in res.body_text and "رمز" in res.body_text
-    assert "message.rule.otp_request" in names(res)
+    assert "message.rule.otp_request" in {e.signal for e in analyze_message(res.body_text).evidence}
     assert all("tracker" not in c.value for c in res.children)  # remote content is not even a child
 
 
-def test_body_goes_through_message_pipeline_and_h5_children() -> None:
+def test_body_goes_through_message_pipeline_once_and_h5_children() -> None:
     res = analyze_email(mk(subject="مخالفة مرورية", text="ادفع الان hxxps://pay.example[.]test/f").as_bytes())
-    assert {"message.rule.fine", "message.rule.payment"} <= names(res)
-    assert ("url", "https://pay.example.test/f") in {(c.kind, c.value) for c in res.children}
+    # email.analyze emits no message.* evidence: the cascade runs the message pipeline once on body_text
+    assert not [n for n in names(res) if n.startswith("message.")]
+    ma = analyze_message(res.body_text)
+    assert {"message.rule.fine", "message.rule.payment"} <= {e.signal for e in ma.evidence}
+    assert ("url", "https://pay.example.test/f") in {(c.kind, c.value) for c in ma.children}
+
+
+def test_email_emits_only_declared_names() -> None:
+    m = mk(
+        frm="Falcon Demo Bank <h@mailer-one.test>",
+        Reply_To="r@other-two.test",
+        Return_Path="<b@bounce-three.test>",
+        Authentication_Results="x; spf=fail",
+        html='<a href="https://a-one.test">https://b-two.test</a>',
+    )
+    m.add_attachment(b"MZ..", maintype="application", subtype="octet-stream", filename="a.exe")
+    m.add_attachment(qr_png("https://qr.example.test/"), maintype="image", subtype="png", filename="q.png")
+    emitted = names(analyze_email(m.as_bytes())) | names(analyze_email(b"x" * (MAX_EMAIL_BYTES + 1)))
+    assert emitted <= set(REGISTRY["email.analyze"][0].emits)
+    assert len(emitted) >= 8
 
 
 def test_attachment_type_by_magic_and_hash_only() -> None:
@@ -131,7 +150,9 @@ def test_attachment_type_by_magic_and_hash_only() -> None:
     assert atts[0]["detected_type"] == "exe" and atts[0]["declared_type"] == "application/pdf"
     assert atts[0]["risky"] and atts[0]["double_extension"]
     assert atts[0]["sha256"] == hashlib.sha256(exe).hexdigest()
-    assert atts[1]["detected_type"] == "pdf" and atts[1]["name"] == "a.pdf" and not atts[1]["risky"]
+    assert (
+        atts[1]["detected_type"] == "pdf" and atts[1]["ext"] == "pdf" and "name" not in atts[1] and not atts[1]["risky"]
+    )
 
 
 def test_image_attachment_qr_becomes_child() -> None:

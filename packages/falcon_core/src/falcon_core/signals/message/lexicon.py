@@ -25,7 +25,6 @@ RULES: dict[str, list[Group]] = {
                 "سيتم (ايقاف|تعليق|حظر|الغاء|تجميد)",
                 "بيتم (ايقاف|تعليق|حظر|الغاء)",
                 "لا تتاخر",
-                "عجل",
             ],
             "en": [
                 "urgent",
@@ -38,16 +37,7 @@ RULES: dict[str, list[Group]] = {
                 "will be (suspended|blocked|closed|frozen|cancell?ed)",
                 "asap",
             ],
-            "arz": [
-                "3ajil",
-                "3ajel",
-                "fawran",
-                "bsor3a",
-                "bsur3a",
-                "al7in",
-                "akher tanbeeh",
-                "akher fursa",
-            ],
+            "arz": ["3ajil", "3ajel", "fawran", "bsor3a", "bsur3a", "al7in", "akher tanbeeh", "akher fursa"],
         }
     ],
     "secrecy": [
@@ -57,69 +47,40 @@ RULES: dict[str, list[Group]] = {
                 "لا ?تقول لاحد",
                 "لا ?تبلغ احد",
                 "لا ?تتكلم مع احد",
-                "لا ?تشارك",
                 "سري للغاية",
                 "بسرية تامة",
                 "لا ?تفتح فمك",
                 "بيننا فقط",
                 "لا تعلم احد",
+                "لا ?تقل لاحد",
             ],
             "en": [
                 "do not tell",
                 "don'?t tell",
                 "keep (this|it) (a )?(secret|confidential|private)",
-                "do not (inform|share with)",
+                "do not inform",
                 "between us",
                 "tell no ?one",
                 "do not discuss",
             ],
-            "arz": [
-                "la tkhbr",
-                "la tgol",
-                "la tqol",
-                "la t2ol",
-                "sirri",
-                "sirriya",
-                "bayni wabaynak",
-            ],
+            "arz": ["la tkhbr", "la tgol", "la tqol", "la t2ol", "sirri", "sirriya", "bayni wabaynak"],
         }
     ],
     "otp_request": [
         {
+            # an ASK: imperative verb + (up to a few words) + code noun. Delivery ("رمز التحقق هو ...") and
+            # warnings ("لا تشارك الرمز") never match: the verb must start a word and must not be negated.
             "ar": [
-                "رمز التحقق",
-                "رمز التاكيد",
-                "رمز التفعيل",
-                "كود التحقق",
-                "كود التفعيل",
-                "كود التاكيد",
-                "رقم التحقق",
-                "كلمة (المرور|السر) (المؤقتة|لمرة واحدة)",
-                "كلمة مرور لمرة واحدة",
-                "الرمز المرسل",
-                "ارسل (لنا )?الرمز",
-                "شاركنا الرمز",
-                "ادخل الرمز",
-                "الرقم السري",
-                "رمز الامان",
+                "(?<!لا )(?<!لا)(ارسل|ارسلي|ارسلوا|ابعث|زودنا|زودني|شاركنا|شارك|اخبرنا|اخبرني|اعطنا|اعطني|عطنا|قولنا|قل لنا|اذكر) "
+                "[^.!?,]{0,30}?(الرمز|رمز|الكود|كود|رقم التحقق|كلمة المرور|كلمة السر|الرقم السري|cvv|otp)"
             ],
             "en": [
-                "otp",
-                "one[- ]time (password|passcode|code)",
-                "verification code",
-                "security code",
-                "(send|share|reply with|give) (us )?the code",
-                "(your|card) pin",
-                "cvv",
-                "passcode",
+                "(?<!not )(?<!never )(?<!t )(send|share|tell|give|provide|read out|forward|reply with) "
+                "[^.!?]{0,30}?(otp|code|pin|cvv|passcode|password)\\b"
             ],
             "arz": [
-                "ramz el ?ta[hk]a?[qk]o?q",
-                "ramz al ?ta2?keed",
-                "ersel el ?(code|ramz)",
-                "ersal el ?(code|ramz)",
-                "kod el ?tafeel",
-                "send el ?code",
+                "(?<!la )(?<!ma )(ersel|ersal|rsel|ab3at|ba3at|ab3ath|shareek|sheer|7ot|katab|ktb|2olli|oli) "
+                "[^.!?]{0,25}?(code|kod|ramz|otp|pin|cvv|password)\\b"
             ],
         }
     ],
@@ -198,6 +159,8 @@ RULES: dict[str, list[Group]] = {
     ],
     "authority": [
         {
+            # strong entities, or a first-person claim ("معك / this is / calling from") before an entity.
+            # A bare «بنك» / "bank" is NOT a claim.
             "ar": [
                 "شرطة",
                 "وزارة الداخلية",
@@ -211,32 +174,31 @@ RULES: dict[str, list[Group]] = {
                 "مكافحة الجرائم",
                 "الامن السيبراني",
                 "قسم الاحتيال",
-                "بنك",
-                "مصرف",
-                "ادارة البنك",
+                "(معك|معاك|معكم|انا|نحن|هنا|اتصل بك من|نتصل بك من|نتواصل معك من|اتواصل معك من|اتكلم معك من|اتحدث من|موظف|ممثل|ضابط|مندوب) "
+                "[^.!?,]{0,25}?(بنك|مصرف|هيئة|دائرة|وزارة)",
             ],
             "en": [
                 "police",
                 "ministry of interior",
                 "public prosecution",
                 "central bank",
-                "your bank",
-                "bank (security|support|team|department)",
-                "fraud (department|team)",
                 "federal authority",
-                "emirates id",
                 "cyber ?crime",
                 "court (order|case)",
                 "customs authority",
+                "bank (security|fraud) (team|department)",
+                "fraud (department|team)",
+                "(this is|i am|i'?m|we are|we'?re|calling from|speaking from|contacting you from|officer|agent|representative) "
+                "[^.!?]{0,30}?\\b(bank|ministry|authority|department)\\b",
             ],
             "arz": [
                 "shurta",
                 "shortat",
                 "wizarat el ?dakhiliya",
                 "niyaba",
-                "[ae]l ?bank",
                 "mahkama",
                 "jara'?im",
+                "(ma3ak|ana|ahna|7na|men|min|mn) (el |al |bel |bil )?bank\\b",
             ],
         }
     ],

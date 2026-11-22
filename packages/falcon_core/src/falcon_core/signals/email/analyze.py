@@ -19,7 +19,6 @@ from typing import Any
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
 from falcon_core.signals.brands.registry import BrandRegistry, default_registry
 from falcon_core.signals.image.analyze import analyze_image, sniff
-from falcon_core.signals.message.analyze import analyze_message
 from falcon_core.signals.message.extract import ChildInput, extract_urls
 from falcon_core.signals.url.canonical import canonicalize, psl_split
 from falcon_core.signals.url.textutil import compact, defang
@@ -45,6 +44,8 @@ SPEC = SignalSpec(
         "email.return_path_mismatch",
         "email.link_text_mismatch",
         "email.attachment",
+        "image.invalid",
+        "image.qr_decoded",
     ),
 )
 
@@ -84,7 +85,7 @@ _RISKY_EXT = frozenset(
 class EmailAnalysis:
     evidence: list[Evidence] = field(default_factory=list)
     children: list[ChildInput] = field(default_factory=list)
-    body_text: str = ""
+    body_text: str = ""  # subject + body, untrusted: feed to analyze_message once (cascade)
 
 
 class _Html(HTMLParser):
@@ -203,7 +204,7 @@ def _invalid(reason: str) -> Evidence:
         family="email",
         polarity="neutral",
         observed={"reason": reason},
-        display={"en": "Email could not be processed safely", "ar": "تعذرت معالجة البريد بأمان"},
+        display={"en": "Email could not be processed", "ar": "تعذرت معالجة البريد"},
     )
 
 
@@ -363,7 +364,8 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
                         family="email",
                         polarity="neutral",
                         observed={
-                            "name": name,
+                            "name_sha256": hashlib.sha256(name.encode()).hexdigest()[:16],
+                            "ext": "".join(c for c in ext if c.isalnum())[:8],
                             "declared_type": ctype,
                             "detected_type": kind,
                             "size": len(blob),
@@ -399,9 +401,9 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
 
     res.body_text = (plain if plain.strip() else html_text)[:8192]
     subject = str(msg["Subject"] or "") if msg["Subject"] is not None else ""
-    ma = analyze_message((subject + "\n" + res.body_text)[:8192], reg)
-    res.evidence += ma.evidence
-    res.children += [ChildInput(c.kind, c.value, None, "email.body") for c in ma.children]
+    # The message pipeline is NOT run here: the cascade runs it once on ``body_text`` (subject + body),
+    # so message.* evidence is never counted twice and email.analyze emits only its declared names.
+    res.body_text = (subject + "\n" + res.body_text)[:8192]
     # de-duplicate children
     seen: set[tuple[str, str]] = set()
     uniq = []

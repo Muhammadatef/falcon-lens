@@ -52,25 +52,29 @@ def _dropped(ch: str) -> bool:
     return any(a <= o <= b for a, b in _DROP_RANGES)
 
 
-def normalize(text: str) -> Normalized:
+def normalize(text: str, collapse: bool = True) -> Normalized:
     """Fold alef/yaa/taa-marbuta, drop diacritics, tatweel and invisibles, Arabic-Indic digits to ASCII,
-    casefold Latin, collapse whitespace and 3+ letter elongation."""
+    casefold (1->n expansions such as İ or ß map every output char to its source char), collapse whitespace
+    and, when ``collapse`` is set, runs of the same letter to ONE letter (elongation; lexicons are collapsed
+    the same way so both sides meet)."""
     out: list[str] = []
     idx: list[int] = []
     for i, raw in enumerate(text):
-        for ch in unicodedata.normalize("NFKC", raw):
-            if _dropped(ch):
+        for ch0 in unicodedata.normalize("NFKC", raw):
+            if _dropped(ch0):
                 continue
-            ch = ch.translate(_DIGITS)
-            ch = _FOLD.get(ch, ch).casefold()
-            if ch.isspace():
-                if not out or out[-1] == " ":
+            ch0 = ch0.translate(_DIGITS)
+            for ch in _FOLD.get(ch0, ch0).casefold():
+                if _dropped(ch):
                     continue
-                ch = " "
-            elif ch.isalpha() and len(out) >= 2 and out[-1] == ch and out[-2] == ch:
-                continue
-            out.append(ch)
-            idx.append(i)
+                if ch.isspace():
+                    if not out or out[-1] == " ":
+                        continue
+                    ch = " "
+                elif collapse and ch.isalpha() and out and out[-1] == ch:
+                    continue
+                out.append(ch)
+                idx.append(i)
     return Normalized("".join(out), tuple(idx))
 
 

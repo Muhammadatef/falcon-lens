@@ -43,7 +43,7 @@ def embed_settings() -> tuple[str, int]:
 
 def prepare_for_embedding(text: str) -> str:
     """Normalised (Arabic-folded) text, capped to the message limit. Same function for scripts and queries."""
-    return normalize(text[:MAX_MESSAGE_CHARS]).text
+    return normalize(text[:MAX_MESSAGE_CHARS], collapse=False).text
 
 
 class OllamaEmbedder:

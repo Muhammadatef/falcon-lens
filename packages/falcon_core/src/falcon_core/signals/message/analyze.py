@@ -120,7 +120,7 @@ def _rule_evidence(hits: list[RuleHit]) -> list[Evidence]:
 
 
 def _brand_evidence(text: str, urls: list[ChildInput], reg: BrandRegistry) -> list[Evidence]:
-    nm = normalize(text).text
+    nm = normalize(text, collapse=False).text
     comp = compact(text)
     found = []
     for b in reg.brands:

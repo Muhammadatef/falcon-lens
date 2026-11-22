@@ -64,7 +64,7 @@ def _invalid(reason: str) -> Evidence:
         family="image",
         polarity="neutral",
         observed={"reason": reason},
-        display={"en": "Image could not be processed safely", "ar": "تعذرت معالجة الصورة بأمان"},
+        display={"en": "Image could not be processed", "ar": "تعذرت معالجة الصورة"},
     )
 
 
