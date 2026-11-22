@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +38,8 @@ from falcon_core.cascade.testing import (
     stub_resolver,
 )
 from falcon_core.signals.brands.registry import default_registry
+from falcon_core.signals.cache import RedisCache
+from falcon_core.signals.reputation.mirror import SET_KEY, UPDATED_KEY, FeedMirror
 from falcon_core.signals.url.canonical import canonicalize
 from falcon_worker import keys
 from falcon_worker.consumer import RedisVerdictCache, Worker
@@ -72,11 +76,17 @@ class Rig:
             cache=RedisVerdictCache(self.r, self.store),
             guard_policy=FIXTURE_POLICY,
             resolver=stub_resolver,
+            signal_cache=RedisCache(self.r),
+            mirror=FeedMirror(RedisCache(self.r)),  # the production hash-only mirror, on fakeredis
         )
+        # Mirror loaded 10 min ago and empty (the refresh job's state); tests add entries like smoke.
+        self.r_sync_updated = time.time() - 600
         wkw.setdefault("consumer", "w1")
         self.worker = Worker(self.r, Cascade(deps), self.store, registry, self.metrics, poll_s=0.02, **wkw)
 
     async def submit(self, url: str, input_type: str = "url", **payload: Any) -> str:
+        if not await self.r.exists(UPDATED_KEY):
+            await self.r.set(UPDATED_KEY, json.dumps(self.r_sync_updated))
         vid = new_verdict_id()
         c = canonicalize(url)
         body: dict[str, Any] = {"url": url, "canonical_sha256": url_sha256(c)} if url else {}
@@ -280,3 +290,33 @@ def test_job_fields_roundtrip() -> None:
     assert back.url == "https://x.test/" and back.fingerprint == "ab" and back.verdict_id == vid
     with pytest.raises(ValueError):
         CheckJob.from_fields({"verdict_id": "vd_bad", "payload_json": "{}"})
+
+
+async def test_smoke_check3_synthetic_feed_entry_is_h2_at_t0() -> None:
+    """What `make smoke` check 3 does: SADD sha256(canonical URL) + sha256(host), fresh updated_at."""
+    sandbox = StubSandboxClient(error="must_not_render")
+    rig = Rig(sandbox)
+    await rig.worker.ensure_group()
+    url = "http://synthetic-openphish.test/ab12cd34"
+    hashes = [hashlib.sha256(x.encode()).hexdigest() for x in (url, "synthetic-openphish.test")]
+    await rig.r.sadd(SET_KEY, *hashes)
+    await rig.r.set(UPDATED_KEY, json.dumps(time.time() - 60))
+    vid = await rig.submit(url)
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    final = rig.store.verdicts[vid]
+    VERDICT.validate(final)
+    assert final["verdict"] == "dangerous" and final["tier_reached"] == "T0"
+    assert any(e.get("hard_rule") == "H2" and e["tier"] == "T0" for e in final["evidence"])
+    assert sandbox.calls == []
+
+
+async def test_stale_mirror_entry_is_not_h2() -> None:
+    rig = Rig(StubSandboxClient(default=benign_features("http://synthetic-openphish.test/x")))
+    await rig.worker.ensure_group()
+    url = "http://synthetic-openphish.test/x"
+    await rig.r.sadd(SET_KEY, hashlib.sha256(url.encode()).hexdigest())
+    await rig.r.set(UPDATED_KEY, json.dumps(time.time() - 7 * 3600))
+    vid = await rig.submit(url)
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    final = rig.store.verdicts[vid]
+    assert not any(e.get("hard_rule") == "H2" for e in final["evidence"])
