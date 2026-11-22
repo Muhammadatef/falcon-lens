@@ -1,0 +1,31 @@
+Return-Path: <bounce@falcon-demo-bank-secure.test>
+Received: from mail.falcon-demo-bank-secure.test ([192.0.2.19]) by
+ mx.example.test with ESMTPS; Sat, 21 Nov 2026 12:03:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank-secure.test; dkim=pass
+ header.d=falcon-demo-bank-secure.test; dmarc=fail
+ header.from=falcon-demo-bank-secure.test
+From: "Falcon Demo Bank Card Services" <cards@falcon-demo-bank-secure.test>
+To: Customer <customer@example.test>
+Subject: =?utf-8?b?2KjYt9in2YLYqtmDINmF2YjZgtmI2YHYqSDZhdik2YLYqtmL2Kc=?= |
+ Your card is temporarily blocked
+Date: Sat, 21 Nov 2026 12:03:00 +0400
+Message-ID: <c05-09.fixture@falcon-demo-bank-secure.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYt
+OCI+PHRpdGxlPkZhbGNvbiBEZW1vIEJhbms8L3RpdGxlPjwvaGVhZD4KPGJvZHk+CjxwPjxzdHJv
+bmc+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio
+2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqTwvc3Ryb25nPjwvcD4KPHAgZGlyPSJydGwiPti5
+2YXZitmE2YbYpyDYp9mE2LnYstmK2LLYjCDYqtmFINil2YrZgtin2YEg2KjYt9in2YLYqtmDINmF
+2KTZgtiq2YvYpyDYqNiz2KjYqCDZhdit2KfZiNmE2Kkg2K/YrtmI2YQg2LrZitixINmF2LnYqtin
+2K/YqS4g2YTYpdi52KfYr9ipINiq2YHYudmK2YTZh9in2Iwg2KPZg9mR2K8g2KjZitin2YbYp9iq
+2YMg2LnYqNixINin2YTYsdin2KjYtyDYp9mE2KrYp9mE2Yo6PC9wPjxwPkRlYXIgY3VzdG9tZXIs
+IHlvdXIgY2FyZCBoYXMgYmVlbiB0ZW1wb3JhcmlseSBibG9ja2VkIGFmdGVyIGFuIHVudXN1YWwg
+c2lnbi1pbiBhdHRlbXB0LiBDb25maXJtIHlvdXIgZGV0YWlscyB0byB1bmJsb2NrIGl0OjwvcD48
+cD48YSBocmVmPSJodHRwczovL2ZhbGNvbi1kZW1vLWJhbmstc2VjdXJlLnRlc3QvY2FyZHMvdW5i
+bG9jayI+aHR0cHM6Ly9mYWxjb24tZGVtby1iYW5rLnRlc3QvY2FyZHMvdW5ibG9jazwvYT48L3A+
+CjwvYm9keT48L2h0bWw+Cg==

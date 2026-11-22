@@ -1,0 +1,28 @@
+Return-Path: <bounce@bulk-sender.example.test>
+Received: from mail.bulk-sender.example.test ([192.0.2.18]) by mx.example.test
+ with ESMTPS; Sat, 21 Nov 2026 08:56:00 +0400
+Authentication-Results: mx.example.test; spf=fail
+ smtp.mailfrom=bulk-sender.example.test; dkim=none
+ header.d=bulk-sender.example.test; dmarc=fail
+ header.from=falcon-demo-bank.test
+Received-SPF: fail (mx.example.test: domain of bulk-sender.example.test does
+ not designate 192.0.2.77 as permitted sender)
+From: "Falcon Demo Bank" <alerts@falcon-demo-bank.test>
+To: Customer <customer@example.test>
+Reply-To: falcon.support.desk@example.test
+Subject: Verify your identity to keep online banking active
+Date: Sat, 21 Nov 2026 08:56:00 +0400
+Message-ID: <c05-08.fixture@falcon-demo-bank.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBjdXN0b21lciwKCkFzIHBhcnQgb2YgYSBy
+b3V0aW5lIHNlY3VyaXR5IHJldmlldyB3ZSBuZWVkIHRvIHZlcmlmeSB5b3VyIGlkZW50aXR5LiBQ
+bGVhc2UgcmVwbHkgdG8gdGhpcyBlbWFpbCB3aXRoIHRoZSB2ZXJpZmljYXRpb24gY29kZSB3ZSBq
+dXN0IHNlbnQgdG8geW91ciBtb2JpbGUuCgpEbyBub3Qgc2hhcmUgdGhpcyBlbWFpbCB3aXRoIGFu
+eW9uZTsgaXQgaXMgcGFydCBvZiBhIGNvbmZpZGVudGlhbCByZXZpZXcuCgpGYWxjb24gRGVtbyBC
+YW5rCgpURVNUIEZJWFRVUkUsIG5vdCBhIHJlYWwgbWVzc2FnZSAvINix2LPYp9mE2Kkg2KfYrtiq
+2KjYp9ixINmI2YTZitiz2Kog2K3ZgtmK2YLZitipCg==
