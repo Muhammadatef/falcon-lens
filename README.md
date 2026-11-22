@@ -248,18 +248,18 @@ The method is in [`docs/EVALS.md`](docs/EVALS.md): a temporal split grouped by r
 The block below is written by [`scripts/readme_metrics.py`](scripts/readme_metrics.py), which copies values verbatim from the newest file in `evals/results/published/`. Nothing in it is typed by hand.
 
 <!-- metrics:start -->
-Source artifact: [`evals/results/published/20261122T175915Z.json`](evals/results/published/20261122T175915Z.json). Values are copied verbatim.
+Source artifact: [`evals/results/published/20261122T182533Z.json`](evals/results/published/20261122T182533Z.json). Values are copied verbatim.
 
 | Provenance | Value |
 |---|---|
-| `created_at` | `2026-11-22T17:59:15Z` |
-| `git_sha` | `c1ef83f9e16d0091856333f7ac72a35f39bae7a7` |
+| `created_at` | `2026-11-22T18:25:33Z` |
+| `git_sha` | `ac36c6a4ece9f814cebbc337eef685c0369deb01-dirty` |
 | `dataset_hash` | `382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1` |
 | `seeds` | `{"bootstrap": 20261122, "model": 20261122, "n_bootstrap": 1000, "split": 20261122}` |
 | `model_ids.llm_cloud` | `not_evaluated` |
 | `model_ids.llm_sovereign` | `not_evaluated` |
 | `model_ids.t1.fit_date` | `2026-11-22` |
-| `model_ids.t1.git_sha` | `45bbd72feae1315005cc78945a068730793b4e99` |
+| `model_ids.t1.git_sha` | `4415c0fa498b6b95155b09fdd43c26cff4d623d5` |
 | `model_ids.t1.model_id` | `t1_hgb` |
 | `model_ids.t1.model_sha256` | `41db3ba644d5084d45c3ff0fa0a11ca258caa145d7d81856a0c4fe8b9b179ed3` |
 | `model_ids.t1.sklearn_version` | `1.9.1` |

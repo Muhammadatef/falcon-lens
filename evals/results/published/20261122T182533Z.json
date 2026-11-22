@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-22T17:59:15Z",
+  "created_at": "2026-11-22T18:25:33Z",
   "dataset_hash": "382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1",
-  "git_sha": "c1ef83f9e16d0091856333f7ac72a35f39bae7a7",
+  "git_sha": "ac36c6a4ece9f814cebbc337eef685c0369deb01-dirty",
   "metrics": {
     "test.ece": 0.014249,
     "test.ece_ci95": [
@@ -73,7 +73,7 @@
     "llm_sovereign": "not_evaluated",
     "t1": {
       "fit_date": "2026-11-22",
-      "git_sha": "45bbd72feae1315005cc78945a068730793b4e99",
+      "git_sha": "4415c0fa498b6b95155b09fdd43c26cff4d623d5",
       "model_id": "t1_hgb",
       "model_sha256": "41db3ba644d5084d45c3ff0fa0a11ca258caa145d7d81856a0c4fe8b9b179ed3",
       "sklearn_version": "1.9.1"
