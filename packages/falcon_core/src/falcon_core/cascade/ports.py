@@ -1,6 +1,6 @@
 """Interfaces the cascade depends on, with offline stubs.
 
-- ``FeedMirror``: local feed mirror lookup (T-008, builder-signals implements it). Stub: no hit.
+- Feed mirror: the registered T0 signal ``rep.openphish`` (``signals.reputation``) reads ``ctx.mirror``.
 - ``SandboxClient``: sandbox ``/render`` (T-009, builder-sandbox). HTTP client + stub.
 - ``Extractor``: quarantined LLM extractor hook (T-024). Not wired yet: ``None`` by default.
 """
@@ -8,33 +8,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Any, Protocol
 
 import httpx
 
 from falcon_core.cascade.models import SandboxFeatures
 from falcon_core.scoring.evidence import Evidence
-
-FeedName = Literal["openphish", "gsb", "urlhaus"]
-
-
-@dataclass(frozen=True, slots=True)
-class FeedHit:
-    feed: FeedName
-    match: Literal["url", "host"]
-    feed_age_s: int | None  # age of the mirror snapshot; None when unknown (then never H2)
-
-
-class FeedMirror(Protocol):
-    async def lookup(self, canonical_url: str, host: str) -> Sequence[FeedHit]: ...
-
-
-class NullFeedMirror:
-    """Stub mirror until T-008 lands: never a hit."""
-
-    async def lookup(self, canonical_url: str, host: str) -> Sequence[FeedHit]:
-        return ()
 
 
 class SandboxError(Exception):
