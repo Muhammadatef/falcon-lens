@@ -26,6 +26,7 @@ Phase 0, Foundation. See `STATUS.md` (gates), `TASKS.md` (task cards) and `DECIS
 | `docs/PRIVACY.md` | Data minimisation, redaction, cloud vs sovereign flow |
 | `docs/RUNBOOK.md` | One entry per alert |
 | `docs/DEMO.md` | Six scenarios, Sentinel scene, video shot list, pitch |
+| `docs/CONTRIBUTOR_TASKS.md` | Human contributor task board (@Abdulrahman-alseiari) |
 | `docs/research/VERIFIED_VERSIONS.md` | Library and API versions checked against official docs |
 
 ## Make targets

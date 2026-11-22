@@ -60,9 +60,7 @@ class IncidentAction(BaseModel):
         "draft_police_report",
     ]
     mode: Literal["internal_auto", "external_draft"]
-    status: Literal[
-        "proposed", "executed", "awaiting_approval", "approved", "rejected", "reverted", "failed"
-    ]
+    status: Literal["proposed", "executed", "awaiting_approval", "approved", "rejected", "reverted", "failed"]
     args: dict[str, Any] | None = None
     draft: dict[str, Any] | None = None
     evidence_ids: list[str]
@@ -77,9 +75,7 @@ class Incident(BaseModel):
     type: Literal["campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"]
     severity: Literal["low", "medium", "high", "critical"]
     severity_reason: SeverityReason | None = None
-    status: Literal[
-        "open", "triaging", "awaiting_approval", "mitigated", "closed", "false_positive"
-    ]
+    status: Literal["open", "triaging", "awaiting_approval", "mitigated", "closed", "false_positive"]
     brand_id: str | None = None
     rule_ids: list[str] = Field(min_length=1)
     correlation_keys: dict[str, Any] | None = None

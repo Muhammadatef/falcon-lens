@@ -9,11 +9,12 @@ from __future__ import annotations
 import asyncio
 import hmac
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from falcon_core.service import create_app, run
@@ -78,20 +79,29 @@ def build_app(settings: Settings | None = None, browser: SandboxBrowser | None =
         "sandbox", title="Falcon Lens sandbox", lifespan=lifespan, deps={"browser": sb.ready}
     )
 
-    def auth(x_sandbox_key: Annotated[str | None, Header()] = None) -> None:
-        if (
-            not cfg.api_key
-            or not x_sandbox_key
-            or not hmac.compare_digest(x_sandbox_key, cfg.api_key)
-        ):
-            raise HTTPException(401, "invalid sandbox key")
+    @app.middleware("http")
+    async def require_key(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        """Everything except the health probes needs the worker token (same rule as the
+        platform's ``protect=True``), sent as ``X-Sandbox-Key`` or ``Authorization: Bearer``."""
+        if request.url.path in ("/healthz", "/readyz"):
+            return await call_next(request)
+        if not cfg.api_key:
+            return JSONResponse({"detail": "service token not configured"}, status_code=503)
+        supplied = request.headers.get("x-sandbox-key") or request.headers.get(
+            "authorization", ""
+        ).removeprefix("Bearer ")
+        if not supplied or not hmac.compare_digest(supplied.encode(), cfg.api_key.encode()):
+            return JSONResponse({"detail": "invalid sandbox key"}, status_code=401)
+        return await call_next(request)
 
     def refuse(url: str) -> None:
         reason = check_target(url, cfg.guard)
         if reason:
             raise HTTPException(400, {"error": "blocked", "reason": reason})
 
-    @app.post("/render", dependencies=[Depends(auth)])
+    @app.post("/render")
     async def render(req: RenderRequest) -> dict[str, Any]:
         refuse(req.url)
         t0 = time.monotonic()
@@ -118,7 +128,7 @@ def build_app(settings: Settings | None = None, browser: SandboxBrowser | None =
             out.cloaking = cloaking
         return to_flat(out, req.verdict_id)
 
-    @app.post("/capture", response_model=CaptureResponse, dependencies=[Depends(auth)])
+    @app.post("/capture", response_model=CaptureResponse)
     async def capture(req: CaptureRequest) -> CaptureResponse:
         refuse(req.url)
         r = await sb.visit(req.url, req.profile, visual=True, keep_artifacts=True)

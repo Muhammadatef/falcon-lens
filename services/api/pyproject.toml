@@ -3,7 +3,13 @@ name = "falcon-api"
 version = "0.1.0"
 description = "Falcon Lens REST API v1"
 requires-python = ">=3.12,<3.13"
-dependencies = ["falcon-core"]
+dependencies = [
+    "asyncpg>=0.30",
+    "falcon-core",
+    "python-multipart>=0.0.20",
+    "python-ulid>=3.0",
+    "redis>=5.2",
+]
 
 [build-system]
 requires = ["hatchling"]
