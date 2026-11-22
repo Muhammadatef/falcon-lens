@@ -6,7 +6,7 @@ from typing import Any
 
 from cascade_helpers import assert_valid, make_cascade, metric, rules, run
 
-from falcon_core.cascade import FeedHit, StubSandboxClient
+from falcon_core.cascade import StubSandboxClient
 from falcon_core.cascade.engine import url_sha256
 from falcon_core.cascade.testing import (
     DEMO_BENIGN_URL,
@@ -14,8 +14,8 @@ from falcon_core.cascade.testing import (
     DEMO_OFFICIAL_URL,
     DEMO_ZERO_DAY_URL,
     SlowSandbox,
-    StubFeedMirror,
     benign_features,
+    loaded_mirror,
     official_features,
     phish_features,
     slow_signal,
@@ -124,28 +124,43 @@ async def test_benign_page_is_no_warning_signs() -> None:
 
 async def test_t0_fresh_feed_hit_exits_dangerous_h2() -> None:
     url = "https://synthetic-feed-entry.test/a"
-    canon = canonicalize(url).url
-    feeds = StubFeedMirror({canon: [FeedHit("openphish", "url", 600)]})
     sandbox = StubSandboxClient(error="must_not_render")
-    cascade, _ = make_cascade(sandbox, feeds=feeds)
+    cascade, _ = make_cascade(sandbox, mirror=loaded_mirror([url], age_s=600))
     sink = await run(cascade, url)
     _all_valid(sink.docs)
     assert len(sink.docs) == 1
     final = sink.docs[0]
     assert final["verdict"] == "dangerous" and final["tier_reached"] == "T0"
     assert "H2" in rules(final)
-    assert any(e["tier"] == "T0" and e["signal"] == "rep.openphish" for e in final["evidence"])
+    ev = next(e for e in final["evidence"] if e["signal"] == "rep.openphish")
+    assert ev["tier"] == "T0" and ev["observed"]["fresh"] is True and ev["observed"]["match"] == "url"
+    assert "synthetic-feed-entry" not in str(ev["observed"])  # hash-only mirror, no URL echoed
     assert sandbox.calls == []
+
+
+async def test_t0_host_listing_hits_whole_host() -> None:
+    cascade, _ = make_cascade(mirror=loaded_mirror(["https://synthetic-feed-entry.test/"]))
+    final = (await run(cascade, "https://synthetic-feed-entry.test/other/page")).docs[-1]
+    assert final["verdict"] == "dangerous" and "H2" in rules(final)
 
 
 async def test_t0_stale_feed_hit_is_not_h2() -> None:
     url = "https://synthetic-feed-entry.test/b"
-    feeds = StubFeedMirror({canonicalize(url).url: [FeedHit("openphish", "url", 7 * 3600)]})
-    cascade, _ = make_cascade(StubSandboxClient(default=benign_features(url)), feeds=feeds)
+    cascade, _ = make_cascade(StubSandboxClient(default=benign_features(url)), mirror=loaded_mirror([url], 7 * 3600))
     sink = await run(cascade, url)
     final = sink.docs[-1]
     assert "H2" not in rules(final)
     assert final["verdict"] != "no_warning_signs"  # +6.0 still applies
+
+
+async def test_t0_mirror_never_loaded_degrades() -> None:
+    from falcon_core.signals.cache import MemoryCache
+    from falcon_core.signals.reputation.mirror import FeedMirror
+
+    cascade, _ = make_cascade(StubSandboxClient(default=benign_features()), mirror=FeedMirror(MemoryCache()))
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert final["degraded"] and "signal_error:rep.openphish" in final["degraded_reasons"]
+    assert final["verdict"] != "no_warning_signs"
 
 
 class _MemCache:

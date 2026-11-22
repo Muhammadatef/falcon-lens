@@ -129,7 +129,21 @@ services:
     build: { context: ., dockerfile: services/worker/Dockerfile }
     image: falcon-lens/worker:0.1.0
     <<: [*hardened, *host-gateway]
-    environment: *app-env
+    environment:
+      <<: *app-env
+      # Stable consumer name in the fl:jobs group (XAUTOCLAIM reclaims idle entries either way).
+      FL_WORKER_ID: ${FL_WORKER_ID:-worker-1}
+      FL_SANDBOX_URL: ${FL_SANDBOX_URL:-http://sandbox:8000}
+      # Network signals (RDAP, crt.sh, GSB, URLhaus) go through the filtering egress proxy.
+      FL_EGRESS_PROXY: ${FL_EGRESS_PROXY:-http://egress-proxy:3128}
+      # Exact fixture hosts the worker's SSRF pre-check may let through (tools/demo stacks only;
+      # ignored when FL_ENV=production). Empty by default.
+      FL_SSRF_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-}
+      FL_OPENPHISH_FEED_DIR: /app/data/private/feeds/openphish
+    volumes:
+      # Private OpenPhish rows (gitignored). The worker's refresh job loads them into the hash-only
+      # Redis mirror every FL_OPENPHISH_REFRESH_S. Missing dir = mirror unavailable (degraded checks).
+      - ${FL_OPENPHISH_HOST_DIR:-./data/private/feeds/openphish}:/app/data/private/feeds/openphish:ro
     networks: [app, data, sandbox_ctl, observability]
     depends_on:
       postgres: { condition: service_healthy }

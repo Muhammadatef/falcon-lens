@@ -19,7 +19,7 @@ import asyncio
 import hashlib
 import logging
 import time
-from collections.abc import Awaitable, Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol, TypeGuard
 
@@ -29,8 +29,6 @@ from falcon_core.cascade.metrics import CascadeMetrics
 from falcon_core.cascade.page import page_evidence
 from falcon_core.cascade.ports import (
     Extractor,
-    FeedMirror,
-    NullFeedMirror,
     SandboxClient,
     SandboxError,
 )
@@ -47,6 +45,7 @@ from falcon_core.scoring.params import ScoringParams, load_params
 from falcon_core.scoring.reasons import ReportingChannels
 from falcon_core.security import (
     DEFAULT_POLICY,
+    BlockReason,
     GuardPolicy,
     Resolver,
     SSRFBlocked,
@@ -62,7 +61,6 @@ from falcon_core.signals.url.textutil import defang
 log = logging.getLogger("falcon.cascade")
 
 Tier = Literal["T0", "T1", "T2", "T3"]
-FEED_SOURCE = {"openphish": "openphish", "gsb": "gsb", "urlhaus": "urlhaus"}
 
 
 class VerdictSink(Protocol):
@@ -113,10 +111,14 @@ class SignalCtx:
     brands: Any = None
 
 
-def default_t1_signals() -> dict[str, tuple[SignalSpec, SignalFn]]:
+def default_signals(tier: str) -> dict[str, tuple[SignalSpec, SignalFn]]:
     return {
-        name: (spec, fn) for name, (spec, fn) in REGISTRY.items() if spec.tier == "T1" and "url" in spec.input_types
+        name: (spec, fn) for name, (spec, fn) in REGISTRY.items() if spec.tier == tier and "url" in spec.input_types
     }
+
+
+def default_t1_signals() -> dict[str, tuple[SignalSpec, SignalFn]]:
+    return default_signals("T1")
 
 
 def url_sha256(canonical: CanonicalURL) -> str:
@@ -128,7 +130,6 @@ class CascadeDeps:
     registry: BrandRegistry
     sandbox: SandboxClient
     metrics: CascadeMetrics = field(default_factory=CascadeMetrics)
-    feeds: FeedMirror = field(default_factory=NullFeedMirror)
     cache: VerdictCache = field(default_factory=NullCache)
     extractor: Extractor | None = None  # T-024 hook
     t1_signals: Mapping[str, tuple[SignalSpec, SignalFn]] | None = None  # None -> REGISTRY
@@ -137,11 +138,18 @@ class CascadeDeps:
     favicons: Mapping[str, str] = field(default_factory=dict)  # favicon sha256 -> brand_id
     channels: ReportingChannels | None = None
     params: ScoringParams | None = None
-    feed_timeout_s: float = 0.2
-    t1_budget_s: float = 1.0
+    t0_signals: Mapping[str, tuple[SignalSpec, SignalFn]] | None = None  # None -> REGISTRY (rep.openphish)
+    # Overall cap per tier on top of each signal's own timeout_ms (a hung signal never stalls a tier).
+    tier_grace_s: float = 0.5
     sandbox_timeout_s: float = 7.0
     ssrf_timeout_s: float = 2.0
-    signal_http: Any = None  # SSRF-guarded client for network T1 signals (T-008)
+    # Shared signal context (SignalContext): guarded http client (``security.GuardedHTTPClient`` with
+    # ``post_allow_hosts=FEED_POST_HOSTS``), signal KV cache (``signals.cache.RedisCache``) and the
+    # OpenPhish mirror (``signals.reputation.mirror.FeedMirror``). None -> the signals' in-process defaults.
+    signal_http: Any = None
+    signal_cache: Any = None
+    mirror: Any = None
+    clock: Any = time.time
 
 
 @dataclass
@@ -287,9 +295,14 @@ class Cascade:
                 self.d.ssrf_timeout_s,
             )
         except SSRFBlocked as exc:
-            self.d.metrics.on_ssrf_block(exc.reason)
-            run.blocked = exc.reason.value
-            run.degraded_reasons.append(f"not_rendered:{exc.reason.value}")
+            if exc.reason is BlockReason.DNS_FAILURE and c.host_ascii in self.d.guard_policy.allow_hosts:
+                # An explicitly allow-listed fixture host lives on the sandbox network, which the worker
+                # cannot resolve. The sandbox resolves and guards it itself (through the egress proxy).
+                pass
+            else:
+                self.d.metrics.on_ssrf_block(exc.reason)
+                run.blocked = exc.reason.value
+                run.degraded_reasons.append(f"not_rendered:{exc.reason.value}")
         except TimeoutError:
             self.d.metrics.on_ssrf_block("dns_failure")
             run.blocked = "dns_timeout"
@@ -309,34 +322,8 @@ class Cascade:
                     ar=f"موقع رسمي مسجّل لـ {brand.name_ar[:80]}",
                 )
             )
-        try:
-            hits = await asyncio.wait_for(self.d.feeds.lookup(c.url, c.host), self.d.feed_timeout_s)
-            for h in hits:
-                added.append(
-                    make_evidence(
-                        f"rep.{h.feed}",
-                        "reputation",
-                        {
-                            "hit": True,
-                            "match": h.match,
-                            "feed_age_s": h.feed_age_s,
-                            "fresh": h.feed_age_s is not None and h.feed_age_s < self.params.h2_max_feed_age_s,
-                        },
-                        tier="T0",
-                        source=FEED_SOURCE.get(h.feed, h.feed),
-                        en=f"Listed in the {h.feed} feed",
-                        ar="مدرج في قائمة مواقع احتيال معروفة",
-                    )
-                )
-        except Exception as exc:  # noqa: BLE001 - a mirror failure degrades, never crashes
-            reason = "timeout" if isinstance(exc, TimeoutError) else type(exc).__name__
-            self.d.metrics.tool_errors.labels("feed_mirror", reason).inc()
-            added.append(
-                make_evidence(
-                    "rep.openphish", "reputation", None, tier="T0", source="openphish",
-                    confidence=0.0, error=f"mirror_unavailable:{reason}"[:200],
-                )
-            )  # fmt: skip
+        t0_signals = self.d.t0_signals if self.d.t0_signals is not None else default_signals("T0")
+        added.extend(await self._run_signals(t0_signals, self._ctx(run)))
         run.evidence.extend(added)
         result = self._score(run)
         ms = self._observe("T0", t0)
@@ -370,6 +357,41 @@ class Cascade:
 
     # --- T1 --------------------------------------------------------------------------------
 
+    def _ctx(self, run: _Run) -> SignalCtx:
+        if run.canonical is None:
+            raise RuntimeError("T0 did not canonicalise")
+        return SignalCtx(
+            url=run.canonical.raw,
+            brands=self.d.registry,
+            http=self.d.signal_http,
+            cache=self.d.signal_cache,
+            mirror=self.d.mirror,
+            clock=self.d.clock,
+        )
+
+    async def _run_signals(self, signals: Mapping[str, tuple[SignalSpec, SignalFn]], ctx: SignalCtx) -> list[Evidence]:
+        """All signals concurrently, each under its own timeout; results kept per signal."""
+        if not signals:
+            return []
+        specs = list(signals.values())
+        tasks = [asyncio.create_task(self._run_signal(spec, fn, ctx)) for spec, fn in specs]
+        cap = max(spec.timeout_ms for spec, _ in specs) / 1000 + self.d.tier_grace_s
+        done, pending = await asyncio.wait(tasks, timeout=cap)
+        out: list[Evidence] = []
+        for (spec, _), task in zip(specs, tasks, strict=True):
+            if task in done:
+                out.extend(task.result())
+            else:  # belt and braces: the per-signal timeout should have fired first
+                task.cancel()
+                self.d.metrics.tool_errors.labels(spec.name, "timeout").inc()
+                out.append(
+                    make_evidence(
+                        spec.name, spec.family, None, tier=spec.tier, source="computed",
+                        confidence=0.0, error="timeout",
+                    )
+                )  # fmt: skip
+        return out
+
     async def _run_signal(self, spec: SignalSpec, fn: SignalFn, ctx: SignalCtx) -> list[Evidence]:
         try:
             out = await asyncio.wait_for(fn(ctx), spec.timeout_ms / 1000)
@@ -394,14 +416,7 @@ class Cascade:
             raise RuntimeError("T0 did not canonicalise")
         t0 = time.perf_counter()
         signals = self.d.t1_signals if self.d.t1_signals is not None else default_t1_signals()
-        ctx = SignalCtx(url=run.canonical.raw, brands=self.d.registry, http=self.d.signal_http)
-        tasks = [self._run_signal(spec, fn, ctx) for spec, fn in signals.values()]
-        try:
-            groups: Sequence[list[Evidence]] = await asyncio.wait_for(asyncio.gather(*tasks), self.d.t1_budget_s + 0.5)
-        except TimeoutError:  # belt and braces: per-signal timeouts should fire first
-            groups = []
-            run.degraded_reasons.append("t1_budget_exceeded")
-        added = [e for g in groups for e in g]
+        added = await self._run_signals(signals, self._ctx(run))
         run.evidence.extend(added)
         result = self._score(run)
         ms = self._observe("T1", t0)

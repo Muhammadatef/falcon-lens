@@ -20,7 +20,7 @@ from falcon_worker.store import PgStore
 def test_metrics_expose_checks_and_ssrf_counters() -> None:
     app = create_app("worker-test")
     r: Any = fakeredis.FakeAsyncRedis(decode_responses=True)
-    worker, _store, _sandbox = build_worker(app, r)
+    worker, _store, _closers = build_worker(app, r)
     worker.metrics.on_ssrf_block(BlockReason.METADATA)
     text = TestClient(app).get("/metrics").text
     assert "fl_checks_total" in text

@@ -134,6 +134,9 @@ def main() -> int:
         # feed:openphish stores sha256 hex of the canonical URL and of the host, never plaintext
         hashes = [sha256_hex(canonicalize_url(url)), sha256_hex(host)]
         compose("exec", "-T", "redis", "redis-cli", "SADD", "feed:openphish", *hashes)
+        # H2 needs a fresh mirror (< 6 h). Synthetic entry: mark the mirror as just refreshed. The worker's
+        # refresh job (if the private feed dir is mounted) restores the real state on its next tick.
+        compose("exec", "-T", "redis", "redis-cli", "SET", "feed:openphish:updated_at", str(time.time()))
         d = final_verdict(c, url)
         assert d["verdict"] == "dangerous", d["verdict"]
         assert has_rule(d, "H2"), "H2 not cited"
