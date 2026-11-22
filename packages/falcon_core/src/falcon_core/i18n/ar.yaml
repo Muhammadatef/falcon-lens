@@ -63,6 +63,7 @@ reasons:
   message.brand_url_mismatch: "الرسالة تذكر جهة معروفة، لكن رابطها يفتح موقعاً آخر."
   email.attachment: "البريد فيه مرفق يمكنه تشغيل برامج على جهازك."
   injection.instruction_like_text: "المحتوى فيه نص مخفي يحاول خداع أدوات الفحص."
+  injection.tool_provenance: "المحتوى حاول توجيه الفحص إلى عنوان آخر غير الرابط الذي أرسلته."
 
 actions:
   dangerous:
