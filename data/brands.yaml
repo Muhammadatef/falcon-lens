@@ -110,14 +110,26 @@ brands:
     name_ar: سالك
     category: transport
     verified_domains: [salik.ae]
-    source_url: https://www.rta.ae
+    source_url: https://www.rta.ae/wps/portal/rta/ae/home/news-and-media/all-news/NewsDetails/salik-registration-now-becomes-paperless
     retrieved_at: 2026-11-22
-    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested."
+    verification_evidence:
+      - retrieved_at: 2026-11-22
+        source_url: https://feeds.dfm.ae/documents/2025/Mar/04/fffb4b6e-6d61-4a8c-a4a3-7c8f1446d4b3/SALIK_IR_E.pdf
+        shows: "Salik Company PJSC Integrated Annual Report 2024 (DFM filing): footer www.salik.ae/en, contacts @salik.ae"
+      - retrieved_at: 2026-11-22
+        source_url: https://feeds.dfm.ae/documents/2023/Nov/13/2db9656b-ed95-49c4-826c-9b77df42b856/Salik_Q3_23_Earnings-Release_EN.pdf
+        shows: "Salik Q3 2023 earnings release (DFM filing): IR and media contacts @salik.ae"
+      - retrieved_at: 2026-11-22
+        source_url: https://apps.apple.com/ae/app/smart-salik/id912158362
+        shows: "Official Smart Salik app: copyright Salik Company PJSC, privacy policy on www.salik.ae"
+      - retrieved_at: 2026-11-22
+        source_url: https://www.rta.ae/wps/portal/rta/ae/home/news-and-media/all-news/NewsDetails/salik-registration-now-becomes-paperless
+        shows: "rta.ae (verified official) navigation links www.salik.ae/en"
     keywords_en: [salik, toll, recharge, balance, tag, fine, unpaid]
     keywords_ar: [سالك, رسوم, شحن, رصيد, مخالفة]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "Could not verify. salik.gov.ae did not resolve, www.salik.ae returned 403, sources conflict (salik.ae vs salik.gov.ae). Omitted pending manual check."
+    unverified_notes: "salik.gov.ae is NOT listed: it was the Salik portal in 2020 (rta.ae article above) but returns NXDOMAIN on 2026-11-22, although the Google Play Smart Salik listing still names it. Re-verify before ever adding it back. name_ar not confirmed on an official page (C01)."
 
   - brand_id: rta_dubai
     name_en: Roads and Transport Authority (RTA) Dubai
@@ -153,12 +165,21 @@ brands:
     verified_domains: [addc.ae, taqadistribution.com]
     source_url: https://taqadistribution.com/addc/en-us/residential/overview
     retrieved_at: 2026-11-22
-    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested. addc.ae 301→taqadistribution.com/addc."
+    verification_evidence:
+      - retrieved_at: 2026-11-22
+        source_url: https://play.google.com/store/apps/details?id=com.ADDC.addcApp
+        shows: "Official TAQA Distribution app, developer Abu Dhabi Distribution Company: website www.addc.ae/, privacy policy on taqadistribution.com, email @addc.ae"
+      - retrieved_at: 2026-11-22
+        source_url: https://apps.apple.com/ae/app/addc/id1045166599
+        shows: "Official TAQA Distribution app, seller Abu Dhabi Distribution Company: privacy policy on www.addc.ae"
+      - retrieved_at: 2026-11-22
+        source_url: https://www.addc.ae/en-US/home/Pages/AboutUs.aspx
+        shows: "addc.ae 'Our Company' page links branches on taqadistribution.com and the e-services portal eservices.addc.ae"
     keywords_en: [addc, taqa, taqa distribution, electricity, water, bill, disconnection, payment]
     keywords_ar: [طاقة للتوزيع, شركة أبوظبي للتوزيع, أبوظبي للتوزيع, طاقة, كهرباء, ماء, فاتورة, فصل الخدمة, سداد]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "Weak verification: addc.ae returned a 301 redirect to taqadistribution.com/addc, whose fetched content showed only the title 'TAQA Distribution'. name_ar not confirmed on page. Re-check payment/login domains manually."
+    unverified_notes: "Both domains proven by the official app listings above; e-services run on eservices.addc.ae (covered by addc.ae). taqa.com (parent) served a bot challenge, so no parent-site link was confirmed. The Arabic Play listing uses the name 'طاقة للتوزيع'; name_ar to be reviewed under C01."
 
   - brand_id: dewa
     name_en: Dubai Electricity and Water Authority (DEWA)
@@ -221,12 +242,18 @@ brands:
     verified_domains: [centralbank.ae]
     source_url: https://www.centralbank.ae
     retrieved_at: 2026-11-22
-    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested."
+    verification_evidence:
+      - retrieved_at: 2026-11-22
+        source_url: https://u.ae/en/information-and-services/finance-and-investment/banking-in-uae
+        shows: "UAE federal government portal describes the CBUAE and links www.centralbank.ae, eservices.centralbank.ae and rulebook.centralbank.ae"
+      - retrieved_at: 2026-11-22
+        source_url: https://u.ae/ar/information-and-services/finance-and-investment/banking-in-uae
+        shows: "Arabic u.ae page gives the name مصرف الإمارات العربية المتحدة المركزي"
     keywords_en: [central bank, cbuae, account frozen, compliance, sanctions, verification]
     keywords_ar: [المصرف المركزي, حساب مجمد, امتثال, تحقق]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "centralbank.ae returned HTTP 403; omitted pending manual check. name_ar not confirmed on page. Public reports say CBUAE does not contact individuals by phone/social media."
+    unverified_notes: "No official CBUAE app exists to cross-check; note the unrelated US 'Central Bank' (centralbank.net) app. Public reports say CBUAE does not contact individuals by phone/social media."
 
   - brand_id: fab
     name_en: First Abu Dhabi Bank (FAB)
@@ -248,12 +275,21 @@ brands:
     verified_domains: [adcb.com]
     source_url: https://www.adcb.com
     retrieved_at: 2026-11-22
-    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested."
+    verification_evidence:
+      - retrieved_at: 2026-11-22
+        source_url: https://apps.apple.com/gb/app/id6755109454
+        shows: "Official ADCB Mobile Banking app, seller Abu Dhabi Commercial Bank: developer website www.adcb.com"
+      - retrieved_at: 2026-11-22
+        source_url: https://play.google.com/store/apps/details?id=com.adcb.nexgen
+        shows: "Official ADCB app, developer Abu Dhabi Commercial Bank: website www.adcb.com, email @adcb.com; Arabic listing names بنك أبوظبي التجاري"
+      - retrieved_at: 2026-11-22
+        source_url: https://centralbank.ae/media/ffco0wgo/cb-register-oct-2026.pdf
+        shows: "CBUAE register Oct 2026: Abu Dhabi Commercial Bank P.J.S.C is a licensed national bank (licence only; register has no website column)"
     keywords_en: [adcb, abu dhabi commercial bank, online banking, otp, card blocked, verify]
     keywords_ar: [بنك أبوظبي التجاري, بطاقة موقوفة, تحقق, حساب]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "adcb.com returned HTTP 403; omitted pending manual check. name_ar not confirmed on page."
+    unverified_notes: "No separate online-banking domain found with an official source. Do NOT add adcb.com.eg (ADCB-Egypt, separate entity, ownership not verified)."
 
   - brand_id: emirates_nbd
     name_en: Emirates NBD
@@ -314,12 +350,21 @@ brands:
     verified_domains: [rakbank.ae]
     source_url: https://www.rakbank.ae
     retrieved_at: 2026-11-22
-    verification_l1: "DV cert only (no org in subject) + resolves/serves 2026-11-22; widely known official domain — OWNER SPOT-CHECK requested."
+    verification_evidence:
+      - retrieved_at: 2026-11-22
+        source_url: https://apps.apple.com/us/app/rakbank-app/id427758991
+        shows: "Official RAKBANK app, seller National Bank of Ras Al Khaimah: developer website rakbank.ae/"
+      - retrieved_at: 2026-11-22
+        source_url: https://play.google.com/store/apps/details?id=com.rak
+        shows: "Official Rakbank app, developer NATIONAL BANK OF RAS AL KHAIMAH P.S.C: website and privacy policy on rakbank.ae"
+      - retrieved_at: 2026-11-22
+        source_url: https://centralbank.ae/media/ffco0wgo/cb-register-oct-2026.pdf
+        shows: "CBUAE register Oct 2026: National Bank of R.A.K P.J.S.C is a licensed national bank (licence only; register has no website column)"
     keywords_en: [rakbank, national bank of ras al khaimah, online banking, otp, card blocked, verify]
     keywords_ar: [راك بنك, بنك رأس الخيمة الوطني, بطاقة موقوفة, تحقق]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "Weak verification: page titled 'Rakbank' and linked apps.rakbank.ae only; name_ar not confirmed on page."
+    unverified_notes: "No separate online-banking domain found with an official source. The Play listing's contact email is a gmail.com address, so never trust a non-rakbank.ae email domain as RAKBANK. The bank's Arabic site uses the brand 'راك بنك'; name_ar to be reviewed under C01."
 
   - brand_id: emirates_islamic
     name_en: Emirates Islamic

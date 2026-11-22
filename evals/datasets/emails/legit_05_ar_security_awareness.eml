@@ -1,0 +1,54 @@
+Return-Path: <bounce@falcon-demo-bank.test>
+Received: from mail.falcon-demo-bank.test ([192.0.2.40]) by mx.example.test
+ with ESMTPS; Tue, 24 Nov 2026 05:30:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank.test; dkim=pass
+ header.d=falcon-demo-bank.test; dmarc=pass header.from=falcon-demo-bank.test
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=falcon-demo-bank.test;
+ s=fixture; h=from:to:subject:date; bh=FIXTURE; b=FIXTURE-NOT-A-REAL-SIGNATURE
+From: =?utf-8?b?2KjZhtmDINin2YTYtdmC2LEg2KfZhNiq2KzYsdmK2KjZig==?=
+ <security@falcon-demo-bank.test>
+To: Customer <customer@example.test>
+Subject: =?utf-8?b?2KrYsNmD2YrYsSDYo9mF2YbZijog2YTZhiDZhti32YTYqCDZhdmG2YMg?=
+ =?utf-8?b?2LHZhdiyINin2YTYqtit2YLZgiDYo9io2K/Zi9in?=
+Date: Tue, 24 Nov 2026 05:30:00 +0400
+Message-ID: <c05-30.fixture@falcon-demo-bank.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9
+
+=D8=B9=D9=85=D9=8A=D9=84=D9=86=D8=A7 =D8=A7=D9=84=D8=B9=D8=B2=D9=8A=D8=B2=D8=
+=8C
+
+=D9=86=D8=B0=D9=83=D9=91=D8=B1=D9=83 =D8=A8=D8=A3=D9=86 =D8=A8=D9=86=D9=83 =
+=D8=A7=D9=84=D8=B5=D9=82=D8=B1 =D8=A7=D9=84=D8=AA=D8=AC=D8=B1=D9=8A=D8=A8=D9=
+=8A =D9=84=D9=86 =D9=8A=D8=B7=D9=84=D8=A8 =D9=85=D9=86=D9=83 =D8=A3=D8=A8=D8=
+=AF=D9=8B=D8=A7 =D8=B1=D9=85=D8=B2 =D8=A7=D9=84=D8=AA=D8=AD=D9=82=D9=82 =D8=
+=A3=D9=88 =D8=A7=D9=84=D8=B1=D9=82=D9=85 =D8=A7=D9=84=D8=B3=D8=B1=D9=8A =D8=
+=A3=D9=88 =D9=83=D9=84=D9=85=D8=A9 =D8=A7=D9=84=D9=85=D8=B1=D9=88=D8=B1=D8=8C=
+ =D9=84=D8=A7 =D8=B9=D8=A8=D8=B1 =D8=A7=D9=84=D8=A8=D8=B1=D9=8A=D8=AF =D8=A7=
+=D9=84=D8=A5=D9=84=D9=83=D8=AA=D8=B1=D9=88=D9=86=D9=8A =D9=88=D9=84=D8=A7 =D8=
+=A7=D9=84=D8=B1=D8=B3=D8=A7=D8=A6=D9=84 =D8=A7=D9=84=D9=86=D8=B5=D9=8A=D8=A9 =
+=D9=88=D9=84=D8=A7 =D8=A7=D9=84=D9=87=D8=A7=D8=AA=D9=81.
+=D8=A5=D8=B0=D8=A7 =D9=88=D8=B5=D9=84=D8=AA=D9=83 =D8=B1=D8=B3=D8=A7=D9=84=D8=
+=A9 =D8=AA=D8=AF=D9=91=D8=B9=D9=8A =D8=A3=D9=86=D9=87=D8=A7 =D9=85=D9=86=D9=
+=91=D8=A7 =D9=88=D8=AA=D8=B7=D9=84=D8=A8 =D9=87=D8=B0=D9=87 =D8=A7=D9=84=D8=
+=A8=D9=8A=D8=A7=D9=86=D8=A7=D8=AA=D8=8C =D9=81=D9=84=D8=A7 =D8=AA=D8=B1=D8=AF=
+=D9=91 =D8=B9=D9=84=D9=8A=D9=87=D8=A7=D8=8C =D9=88=D8=AA=D9=88=D8=A7=D8=B5=D9=
+=84 =D9=85=D8=B9=D9=86=D8=A7 =D8=B9=D8=A8=D8=B1 =D8=A7=D9=84=D8=B1=D9=82=D9=
+=85 =D8=A7=D9=84=D9=85=D8=AF=D9=88=D9=91=D9=86 =D8=B9=D9=84=D9=89 =D8=B8=D9=
+=87=D8=B1 =D8=A8=D8=B7=D8=A7=D9=82=D8=AA=D9=83.
+
+=D9=85=D8=B9 =D8=A3=D8=B7=D9=8A=D8=A8 =D8=A7=D9=84=D8=AA=D8=AD=D9=8A=D8=A7=D8=
+=AA=D8=8C
+=D9=81=D8=B1=D9=8A=D9=82 =D8=A7=D9=84=D8=AA=D9=88=D8=B9=D9=8A=D8=A9 =D8=A7=D9=
+=84=D8=A3=D9=85=D9=86=D9=8A=D8=A9
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9

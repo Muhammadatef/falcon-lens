@@ -1,0 +1,66 @@
+Return-Path: <bounce@falcon-demo-bank.test>
+Received: from mail.falcon-demo-bank.test ([192.0.2.38]) by mx.example.test
+ with ESMTPS; Mon, 23 Nov 2026 23:16:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank.test; dkim=pass
+ header.d=falcon-demo-bank.test; dmarc=pass header.from=falcon-demo-bank.test
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=falcon-demo-bank.test;
+ s=fixture; h=from:to:subject:date; bh=FIXTURE; b=FIXTURE-NOT-A-REAL-SIGNATURE
+From: "Falcon Demo Bank" <news@falcon-demo-bank.test>
+To: Customer <customer@example.test>
+Subject: Falcon Demo Bank newsletter | =?utf-8?b?2YbYtNix2Kkg2KjZhtmDINin?=
+ =?utf-8?b?2YTYtdmC2LEg2KfZhNiq2KzYsdmK2KjZiiAtINiv2YrYs9mF2KjYsQ==?= 2026
+Date: Mon, 23 Nov 2026 23:16:00 +0400
+Message-ID: <c05-28.fixture@falcon-demo-bank.test>
+List-Unsubscribe: <https://falcon-demo-bank.test/unsubscribe>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============0690060163817443558=="
+
+--===============0690060163817443558==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9
+
+This month: new savings rates, app improvements and holiday branch hours.
+=D9=81=D9=8A =D9=87=D8=B0=D8=A7 =D8=A7=D9=84=D8=B9=D8=AF=D8=AF: =D8=A3=D8=B3=
+=D8=B9=D8=A7=D8=B1 =D8=AC=D8=AF=D9=8A=D8=AF=D8=A9 =D9=84=D8=AD=D8=B3=D8=A7=D8=
+=A8=D8=A7=D8=AA =D8=A7=D9=84=D8=AA=D9=88=D9=81=D9=8A=D8=B1=D8=8C =D9=88=D8=AA=
+=D8=AD=D8=B3=D9=8A=D9=86=D8=A7=D8=AA =D8=B9=D9=84=D9=89 =D8=A7=D9=84=D8=AA=D8=
+=B7=D8=A8=D9=8A=D9=82=D8=8C =D9=88=D9=85=D9=88=D8=A7=D8=B9=D9=8A=D8=AF =D8=B9=
+=D9=85=D9=84 =D8=A7=D9=84=D9=81=D8=B1=D9=88=D8=B9 =D8=AE=D9=84=D8=A7=D9=84 =
+=D8=A7=D9=84=D8=B9=D8=B7=D9=84=D8=A9.
+
+Read more / =D8=A7=D9=82=D8=B1=D8=A3 =D8=A7=D9=84=D9=85=D8=B2=D9=8A=D8=AF: ht=
+tps://falcon-demo-bank.test/news
+Unsubscribe / =D8=A5=D9=84=D8=BA=D8=A7=D8=A1 =D8=A7=D9=84=D8=A7=D8=B4=D8=AA=
+=D8=B1=D8=A7=D9=83: https://falcon-demo-bank.test/unsubscribe
+
+TEST FIXTURE, not a real message / =D8=B1=D8=B3=D8=A7=D9=84=D8=A9 =D8=A7=D8=
+=AE=D8=AA=D8=A8=D8=A7=D8=B1 =D9=88=D9=84=D9=8A=D8=B3=D8=AA =D8=AD=D9=82=D9=8A=
+=D9=82=D9=8A=D8=A9
+
+--===============0690060163817443558==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYt
+OCI+PHRpdGxlPkZhbGNvbiBEZW1vIEJhbms8L3RpdGxlPjwvaGVhZD4KPGJvZHk+CjxwPjxzdHJv
+bmc+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio
+2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqTwvc3Ryb25nPjwvcD4KPHA+VGhpcyBtb250aDog
+bmV3IHNhdmluZ3MgcmF0ZXMsIGFwcCBpbXByb3ZlbWVudHMgYW5kIGhvbGlkYXkgYnJhbmNoIGhv
+dXJzLjwvcD48cCBkaXI9InJ0bCI+2YHZiiDZh9iw2Kcg2KfZhNi52K/Yrzog2KPYs9i52KfYsSDY
+rNiv2YrYr9ipINmE2K3Ys9in2KjYp9iqINin2YTYqtmI2YHZitix2Iwg2YjYqtit2LPZitmG2KfY
+qiDYudmE2Ykg2KfZhNiq2LfYqNmK2YLYjCDZiNmF2YjYp9i52YrYryDYudmF2YQg2KfZhNmB2LHZ
+iNi5INiu2YTYp9mEINin2YTYudi32YTYqS48L3A+PHA+PGEgaHJlZj0iaHR0cHM6Ly9mYWxjb24t
+ZGVtby1iYW5rLnRlc3QvbmV3cyI+UmVhZCBtb3JlIC8g2KfZgtix2KMg2KfZhNmF2LLZitivPC9h
+PjwvcD48cD48YSBocmVmPSJodHRwczovL2ZhbGNvbi1kZW1vLWJhbmsudGVzdC91bnN1YnNjcmli
+ZSI+aHR0cHM6Ly9mYWxjb24tZGVtby1iYW5rLnRlc3QvdW5zdWJzY3JpYmU8L2E+PC9wPgo8L2Jv
+ZHk+PC9odG1sPgo=
+
+--===============0690060163817443558==--
