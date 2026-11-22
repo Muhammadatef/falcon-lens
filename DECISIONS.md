@@ -53,3 +53,4 @@
   - (b) OpenPhish is used for the research or eval dataset and for the non-commercial hackathon prototype. A production or police deployment needs an OpenPhish licence, and the README says so.
   - (c) The feed has no per-entry timestamps, so `first_seen` = poll time.
 - 2026-11-22 · L1 · `first_poll`: 300 rows at 2026-11-22 ~16:00 GST. Next poll is allowed about 12 h later, so the loop runs in the background.
+- 2026-11-22 · L1 · **Local model = `inkling-2-mini-chat`**, imported from the owner's `~/Models/Inkling-2-Mini` with a hand-written chat template (infra/ollama/). Smoke test: valid JSON, correct Arabic summary, and it flagged an embedded "ignore instructions" injection rather than obeying it. About 4.7 s warm, about 50 s cold. No structured-output support, so JSON is prompt-level plus validation and repair. Vision stays on gemma3:27b until tested. L4 worker stays on qwen3:4b (fast bulk).
