@@ -1,0 +1,42 @@
+Return-Path: <bounce@falcon-demo-bank-secure.test>
+Received: from mail.falcon-demo-bank-secure.test ([192.0.2.21]) by
+ mx.example.test with ESMTPS; Sat, 21 Nov 2026 18:17:00 +0400
+Authentication-Results: mx.example.test; spf=pass
+ smtp.mailfrom=falcon-demo-bank-secure.test; dkim=fail
+ header.d=falcon-demo-bank-secure.test; dmarc=fail
+ header.from=falcon-demo-bank-secure.test
+From: "Falcon Demo Bank Statements" <statements@falcon-demo-bank-secure.test>
+To: Customer <customer@example.test>
+Subject: Your November e-statement is ready
+Date: Sat, 21 Nov 2026 18:17:00 +0400
+Message-ID: <c05-11.fixture@falcon-demo-bank-secure.test>
+X-Falcon-Fixture: C05 synthetic test fixture; not a real message
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============3877811053094358438=="
+
+--===============3877811053094358438==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio2KfY
+sSDZiNmE2YrYs9iqINit2YLZitmC2YrYqQoKRGVhciBjdXN0b21lciwKCllvdXIgTm92ZW1iZXIg
+ZS1zdGF0ZW1lbnQgaXMgYXR0YWNoZWQuIE9wZW4gdGhlIGF0dGFjaG1lbnQgYW5kIHNpZ24gaW4g
+d2l0aCB5b3VyIG9ubGluZSBiYW5raW5nIHVzZXJuYW1lIGFuZCBwYXNzd29yZCB0byB2aWV3IGl0
+LgoKRmFsY29uIERlbW8gQmFuayBTdGF0ZW1lbnRzCgpURVNUIEZJWFRVUkUsIG5vdCBhIHJlYWwg
+bWVzc2FnZSAvINix2LPYp9mE2Kkg2KfYrtiq2KjYp9ixINmI2YTZitiz2Kog2K3ZgtmK2YLZitip
+Cg==
+
+--===============3877811053094358438==
+Content-Type: text/html
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="eStatement_Nov2026.pdf.html"
+MIME-Version: 1.0
+
+PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj48aGVhZD48bWV0YSBjaGFyc2V0PSJ1dGYt
+OCI+PHRpdGxlPkZhbGNvbiBEZW1vIEJhbms8L3RpdGxlPjwvaGVhZD4KPGJvZHk+CjxwPjxzdHJv
+bmc+VEVTVCBGSVhUVVJFLCBub3QgYSByZWFsIG1lc3NhZ2UgLyDYsdiz2KfZhNipINin2K7Yqtio
+2KfYsSDZiNmE2YrYs9iqINit2YLZitmC2YrYqTwvc3Ryb25nPjwvcD4KPHA+U3RhdGVtZW50IHZp
+ZXdlciBwbGFjZWhvbGRlci4gSW5lcnQgZml4dHVyZTogbm8gZm9ybSwgbm8gc2NyaXB0LCBwb3N0
+cyBub3doZXJlLjwvcD4KPC9ib2R5PjwvaHRtbD4K
+
+--===============3877811053094358438==--

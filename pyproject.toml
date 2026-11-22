@@ -51,6 +51,7 @@ dev = [
   "scikit-learn>=1.9.1",
   "joblib>=1.6.0",
   "numpy>=2.5.5",
+  "qrcode>=8",
 ]
 
 [tool.ruff]
@@ -59,7 +60,7 @@ target-version = "py312"
 extend-exclude = ["web", ".venv", "docs", "*.md"]  # ruff 0.17 would reformat code blocks in docs
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "S"]
+select = ["E", "F", "I", "UP", "B", "SIM", "S", "PLE2502", "PLE2515"]
 ignore = ["S104", "SIM905", "UP047"]  # S104: services bind 0.0.0.0 in containers; SIM905: `"a b".split()` word lists are deliberate
 
 [tool.ruff.lint.isort]
@@ -73,6 +74,10 @@ known-first-party = [
 "**/tests/**" = ["S101", "S105", "S106", "S311", "S324", "E501"]
 "evals/**" = ["S603", "S607"]
 "**/fixtures.py" = ["S311"]
+"scripts/falcon_demo/**" = ["S311", "S603", "S607"]
+"services/sentinel/**" = ["E501"]  # bilingual strings and SQL read better unwrapped
+"packages/falcon_core/src/falcon_core/tools/**" = ["E501"]
+"services/sentinel/sentinel_core/**" = ["S311", "S324", "UP047"]
 "scripts/smoke.py" = ["S101", "S501"]
 
 [tool.mypy]
@@ -81,15 +86,16 @@ strict = true
 plugins = ["pydantic.mypy"]
 # Strict applies to falcon_core itself (CLAUDE.md). Tests are linted by ruff but not type-checked:
 # several test dirs ship a `conftest.py` and mypy reports them as duplicate modules.
-files = ["packages/falcon_core/src", "services/api/src"]
+files = ["packages/falcon_core/src", "services/api/src", "services/worker/src"]
 explicit_package_bases = true
-mypy_path = "packages/falcon_core/src:services/api/src"
+mypy_path = "packages/falcon_core/src:services/api/src:services/worker/src"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["packages/falcon_core/tests", "services", "scripts/tests", "evals"]
-pythonpath = ["."]
+testpaths = ["packages/falcon_core/tests", "services", "scripts/tests", "scripts/falcon_demo", "evals"]
+pythonpath = ["scripts", "."]
+markers = ["integration: needs a real Postgres (FL_TEST_PG_DSN)"]
 
 [[tool.mypy.overrides]]
 module = ["joblib", "joblib.*", "sklearn", "sklearn.*"]
