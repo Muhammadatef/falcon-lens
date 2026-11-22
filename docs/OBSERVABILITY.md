@@ -4,7 +4,16 @@
 
 Every log line, span and LLM span carries `verdict_id` (or `incident_id`).
 
-**Metrics.** All use the `fl_` prefix and follow the build prompt §11 exactly; that list is the contract. The labels `source=live|replay` appear on `fl_checks_total`, `fl_incidents_total` and `fl_campaign_new_domains_total`, so dashboards can label replayed data.
+**Metrics (the contract; all prefixed `fl_`):**
+- Checks: `checks_total{input_type,verdict,tier,route,source}`, `stage_latency_seconds{stage}` (histogram), `escalations_total{from,to}`, `cache_hits_total{layer}`
+- Health: `tool_errors_total{tool,reason}`, `sandbox_timeouts_total`, `feed_age_seconds{feed}`, `feed_enabled{feed}` (0 or 1), `degraded_total`
+- LLM: `llm_tokens_total{model,role}`, `llm_cost_usd_total{model}`, `llm_fallback_total{role}`, `route_agreement_ratio`, `agent_steps` (histogram), `canary_leak_total`
+- Security: `injection_detected_total`, `ssrf_blocked_total{reason}`, `rate_limited_total{scope}`, `auth_failures_total`
+- Brands and feedback: `campaign_new_domains_total{brand,source}`, `brand_impersonation_total{brand}`, `user_feedback_total{type}`
+- Evals: `eval_metric{name,split,route}` (gauge, from the latest eval artifact), `score_drift_index` (gauge)
+- Sentinel: `incidents_total{type,severity,source}`, `incident_open{severity}` (gauge), `rule_fired_total{rule}`, `time_to_incident_seconds` (histogram), `sentinel_actions_total{action,mode}`, `approvals_pending` (gauge), `blocks_reverted_total`, `event_lag_seconds` (gauge), `sentinel_dead_letter_total`
+
+Helpers live in `packages/falcon_core/telemetry/metrics.py` (owned by builder-observability). Services import them and never declare their own `fl_` metrics. The labels `source=live|replay` appear on `fl_checks_total`, `fl_incidents_total` and `fl_campaign_new_domains_total`, so dashboards can label replayed data.
 
 **Dashboards** (`infra/grafana/dashboards/*.json`, provisioned automatically, 5 s refresh):
 1. Command overview

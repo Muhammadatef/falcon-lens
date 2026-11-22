@@ -36,3 +36,9 @@ out/
 .vscode/
 # claude local
 .claude/settings.local.json
+
+# agent worktrees
+.claude/worktrees/
+
+# private owner notes
+REMOTE_ACCESS.md
