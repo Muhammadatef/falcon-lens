@@ -36,10 +36,7 @@ def test_bad_rule_config_rejected(tmp_path):
 
 # ---- R1 campaign
 def test_r1_fires_on_three_lookalikes_in_window():
-    evs = [
-        observed_ev(f"falcon-demo-bank-{s}.test", m)
-        for s, m in [("a", 0), ("login", 20), ("pay", 59)]
-    ]
+    evs = [observed_ev(f"falcon-demo-bank-{s}.test", m) for s, m in [("a", 0), ("login", 20), ("pay", 59)]]
     (m,) = fire("R1", evs)
     assert m.rule.type == "campaign" and len(m.features) == 3
 
@@ -66,9 +63,7 @@ def test_r1_same_domain_counted_once_across_event_types():
 
 
 def test_r1_ignores_no_warning_signs_verdicts():
-    evs = [
-        verdict_ev(f"falcon-demo-bank-{i}.test", i, "no_warning_signs", brand=B) for i in range(4)
-    ]
+    evs = [verdict_ev(f"falcon-demo-bank-{i}.test", i, "no_warning_signs", brand=B) for i in range(4)]
     assert not fire("R1", evs)
 
 
@@ -76,10 +71,7 @@ def test_r1_ignores_no_warning_signs_verdicts():
 def test_r2_fires_one_simhash_three_domains_within_hamming_6():
     base = 0xABCDEF0123456789
     evs = [verdict_ev(f"kit-{i}.test", i * 100, simhash=base ^ (0b1111 << i)) for i in range(3)]
-    assert (
-        max(hamming(base ^ (0b1111 << i), base ^ (0b1111 << j)) for i in range(3) for j in range(3))
-        <= 6
-    )
+    assert max(hamming(base ^ (0b1111 << i), base ^ (0b1111 << j)) for i in range(3) for j in range(3)) <= 6
     (m,) = fire("R2", evs)
     assert m.rule.type == "kit_reuse"
 
@@ -89,9 +81,7 @@ def test_r2_not_fire_two_domains_distant_hash_or_one_domain_repeated():
     assert not fire("R2", [verdict_ev(f"kit-{i}.test", i, simhash=base) for i in range(2)])
     far = [verdict_ev(f"kit-{i}.test", i, simhash=base ^ (0xFFFF << (16 * i))) for i in range(3)]
     assert not fire("R2", far)
-    assert not fire(
-        "R2", [verdict_ev("kit-0.test", i, simhash=base, key=f"k{i}") for i in range(4)]
-    )
+    assert not fire("R2", [verdict_ev("kit-0.test", i, simhash=base, key=f"k{i}") for i in range(4)])
 
 
 # ---- R3 report burst
@@ -129,15 +119,9 @@ def test_r4_fires_on_flip_and_on_previous_verdict_field():
 
 
 def test_r4_not_fire_other_transitions_or_stale_or_other_domain():
-    assert not fire(
-        "R4", [verdict_ev("a.test", 0, "suspicious"), verdict_ev("a.test", 5, "dangerous")]
-    )
-    assert not fire(
-        "R4", [verdict_ev("a.test", 0, "dangerous"), verdict_ev("a.test", 5, "no_warning_signs")]
-    )
-    assert not fire(
-        "R4", [verdict_ev("a.test", 0, "no_warning_signs"), verdict_ev("b.test", 5, "dangerous")]
-    )
+    assert not fire("R4", [verdict_ev("a.test", 0, "suspicious"), verdict_ev("a.test", 5, "dangerous")])
+    assert not fire("R4", [verdict_ev("a.test", 0, "dangerous"), verdict_ev("a.test", 5, "no_warning_signs")])
+    assert not fire("R4", [verdict_ev("a.test", 0, "no_warning_signs"), verdict_ev("b.test", 5, "dangerous")])
     assert not fire(
         "R4",
         [
@@ -165,9 +149,7 @@ def test_domain_pattern_and_registrable():
     assert domain_pattern("falcon-demo-bank-login.test", B) == (True, "login")
     assert domain_pattern("falcondem0bank.test", B)[0]
     assert domain_pattern("falcondembank.test", B)[0]  # one-char typo
-    assert not domain_pattern("falcon-demo-bank-x.test", B, frozenset({"falcon-demo-bank-x.test"}))[
-        0
-    ]
+    assert not domain_pattern("falcon-demo-bank-x.test", B, frozenset({"falcon-demo-bank-x.test"}))[0]
     assert not domain_pattern("example.test", B)[0]
     assert registrable_domain("a.b.falcon[.]test") == "falcon.test"
     assert registrable_domain("x.gov.zz") == "x.gov.zz"

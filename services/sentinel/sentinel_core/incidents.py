@@ -131,12 +131,7 @@ def build_incident(
     canon = canonical_id(rule, group, earliest)
     iid = canon if existing is None else existing["incident_id"]
     aliases = [a["incident_id"] for a in absorbed]
-    if (
-        existing is not None
-        and same_type
-        and is_pristine(existing)
-        and existing["incident_id"] != canon
-    ):
+    if existing is not None and same_type and is_pristine(existing) and existing["incident_id"] != canon:
         aliases.append(existing["incident_id"])
         iid = canon
 
@@ -145,9 +140,7 @@ def build_incident(
         created_cands.append(triggered_at)
     created = min(created_cands)
 
-    carried = [
-        t for src in [existing, *absorbed] if src for t in src["timeline"] if "event_id" not in t
-    ]
+    carried = [t for src in [existing, *absorbed] if src for t in src["timeline"] if "event_id" not in t]
     carried = [t for t in carried if not t["what"].startswith(f"rule {rule.id} fired")]
     extra = [{"at": iso(created), "what": f"alias {a}"} for a in aliases]
     extra.append({"at": iso(triggered_at), "what": f"rule {rule.id} fired ({rule.type})"})
@@ -181,10 +174,7 @@ def build_incident(
     severity = rule.severity_floor
     for o in others:
         severity = _max_sev(severity, o["severity"])
-    updated = max(
-        [f.event.occurred_at for f in fs]
-        + ([parse_time(existing["updated_at"])] if existing else [])
-    )
+    updated = max([f.event.occurred_at for f in fs] + ([parse_time(existing["updated_at"])] if existing else []))
 
     inc: dict[str, Any] = dict(existing or {})
     inc.update(
@@ -234,9 +224,7 @@ class Sentinel:
                 added = True
         if not added:
             return []
-        all_feats = sorted(
-            self._feats.values(), key=lambda f: (f.event.occurred_at, f.event.event_id)
-        )
+        all_feats = sorted(self._feats.values(), key=lambda f: (f.event.occurred_at, f.event.event_id))
         changed: list[str] = []
         for rule in self.rules:
             for m in evaluate(rule, all_feats, self.vectors):
@@ -255,9 +243,7 @@ class Sentinel:
                 cands[inc["incident_id"]] = inc
         keep: list[dict[str, Any]] = []
         absorb: list[dict[str, Any]] = []
-        for inc in sorted(
-            cands.values(), key=lambda i: (parse_time(i["created_at"]), i["incident_id"])
-        ):
+        for inc in sorted(cands.values(), key=lambda i: (parse_time(i["created_at"]), i["incident_id"])):
             ids = set(inc["rule_ids"])
             same = inc["type"] == m.rule.type and m.rule.id in ids
             fold = bool(set(m.rule.merge_into) & ids)
@@ -268,9 +254,7 @@ class Sentinel:
         if not keep:
             return None, absorb
         survivor = keep[0]
-        absorb += [
-            k for k in keep[1:] if k["type"] == m.rule.type
-        ]  # group merge: older id survives
+        absorb += [k for k in keep[1:] if k["type"] == m.rule.type]  # group merge: older id survives
         return survivor, absorb
 
     def _upsert(self, m: Match) -> str | None:
@@ -281,9 +265,7 @@ class Sentinel:
                 eid = t.get("event_id")
                 if eid and eid in self._feats:
                     feats.setdefault(eid, self._feats[eid])
-        inc = build_incident(
-            m.rule, list(feats.values()), m.triggered_at, survivor, m.group, absorbed
-        )
+        inc = build_incident(m.rule, list(feats.values()), m.triggered_at, survivor, m.group, absorbed)
         if survivor == inc and not absorbed:
             return None
         for a in absorbed:

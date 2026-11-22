@@ -107,19 +107,13 @@ async def structured[M: BaseModel](
                 "repair": f"Previous output was invalid: {last_err[:300]}. Return only valid JSON matching the schema.",
             }
         )
-        data = await llm.complete_json(
-            role="sentinel", system=system, user_json=payload, schema=schema
-        )
+        data = await llm.complete_json(role="sentinel", system=system, user_json=payload, schema=schema)
         if on_tokens:
             on_tokens(estimate_tokens(payload, data))
         try:
             return model.model_validate(data)
         except ValidationError as exc:
-            last_err = (
-                str(exc.errors()[0]["msg"])
-                + " @"
-                + ".".join(str(x) for x in exc.errors()[0]["loc"])
-            )
+            last_err = str(exc.errors()[0]["msg"]) + " @" + ".".join(str(x) for x in exc.errors()[0]["loc"])
     raise LLMOutputError(last_err)
 
 
@@ -145,9 +139,7 @@ class OpenAICompatLLM:
     async def complete_json(
         self, *, role: str, system: str, user_json: dict[str, Any], schema: dict[str, Any]
     ) -> dict[str, Any]:
-        sys_prompt = (
-            f"{system}\nReturn ONLY a JSON object matching this JSON Schema:\n{json.dumps(schema)}"
-        )
+        sys_prompt = f"{system}\nReturn ONLY a JSON object matching this JSON Schema:\n{json.dumps(schema)}"
         resp = await self._client.post(
             self.url,
             json={

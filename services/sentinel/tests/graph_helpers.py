@@ -59,9 +59,7 @@ async def make_env(repo: Repo | None = None, redis: Any = None, load: bool = Tru
     cache = IncidentCache(repo)
     rec = Recorder()
     http = httpx.AsyncClient(transport=httpx.MockTransport(rec.handler))
-    ctx = ToolContext(
-        incidents=cache, repo=repo, redis=redis, http=http, alertmanager_url="http://am.test:9093"
-    )
+    ctx = ToolContext(incidents=cache, repo=repo, redis=redis, http=http, alertmanager_url="http://am.test:9093")
     sentinel = Sentinel(cache, vectors=fx.vectors)
     env = Env(redis, repo, cache, ctx, rec, sentinel, fx)
     if load:

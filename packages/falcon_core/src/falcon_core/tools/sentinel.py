@@ -182,9 +182,7 @@ def refang(v: str) -> str:
 
 
 def action_id_for(incident_id: str, tool: str, args: dict[str, Any]) -> str:
-    h = hashlib.sha256(
-        f"{incident_id}|{tool}|{json.dumps(args, sort_keys=True)}".encode()
-    ).hexdigest()
+    h = hashlib.sha256(f"{incident_id}|{tool}|{json.dumps(args, sort_keys=True)}".encode()).hexdigest()
     return f"act_{h[:24]}"
 
 
@@ -263,9 +261,7 @@ async def _find_related(ctx: ToolContext, a: FindRelatedArgs) -> dict[str, Any]:
             if k == "dom_simhash":
                 mine = [int(x, 16) for x in keys.get("dom_simhash", [])]
                 try:
-                    hit = v is not None and any(
-                        (int(str(v), 16) ^ m).bit_count() <= 6 for m in mine
-                    )
+                    hit = v is not None and any((int(str(v), 16) ^ m).bit_count() <= 6 for m in mine)
                 except ValueError:
                     hit = False
             else:
@@ -279,14 +275,12 @@ async def _past_incidents(ctx: ToolContext, a: PastIncidentsArgs) -> dict[str, A
     rows = [
         i
         for i in ctx.incidents.all()
-        if (not a.brand_id or i.get("brand_id") == a.brand_id)
-        and (not a.type or i["type"] == a.type)
+        if (not a.brand_id or i.get("brand_id") == a.brand_id) and (not a.type or i["type"] == a.type)
     ]
     rows.sort(key=lambda i: i["created_at"], reverse=True)
     return {
         "incidents": [
-            {k: i[k] for k in ("incident_id", "type", "severity", "status", "created_at")}
-            for i in rows[: a.limit]
+            {k: i[k] for k in ("incident_id", "type", "severity", "status", "created_at")} for i in rows[: a.limit]
         ]
     }
 
@@ -329,9 +323,7 @@ async def _requeue(ctx: ToolContext, incident_id: str, a: RequeueArgs) -> dict[s
     return {"queued": ind["value_defanged"]}
 
 
-async def _block(
-    ctx: ToolContext, incident_id: str, action_id: str, a: BlockArgs
-) -> dict[str, Any]:
+async def _block(ctx: ToolContext, incident_id: str, action_id: str, a: BlockArgs) -> dict[str, Any]:
     ind = find_indicator(_inc(ctx, incident_id), a.indicator)
     now = ctx.now()
     until = now + timedelta(hours=a.ttl_hours)

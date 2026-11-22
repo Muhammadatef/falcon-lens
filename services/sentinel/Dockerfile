@@ -18,9 +18,11 @@ RUN groupadd --system --gid 10001 app \
 COPY --from=builder /opt/venv /opt/venv
 COPY services/sentinel/rules.yaml /app/rules.yaml
 COPY contracts /app/contracts
-COPY data/brands.yaml /app/brands.yaml
-ENV FL_SENTINEL_RULES=/app/rules.yaml FL_CONTRACTS_DIR=/app/contracts FALCON_BRANDS_YAML=/app/brands.yaml
+COPY data/brands.yaml /app/data/brands.yaml
+COPY config/reporting_channels.yaml /app/config/reporting_channels.yaml
 ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+ENV FALCON_BRANDS_YAML=/app/data/brands.yaml FL_REPORTING_CHANNELS=/app/config/reporting_channels.yaml
+ENV FL_SENTINEL_RULES=/app/rules.yaml FL_CONTRACTS_DIR=/app/contracts
 USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=4s --start-period=10s --retries=3 \

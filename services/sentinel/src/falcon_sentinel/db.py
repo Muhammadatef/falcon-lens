@@ -133,9 +133,7 @@ class PgRepo:
         from psycopg_pool import AsyncConnectionPool
 
         self.dsn = dsn
-        self.pool = AsyncConnectionPool(
-            dsn, min_size=1, max_size=5, open=False, kwargs={"autocommit": True}
-        )
+        self.pool = AsyncConnectionPool(dsn, min_size=1, max_size=5, open=False, kwargs={"autocommit": True})
 
     async def init(self) -> None:
         await self.pool.open()
@@ -203,9 +201,7 @@ class PgRepo:
 
     async def load_features(self) -> list[dict[str, Any]]:
         async with self.pool.connection() as c:
-            cur = await c.execute(
-                "SELECT doc FROM sentinel_features ORDER BY occurred_at, event_id"
-            )
+            cur = await c.execute("SELECT doc FROM sentinel_features ORDER BY occurred_at, event_id")
             return [r[0] for r in await cur.fetchall()]
 
     async def query_features(self, since: datetime | None, limit: int) -> list[dict[str, Any]]:
@@ -335,9 +331,7 @@ class IncidentCache(InMemoryIncidentStore):
         if inc is None:
             raise KeyError(incident_id)
         fn(inc)
-        inc["updated_at"] = max(
-            inc["updated_at"], datetime.now(UTC).isoformat().replace("+00:00", "Z")
-        )
+        inc["updated_at"] = max(inc["updated_at"], datetime.now(UTC).isoformat().replace("+00:00", "Z"))
         validate_incident(inc)
         super().put(inc)
         return inc

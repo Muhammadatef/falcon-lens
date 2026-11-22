@@ -65,9 +65,7 @@ async def test_restart_resume_with_postgres_checkpointer(repo):
     async with AsyncPostgresSaver.from_conn_string(DSN) as saver:
         await saver.setup()
         with pytest.raises(Crash):
-            await env.runner(StubLLM(overrides={"propose": lambda u: Crash("died")}), saver).run(
-                iid
-            )
+            await env.runner(StubLLM(overrides={"propose": lambda u: Crash("died")}), saver).run(iid)
 
     # "process restart": new repo/cache/core loaded from Postgres, new checkpointer connection
     repo2 = PgRepo(DSN)

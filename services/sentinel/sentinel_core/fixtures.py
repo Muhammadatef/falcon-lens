@@ -43,9 +43,7 @@ class _Gen:
         self.events: list[dict[str, Any]] = []
         self.n = 0
 
-    def emit(
-        self, type_: str, at: datetime, payload: dict[str, Any], verdict_id: str | None = None
-    ) -> str:
+    def emit(self, type_: str, at: datetime, payload: dict[str, Any], verdict_id: str | None = None) -> str:
         self.n += 1
         eid = f"evt_{make_ulid(at, f'{self.seed}|evt|{self.n}')}"
         self.events.append(
@@ -146,9 +144,7 @@ def generate(seed: int = 7) -> Fixture:
             T0 + timedelta(hours=2 * i),
             {"kind": "false_positive", "signal": f"signal.noise_{i}"},
         )
-    for i in range(
-        2
-    ):  # only 2 lookalikes for the brand, a day before the campaign: near miss for R1
+    for i in range(2):  # only 2 lookalikes for the brand, a day before the campaign: near miss for R1
         d = ["falcon-demo-bank-help.test", "falcondemobank-sms.test"][i]
         g.emit(
             "domain.observed",

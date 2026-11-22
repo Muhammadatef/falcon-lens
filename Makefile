@@ -3,33 +3,45 @@ SHELL := /bin/bash
 COMPOSE := docker compose --profile core --profile obs
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: help up down smoke test eval redteam seed replay demo scan submission unblock
+.PHONY: help up down smoke test eval eval-gate redteam seed replay demo scan submission guard lint typecheck unblock
 
 help:
-	@echo "Targets: up down smoke test eval redteam seed replay demo scan submission"
+	@echo "Targets: up down smoke test eval eval-gate redteam seed replay demo scan submission guard"
+	@echo "Parallel stacks: COMPOSE_PROJECT_NAME=x FL_GATEWAY_PORT=.. FL_PROMETHEUS_PORT=.. FL_GRAFANA_PORT=.. make up"
 
 up: ## Start core + obs, wait until every service is healthy
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' first." >&2; exit 1; }
 	$(COMPOSE) up -d --build
 	@scripts/wait_healthy.sh 300
-	@echo ""
-	@echo "Falcon Lens is up:"
-	@echo "  App        https://localhost:8443   (local CA: accept the certificate warning)"
-	@echo "  Grafana    http://localhost:3001    (admin / \$$GRAFANA_ADMIN_PASSWORD)"
-	@echo "  Prometheus http://localhost:9090"
+	@scripts/urls.sh
 
 down: ## Stop everything (data volumes are kept; use 'docker compose down -v' to wipe)
 	docker compose --profile core --profile obs --profile tools --profile stretch down --remove-orphans
 
-test: ## ruff + mypy (falcon_core) + pytest
+lint:
 	uv run ruff check .
 	uv run ruff format --check .
+
+typecheck:
 	uv run mypy
+
+test: lint typecheck ## ruff + mypy (falcon_core) + pytest
 	uv run pytest -q
 
 unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL and REDIS_URL, host-reachable)
 	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
 	uv run python -m falcon_sentinel.unblock $(ID)
+
+guard: ## defensive-only guard: no live URLs, no data/private in git
+	python3 scripts/check_no_live_urls.py
+
+# Merge gate for detection quality. Becomes real when builder-evals lands evals/baseline.json:
+# until then it says so loudly and does NOT claim a pass.
+eval-gate:
+	@if [ ! -f evals/baseline.json ]; then \
+	  echo "eval-gate: SKIPPED - evals/baseline.json does not exist yet (eval harness not landed). This is NOT a pass."; \
+	  echo "::notice title=eval-gate skipped::no evals/baseline.json yet; detection quality is not gated"; \
+	else $(MAKE) eval; fi
 
 scan: ## gitleaks, pip-audit, pnpm audit, trivy, syft (a missing tool only warns locally)
 	@rc=0; \

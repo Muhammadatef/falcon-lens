@@ -84,9 +84,7 @@ def parse_event(data: dict[str, Any]) -> Event:
     """Validate against the JSON schema (plus time parsing and the no-raw-text rule)."""
     errors = sorted(_validator().iter_errors(data), key=lambda e: list(e.path))
     if errors:
-        raise EventValidationError(
-            "; ".join(f"{'/'.join(map(str, e.path))}: {e.message}" for e in errors[:3])
-        )
+        raise EventValidationError("; ".join(f"{'/'.join(map(str, e.path))}: {e.message}" for e in errors[:3]))
     try:
         occurred = parse_time(data["occurred_at"])
     except ValueError as exc:

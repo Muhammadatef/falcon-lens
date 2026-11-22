@@ -57,9 +57,7 @@ class Consumer:
         await self.cache.load()
         raws = await self.repo.load_features()
         events = [parse_event(r) for r in raws]
-        self.sentinel.process(
-            events
-        )  # idempotent: existing incidents are already stored, nothing changes
+        self.sentinel.process(events)  # idempotent: existing incidents are already stored, nothing changes
         await self.cache.flush()
         return len(events)
 
@@ -102,9 +100,7 @@ class Consumer:
     async def _fail(self, entry_id: str, fields: dict[str, str], exc: Exception) -> None:
         n = await self.redis.hincrby(FAILS, entry_id, 1)
         if n >= MAX_FAILURES:
-            await self.redis.xadd(
-                DLQ, {"entry_id": entry_id, "error": str(exc)[:500], "attempts": str(n), **fields}
-            )
+            await self.redis.xadd(DLQ, {"entry_id": entry_id, "error": str(exc)[:500], "attempts": str(n), **fields})
             await self.redis.xack(STREAM, GROUP, entry_id)
             await self.redis.hdel(FAILS, entry_id)
             m.DEAD_LETTER.inc()
@@ -139,9 +135,7 @@ class Consumer:
 
     async def run_once(self, block_ms: int = 1000, count: int = 50) -> int:
         n = await self.claim_stale(count)
-        batches = await self.redis.xreadgroup(
-            GROUP, self.name, {STREAM: ">"}, count=count, block=block_ms
-        )
+        batches = await self.redis.xreadgroup(GROUP, self.name, {STREAM: ">"}, count=count, block=block_ms)
         for _stream, entries in batches or []:
             n += await self._process_entries(entries)
         return n

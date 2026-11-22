@@ -27,9 +27,7 @@ async def test_consumer_turns_planted_replay_into_one_campaign_and_persists():
     assert n == len(env.fx.events)
     camps = [i for i in env.cache.all() if i["type"] == "campaign"]
     assert len(camps) == 1 and len(env.cache.all()) == 3
-    assert {i["incident_id"] for i in await env.repo.load_incidents()} == {
-        i["incident_id"] for i in env.cache.all()
-    }
+    assert {i["incident_id"] for i in await env.repo.load_incidents()} == {i["incident_id"] for i in env.cache.all()}
     assert len(await env.repo.load_features()) == len(env.fx.events)
     assert (await env.redis.xpending(STREAM, GROUP))["pending"] == 0
     assert any(camps[0]["incident_id"] in ids for ids in seen)
@@ -73,9 +71,7 @@ async def test_dlq_after_three_failures_and_ack():
     dlq = await env.redis.xrange(DLQ)
     assert len(dlq) == 2 and all(f["attempts"] == "3" and f["error"] for _, f in dlq)
     assert (await env.redis.xpending(STREAM, GROUP))["pending"] == 0
-    assert (
-        len(await env.repo.load_features()) == 3
-    )  # good events after the poison pills still processed
+    assert len(await env.repo.load_features()) == 3  # good events after the poison pills still processed
 
 
 async def test_failed_attempts_below_three_stay_pending():
@@ -85,9 +81,7 @@ async def test_failed_attempts_below_three_stay_pending():
     await env.redis.xadd(STREAM, {"event": "garbage"})
     await c.run_once(block_ms=10)
     await c.run_once(block_ms=10)
-    assert (await env.redis.xpending(STREAM, GROUP))["pending"] == 1 and await env.redis.xlen(
-        DLQ
-    ) == 0
+    assert (await env.redis.xpending(STREAM, GROUP))["pending"] == 1 and await env.redis.xlen(DLQ) == 0
 
 
 async def test_stale_pending_claimed_by_another_consumer():
@@ -95,16 +89,12 @@ async def test_stale_pending_claimed_by_another_consumer():
     dead = make_consumer(env, "dead")
     await dead.setup()
     await publish(env.redis, env.fx.events[:5])
-    await env.redis.xreadgroup(
-        GROUP, "dead", {STREAM: ">"}, count=10
-    )  # read, never acked: consumer died
+    await env.redis.xreadgroup(GROUP, "dead", {STREAM: ">"}, count=10)  # read, never acked: consumer died
     assert (await env.redis.xpending(STREAM, GROUP))["pending"] == 5
     alive = make_consumer(env, "alive")
     assert await alive.claim_stale() == 5
     assert (await env.redis.xpending(STREAM, GROUP))["pending"] == 0
-    assert {e["event_id"] for e in await env.repo.load_features()} == {
-        e["event_id"] for e in env.fx.events[:5]
-    }
+    assert {e["event_id"] for e in await env.repo.load_features()} == {e["event_id"] for e in env.fx.events[:5]}
 
 
 def test_fixture_events_parse():

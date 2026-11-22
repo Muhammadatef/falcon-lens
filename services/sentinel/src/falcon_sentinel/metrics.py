@@ -10,9 +10,7 @@ from prometheus_client import Counter, Gauge, Histogram
 
 INCIDENTS_TOTAL = Counter("fl_incidents_total", "Incidents created", ["type", "severity", "source"])
 INCIDENT_OPEN = Gauge("fl_incident_open", "Open incidents", ["severity"])
-RULE_FIRED = Counter(
-    "fl_rule_fired_total", "Rule matches that created or changed an incident", ["rule"]
-)
+RULE_FIRED = Counter("fl_rule_fired_total", "Rule matches that created or changed an incident", ["rule"])
 TIME_TO_INCIDENT = Histogram(
     "fl_time_to_incident_seconds",
     "Seconds from the triggering event to the incident (live source only)",
@@ -41,12 +39,7 @@ class SentinelMetrics:
         for sev in SEVERITIES:
             INCIDENT_OPEN.labels(sev).set(
                 sum(
-                    1
-                    for i in incs
-                    if i["severity"] == sev
-                    and i["status"] in ("open", "triaging", "awaiting_approval")
+                    1 for i in incs if i["severity"] == sev and i["status"] in ("open", "triaging", "awaiting_approval")
                 )
             )
-        APPROVALS_PENDING.set(
-            sum(1 for i in incs for a in i["actions"] if a["status"] == "awaiting_approval")
-        )
+        APPROVALS_PENDING.set(sum(1 for i in incs for a in i["actions"] if a["status"] == "awaiting_approval"))

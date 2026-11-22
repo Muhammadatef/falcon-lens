@@ -86,9 +86,7 @@ class Deps:
     llm: LLMClient
     tools: ToolContext
     retry: RetryPolicy = field(
-        default_factory=lambda: RetryPolicy(
-            initial_interval=0.5, max_attempts=3, retry_on=TRANSIENT
-        )
+        default_factory=lambda: RetryPolicy(initial_interval=0.5, max_attempts=3, retry_on=TRANSIENT)
     )
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)
 
@@ -131,9 +129,7 @@ def evidence_view(inc: dict[str, Any]) -> dict[str, Any]:
         "rule_ids": inc["rule_ids"],
         "correlation_keys": keys,
         "indicators": ind_view,
-        "timeline": [
-            {"at": t["at"], "what": t["what"], "event_id": t["event_id"]} for t in timeline[:40]
-        ],
+        "timeline": [{"at": t["at"], "what": t["what"], "event_id": t["event_id"]} for t in timeline[:40]],
         "linked_verdicts": inc["linked_verdicts"],
         "evidence_ids": sorted(set(ids)),
     }
@@ -172,9 +168,7 @@ def template_summary(view: dict[str, Any]) -> dict[str, Any]:
         }
     ]
     if evts:
-        claims.append(
-            {"text_en": f"{len(view['timeline'])} events are linked to it.", "evidence_ids": evts}
-        )
+        claims.append({"text_en": f"{len(view['timeline'])} events are linked to it.", "evidence_ids": evts})
     return {
         "en": f"Incident of type {view['type']} for brand {brand}: {n} domains matched {rules}. Template summary (no model output was accepted).",
         "ar": f"حادثة من نوع {view['type']} للعلامة {brand}: تطابقت {n} نطاقات مع {rules}. ملخص قالبي (لم يُقبل مخرج النموذج).",
@@ -274,9 +268,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         related: dict[str, Any] = {}
         brand = inc.get("brand_id")
         if brand:
-            related["verdicts"] = (
-                await run_read(ctx, "search_verdicts", {"brand_id": brand, "limit": 50})
-            ).result
+            related["verdicts"] = (await run_read(ctx, "search_verdicts", {"brand_id": brand, "limit": 50})).result
         related["related_domains"] = (
             await run_read(
                 ctx,
@@ -284,9 +276,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                 {"incident_id": iid, "keys": ["dom_simhash", "asn", "registrar", "cert_issuer"]},
             )
         ).result
-        related["past_incidents"] = (
-            await run_read(ctx, "get_past_incidents", {"brand_id": brand, "limit": 10})
-        ).result
+        related["past_incidents"] = (await run_read(ctx, "get_past_incidents", {"brand_id": brand, "limit": 10})).result
         related["feeds"] = (await run_read(ctx, "feed_status", {})).result
         return {"evidence": view, "related": related, "degraded": []}
 
@@ -295,15 +285,9 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         view = dict(state["evidence"])
         keys = view["correlation_keys"]
         shared = {
-            k: v
-            for k, v in keys.items()
-            if k in ("dom_simhash", "asn", "registrar", "cert_issuer") and len(v) == 1
+            k: v for k, v in keys.items() if k in ("dom_simhash", "asn", "registrar", "cert_issuer") and len(v) == 1
         }
-        past = [
-            p
-            for p in state["related"]["past_incidents"]["incidents"]
-            if p["incident_id"] != state["incident_id"]
-        ]
+        past = [p for p in state["related"]["past_incidents"]["incidents"] if p["incident_id"] != state["incident_id"]]
         view["comparison"] = {
             "shared_keys": shared,
             "related_domain_count": len(state["related"]["related_domains"]["related"]),
@@ -355,14 +339,10 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             degraded.append("summarise")
         if summary is None:
             summary = template_summary(view)
-        await write(
-            iid, {"summary": summary}, [e for c in summary["claims"] for e in c["evidence_ids"]]
-        )
+        await write(iid, {"summary": summary}, [e for c in summary["claims"] for e in c["evidence_ids"]])
         return {"degraded": degraded}
 
-    def mk_action(
-        iid: str, tool: str, args: dict[str, Any], evidence_ids: list[str]
-    ) -> dict[str, Any]:
+    def mk_action(iid: str, tool: str, args: dict[str, Any], evidence_ids: list[str]) -> dict[str, Any]:
         return {
             "action_id": action_id_for(iid, tool, args),
             "tool": tool,
@@ -383,11 +363,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         rejected: list[dict[str, Any]] = []
         raw: list[Any] = []
         try:
-            raw = (
-                await ask(
-                    state, ProposeOut, "propose", view, b, {"allowed_tools": list(LLM_PROPOSABLE)}
-                )
-            ).actions
+            raw = (await ask(state, ProposeOut, "propose", view, b, {"allowed_tools": list(LLM_PROPOSABLE)})).actions
         except (LLMOutputError, BudgetExceeded, TimeoutError):
             degraded.append("propose")
         blocks = 0
@@ -447,9 +423,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         if inc is None:
             raise ToolError("not_found", iid)
         # internal_auto first (idempotent: only status == proposed is executed)
-        todo = [
-            a for a in inc["actions"] if a["mode"] == "internal_auto" and a["status"] == "proposed"
-        ]
+        todo = [a for a in inc["actions"] if a["mode"] == "internal_auto" and a["status"] == "proposed"]
         todo.sort(key=lambda a: EXEC_ORDER.index(a["tool"]) if a["tool"] in EXEC_ORDER else 99)
         for a in todo:
             try:
@@ -467,9 +441,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             await cache.flush()
         # external drafts: build, never send
         inc = cache.get(iid) or inc
-        for a in [
-            x for x in inc["actions"] if x["tool"] in DRAFT_TOOLS and x["status"] == "proposed"
-        ]:
+        for a in [x for x in inc["actions"] if x["tool"] in DRAFT_TOOLS and x["status"] == "proposed"]:
             try:
                 res = await run_action(
                     ctx,
@@ -502,9 +474,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                     ],
                 }
             )
-            tgt = next(
-                (a for a in pending if a["action_id"] == (decision or {}).get("action_id")), None
-            )
+            tgt = next((a for a in pending if a["action_id"] == (decision or {}).get("action_id")), None)
             if tgt is not None and decision.get("decision") in ("approve", "reject"):
                 ok = decision["decision"] == "approve"
                 op = str(decision.get("operator") or "unknown")
@@ -531,9 +501,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             inc = cache.get(iid) or inc
             pending = [a for a in inc["actions"] if a["status"] == "awaiting_approval"]
         if not pending:
-            blocked = any(
-                a["tool"] == "block_indicator" and a["status"] == "executed" for a in inc["actions"]
-            )
+            blocked = any(a["tool"] == "block_indicator" and a["status"] == "executed" for a in inc["actions"])
             final = "mitigated" if blocked else "open"
             if inc["status"] != final:
                 await write(iid, {"status": final}, [])
@@ -563,9 +531,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
     g.add_edge("assess", "summarise")
     g.add_edge("summarise", "propose")
     g.add_edge("propose", "act")
-    g.add_conditional_edges(
-        "act", lambda s: "act" if s.get("pending_count", 0) > 0 else END, ["act", END]
-    )
+    g.add_conditional_edges("act", lambda s: "act" if s.get("pending_count", 0) > 0 else END, ["act", END])
     return g
 
 
@@ -596,9 +562,7 @@ class TriageRunner:
             if snap.next:
                 inp: Any = None  # resume mid-run from the last checkpoint
                 if snap.tasks and any(t.interrupts for t in snap.tasks):
-                    return dict(
-                        snap.values
-                    )  # paused for approval: only approve/reject may continue
+                    return dict(snap.values)  # paused for approval: only approve/reject may continue
             elif snap.values:
                 return dict(snap.values)  # already finished
             else:
@@ -614,18 +578,14 @@ class TriageRunner:
                 out.extend(i.value["pending"])
         return out
 
-    async def _decide(
-        self, incident_id: str, action_id: str, operator: str, decision: str
-    ) -> dict[str, Any]:
+    async def _decide(self, incident_id: str, action_id: str, operator: str, decision: str) -> dict[str, Any]:
         if not operator.strip():
             raise ApprovalError("operator required")
         async with self._lock(incident_id):
             if action_id not in {p["action_id"] for p in await self.pending_approvals(incident_id)}:
                 raise ApprovalError(f"{action_id} is not awaiting approval on {incident_id}")
             out = await self.graph.ainvoke(
-                Command(
-                    resume={"decision": decision, "action_id": action_id, "operator": operator}
-                ),
+                Command(resume={"decision": decision, "action_id": action_id, "operator": operator}),
                 self._cfg(incident_id),
             )
             return dict(out)

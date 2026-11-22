@@ -48,9 +48,7 @@ async def test_planted_campaign_end_to_end_with_stub_llm():
     assert td["status"] == "awaiting_approval" and td["draft"]["body_ar"] and td["draft"]["body_en"]
     assert inc["status"] == "awaiting_approval"
     assert state["__interrupt__"]
-    assert [r.url.path for r in env.http_log.requests] == [
-        "/api/v2/alerts"
-    ]  # only the internal Alertmanager
+    assert [r.url.path for r in env.http_log.requests] == ["/api/v2/alerts"]  # only the internal Alertmanager
     assert await env.redis.xlen("fl:board") == 1
     assert by_tool(inc, "export_stix")[0]["status"] == "executed"
     assert by_tool(inc, "raise_alert")[0]["status"] == "executed"
@@ -73,12 +71,8 @@ async def test_planted_campaign_end_to_end_with_stub_llm():
     (td,) = by_tool(inc, "draft_takedown")
     assert td["status"] == "approved" and td["approved_by"] == "op_alice"
     assert inc["status"] == "mitigated"
-    assert {"decision": "approve", "sent": False} in [
-        a["result"] for a in await env.repo.audit_list(iid)
-    ]
-    assert [r.url.path for r in env.http_log.requests] == [
-        "/api/v2/alerts"
-    ]  # still nothing sent externally
+    assert {"decision": "approve", "sent": False} in [a["result"] for a in await env.repo.audit_list(iid)]
+    assert [r.url.path for r in env.http_log.requests] == ["/api/v2/alerts"]  # still nothing sent externally
     with pytest.raises(ApprovalError):
         await runner.approve(iid, td["action_id"], "op_alice")  # nothing pending any more
 
@@ -142,9 +136,7 @@ async def test_verifier_drops_uncited_claims_and_falls_back_to_template():
     )
     await env2.runner(mixed).run(iid2)
     s2 = (env2.cache.get(iid2) or {})["summary"]
-    assert s2["generated_by"] == "llm" and s2["claims"] == [
-        {"text_en": "ok", "evidence_ids": ["rule:R1"]}
-    ]
+    assert s2["generated_by"] == "llm" and s2["claims"] == [{"text_en": "ok", "evidence_ids": ["rule:R1"]}]
 
 
 async def test_json_repair_retry_then_success_and_double_failure_degrades():
@@ -167,16 +159,12 @@ async def test_json_repair_retry_then_success_and_double_failure_degrades():
 
     env2 = await make_env()
     iid2 = env2.campaign_id()
-    always_bad = StubLLM(
-        overrides={"assess": lambda u: {"nope": 1}, "propose": lambda u: {"actions": "x"}}
-    )
+    always_bad = StubLLM(overrides={"assess": lambda u: {"nope": 1}, "propose": lambda u: {"actions": "x"}})
     st = await env2.runner(always_bad).run(iid2)
     inc2 = env2.cache.get(iid2) or {}
     assert inc2["severity_reason"]["en"].startswith("Rule R1")  # template fallback
     assert {"assess", "propose"} <= set(st["degraded"])
-    assert not by_tool(inc2, "block_indicator") and by_tool(
-        inc2, "export_stix"
-    )  # deterministic internals still run
+    assert not by_tool(inc2, "block_indicator") and by_tool(inc2, "export_stix")  # deterministic internals still run
 
 
 async def test_end_message_token_is_stripped():
@@ -313,11 +301,7 @@ async def test_unblock_reverts_block_and_counts():
 async def test_requeue_and_tool_arg_validation():
     env = await make_env()
     iid = env.campaign_id()
-    dom = next(
-        i["value_defanged"]
-        for i in (env.cache.get(iid) or {})["indicators"]
-        if i["kind"] == "domain"
-    )
+    dom = next(i["value_defanged"] for i in (env.cache.get(iid) or {})["indicators"] if i["kind"] == "domain")
     r = await run_action(
         env.ctx,
         "requeue_check",
@@ -347,9 +331,7 @@ async def test_requeue_and_tool_arg_validation():
             evidence_ids=[],
         )
     with pytest.raises(ToolError):
-        await run_action(
-            env.ctx, "send_email", {}, incident_id=iid, action_id="act_t4", evidence_ids=[]
-        )
+        await run_action(env.ctx, "send_email", {}, incident_id=iid, action_id="act_t4", evidence_ids=[])
 
 
 async def test_alertmanager_failure_is_recorded_not_fatal():
@@ -375,17 +357,9 @@ async def test_stix_bundle_shape():
     kinds = {o["type"] for o in b["objects"]}
     assert kinds == {"identity", "indicator", "grouping"}
     for o in b["objects"]:
-        assert (
-            o["spec_version"] == "2.1"
-            and o["id"].startswith(o["type"] + "--")
-            and o["created"].endswith("Z")
-        )
+        assert o["spec_version"] == "2.1" and o["id"].startswith(o["type"] + "--") and o["created"].endswith("Z")
         if o["type"] == "indicator":
-            assert (
-                o["pattern_type"] == "stix"
-                and o["pattern"].startswith("[domain-name:value = '")
-                and o["valid_from"]
-            )
+            assert o["pattern_type"] == "stix" and o["pattern"].startswith("[domain-name:value = '") and o["valid_from"]
         if o["type"] == "grouping":
             assert o["context"] and o["object_refs"]
     assert build_bundle(env.cache.get(env.campaign_id()) or {}) == b  # deterministic

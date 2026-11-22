@@ -32,10 +32,7 @@ from .metrics import SentinelMetrics
 log = logging.getLogger("falcon.sentinel")
 settings = get_settings()
 CONSUMER = f"sentinel-{os.environ.get('HOSTNAME') or socket.gethostname()}"
-BRANDS = Path(
-    os.environ.get("FALCON_BRANDS_YAML")
-    or Path(__file__).resolve().parents[4] / "data" / "brands.yaml"
-)
+BRANDS = Path(os.environ.get("FALCON_BRANDS_YAML") or Path(__file__).resolve().parents[4] / "data" / "brands.yaml")
 
 
 def official_domains() -> list[str]:
@@ -48,9 +45,7 @@ def official_domains() -> list[str]:
 def make_llm() -> LLMClient:
     if os.environ.get("FL_SENTINEL_LLM", "ollama") == "stub":
         return StubLLM()
-    return OpenAICompatLLM(
-        settings.ollama_base_url, os.environ.get("FL_SENTINEL_MODEL", "inkling-2-mini-chat")
-    )
+    return OpenAICompatLLM(settings.ollama_base_url, os.environ.get("FL_SENTINEL_MODEL", "inkling-2-mini-chat"))
 
 
 class Runtime:
@@ -200,16 +195,12 @@ async def _decide(incident_id: str, action_id: str, who: str, ok: bool) -> dict[
 
 
 @app.post("/internal/incidents/{incident_id}/actions/{action_id}/approve")
-async def approve(
-    incident_id: str, action_id: str, x_operator_key: str | None = Header(None)
-) -> dict[str, Any]:
+async def approve(incident_id: str, action_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
     return await _decide(incident_id, action_id, _operator(x_operator_key), True)
 
 
 @app.post("/internal/incidents/{incident_id}/actions/{action_id}/reject")
-async def reject(
-    incident_id: str, action_id: str, x_operator_key: str | None = Header(None)
-) -> dict[str, Any]:
+async def reject(incident_id: str, action_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
     return await _decide(incident_id, action_id, _operator(x_operator_key), False)
 
 
