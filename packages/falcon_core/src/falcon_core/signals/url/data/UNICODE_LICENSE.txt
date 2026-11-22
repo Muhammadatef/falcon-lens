@@ -1,0 +1,4 @@
+confusables.txt is vendored unmodified from https://www.unicode.org/Public/security/latest/confusables.txt
+(retrieved 2026-11-22; file header: Date 2026-08-06, UTS #39 version 18.0.0).
+(c) Unicode, Inc. Distributed under the Unicode Terms of Use: https://www.unicode.org/terms_of_use.html
+The licence notice is kept in the file's own header.
