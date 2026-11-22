@@ -45,6 +45,8 @@ dev = [
   "mypy>=1.14",
   "types-jsonschema",
   "types-PyYAML",
+  "fakeredis>=2.26",
+  "pyyaml>=6",
   "pytest-cov>=6",
 ]
 
@@ -68,6 +70,7 @@ known-first-party = [
 "**/tests/**" = ["S101", "S105", "S106", "S311", "S324", "E501"]
 "evals/**" = ["S603", "S607"]
 "**/fixtures.py" = ["S311"]
+"scripts/smoke.py" = ["S101", "S501"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -75,11 +78,11 @@ strict = true
 plugins = ["pydantic.mypy"]
 # Strict applies to falcon_core itself (CLAUDE.md). Tests are linted by ruff but not type-checked:
 # several test dirs ship a `conftest.py` and mypy reports them as duplicate modules.
-files = ["packages/falcon_core/src"]
+files = ["packages/falcon_core/src", "services/api/src"]
 explicit_package_bases = true
-mypy_path = "packages/falcon_core/src"
+mypy_path = "packages/falcon_core/src:services/api/src"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["packages/falcon_core/tests", "services"]
+testpaths = ["packages/falcon_core/tests", "services", "scripts/tests"]
