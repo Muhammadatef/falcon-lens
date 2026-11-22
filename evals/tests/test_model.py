@@ -15,5 +15,5 @@ def test_tampered_model_refused(tmp_path):
 def test_committed_model_loads_and_scores():
     m = load_t1_model()
     assert m.meta["model_id"] == "t1_hgb"
-    p = m.p_clf_many(["https://www.adpolice.gov.ae/", "http://secure-login-verify.example.xyz/a/b/c?x=1&y=2"])
+    p = m.p_clf_many(["https://www.adpolice.gov.ae/", "http://secure-login-verify.test/a/b/c?x=1&y=2"])
     assert all(0.0 <= v <= 1.0 for v in p)

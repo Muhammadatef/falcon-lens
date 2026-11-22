@@ -288,6 +288,26 @@ def assert_url_free(doc: dict[str, Any]) -> None:
         raise SystemExit("published artifact would contain a URL; refusing")
 
 
+def publish_doc(doc: dict[str, Any]) -> dict[str, Any]:
+    """Compact, URL-free summary for evals/results/published/ (feeds the README block via readme_metrics)."""
+    metrics: dict[str, Any] = {}
+    for split, s in doc["splits"].items():
+        for name in ("precision", "recall", "f1", "fpr", "pr_auc", "ece"):
+            m = s["overall"][name]
+            metrics[f"{split}.{name}"] = m["value"]
+            metrics[f"{split}.{name}_ci95"] = [m["ci_low"], m["ci_high"]]
+        metrics[f"{split}.official_false_dangerous"] = s["verified_official"]["false_dangerous"]
+        metrics[f"{split}.n"] = s["overall"]["n"]
+    keys = ("schema_version", "created_at", "git_sha", "dataset_hash", "temporal_cut", "seeds", "model_ids")
+    return {
+        **{k: doc[k] for k in keys},
+        "thresholds": doc["thresholds"],
+        "metrics": metrics,
+        "not_evaluated": sorted(doc["not_evaluated"]) + ["zero_day", "synthetic", "cloud_route", "sovereign_route"],
+        "scope": "offline T1 + arbiter on URLs; real data only; temporal_cut false (single poll)",
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--splits", default="val,test")
@@ -310,7 +330,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.publish:
         pub = args.out_dir / "published"
         pub.mkdir(exist_ok=True)
-        (pub / f"{ts}.json").write_text(text, encoding="utf-8")
+        pdoc = publish_doc(doc)
+        assert_url_free(pdoc)
+        (pub / f"{ts}.json").write_text(json.dumps(pdoc, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     v = doc["splits"].get("val", {}).get("overall")
     if v:
         print(f"val recall={v['recall']['value']} fpr={v['fpr']['value']} pr_auc={v['pr_auc']['value']}")
