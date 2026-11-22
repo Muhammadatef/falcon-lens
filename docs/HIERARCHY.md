@@ -5,7 +5,7 @@
 | L0 | Owner | human | Secrets; irreversible decisions; Arabic spot-checks; records the demo video |
 | L1 | Lead architect (main session) | Opus 5.5 (the spec says Fable 5.2; see DECISIONS) | Vision, architecture, ADRs, contracts, scoring, threat model, dispatch, merging approved work. **Writes no feature code.** |
 | L2 | `supervisor` | opus | Task cards, review of every PR (contracts, tests, evals, security), audit of every local-model batch. Sole approver. Writes only `reviews/` and `TASKS.md`. |
-| L3 | builders | opus: agent-core, security · sonnet: sentinel, signals, sandbox, evals, platform, observability, frontend, docs | One module each, on its own branch or worktree |
+| L3 | builders | **sonnet 5.5 for all builders** (owner decision 2026-11-23, cost) | One module each, on its own branch or worktree |
 | L4 | local workers | `FL_LOCAL_WORKER_MODEL` via Ollama (currently `qwen3:4b`; `qwen3.8:27b` when mirai is reachable) | Bulk, low-risk drafts via `scripts/qwen_task.py` only |
 
 ## How it runs
@@ -27,5 +27,5 @@
 
 ## Budget discipline
 - L1 keeps its context small and delegates reading.
-- Opus is used only for the supervisor, agent-core and security.
+- **Opus is used ONLY for the supervisor.** Builders run on Sonnet 5.5; bulk text (synthetic data, drafts, labelling) goes to the local LLM via scripts/qwen_task.py. Fable is no longer used.
 - If usage limits get close, the supervisor reviews only P0 PRs and no stretch work starts.
