@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -10,11 +11,12 @@ import subprocess
 import sys
 import time
 from collections.abc import Callable, Mapping
+from pathlib import Path
 from urllib.parse import quote
 
 import httpx
 
-from .common import PRIVATE_DIR, ApiClient, Endpoints, load_env
+from .common import PRIVATE_DIR, REPO_ROOT, ApiClient, Endpoints, load_env
 
 TUNNEL_URL_FILE = PRIVATE_DIR / "tunnel_url.txt"
 TUNNEL_PID_FILE = PRIVATE_DIR / "tunnel.pid"
@@ -28,7 +30,6 @@ def url_table(env: Mapping[str, str]) -> list[tuple[str, str]]:
         ("Web app", ep.gateway + "/"),
         ("Incident board", ep.gateway + "/board"),
         ("Incidents", ep.gateway + "/incidents"),
-        ("API docs", ep.gateway + "/v1/docs"),
         ("MCP endpoint", ep.gateway + "/mcp"),
     ]
     names = (
@@ -198,17 +199,86 @@ def tunnel_start(env: Mapping[str, str], out: Callable[[str], None] = print, wai
     return 0
 
 
+def _pid_is_cloudflared(pid: int) -> bool:
+    r = subprocess.run(["ps", "-p", str(pid), "-o", "command="], capture_output=True, text=True, check=False)
+    return "cloudflared" in r.stdout
+
+
+def _read_pid(path: Path) -> int | None:
+    try:
+        pid = int(path.read_text().strip())
+    except (OSError, ValueError):
+        return None
+    return pid if pid > 1 else None
+
+
 def tunnel_stop(out: Callable[[str], None] = print) -> int:
-    """Stops only the cloudflared we started (pid file); other tunnels are left alone."""
+    """Stops only the cloudflared we started (pid file, command verified); other tunnels are left alone."""
     if not TUNNEL_PID_FILE.is_file():
         out("tunnel-stop: no tunnel started by `make tunnel` (other cloudflared processes are not touched).")
         return 0
-    pid = int(TUNNEL_PID_FILE.read_text().strip() or 0)
-    if pid and _pid_alive(pid):
+    pid = _read_pid(TUNNEL_PID_FILE)
+    if pid is None:
+        out("tunnel-stop: pid file is garbled; removed it, nothing killed.")
+    elif _pid_alive(pid) and _pid_is_cloudflared(pid):
         os.kill(pid, signal.SIGTERM)
         out(f"tunnel-stop: stopped cloudflared pid {pid}")
+    else:
+        out(f"tunnel-stop: pid {pid} is not a running cloudflared; nothing killed.")
     TUNNEL_PID_FILE.unlink(missing_ok=True)
     TUNNEL_URL_FILE.unlink(missing_ok=True)
+    return 0
+
+
+# --- demo-reset ------------------------------------------------------------------------------------------------
+RESET_VOLUMES = ("pg_data", "redis_data")
+
+
+def reset_plan(config: dict[str, object]) -> tuple[str, list[str]]:
+    """(project name, volume names) from `docker compose config --format json`, never guessed."""
+    name = config.get("name")
+    vols = config.get("volumes")
+    if not isinstance(name, str) or not name or not isinstance(vols, dict):
+        raise ValueError("compose config has no project name or volumes")
+    out = []
+    for key in RESET_VOLUMES:
+        v = vols.get(key)
+        vname = v.get("name") if isinstance(v, dict) else None
+        if not isinstance(vname, str) or not vname:
+            raise ValueError(f"volume '{key}' not found in compose config")
+        out.append(vname)
+    return name, out
+
+
+def compose_config() -> dict[str, object]:
+    r = subprocess.run(
+        ["docker", "compose", "--profile", "core", "--profile", "obs", "--profile", "tools"]
+        + ["config", "--format", "json"],
+        capture_output=True, text=True, cwd=REPO_ROOT, check=False,
+    )  # fmt: skip
+    if r.returncode != 0:
+        raise ValueError("`docker compose config` failed: " + r.stderr.strip().splitlines()[-1:][0] if r.stderr else "")
+    doc = json.loads(r.stdout)
+    if not isinstance(doc, dict):
+        raise ValueError("unexpected compose config")
+    return doc
+
+
+def demo_reset(assume_yes: bool, out: Callable[[str], None] = print, ask: Callable[[str], str] = input) -> int:
+    try:
+        project, volumes = reset_plan(compose_config())
+    except (ValueError, OSError) as exc:
+        out(f"demo-reset: cannot resolve project/volumes ({exc}); nothing deleted.")
+        return 1
+    out(f"demo-reset: project '{project}', volumes to delete: {', '.join(volumes)}")
+    if not assume_yes and ask("Type the project name to confirm: ").strip() != project:
+        out("aborted")
+        return 1
+    base = ["docker", "compose", "--profile", "core", "--profile", "obs", "--profile", "tools", "--profile", "stretch"]
+    subprocess.run([*base, "down", "--remove-orphans"], cwd=REPO_ROOT, check=True)
+    subprocess.run(["docker", "volume", "rm", "-f", *volumes], check=True)
+    (PRIVATE_DIR / "seed_state.json").unlink(missing_ok=True)
+    out("demo-reset: volumes and seed state removed")
     return 0
 
 
@@ -224,6 +294,8 @@ def main(argv: list[str]) -> int:
     if cmd == "prewarm":
         prewarm(env)
         return 0
+    if cmd == "reset":
+        return demo_reset(assume_yes=os.environ.get("YES") == "1")
     if cmd == "reset-state":
         (PRIVATE_DIR / "seed_state.json").unlink(missing_ok=True)
         print("seed state cleared")
@@ -232,7 +304,7 @@ def main(argv: list[str]) -> int:
         return tunnel_start(env)
     if cmd == "tunnel-stop":
         return tunnel_stop()
-    print("usage: python -m falcon_demo.ops urls|next|prewarm|tunnel|tunnel-stop", file=sys.stderr)
+    print("usage: python -m falcon_demo.ops urls|next|prewarm|tunnel|tunnel-stop|reset|reset-state", file=sys.stderr)
     return 2
 
 

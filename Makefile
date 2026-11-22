@@ -2,7 +2,6 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
-PROJECT = $${COMPOSE_PROJECT_NAME:-falcon}
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
 .PHONY: help up down smoke openapi test eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
@@ -92,11 +91,8 @@ tunnel: ## Public cloudflared quick tunnel to the gateway; URL in data/private/t
 tunnel-stop: ## Stop the tunnel started by `make tunnel` (other cloudflared processes are untouched)
 	@$(DEMO) tunnel-stop
 
-demo-reset: ## Reset Postgres+Redis volumes and seed state, then `make demo` (YES=1 skips the prompt)
-	@if [ "$(YES)" != 1 ]; then read -r -p "Delete volumes $(PROJECT)_pg_data and $(PROJECT)_redis_data? [y/N] " a; [ "$$a" = y ] || { echo aborted; exit 1; }; fi
-	docker compose --profile core --profile obs --profile tools --profile stretch down --remove-orphans
-	docker volume rm -f $(PROJECT)_pg_data $(PROJECT)_redis_data
-	$(DEMO) reset-state
+demo-reset: ## Reset Postgres+Redis volumes and seed state (names resolved from `docker compose config`), then `make demo`; YES=1 skips the prompt
+	@YES=$(YES) $(DEMO) reset
 	$(MAKE) demo
 
 unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs falcon_sentinel.unblock, host-reachable DATABASE_URL/REDIS_URL)

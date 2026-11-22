@@ -3,8 +3,8 @@
 Sources (each optional, a missing one is reported, never fatal):
   legit    evals/datasets/legit_urls.csv        defanged official URLs, sampled deterministically
   fixture  Falcon Demo Bank (.test domains)      built in, always present
-  redteam  evals/redteam/cases.jsonl             {"id","kind":"url|message","value"} per line
-  message  evals/datasets/{synthetic,human}_messages*.jsonl   {"text": ...} per line
+  (red-team cases are never seeded: `make redteam` runs them)
+  message  evals/datasets/{synthetic,human}_messages*.jsonl   {"text"}; kept if all domains reserved
   phish    evals/manifests/phishing.manifest.jsonl   hashes only -> verdict.created replay events
 """
 
@@ -13,12 +13,14 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import re
 import sys
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from .common import REPO_ROOT, SOURCE, refang
 
@@ -28,7 +30,50 @@ if str(SENTINEL_DIR) not in sys.path:  # sentinel_core is a workspace package; t
 
 from sentinel_core.ids import make_ulid  # noqa: E402
 
-GROUPS = ("fixture", "legit", "redteam", "message", "phish")
+GROUPS = ("fixture", "legit", "message", "phish")
+# Red-team cases are NOT seeded: they run through `make redteam`, never the public API (reviewer B2).
+SAFE_SUFFIXES = (".test", ".example", ".invalid")
+_URL_RE = re.compile(r"(?i)\b(?:hxxps?|https?)(?:://|\[:\]//)[^\s<>\"')\]]+")
+_DOMAIN_RE = re.compile(
+    r"(?i)(?<![A-Za-z0-9-])((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.|\[\.\]))+[a-z]{2,})(?![A-Za-z0-9-])"
+)
+
+
+def _host_ok(host: str) -> bool:
+    h = host.lower().rstrip(".")
+    return any(h == sfx[1:] or h.endswith(sfx) for sfx in SAFE_SUFFIXES)
+
+
+def text_domains(text: str) -> set[str]:
+    """Every host-like token in free text: scheme URLs, bare domains, defanged forms, e-mail domains."""
+    found: set[str] = set()
+    for m in _URL_RE.finditer(text):
+        try:
+            found.add((urlsplit(refang(m.group(0))).hostname or "").lower())
+        except ValueError:
+            found.add("unparseable-url.invalid!")  # fail closed: never matches the allowlist
+    for m in _DOMAIN_RE.finditer(text):
+        found.add(m.group(1).replace("[.]", ".").lower())
+    found.discard("")
+    return found
+
+
+def message_allowed(text: str) -> bool:
+    return all(_host_ok(h) for h in text_domains(text))
+
+
+def item_allowed(item: Item) -> bool:
+    """Final gate before the API: fixture URLs reserved-TLD only; legit URLs come from the curated CSV."""
+    if item.kind == "message":
+        return message_allowed(item.value)
+    if item.kind == "url":
+        if item.group == "legit":
+            return True
+        host = (urlsplit(item.value).hostname or "").lower()
+        return item.group == "fixture" and _host_ok(host)
+    return item.kind == "event" and item.group == "phish"
+
+
 BRAND = "falcon_demo_bank"
 
 
@@ -97,19 +142,6 @@ def _jsonl(path: Path) -> Iterator[dict[str, Any]]:
                 yield obj
 
 
-def redteam_items(path: Path | None = None) -> list[Item]:
-    p = path or REPO_ROOT / "evals" / "redteam" / "cases.jsonl"
-    if not p.is_file():
-        return []
-    out = []
-    for c in _jsonl(p):
-        kind = "message" if c.get("kind") == "message" else "url"
-        v = str(c.get("value") or c.get("text") or c.get("url") or "")
-        if v:
-            out.append(Item("redteam", kind, refang(v) if kind == "url" else v, c.get("expect_floor")))
-    return out
-
-
 def message_items(root: Path | None = None, limit: int | None = 60) -> list[Item]:
     d = root or REPO_ROOT / "evals" / "datasets"
     rows: list[dict[str, Any]] = []
@@ -172,14 +204,23 @@ def hash_event(item: Item) -> dict[str, Any]:
 
 def build_corpus(
     groups: tuple[str, ...] = GROUPS, legit_limit: int | None = 60, phish_limit: int | None = 50
-) -> tuple[list[Item], dict[str, int]]:
-    """Returns (items in a stable order, per-group counts; 0 means the source is absent)."""
+) -> tuple[list[Item], dict[str, int], dict[str, int]]:
+    """Returns (items, per-group counts kept, per-group counts skipped by the allowlist). Never prints contents."""
     parts: dict[str, list[Item]] = {
         "fixture": fixture_items(),
         "legit": legit_items(limit=legit_limit),
-        "redteam": redteam_items(),
-        "message": message_items(),
+        "message": message_items(limit=None),
         "phish": phish_event_items(limit=phish_limit),
     }
-    items = [i for g in GROUPS if g in groups for i in parts[g]]
-    return items, {g: len(parts[g]) for g in GROUPS if g in groups}
+    kept: dict[str, int] = {}
+    skipped: dict[str, int] = {}
+    items: list[Item] = []
+    for g in GROUPS:
+        if g not in groups:
+            continue
+        ok = [i for i in parts[g] if item_allowed(i)]
+        if g == "message":
+            ok = _every_kth(ok, 60)
+        items += ok
+        kept[g], skipped[g] = len(ok), sum(not item_allowed(i) for i in parts[g])
+    return items, kept, skipped

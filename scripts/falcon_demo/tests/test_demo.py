@@ -197,7 +197,6 @@ def test_phishing_is_hashes_only_and_events_validate(tmp_path: Path) -> None:
 
 def test_missing_sources_degrade_to_empty(tmp_path: Path) -> None:
     assert corpus.legit_items(tmp_path / "nope.csv") == []
-    assert corpus.redteam_items(tmp_path / "nope.jsonl") == []
     assert corpus.message_items(tmp_path) == []
     assert corpus.phish_event_items(tmp_path / "nope.jsonl") == []
 

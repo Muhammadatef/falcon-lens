@@ -1,4 +1,4 @@
-"""python -m falcon_demo <seed|replay|urls|next|prewarm|tunnel|tunnel-stop> [args]"""
+"""python -m falcon_demo <seed|replay|urls|next|prewarm|tunnel|tunnel-stop|reset-state|reset> [args]"""
 
 import sys
 
@@ -11,7 +11,7 @@ def main(argv: list[str]) -> int:
         return seed.main(rest)
     if cmd == "replay":
         return replay.main(rest)
-    if cmd in {"urls", "next", "prewarm", "tunnel", "tunnel-stop", "reset-state"}:
+    if cmd in {"urls", "next", "prewarm", "tunnel", "tunnel-stop", "reset-state", "reset"}:
         return ops.main([cmd, *rest])
     print(__doc__, file=sys.stderr)
     return 2

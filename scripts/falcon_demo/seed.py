@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .common import PRIVATE_DIR, ApiClient, ApiError, EventSink, Sleep, Throttled, retry_throttled
-from .corpus import Item, hash_event
+from .corpus import Item, hash_event, item_allowed
 
 STATE_PATH = PRIVATE_DIR / "seed_state.json"
 
@@ -22,6 +22,7 @@ class Summary:
     submitted: Counter[str] = field(default_factory=Counter)
     skipped: Counter[str] = field(default_factory=Counter)
     failed: Counter[str] = field(default_factory=Counter)
+    blocked: Counter[str] = field(default_factory=Counter)
     verdicts: Counter[str] = field(default_factory=Counter)
     mismatches: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
@@ -33,6 +34,8 @@ class Summary:
             lines.append(
                 f"  {g:<9} submitted={self.submitted[g]:<4} already-seeded={self.skipped[g]:<4} failed={self.failed[g]}"
             )
+        if self.blocked:
+            lines.append("  blocked by allowlist: " + ", ".join(f"{k}={v}" for k, v in sorted(self.blocked.items())))
         if self.verdicts:
             lines.append("  verdicts seen: " + ", ".join(f"{k}={v}" for k, v in sorted(self.verdicts.items())))
         if self.mismatches:
@@ -82,6 +85,9 @@ def run_seed(
     for n, item in enumerate(items, 1):
         if on_progress:
             on_progress(n - 1, len(items))
+        if not item_allowed(item):  # defence in depth: nothing off the allowlist reaches the API
+            s.blocked[item.group] += 1
+            continue
         if not force and item.key in state:
             s.skipped[item.group] += 1
             continue
@@ -146,9 +152,12 @@ def main(argv: list[str]) -> int:
 
     env = load_env()
     groups = tuple(g for g in a.groups.split(",") if g)
-    items, counts = build_corpus(groups, a.legit_limit, a.phish_limit)
+    items, counts, skipped = build_corpus(groups, a.legit_limit, a.phish_limit)
+    for g, n in skipped.items():
+        if n:
+            print(f"note: {n} '{g}' item(s) skipped by the reserved-domain allowlist")
     for g, n in counts.items():
-        if n == 0:
+        if n == 0 and not skipped.get(g):
             print(f"note: no '{g}' items found (source file not present yet); skipping that group")
     ep = Endpoints.from_env(env)
     client = ApiClient(ep.gateway, env.get("FL_SANDBOX_API_KEY"))
