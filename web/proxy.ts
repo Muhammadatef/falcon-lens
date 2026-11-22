@@ -45,7 +45,10 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: "/((?!api|_next/static|_next/image|fonts|icons|sw.js|favicon.ico).*)",
+      // Not matched: API routes and static files (the gateway gives those a deny-all fallback CSP).
+      // /sw.js IS matched: a worker runs under the CSP its script was served with, and it needs
+      // connect-src 'self' to fetch the offline shell.
+      source: "/((?!api/|_next/static/|_next/image|fonts/|icons/|favicon.ico).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

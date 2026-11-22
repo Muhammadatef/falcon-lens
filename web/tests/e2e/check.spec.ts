@@ -1,4 +1,4 @@
-import { DEMO_DANGEROUS } from "../../lib/demo";
+import { DEMO_DANGEROUS, DEMO_NWS } from "../../lib/demo";
 import { XSS, dangerousStream, degradedVerdict, nwsStream, withId, xssVerdict } from "../fixtures";
 import { expect, newVerdictId, registerScenario, scenarioLog, setPrefs, submitText, test, token } from "./helpers";
 
@@ -108,6 +108,35 @@ test.describe("check page: progressive verdict from the API stream", () => {
     await expect(page.getByTestId("degraded")).toContainText("لم نتمكن من إكمال كل الفحوص");
     await expect(page.locator('[data-testid="evidence-row"][data-evidence="ev_sandbox0err"]')).toContainText("تعذّر هذا الفحص");
     await expect(page.getByTestId("impersonated")).toHaveCount(0);
+  });
+
+  test("contract invariants enforced in the client: degraded is never 'no warning signs', and that verdict always has its caution", async ({ page, request }) => {
+    // Malformed on purpose: the API should never send either of these.
+    const id = newVerdictId();
+    const t = token();
+    const degradedNws = { ...withId(DEMO_NWS, id), degraded: true, degraded_reasons: ["rdap_unavailable"] };
+    await registerScenario(request, { match: t, verdictId: id, steps: [{ delayMs: 150, verdict: degradedNws }] });
+    await page.goto("/");
+    await submitText(page, `https://falcon-demo-bank.test/?c=${t}`);
+    await expect(page.getByTestId("result")).toHaveAttribute("data-phase", "final");
+    await expect(page.getByTestId("verdict-word")).toHaveText("مريب");
+    await expect(page.getByTestId("verdict-card")).toHaveAttribute("data-verdict", "suspicious");
+    await expect(page.getByTestId("degraded")).toContainText("لم نتمكن من إكمال كل الفحوص");
+    await expect(page.locator("body")).not.toContainText("لم نجد علامات تحذير");
+
+    const id2 = newVerdictId();
+    const t2 = token();
+    const { caution: _caution, ...actions } = DEMO_NWS.actions;
+    void _caution;
+    const noCaution = { ...withId(DEMO_NWS, id2), actions } as typeof DEMO_NWS;
+    await registerScenario(request, { match: t2, verdictId: id2, steps: [{ delayMs: 150, verdict: noCaution }] });
+    await page.getByTestId("new-check").click();
+    await submitText(page, `https://falcon-demo-bank.test/?c=${t2}`);
+    await expect(page.getByTestId("verdict-word")).toHaveText("لم نجد علامات تحذير");
+    await expect(page.getByTestId("caution").locator("li")).toHaveCount(3);
+    await expect(page.getByTestId("caution")).toContainText("ليس ضماناً");
+    const order = await page.locator(".acts > .act").evaluateAll((nodes) => nodes.map((n) => n.getAttribute("data-testid")));
+    expect(order[0]).toBe("caution");
   });
 
   test("429 rate limit: honest error with Retry-After, no verdict, form usable again", async ({ page, request }) => {

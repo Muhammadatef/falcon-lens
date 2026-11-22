@@ -47,6 +47,11 @@ async function startCheck(plan: Exclude<SharePlan, { kind: "none" }>, forwardedF
 }
 
 export async function POST(request: Request) {
+  // Another website must not be able to make a visitor's browser start checks. A share-target
+  // launch is browser-initiated (Sec-Fetch-Site: none) and our own pages are same-origin, so
+  // only an explicit cross-site POST is refused. Nothing is checked; the box is shown instead.
+  if (request.headers.get("sec-fetch-site") === "cross-site") return seeOther("/");
+
   const length = Number.parseInt(request.headers.get("content-length") ?? "0", 10);
   if (Number.isFinite(length) && length > MAX_BODY_BYTES) return seeOther("/?share=failed");
 

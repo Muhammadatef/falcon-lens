@@ -26,6 +26,15 @@ test.describe("CSP and markup hygiene", () => {
     }
   });
 
+  test("the service worker script is served with the app CSP (a worker runs under its own script's policy)", async ({ request }) => {
+    const sw = await request.get("/sw.js");
+    expect(sw.status()).toBe(200);
+    expect(sw.headers()["content-security-policy"]).toContain("connect-src 'self'");
+    expect(sw.headers()["cache-control"]).toContain("no-store");
+    // /apis… is not the API prefix: it is a page route and gets the CSP too.
+    expect((await request.get("/apis")).headers()["content-security-policy"]).toContain("'strict-dynamic'");
+  });
+
   test("each response gets a fresh nonce", async ({ request }) => {
     const nonces = await Promise.all([0, 1, 2].map(async () => /'nonce-([^']+)'/.exec((await request.get("/")).headers()["content-security-policy"] ?? "")?.[1]));
     expect(new Set(nonces).size).toBe(3);
@@ -78,6 +87,14 @@ test.describe("PWA", () => {
     expect(failed.headers().location).toBe("/?share=failed");
     await page.goto("/?share=failed");
     await expect(page.getByTestId("share-failed")).toBeVisible();
+
+    // A cross-site POST (another website's form) starts nothing.
+    const t2 = token();
+    await registerScenario(request, { match: t2, verdictId: newVerdictId(), steps: dangerousStream(newVerdictId()) });
+    const crossSite = await request.post("/share", { multipart: { text: `https://falcon-demo-bank-secure.test/?c=${t2}` }, headers: { "sec-fetch-site": "cross-site", origin: "https://attacker.test" }, maxRedirects: 0 });
+    expect(crossSite.status()).toBe(303);
+    expect(crossSite.headers().location).toBe("/");
+    expect((await scenarioLog(request, t2)).requests).toHaveLength(0);
 
     const prefill = await request.get(`/share?text=${encodeURIComponent("hello https://x.test/a")}`, { maxRedirects: 0 });
     expect(prefill.headers().location).toBe(`/?text=${encodeURIComponent("hello https://x.test/a")}`);

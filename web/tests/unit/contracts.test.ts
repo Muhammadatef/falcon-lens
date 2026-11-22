@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 import { describe, expect, it } from "vitest";
-import { parseCampaign, parseIncident, parseVerdict, unwrapList } from "@/lib/contracts";
+import { DEFAULT_CAUTION, parseCampaign, parseIncident, parseVerdict, unwrapList } from "@/lib/contracts";
 import { DEMO_CAMPAIGNS, DEMO_DANGEROUS, DEMO_INCIDENT, DEMO_NWS, DEMO_STREAMS } from "@/lib/demo";
 import { degradedVerdict, xssVerdict } from "../fixtures";
 
@@ -72,6 +72,35 @@ describe("parseVerdict", () => {
     expect(parseVerdict({ ...DEMO_NWS, verdict_id: "../../etc/passwd" })).toBeNull();
     expect(parseVerdict({ ...DEMO_NWS, final: "true" })).toBeNull();
     expect(parseVerdict({ ...DEMO_NWS, tier_reached: "T9" })).toBeNull();
+  });
+
+  it("invariant 4: a degraded no_warning_signs is never passed on as no_warning_signs", () => {
+    for (const final of [true, false]) {
+      const v = parseVerdict({ ...DEMO_NWS, degraded: true, degraded_reasons: ["rdap_unavailable"], final })!;
+      expect(v.verdict).toBe("suspicious");
+      expect(v.degraded).toBe(true);
+    }
+    // Not degraded: left as it is. Degraded but already cautious: left as it is.
+    expect(parseVerdict(DEMO_NWS)!.verdict).toBe("no_warning_signs");
+    expect(parseVerdict({ ...DEMO_DANGEROUS, degraded: true })!.verdict).toBe("dangerous");
+    // Only a real boolean true counts; a truthy string does not flip a clean verdict.
+    expect(parseVerdict({ ...DEMO_NWS, degraded: "false" })!.verdict).toBe("no_warning_signs");
+  });
+
+  it("invariant 3: no_warning_signs always carries a caution list", () => {
+    const { caution: _caution, ...withoutCaution } = DEMO_NWS.actions;
+    void _caution;
+    expect(parseVerdict({ ...DEMO_NWS, actions: withoutCaution })!.actions.caution).toEqual(DEFAULT_CAUTION);
+    expect(parseVerdict({ ...DEMO_NWS, actions: { ...DEMO_NWS.actions, caution: { ar: [], en: [] } } })!.actions.caution).toEqual(DEFAULT_CAUTION);
+    expect(parseVerdict({ ...DEMO_NWS, actions: { ...DEMO_NWS.actions, caution: "be careful" } })!.actions.caution).toEqual(DEFAULT_CAUTION);
+    expect(parseVerdict({ ...DEMO_NWS, actions: null })!.actions.caution).toEqual(DEFAULT_CAUTION);
+    // One language present: it is kept, the other is filled.
+    const half = parseVerdict({ ...DEMO_NWS, actions: { ...DEMO_NWS.actions, caution: { ar: ["تنبيه"], en: [] } } })!.actions.caution;
+    expect(half).toEqual({ ar: ["تنبيه"], en: DEFAULT_CAUTION.en });
+    // The API's own caution is used untouched, and other verdicts get none invented.
+    expect(parseVerdict(DEMO_NWS)!.actions.caution).toEqual(DEMO_NWS.actions.caution);
+    expect(parseVerdict(DEMO_DANGEROUS)!.actions.caution).toBeUndefined();
+    for (const s of [...DEFAULT_CAUTION.ar, ...DEFAULT_CAUTION.en]) expect(s).not.toMatch(/\bsafe\b|آمن/i);
   });
 
   it("drops non-string and malformed members instead of rendering them", () => {

@@ -185,10 +185,29 @@ function parseTrace(raw: unknown): TraceStep[] | undefined {
   return out.sort((a, b) => a.step - b.step);
 }
 
-/** Returns a sanitised Verdict, or null when the payload is not a usable verdict. */
+/**
+ * Shown when a `no_warning_signs` verdict arrives without `actions.caution` (contract
+ * invariant 3). The UI never shows that verdict without a "stay careful" block.
+ */
+export const DEFAULT_CAUTION: BilingualList = {
+  ar: ["عدم وجود علامات تحذير ليس ضماناً.", "لا تشارك رمز التحقق (OTP) أو كلمة المرور مع أي شخص.", "إذا استعجلك أحد أو طلب تحويل مال، توقّف وتحقق."],
+  en: ["Finding no warning signs is not a guarantee.", "Never share a one-time code (OTP) or password with anyone.", "If someone rushes you or asks for a money transfer, stop and verify."],
+};
+
+/**
+ * Returns a sanitised Verdict, or null when the payload is not a usable verdict.
+ *
+ * The client enforces two contract invariants itself instead of trusting the API:
+ *  - invariant 4: a degraded verdict is never `no_warning_signs`. If one arrives it is shown
+ *    as `suspicious` with the "could not complete every check" note (never upgraded to a
+ *    reassuring answer on incomplete evidence);
+ *  - invariant 3: `no_warning_signs` always carries a caution list (DEFAULT_CAUTION fills
+ *    any language that is missing or empty).
+ */
 export function parseVerdict(raw: unknown): Verdict | null {
   if (!isObj(raw)) return null;
-  const verdict = oneOf(raw.verdict, VERDICTS);
+  const declared = oneOf(raw.verdict, VERDICTS);
+  const verdict: VerdictLabel | null = declared === "no_warning_signs" && raw.degraded === true ? "suspicious" : declared;
   const tier = oneOf(raw.tier_reached, TIERS);
   const inputType = oneOf(raw.input_type, ["url", "message", "email", "image"] as const);
   if (typeof raw.verdict_id !== "string" || !VERDICT_ID_RE.test(raw.verdict_id)) return null;
@@ -241,7 +260,7 @@ export function parseVerdict(raw: unknown): Verdict | null {
       now: bilingualList(a.now),
       if_already_acted: bilingualList(a.if_already_acted),
       report: { ar: str(report.ar), en: str(report.en), channels },
-      caution: isObj(a.caution) ? bilingualList(a.caution) : undefined,
+      caution: cautionFor(verdict, a.caution),
     },
     tier_reached: tier,
     model_route: oneOf(raw.model_route, ["cloud", "local", "none"] as const) ?? "none",
@@ -253,6 +272,12 @@ export function parseVerdict(raw: unknown): Verdict | null {
     latency_ms: num(raw.latency_ms),
     created_at: str(raw.created_at),
   };
+}
+
+function cautionFor(verdict: VerdictLabel, raw: unknown): BilingualList | undefined {
+  const given = isObj(raw) ? bilingualList(raw) : undefined;
+  if (verdict !== "no_warning_signs") return given;
+  return { ar: given?.ar.length ? given.ar : DEFAULT_CAUTION.ar, en: given?.en.length ? given.en : DEFAULT_CAUTION.en };
 }
 
 const SEVERITIES: readonly Severity[] = ["low", "medium", "high", "critical"];

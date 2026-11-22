@@ -130,3 +130,11 @@ scripts keep one source), §3 SSE integration, §4 PWA (share target is POST, se
 campaign and incident boards. Not built yet: §5 extension, Lighthouse CI budgets.
 Run: `pnpm build && pnpm test` in `web/` (typecheck, vitest, Playwright against
 `tests/mock/gateway.mjs`).
+
+## 10. Tokens: one source of truth
+
+`web/design/tokens.css` is the source of truth for every colour, type, spacing and motion token.
+The Chrome extension (`extension/static/tokens.css`, PR #34) ships a **copy**, because an MV3
+package cannot import from outside its own directory. Change tokens here first, run
+`node web/design/scripts/check-contrast.mjs`, then copy the file to the extension; never edit the
+copy on its own.

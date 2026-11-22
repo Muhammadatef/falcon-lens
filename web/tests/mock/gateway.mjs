@@ -243,4 +243,4 @@ http
     if (run) run.catch(() => { if (!res.headersSent) problem(req, res, 500, "internal", "Internal error"); else res.end(); });
     else proxy(req, res);
   })
-  .listen(PORT, "127.0.0.1", () => console.log(`mock gateway on http://127.0.0.1:${PORT} → app :${APP_PORT}`));
+  .listen(PORT, process.env.MOCK_HOST ?? "127.0.0.1", () => console.log(`mock gateway on :${PORT} → app :${APP_PORT}`));

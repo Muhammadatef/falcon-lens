@@ -23,6 +23,19 @@ test("web routes carry only the app's strict nonce CSP; /v1 is deny-all", async 
   expect(csp).not.toContain("unsafe-inline");
   expect(csp).not.toContain("unsafe-eval");
 
+  // Paths the app's CSP proxy skips get the gateway's deny-all fallback: still exactly one policy.
+  for (const path of ["/fonts/readex-pro-arabic-wght-normal.woff2", "/_next/static/does-not-exist.js", "/api/health"]) {
+    const res = await request.get(path);
+    const found = res.headersArray().filter((h) => h.name.toLowerCase() === "content-security-policy");
+    expect(found, path).toHaveLength(1);
+    expect(found[0]!.value, path).toContain("default-src 'none'");
+  }
+  // The service worker runs under the CSP of its own script: it must be the app policy, not deny-all.
+  const sw = await request.get("/sw.js");
+  const swCsp = sw.headersArray().filter((h) => h.name.toLowerCase() === "content-security-policy");
+  expect(swCsp).toHaveLength(1);
+  expect(swCsp[0]!.value).toContain("connect-src 'self'");
+
   const api = await request.get("/v1/version");
   expect(api.status()).toBe(200);
   expect(api.headers()["content-security-policy"]).toContain("default-src 'none'");
