@@ -30,10 +30,10 @@ pytestmark = [
 
 ROOT = Path(__file__).resolve().parents[3]
 CLIENT = """
-import json, sys, urllib.request, urllib.error
+import json, os, sys, urllib.request, urllib.error
 path, payload = sys.argv[1], sys.argv[2]
 req = urllib.request.Request("http://127.0.0.1:8000" + path, data=payload.encode(), method="POST",
-    headers={"content-type": "application/json", "x-sandbox-key": "fl_sandbox_demo_key"})
+    headers={"content-type": "application/json", "x-sandbox-key": os.environ["FL_SANDBOX_TOKEN"]})
 try:
     r = urllib.request.urlopen(req, timeout=30)
     print(json.dumps({"status": r.status, "body": json.loads(r.read())}))
