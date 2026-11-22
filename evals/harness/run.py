@@ -27,7 +27,7 @@ from evals.datasets.build import Item, load_private_items
 from evals.harness import metrics as M
 from evals.harness.report import render_html, render_prom
 from evals.splits import check_rows, load_lock
-from evals.train.fit import HGB_PARAMS, apply_platt, fit_platt, train_model
+from evals.train.fit import HGB_PARAMS, apply_platt, fit_platt
 from evals.train.pipeline import FEATURE_GROUPS, feature_matrix, score_url
 from falcon_core.scoring.params import ScoringParams, load_params
 from falcon_core.scoring.t1_model import T1Model, load_t1_model
@@ -55,7 +55,9 @@ def _pct(vals: Sequence[float], q: float) -> float | None:
     return round(float(np.percentile(vals, q)), 4) if len(vals) else None
 
 
-def score_items(items: Sequence[Item], model: T1Model, params: ScoringParams, with_registry: bool = True) -> dict[str, Any]:
+def score_items(
+    items: Sequence[Item], model: T1Model, params: ScoringParams, with_registry: bool = True
+) -> dict[str, Any]:
     p_clf = model.p_clf_many([i.url for i in items])
     t0 = time.perf_counter()
     scored = [score_url(i.url, pc, params, with_registry) for i, pc in zip(items, p_clf, strict=True)]
@@ -120,7 +122,9 @@ def evaluate_split(
     for kind in ("real", "synthetic"):
         m = kinds == kind
         out[kind] = (
-            _headline(y[m], warn[m], p[m], n_boot, seed + 20) if m.any() and y[m].sum() > 0 else not_evaluated(
+            _headline(y[m], warn[m], p[m], n_boot, seed + 20)
+            if m.any() and y[m].sum() > 0
+            else not_evaluated(
                 f"no {kind} items with phishing labels in this split" if not m.any() else f"no {kind} phishing items"
             )
         )
@@ -218,8 +222,7 @@ def run_eval(splits: Sequence[str], n_boot: int, seed: int) -> dict[str, Any]:
     if errs or lock is None:
         raise SystemExit("split check failed, refusing to evaluate: " + "; ".join(errs))
     items = load_private_items()
-    for i in items:  # private cache must agree with the public manifest
-        pass
+    # the private cache must agree with the public manifest
     if {i.item_id: i.split for i in items} != {str(r["item_id"]): str(r["split"]) for r in rows}:
         raise SystemExit("private item cache does not match the public manifest: rerun evals.datasets.build")
     model = load_t1_model()
@@ -236,7 +239,9 @@ def run_eval(splits: Sequence[str], n_boot: int, seed: int) -> dict[str, Any]:
         "temporal_cut": lock["temporal_cut"],
         "temporal_cut_note": (
             "split is a seeded domain-grouped random split: fewer than 3 collection polls exist, so a temporal cut "
-            "is not yet possible" if not lock["temporal_cut"] else "every test phishing first_seen is later than train"
+            "is not yet possible"
+            if not lock["temporal_cut"]
+            else "every test phishing first_seen is later than train"
         ),
         "model_ids": {
             "t1": {k: meta[k] for k in ("model_id", "model_sha256", "sklearn_version", "git_sha", "fit_date")},

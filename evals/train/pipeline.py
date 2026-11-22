@@ -38,16 +38,38 @@ class _Ctx:
 # Feature groups for the ablation (all are the "url" signal family; the groups are finer than the family).
 FEATURE_GROUPS: dict[str, tuple[str, ...]] = {
     "length_structure": (
-        "url_len", "host_len", "path_len", "query_len", "num_dots", "num_subdomains", "num_params", "path_depth",
+        "url_len",
+        "host_len",
+        "path_len",
+        "query_len",
+        "num_dots",
+        "num_subdomains",
+        "num_params",
+        "path_depth",
         "longest_label",
     ),  # fmt: skip
     "char_statistics": (
-        "num_hyphens_host", "digit_ratio_host", "digit_ratio_url", "host_entropy", "label_entropy", "num_percent",
+        "num_hyphens_host",
+        "digit_ratio_host",
+        "digit_ratio_url",
+        "host_entropy",
+        "label_entropy",
+        "num_percent",
         "num_special_chars_url",
     ),  # fmt: skip
     "scheme_host_tricks": (
-        "is_https", "is_ip", "ip_obfuscated", "has_userinfo", "nondefault_port", "is_punycode", "non_ascii_host",
-        "mixed_script", "double_encoded", "is_data_uri", "has_bidi_or_zw", "has_at_in_path",
+        "is_https",
+        "is_ip",
+        "ip_obfuscated",
+        "has_userinfo",
+        "nondefault_port",
+        "is_punycode",
+        "non_ascii_host",
+        "mixed_script",
+        "double_encoded",
+        "is_data_uri",
+        "has_bidi_or_zw",
+        "has_at_in_path",
         "has_embedded_url_in_query",
     ),  # fmt: skip
     "tld_hosting": ("tld_len", "risky_tld", "is_shortener", "is_free_host"),

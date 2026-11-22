@@ -121,11 +121,7 @@ def fit_bands(
     tau_low = max(TAU_LOW_MIN, min(tau_low, TAU_LOW_MAX))
 
     def ok_high(t: float) -> bool:
-        return (
-            t >= tau_low + 0.05
-            and legit_rate(t) <= DANGEROUS_FPR_TARGET
-            and not bool(((p >= t) & official).any())
-        )
+        return t >= tau_low + 0.05 and legit_rate(t) <= DANGEROUS_FPR_TARGET and not bool(((p >= t) & official).any())
 
     highs = [t for t in cands if ok_high(t)]
     if highs and min(highs) <= h1_floor:

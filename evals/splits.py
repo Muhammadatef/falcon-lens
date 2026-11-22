@@ -43,7 +43,9 @@ def temporal_feasible(items: Sequence[SplitItem]) -> bool:
     return len({i.first_seen for i in items if i.label == 1}) >= MIN_POLLS
 
 
-def _fill_random(groups: list[tuple[str, list[SplitItem]]], rng: random.Random, counts: dict[str, int]) -> dict[str, str]:
+def _fill_random(
+    groups: list[tuple[str, list[SplitItem]]], rng: random.Random, counts: dict[str, int]
+) -> dict[str, str]:
     """Greedy: each group (shuffled) goes to the split with the largest deficit against RATIOS."""
     groups = sorted(groups, key=lambda g: g[0])
     rng.shuffle(groups)
@@ -207,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
     for e in errors:
         print(f"FAIL: {e}", file=sys.stderr)
     if not errors and lock is not None:
-        print(f"splits ok: {lock['counts']} temporal_cut={lock['temporal_cut']} test_sha256={str(lock['test_sha256'])[:16]}")
+        print(f"splits ok: {lock['counts']} cut={lock['temporal_cut']} test_sha256={str(lock['test_sha256'])[:12]}")
     return 1 if errors else 0
 
 
