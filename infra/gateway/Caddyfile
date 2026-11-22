@@ -4,6 +4,11 @@
 	skip_install_trust
 	servers {
 		metrics
+		# Behind the cloudflared tunnel every request arrives from a private (docker/host) address.
+		# Trust only private ranges and take the real caller from Cloudflare's header, so the API's
+		# per-IP rate limit sees one bucket per visitor, not one for the whole tunnel.
+		trusted_proxies static private_ranges
+		client_ip_headers Cf-Connecting-Ip X-Forwarded-For
 	}
 }
 
@@ -41,7 +46,9 @@ https://localhost:8443 {
 	}
 
 	handle /v1/* {
-		reverse_proxy api:8000
+		reverse_proxy api:8000 {
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 	handle /mcp* {
 		reverse_proxy mcp:8000
