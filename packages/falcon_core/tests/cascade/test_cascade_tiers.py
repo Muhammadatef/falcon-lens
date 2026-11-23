@@ -336,25 +336,32 @@ async def test_t1_uncertain_escalates_and_partial_is_not_final() -> None:
 
 
 async def test_t1_signals_run_concurrently() -> None:
-    # Five signals of 30 ms each must finish in well under 5 x 30 ms.
+    # Deterministic: every signal waits on a barrier that opens only once all N have started.
+    # If signals ran sequentially the first would never be released and would hit the bound.
     import asyncio
-    import time
+
+    n = 5
+    started = 0
+    all_started = asyncio.Event()
 
     def mk(i: int) -> Any:
         name = f"url.sleepy{i}"
         spec = SignalSpec(name=name, family="url", tier="T1", input_types=("url",),
-                          timeout_ms=500, network="none", emits=(name,))  # fmt: skip
+                          timeout_ms=5000, network="none", emits=(name,))  # fmt: skip
 
         async def fn(ctx: SignalContext) -> list[SignalEvidence]:
-            await asyncio.sleep(0.03)
+            nonlocal started
+            started += 1
+            if started == n:
+                all_started.set()
+            await asyncio.wait_for(all_started.wait(), timeout=2.0)
             return []
 
         return spec, fn
 
-    cascade, _ = make_cascade(signals={f"url.sleepy{i}": mk(i) for i in range(5)})
-    t0 = time.perf_counter()
+    cascade, _ = make_cascade(signals={f"url.sleepy{i}": mk(i) for i in range(n)})
     await run(cascade, "https://plain-host.test/")
-    assert time.perf_counter() - t0 < 0.12
+    assert started == n and all_started.is_set()
 
 
 async def test_crashing_signal_is_error_evidence_not_crash() -> None:
