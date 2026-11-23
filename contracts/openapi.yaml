@@ -38,6 +38,27 @@ components:
       - report
       title: Actions
       type: object
+    AgentTrace:
+      additionalProperties: false
+      properties:
+        incident_id:
+          pattern: ^inc_[0-9A-HJKMNP-TV-Z]{26}$
+          title: Incident Id
+          type: string
+        runs:
+          items:
+            $ref: '#/components/schemas/TraceRun'
+          title: Runs
+          type: array
+        thread_id:
+          title: Thread Id
+          type: string
+      required:
+      - incident_id
+      - thread_id
+      - runs
+      title: AgentTrace
+      type: object
     BilingualList:
       additionalProperties: false
       properties:
@@ -520,46 +541,189 @@ components:
       - kind
       title: ReportIn
       type: object
-    TraceStep:
+    TraceBudget:
       additionalProperties: false
       properties:
-        evidence_added:
-          anyOf:
-          - items:
-              type: string
-            type: array
-          - type: 'null'
-          title: Evidence Added
-        kind:
-          enum:
-          - tier
-          - tool
-          - llm
-          - rule
-          title: Kind
+        elapsed_ms:
+          minimum: 0.0
+          title: Elapsed Ms
+          type: integer
+        steps_used:
+          minimum: 0.0
+          title: Steps Used
+          type: integer
+        tokens_used:
+          minimum: 0.0
+          title: Tokens Used
+          type: integer
+      required:
+      - steps_used
+      - tokens_used
+      - elapsed_ms
+      title: TraceBudget
+      type: object
+    TraceInterrupt:
+      additionalProperties: false
+      properties:
+        action_id:
+          title: Action Id
           type: string
-        ms:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Ms
-        name:
+        decided_by:
           anyOf:
           - type: string
           - type: 'null'
-          title: Name
-        step:
-          title: Step
-          type: integer
-        summary:
-          maxLength: 240
-          title: Summary
+          title: Decided By
+        decision:
+          anyOf:
+          - enum:
+            - approved
+            - rejected
+            type: string
+          - type: 'null'
+          title: Decision
+        pending_count:
+          anyOf:
+          - minimum: 1.0
+            type: integer
+          - type: 'null'
+          title: Pending Count
+        tool:
+          title: Tool
+          type: string
+        waiting_since:
+          title: Waiting Since
           type: string
       required:
-      - step
-      - kind
-      - summary
-      title: TraceStep
+      - action_id
+      - tool
+      - waiting_since
+      title: TraceInterrupt
+      type: object
+    TraceLlm:
+      additionalProperties: false
+      properties:
+        cost_usd:
+          minimum: 0.0
+          title: Cost Usd
+          type: number
+        fallback_template:
+          title: Fallback Template
+          type: boolean
+        model:
+          title: Model
+          type: string
+        repaired:
+          title: Repaired
+          type: boolean
+        route:
+          enum:
+          - cloud
+          - local
+          - none
+          title: Route
+          type: string
+        tokens_in:
+          minimum: 0.0
+          title: Tokens In
+          type: integer
+        tokens_out:
+          minimum: 0.0
+          title: Tokens Out
+          type: integer
+      required:
+      - route
+      - model
+      - tokens_in
+      - tokens_out
+      - cost_usd
+      - repaired
+      - fallback_template
+      title: TraceLlm
+      type: object
+    TraceRun:
+      additionalProperties: false
+      properties:
+        finished_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Finished At
+        interrupt:
+          anyOf:
+          - $ref: '#/components/schemas/TraceInterrupt'
+          - type: 'null'
+        run_id:
+          title: Run Id
+          type: string
+        started_at:
+          title: Started At
+          type: string
+        status:
+          enum:
+          - running
+          - interrupted
+          - completed
+          - failed
+          title: Status
+          type: string
+        steps:
+          items:
+            $ref: '#/components/schemas/falcon_core__contracts__agent_trace__TraceStep'
+          title: Steps
+          type: array
+      required:
+      - run_id
+      - started_at
+      - finished_at
+      - status
+      - steps
+      - interrupt
+      title: TraceRun
+      type: object
+    TraceTool:
+      additionalProperties: false
+      properties:
+        duration_ms:
+          minimum: 0.0
+          title: Duration Ms
+          type: integer
+        evidence_ids:
+          items:
+            type: string
+          maxItems: 20
+          title: Evidence Ids
+          type: array
+        mode:
+          enum:
+          - read
+          - internal_auto
+          - external_draft
+          title: Mode
+          type: string
+        name:
+          title: Name
+          type: string
+        origin:
+          anyOf:
+          - enum:
+            - model
+            - rule_fallback
+            type: string
+          - type: 'null'
+          title: Origin
+        status:
+          enum:
+          - ok
+          - error
+          title: Status
+          type: string
+      required:
+      - name
+      - mode
+      - status
+      - evidence_ids
+      - duration_ms
+      title: TraceTool
       type: object
     UrlCheck:
       properties:
@@ -678,7 +842,7 @@ components:
         trace:
           anyOf:
           - items:
-              $ref: '#/components/schemas/TraceStep'
+              $ref: '#/components/schemas/falcon_core__contracts__verdict__TraceStep'
             type: array
           - type: 'null'
           title: Trace
@@ -709,6 +873,127 @@ components:
       - latency_ms
       - created_at
       title: Verdict
+      type: object
+    falcon_core__contracts__agent_trace__TraceStep:
+      additionalProperties: false
+      properties:
+        budget:
+          $ref: '#/components/schemas/TraceBudget'
+        duration_ms:
+          minimum: 0.0
+          title: Duration Ms
+          type: integer
+        error_code:
+          anyOf:
+          - pattern: ^[a-z0-9_]{1,40}$
+            type: string
+          - type: 'null'
+          title: Error Code
+        generated_by:
+          anyOf:
+          - enum:
+            - llm
+            - template
+            - rule
+            type: string
+          - type: 'null'
+          title: Generated By
+        llm:
+          anyOf:
+          - $ref: '#/components/schemas/TraceLlm'
+          - type: 'null'
+        node:
+          enum:
+          - enrich
+          - compare
+          - assess
+          - summarise
+          - propose
+          - act
+          title: Node
+          type: string
+        seq:
+          minimum: 1.0
+          title: Seq
+          type: integer
+        started_at:
+          title: Started At
+          type: string
+        status:
+          enum:
+          - running
+          - interrupted
+          - completed
+          - failed
+          title: Status
+          type: string
+        summary_ar:
+          maxLength: 300
+          title: Summary Ar
+          type: string
+        summary_en:
+          maxLength: 300
+          title: Summary En
+          type: string
+        tools:
+          items:
+            $ref: '#/components/schemas/TraceTool'
+          title: Tools
+          type: array
+      required:
+      - seq
+      - node
+      - started_at
+      - duration_ms
+      - status
+      - summary_en
+      - summary_ar
+      - tools
+      - llm
+      - budget
+      - error_code
+      title: TraceStep
+      type: object
+    falcon_core__contracts__verdict__TraceStep:
+      additionalProperties: false
+      properties:
+        evidence_added:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Evidence Added
+        kind:
+          enum:
+          - tier
+          - tool
+          - llm
+          - rule
+          title: Kind
+          type: string
+        ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Ms
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        step:
+          title: Step
+          type: integer
+        summary:
+          maxLength: 240
+          title: Summary
+          type: string
+      required:
+      - step
+      - kind
+      - summary
+      title: TraceStep
       type: object
   securitySchemes:
     APIKeyHeader:
@@ -1523,6 +1808,61 @@ paths:
       summary: Reject Action
       tags:
       - operator
+  /v1/incidents/{incident_id}/trace:
+    get:
+      description: Sentinel agent run trace (agent_trace.schema.json). Approver and decision only for
+        operator scope.
+      operationId: get_incident_trace_v1_incidents__incident_id__trace_get
+      parameters:
+      - in: path
+        name: incident_id
+        required: true
+        schema:
+          pattern: ^inc_[0-9A-HJKMNP-TV-Z]{26}$
+          title: Incident Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentTrace'
+          description: Successful Response
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: Get Incident Trace
+      tags:
+      - incidents
   /v1/intel/stix:
     get:
       description: STIX 2.1 bundle of defanged indicators for one incident or all (optionally by status).

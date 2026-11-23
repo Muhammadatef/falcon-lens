@@ -217,6 +217,19 @@ async function api(req, res, path) {
     }
     return;
   }
+  const one = /^\/v1\/incidents\/([^/]+)(\/trace)?$/.exec(path);
+  if (one && req.method === "GET" && one[1] !== "stream") {
+    if (!board || board.incidents == null) return problem(req, res, 404, "not-found", "Not found");
+    if (!authed(board)) return problem(req, res, 401, "unauthorized", "Unauthorized");
+    const inc = board.incidents.find((i) => i.incident_id === one[1]);
+    if (!inc) return problem(req, res, 404, "not-found", "Not found");
+    if (!one[2]) return json(res, 200, inc);
+    // The trace can advance per poll: `traces` is a list of snapshots, the last one repeats.
+    const snaps = board.traces?.[one[1]];
+    if (!snaps?.length) return json(res, 200, { incident_id: one[1], thread_id: one[1], runs: [] });
+    board.traceCalls = (board.traceCalls ?? 0) + 1;
+    return json(res, 200, snaps[Math.min(board.traceCalls - 1, snaps.length - 1)]);
+  }
   const decide = /^\/v1\/incidents\/([^/]+)\/actions\/([^/]+)\/(approve|reject)$/.exec(path);
   if (decide && req.method === "POST") {
     if (!board) return problem(req, res, 404, "not-found", "Not found");

@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/agent_trace.schema.json",
+  "title": "AgentTrace",
+  "description": "Run trace of the Sentinel LangGraph agent for ONE incident (thread_id = incident_id). Built only from template fields: counts, enums, tool names, ids and durations. It never carries raw LLM prompts or outputs, raw page or message text, or live URLs (any domain is defanged).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "incident_id",
+    "thread_id",
+    "runs"
+  ],
+  "properties": {
+    "incident_id": {
+      "type": "string",
+      "pattern": "^inc_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "thread_id": {
+      "type": "string"
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/run"
+      }
+    }
+  },
+  "$defs": {
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "started_at",
+        "finished_at",
+        "status",
+        "steps",
+        "interrupt"
+      ],
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "running",
+            "interrupted",
+            "completed",
+            "failed"
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        "interrupt": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "action_id",
+                "tool",
+                "waiting_since"
+              ],
+              "properties": {
+                "action_id": {
+                  "type": "string"
+                },
+                "tool": {
+                  "type": "string"
+                },
+                "waiting_since": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "pending_count": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "decision": {
+                  "enum": [
+                    "approved",
+                    "rejected",
+                    null
+                  ],
+                  "description": "Operator scope only; stripped for other scopes."
+                },
+                "decided_by": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Operator scope only; stripped for other scopes."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seq",
+        "node",
+        "started_at",
+        "duration_ms",
+        "status",
+        "summary_en",
+        "summary_ar",
+        "tools",
+        "llm",
+        "budget",
+        "error_code"
+      ],
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Monotonic per incident across runs."
+        },
+        "node": {
+          "type": "string",
+          "enum": [
+            "enrich",
+            "compare",
+            "assess",
+            "summarise",
+            "propose",
+            "act"
+          ]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "running",
+            "interrupted",
+            "completed",
+            "failed"
+          ]
+        },
+        "summary_en": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "summary_ar": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tool"
+          }
+        },
+        "llm": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "route",
+                "model",
+                "tokens_in",
+                "tokens_out",
+                "cost_usd",
+                "repaired",
+                "fallback_template"
+              ],
+              "properties": {
+                "route": {
+                  "type": "string",
+                  "enum": [
+                    "cloud",
+                    "local",
+                    "none"
+                  ]
+                },
+                "model": {
+                  "type": "string"
+                },
+                "tokens_in": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "tokens_out": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "cost_usd": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "repaired": {
+                  "type": "boolean"
+                },
+                "fallback_template": {
+                  "type": "boolean"
+                }
+              }
+            }
+          ]
+        },
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "steps_used",
+            "tokens_used",
+            "elapsed_ms"
+          ],
+          "properties": {
+            "steps_used": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tokens_used": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "elapsed_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "error_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z0-9_]{1,40}$"
+        },
+        "generated_by": {
+          "enum": [
+            "llm",
+            "template",
+            "rule",
+            null
+          ],
+          "description": "Who wrote this node's output: the model, a template, or a rule (rule_fallback draft). null for deterministic nodes."
+        }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "mode",
+        "status",
+        "evidence_ids",
+        "duration_ms"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "read",
+            "internal_auto",
+            "external_draft"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "error"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string"
+          }
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "origin": {
+          "enum": [
+            "model",
+            "rule_fallback"
+          ],
+          "description": "rule_fallback: draft queued by rule because the model gave no valid takedown proposal."
+        }
+      }
+    }
+  }
+}
