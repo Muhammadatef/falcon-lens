@@ -152,3 +152,22 @@ def test_committed_published_artifacts_export_without_errors() -> None:
 def test_missing_dir_is_empty_not_error(tmp_path: Path) -> None:
     text, n, _ = X.render(tmp_path / "nope")
     assert n == 0 and "fl_eval_exporter_artifacts 0" in text
+
+
+def test_fits_export_only_measured_values_not_configuration(tmp_path: Path) -> None:
+    chosen = {
+        "fpr_form": 0.0, "recall_form": 0.5, "margin": 0.3, "strong_adj": 1.6, "n_legit": 104, "n_phishing": 142,
+    }  # fmt: skip
+    doc = {
+        "seed": 20261122,
+        "split": "val",
+        "constraints": {"url_only_dangerous_fpr_max": 0.01},
+        "grid": {"margin": [0.0, 0.1]},
+        "chosen": chosen,
+    }
+    _w(tmp_path, "fits/f.json", doc)
+    text, _, _ = X.render(tmp_path)
+    assert 'metric="fpr_form",split="val",source="fits"' in text and 'metric="recall_form"' in text
+    assert 'fl_eval_n{metric="fpr_form"' in text and "} 104.0" in text
+    for config in ("seed", "constraints", "margin", "strong_adj", "n_legit", "grid"):
+        assert f'metric="{config}' not in text

@@ -465,10 +465,11 @@ def eval_tile(
     rb: str | None = "eval-regression",
     nodata: str = ND_EVAL,
     decimals: int = 3,
+    ci_note: str = "CI = bootstrap 95% interval stored in the artifact.",
 ) -> Panel:
     """Stat tile: current value (legend = provenance), 95% CI low/high and n, all from the latest artifact."""
     targets = [
-        target(eval_sel(metric, split, source) + LATEST, "{{provenance}}", "A", True),
+        target(eval_sel(metric, split, source) + LATEST, "{{artifact}} · {{provenance}}", "A", True),
         target(eval_sel(metric, split, source, "fl_eval_ci_low") + LATEST, "95% CI low", "B", True),
         target(eval_sel(metric, split, source, "fl_eval_ci_high") + LATEST, "95% CI high", "C", True),
         target(eval_sel(metric, split, source, "fl_eval_n") + LATEST, "n", "D", True),
@@ -485,8 +486,10 @@ def eval_tile(
         "type": "stat",
         "title": title,
         "description": desc(
-            what + " Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval "
-            "stored in the artifact; n = items evaluated.",
+            what
+            + " Legend under the value = source artifact name and provenance label; "
+            + ci_note
+            + " n = items evaluated.",
             thr_text,
             nodata,
         ),
@@ -698,7 +701,7 @@ def overview() -> Board:
             "Checks by verdict | الفحوصات حسب الحكم",
             [target(src(f"sum by (verdict, source) (rate(fl_checks_total[{RI}])) * 60"), "{{verdict}} · {{source}}")],
             desc(
-                "Checks per minute by verdict and source. Never reads 'safe': the lowest verdict is no warning signs.",
+                "Checks per minute by verdict and source. The lowest verdict is no warning signs.",
                 "none: composition view",
                 ND_TRAFFIC,
             ),
@@ -2183,7 +2186,7 @@ def sentinel() -> Board:
             ],
             desc(
                 "Severity reasons and summaries written by the model (llm) or by the deterministic template (the model failed or the verifier rejected it).",
-                "none: composition; templates are safe, just less specific",
+                "none: composition; template text only, less specific than model text",
                 ND_SENT,
             ),
             stack=True,
@@ -2252,7 +2255,7 @@ def model_quality() -> Board:
             "Every tile reads the eval gauges (metric family `eval`), served by the **evals-exporter** from the published artifacts in "
             "`evals/results/published/` (read-only). Tiles show the **latest** artifact per source: value, "
             "bootstrap 95% CI, n and provenance (real or synthetic). No value is typed here; if an artifact is "
-            "missing the tile says so. Offline scores are not live accuracy. The wording is never 'safe'.",
+            "missing the tile says so. Offline scores are not live accuracy.",
         ),
         16,
         3,
@@ -2471,6 +2474,7 @@ def model_quality() -> Board:
             "green 0%, red above: the target is zero injection success",
             [(None, GREEN), (0.0001, RED)],
             source="redteam",
+            ci_note="CI = Wilson 95% interval computed by the exporter from k/n in the artifact (the artifact stores no interval).",
             rb="injection-spike",
             nodata="no red-team artifact is published yet (evals/results/published/redteam/ is empty)",
         ),

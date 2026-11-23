@@ -168,7 +168,7 @@
       "title": "Where these numbers come from | مصدر الأرقام",
       "options": {
         "mode": "markdown",
-        "content": "Every tile reads the eval gauges (metric family `eval`), served by the **evals-exporter** from the published artifacts in `evals/results/published/` (read-only). Tiles show the **latest** artifact per source: value, bootstrap 95% CI, n and provenance (real or synthetic). No value is typed here; if an artifact is missing the tile says so. Offline scores are not live accuracy. The wording is never 'safe'."
+        "content": "Every tile reads the eval gauges (metric family `eval`), served by the **evals-exporter** from the published artifacts in `evals/results/published/` (read-only). Tiles show the **latest** artifact per source: value, bootstrap 95% CI, n and provenance (real or synthetic). No value is typed here; if an artifact is missing the tile says so. Offline scores are not live accuracy."
       },
       "transparent": true,
       "id": 2,
@@ -279,7 +279,7 @@
     {
       "type": "stat",
       "title": "Recall | الاستدعاء · val",
-      "description": "Share of phishing items that received a warning (suspicious or dangerous). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: green >= 90%, red below: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Share of phishing items that received a warning (suspicious or dangerous). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green >= 90%, red below: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -299,7 +299,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -448,7 +448,7 @@
     {
       "type": "stat",
       "title": "Precision | الدقة · val",
-      "description": "Share of warnings that were phishing. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no precision target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Share of warnings that were phishing. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no precision target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -468,7 +468,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -613,7 +613,7 @@
     {
       "type": "stat",
       "title": "F1 | مقياس F1 · val",
-      "description": "Harmonic mean of precision and recall. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no F1 target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Harmonic mean of precision and recall. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no F1 target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -633,7 +633,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -778,7 +778,7 @@
     {
       "type": "stat",
       "title": "False-alarm rate FPR | الإنذار الكاذب · val",
-      "description": "Share of legitimate items that received a warning. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Share of legitimate items that received a warning. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -798,7 +798,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -947,7 +947,7 @@
     {
       "type": "stat",
       "title": "ROC-AUC | المساحة تحت ROC · val",
-      "description": "Ranking quality of the calibrated probability across all cut points. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Ranking quality of the calibrated probability across all cut points. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -967,7 +967,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -1112,7 +1112,7 @@
     {
       "type": "stat",
       "title": "PR-AUC | المساحة تحت PR · val",
-      "description": "Average precision: ranking quality that weighs the rare class. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no PR-AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Average precision: ranking quality that weighs the rare class. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no PR-AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -1132,7 +1132,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -1277,7 +1277,7 @@
     {
       "type": "stat",
       "title": "Accuracy | الدقة الكلية · val",
-      "description": "Correct calls at the warning operating point. Read with FPR and recall: classes are imbalanced. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no accuracy target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Correct calls at the warning operating point. Read with FPR and recall: classes are imbalanced. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no accuracy target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -1297,7 +1297,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -1442,7 +1442,7 @@
     {
       "type": "stat",
       "title": "Calibration error ECE | خطأ المعايرة · val",
-      "description": "Expected calibration error of the probability (lower is better). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no ECE target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Expected calibration error of the probability (lower is better). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no ECE target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -1462,7 +1462,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -1620,7 +1620,7 @@
     {
       "type": "stat",
       "title": "Recall | الاستدعاء · test",
-      "description": "Share of phishing items that received a warning (suspicious or dangerous). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: green >= 90%, red below: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Share of phishing items that received a warning (suspicious or dangerous). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green >= 90%, red below: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -1640,7 +1640,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -1789,7 +1789,7 @@
     {
       "type": "stat",
       "title": "Precision | الدقة · test",
-      "description": "Share of warnings that were phishing. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no precision target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Share of warnings that were phishing. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no precision target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -1809,7 +1809,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -1954,7 +1954,7 @@
     {
       "type": "stat",
       "title": "F1 | مقياس F1 · test",
-      "description": "Harmonic mean of precision and recall. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no F1 target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Harmonic mean of precision and recall. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no F1 target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -1974,7 +1974,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -2119,7 +2119,7 @@
     {
       "type": "stat",
       "title": "False-alarm rate FPR | الإنذار الكاذب · test",
-      "description": "Share of legitimate items that received a warning. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Share of legitimate items that received a warning. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -2139,7 +2139,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -2288,7 +2288,7 @@
     {
       "type": "stat",
       "title": "ROC-AUC | المساحة تحت ROC · test",
-      "description": "Ranking quality of the calibrated probability across all cut points. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Ranking quality of the calibrated probability across all cut points. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -2308,7 +2308,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -2453,7 +2453,7 @@
     {
       "type": "stat",
       "title": "PR-AUC | المساحة تحت PR · test",
-      "description": "Average precision: ranking quality that weighs the rare class. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no PR-AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Average precision: ranking quality that weighs the rare class. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no PR-AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -2473,7 +2473,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -2618,7 +2618,7 @@
     {
       "type": "stat",
       "title": "Accuracy | الدقة الكلية · test",
-      "description": "Correct calls at the warning operating point. Read with FPR and recall: classes are imbalanced. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no accuracy target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Correct calls at the warning operating point. Read with FPR and recall: classes are imbalanced. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no accuracy target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -2638,7 +2638,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -2783,7 +2783,7 @@
     {
       "type": "stat",
       "title": "Calibration error ECE | خطأ المعايرة · test",
-      "description": "Expected calibration error of the probability (lower is better). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: docs/EVALS.md sets no ECE target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Expected calibration error of the probability (lower is better). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no ECE target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -2803,7 +2803,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -2961,7 +2961,7 @@
     {
       "type": "stat",
       "title": "False-alarm rate, sites that serve web | الإنذار الكاذب (مواقع تعمل)",
-      "description": "Share of held-out real legitimate sites that serve a web page (serves-web) which received a warning, through the running stack. Real sites, live pipeline. Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md; this run is a regression check, not tuned on. No data: no fp_regress artifact is published yet (run make regress-legit LIVE=1 and publish).",
+      "description": "Share of held-out real legitimate sites that serve a web page (serves-web) which received a warning, through the running stack. Real sites, live pipeline. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md; this run is a regression check, not tuned on. No data: no fp_regress artifact is published yet (run make regress-legit LIVE=1 and publish).",
       "links": [
         {
           "title": "Runbook: fp-spike",
@@ -2981,7 +2981,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -3130,7 +3130,7 @@
     {
       "type": "stat",
       "title": "False-alarm rate, all held-out sites | الإنذار الكاذب (الكل)",
-      "description": "Share of all held-out legitimate sites with a warning, including hosts that serve no web page (DNS-only names that degrade). Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: no fp_regress artifact is published yet.",
+      "description": "Share of all held-out legitimate sites with a warning, including hosts that serve no web page (DNS-only names that degrade). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: no fp_regress artifact is published yet.",
       "links": [
         {
           "title": "Runbook: fp-spike",
@@ -3150,7 +3150,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -3458,7 +3458,7 @@
     {
       "type": "stat",
       "title": "Red-team harmful rate | معدل نجاح الهجوم",
-      "description": "Share of synthetic injection cases where the attack changed the outcome (target 0%, docs/EVALS.md). Synthetic fixtures (Falcon Demo Bank), reference pipeline. Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: green 0%, red above: the target is zero injection success. No data: no red-team artifact is published yet (evals/results/published/redteam/ is empty).",
+      "description": "Share of synthetic injection cases where the attack changed the outcome (target 0%, docs/EVALS.md). Synthetic fixtures (Falcon Demo Bank), reference pipeline. Legend under the value = source artifact name and provenance label; CI = Wilson 95% interval computed by the exporter from k/n in the artifact (the artifact stores no interval). n = items evaluated. Thresholds: green 0%, red above: the target is zero injection success. No data: no red-team artifact is published yet (evals/results/published/redteam/ is empty).",
       "links": [
         {
           "title": "Runbook: injection-spike",
@@ -3478,7 +3478,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -3746,7 +3746,7 @@
     {
       "type": "stat",
       "title": "Message-text recall | استدعاء الرسائل · val · SYNTHETIC, pending audit",
-      "description": "Share of phishing messages (URLs wrapped in synthetic English/Arabic templates) that received a warning. SYNTHETIC templates built from real URLs; pending native-speaker audit. Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: the message set is synthetic and pending audit, so no target is applied. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Share of phishing messages (URLs wrapped in synthetic English/Arabic templates) that received a warning. SYNTHETIC templates built from real URLs; pending native-speaker audit. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: the message set is synthetic and pending audit, so no target is applied. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -3766,7 +3766,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -3911,7 +3911,7 @@
     {
       "type": "stat",
       "title": "Message-text FPR | الإنذار الكاذب للرسائل · val · SYNTHETIC, pending audit",
-      "description": "Share of legitimate messages that received a warning. SYNTHETIC templates built from real URLs; pending native-speaker audit. Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: synthetic and pending audit, no target is applied. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Share of legitimate messages that received a warning. SYNTHETIC templates built from real URLs; pending native-speaker audit. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: synthetic and pending audit, no target is applied. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -3931,7 +3931,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -4076,7 +4076,7 @@
     {
       "type": "stat",
       "title": "Message-text recall | استدعاء الرسائل · test · SYNTHETIC",
-      "description": "Same as val, on the test split. SYNTHETIC templates, pending audit. Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: synthetic and pending audit. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Same as val, on the test split. SYNTHETIC templates, pending audit. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: synthetic and pending audit. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -4096,7 +4096,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {
@@ -4241,7 +4241,7 @@
     {
       "type": "stat",
       "title": "Message-text FPR | الإنذار الكاذب للرسائل · test · SYNTHETIC",
-      "description": "Same as val, on the test split. SYNTHETIC templates, pending audit. Legend under the value = provenance label from the artifact; CI = bootstrap 95% interval stored in the artifact; n = items evaluated. Thresholds: none: synthetic and pending audit. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "description": "Same as val, on the test split. SYNTHETIC templates, pending audit. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: synthetic and pending audit. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
       "links": [
         {
           "title": "Runbook: eval-regression",
@@ -4261,7 +4261,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{provenance}}",
+          "legendFormat": "{{artifact}} · {{provenance}}",
           "instant": true
         },
         {

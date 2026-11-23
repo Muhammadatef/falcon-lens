@@ -218,6 +218,26 @@ def _generic_rows(doc: dict[str, Any]) -> list[Row]:
     return out
 
 
+def _fits_rows(doc: dict[str, Any]) -> list[Row]:
+    """Measured values of a threshold fit only (rates on the fit split, with their n); never the fitted
+    parameters (margin, strong_adj), the constraints, the seed or the grid, which are configuration."""
+    chosen = doc.get("chosen")
+    if not isinstance(chosen, dict):
+        return []
+    split = str(doc.get("split", "val"))
+    rows: list[Row] = []
+    for key, n_key in (
+        ("fpr_form", "n_legit"),
+        ("fpr_url_only", "n_legit"),
+        ("recall_form", "n_phishing"),
+        ("recall_url_only", "n_phishing"),
+    ):
+        v = _num(chosen.get(key))
+        if v is not None:
+            rows.append(Row(key, split, v, n=_num(chosen.get(n_key))))
+    return rows
+
+
 def artifact_rows(source: str, doc: dict[str, Any]) -> list[Row]:
     """The rows of one artifact, by source layout."""
     if source == "main":
@@ -226,6 +246,8 @@ def artifact_rows(source: str, doc: dict[str, Any]) -> list[Row]:
         return _fp_rows(doc)
     if source == "redteam":
         return _redteam_rows(doc)
+    if source == "fits":
+        return _fits_rows(doc)
     return _generic_rows(doc)
 
 

@@ -1353,7 +1353,7 @@
     {
       "type": "timeseries",
       "title": "Template vs LLM text | قالب أم نموذج",
-      "description": "Severity reasons and summaries written by the model (llm) or by the deterministic template (the model failed or the verifier rejected it). Thresholds: none: composition; templates are safe, just less specific. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "description": "Severity reasons and summaries written by the model (llm) or by the deterministic template (the model failed or the verifier rejected it). Thresholds: none: composition; template text only, less specific than model text. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
       "links": [],
       "datasource": {
         "type": "prometheus",

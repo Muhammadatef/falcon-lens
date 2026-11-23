@@ -903,7 +903,7 @@
     {
       "type": "timeseries",
       "title": "Checks by verdict | الفحوصات حسب الحكم | REPLAY-aware",
-      "description": "Checks per minute by verdict and source. Never reads 'safe': the lowest verdict is no warning signs. Thresholds: none: composition view. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check. Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "description": "Checks per minute by verdict and source. The lowest verdict is no warning signs. Thresholds: none: composition view. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check. Series with source=replay are drawn dashed orange and labelled REPLAY.",
       "links": [],
       "datasource": {
         "type": "prometheus",
