@@ -48,6 +48,8 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | email.display_name_impersonation | email | +2.0 | |
 | email.reply_to_mismatch | email | +1.0 | |
 | email.link_text_mismatch | email | +2.0 | |
+| email.limit_exceeded | email | +2.0 | email over the size / nesting / part limits (2 MB, 20 levels, 50 parts): what fits is analysed, every link in the raw bytes is judged, and the excess is risk. Sets degraded, so the label is never below `suspicious`. Weight equals `email.display_name_impersonation`: moderate, because padding is common in bulk mail yet is the standard way to push a payload past a scanner; a larger weight would flag legitimate newsletters as dangerous. Red-team: `email-oversized`, `email-deep-mime`, `email-many-parts` |
+| message.limit_exceeded | message | +2.0 | message over 8192 characters: rules read the first 8192, links are extracted from up to 256 KiB (head and tail), same degraded floor |
 | message.link_verdict / email.link_verdict | message/email | 0 (informational) | child URL verdict; drives H5 |
 | injection.instruction_like_text | injection | +1.5 | evidence of manipulation, **never obeyed** |
 | registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |

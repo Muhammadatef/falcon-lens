@@ -4,9 +4,10 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 
-MAX_CHILDREN = 20
+MAX_CHILDREN = 50
 
 # Obfuscation undone before matching. Order matters.
 _DEOBF: tuple[tuple[re.Pattern[str], str], ...] = (
@@ -96,7 +97,7 @@ _URL_RE = re.compile(
     + r")(?![a-z0-9-])(?::\d{2,5})?(?:[/?#][^\s<>\"'«»]*)?)",
     re.I,
 )
-_TRAIL = ".,;:!?)]}>'\"،؛؟…»"
+_TRAIL = ".,;:!?>'\"،؛؟…»"
 _ARABIC_BLOCK = re.compile(r"[؀-ۿ]")
 
 # Candidate digit runs (with common separators); validated as UAE numbers below.
@@ -118,17 +119,51 @@ def deobfuscate(text: str) -> str:
     return t
 
 
-def extract_urls(text: str) -> list[ChildInput]:
-    cleaned = _digits_ascii(deobfuscate(text))
-    out: list[ChildInput] = []
-    seen: set[str] = set()
+_WS_RUN = re.compile(r"\s{2,}")
+_OPEN_CLOSE = {")": "(", "]": "[", "}": "{"}
+_DOT_LIKE = str.maketrans({"。": ".", "｡": ".", "．": ".", "⒈": "."})
+
+
+def _is_invisible(ch: str) -> bool:
+    """Control (Cc), format (Cf: zero-width, bidi marks and overrides, soft hyphen) and line/paragraph separators."""
+    return unicodedata.category(ch) in ("Cc", "Cf", "Zl", "Zp") and ch not in "\n\r\t"
+
+
+def _clean_variants(text: str) -> list[str]:
+    """NFKC text with invisible characters (a) removed, so ``exa<ZWSP>mple.com`` is one host, and (b) turned into
+    spaces, so ``login<NUL>ignore`` is two tokens. Both are scanned: a link must never be lost to either trick."""
+    base = unicodedata.normalize("NFKC", text).translate(_DOT_LIKE)
+    # Whitespace runs are collapsed first: the de-obfuscation patterns use ``\s*`` and are quadratic on long runs.
+    base = _WS_RUN.sub(" ", base)
+    removed = "".join(c for c in base if not _is_invisible(c))
+    spaced = _WS_RUN.sub(" ", "".join(" " if _is_invisible(c) else c for c in base))
+    return [removed] if removed == spaced else [removed, spaced]
+
+
+def _trim_tail(raw: str) -> str:
+    """Drop trailing prose punctuation; a closing bracket is dropped only when it has no opener in the URL."""
+    while raw:
+        last = raw[-1]
+        if last in _OPEN_CLOSE:
+            if raw.count(last) > raw.count(_OPEN_CLOSE[last]):
+                raw = raw[:-1]
+                continue
+            break
+        if last in _TRAIL:
+            raw = raw[:-1]
+            continue
+        break
+    return raw
+
+
+def _scan(cleaned: str, seen: set[str], out: list[ChildInput]) -> None:
     for m in _URL_RE.finditer(cleaned):
         raw = m.group(0)
         # URLs end where Arabic prose starts glued to them
         am = _ARABIC_BLOCK.search(raw)
         if am:
             raw = raw[: am.start()]
-        raw = raw.rstrip(_TRAIL)
+        raw = _trim_tail(raw)
         if len(raw) < 4 or "." not in raw:
             continue
         key = raw.lower()
@@ -136,9 +171,20 @@ def extract_urls(text: str) -> list[ChildInput]:
             continue
         seen.add(key)
         out.append(ChildInput("url", raw[:2048], (m.start(), m.start() + len(raw))))
-        if len(out) >= MAX_CHILDREN:
-            break
-    return out
+
+
+def extract_urls(text: str) -> list[ChildInput]:
+    """Every candidate link, conservatively: each cleaning variant is scanned both as written and de-obfuscated
+    (defanged forms, ``a . b`` dots), so a glued-together reading never replaces the literal one."""
+    out: list[ChildInput] = []
+    seen: set[str] = set()
+    for variant in _clean_variants(text):
+        literal = _digits_ascii(variant)
+        _scan(literal, seen, out)
+        deob = _digits_ascii(deobfuscate(variant))
+        if deob != literal:
+            _scan(deob, seen, out)
+    return out[:MAX_CHILDREN]
 
 
 def _digits_ascii(s: str) -> str:

@@ -53,7 +53,7 @@ email_attachment:
 informational_errors: [feed_disabled, rdap_unsupported_tld]
 
 # Present evidence from these signals marks the verdict degraded (SCORING §2: 'sets degraded').
-degrading_signals: [email.invalid, image.invalid]
+degrading_signals: [email.invalid, image.invalid, email.limit_exceeded, message.limit_exceeded]
 
 message_rules:
   weight_each: 0.6
@@ -89,6 +89,8 @@ weights:
   email.display_name_impersonation: 2.0
   email.reply_to_mismatch: 1.0
   email.link_text_mismatch: 2.0
+  email.limit_exceeded: 2.0      # L1 2026-11-23 fail-closed rule: input larger than the analysers read
+  message.limit_exceeded: 2.0
   injection.instruction_like_text: 1.5
   registry.verified_official: -4.0
   # informational (weight 0), listed so SCORING §2 and this file stay in sync

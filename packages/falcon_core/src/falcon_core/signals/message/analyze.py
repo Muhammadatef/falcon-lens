@@ -25,6 +25,8 @@ from falcon_core.signals.url.canonical import canonicalize, psl_split
 from falcon_core.signals.url.textutil import compact, defang
 
 T1_MS = 100
+# Links are looked for beyond the rule window so that padding in front of a link cannot hide it. Bounded for CPU.
+MAX_LINK_SCAN_CHARS = 65_536
 _IN = ("message", "email", "image")
 
 SPEC_RULES = SignalSpec(
@@ -58,7 +60,7 @@ SPEC_CHILDREN = SignalSpec(
     input_types=_IN,
     timeout_ms=T1_MS,
     network="none",
-    emits=("message.contains_url", "message.contains_phone"),
+    emits=("message.contains_url", "message.contains_phone", "message.limit_exceeded"),
 )
 SPEC_BRAND = SignalSpec(
     name="message.brand_mention",
@@ -93,6 +95,29 @@ class MessageAnalysis:
     evidence: list[Evidence] = field(default_factory=list)
     children: list[ChildInput] = field(default_factory=list)
     truncated: bool = False
+
+
+def _rules_over(windows: list[str]) -> list[RuleHit]:
+    """Rule hits of the first window, plus rules that only fire in later windows (padding in front cannot hide them)."""
+    hits = list(find_rules(windows[0]))
+    have = {h.rule for h in hits}
+    for w in windows[1:]:
+        hits += [h for h in find_rules(w) if h.rule not in have and not have.add(h.rule)]  # type: ignore[func-returns-value]
+    return hits
+
+
+def limit_exceeded_evidence(family: str, reason: str, size: int) -> Evidence:
+    """Risk evidence: the input was larger than the analysers read. Padding must never lower a verdict
+    (docs/SCORING.md §2: ``<family>.limit_exceeded``)."""
+    return Evidence(
+        signal=f"{family}.limit_exceeded",
+        family=family,
+        observed={"reason": reason, "size": size},
+        display={
+            "en": "Unusually large or deeply nested input; only part of it could be read",
+            "ar": "محتوى كبير أو متداخل بشكل غير معتاد؛ لم نتمكن من قراءته كاملا",
+        },
+    )
 
 
 def _rule_evidence(hits: list[RuleHit], brand_named: bool = False) -> list[Evidence]:
@@ -172,15 +197,31 @@ def _brand_evidence(text: str, urls: list[ChildInput], reg: BrandRegistry) -> li
 
 def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnalysis:
     truncated = len(text) > MAX_MESSAGE_CHARS
-    text = text[:MAX_MESSAGE_CHARS]
     reg = reg or default_registry()
     res = MessageAnalysis(truncated=truncated)
-    urls = extract_urls(text)
-    brand_ev = _brand_evidence(text, urls, reg)
+    wide = text[:MAX_LINK_SCAN_CHARS]
+    if truncated:
+        # Fail closed: analyse what fits, but still extract links from the part that does not, and say so.
+        wide = (
+            text[: MAX_LINK_SCAN_CHARS // 2] + "\n" + text[-MAX_LINK_SCAN_CHARS // 2 :]
+            if len(text) > MAX_LINK_SCAN_CHARS
+            else text
+        )
+        res.evidence.append(limit_exceeded_evidence("message", "too_long", len(text)))
+    windows = [wide[i : i + MAX_MESSAGE_CHARS] for i in range(0, len(wide), MAX_MESSAGE_CHARS)] or [""]
+    text = windows[0]
+    urls = extract_urls(wide)
+    phones = extract_phones(wide)
+    brand_ev: list[Evidence] = []
+    seen_brand: set[str] = set()
+    for w in windows:  # a brand claim pushed past the first window by padding is still seen
+        for e_ in _brand_evidence(w, urls, reg):
+            if e_.signal not in seen_brand:
+                seen_brand.add(e_.signal)
+                brand_ev.append(e_)
     res.evidence += _rule_evidence(
-        find_rules(text), brand_named=any(e.signal == "message.brand_mention" for e in brand_ev)
+        _rules_over(windows), brand_named=any(e_.signal == "message.brand_mention" for e_ in brand_ev)
     )
-    phones = extract_phones(text)
     res.children = [*urls, *phones]
     if urls:
         res.evidence.append(
@@ -221,7 +262,7 @@ def _by_prefix(ctx: SignalContext, prefixes: tuple[str, ...]) -> list[Evidence]:
 
 @signal(SPEC_RULES)
 def run_rules(ctx: SignalContext) -> list[Evidence]:
-    return _rule_evidence(find_rules((ctx.text or "")[:MAX_MESSAGE_CHARS]))
+    return [e for e in analyze_message(ctx.text or "", _reg(ctx)).evidence if e.signal.startswith("message.rule.")]
 
 
 @signal(SPEC_CHILDREN)

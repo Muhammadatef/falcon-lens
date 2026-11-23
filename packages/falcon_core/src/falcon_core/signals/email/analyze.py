@@ -19,12 +19,16 @@ from typing import Any
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
 from falcon_core.signals.brands.registry import BrandRegistry, default_registry
 from falcon_core.signals.image.analyze import analyze_image, sniff
+from falcon_core.signals.message.analyze import limit_exceeded_evidence
 from falcon_core.signals.message.extract import ChildInput, extract_urls
 from falcon_core.signals.url.canonical import canonicalize, psl_split
 from falcon_core.signals.url.textutil import compact, defang
 
 MAX_EMAIL_BYTES = 2 * 1024 * 1024
 MAX_PARTS = 50
+MAX_DEPTH = 20  # multipart nesting read; deeper parts are skipped (and flagged)
+MAX_OVERFLOW_PARTS = 2000  # parts past the limits whose text is still scanned for links (never analysed further)
+RAW_TAIL_BYTES = 262_144  # of an oversized email, the tail is also scanned for links
 MAX_BODY_CHARS = 200_000
 MAX_LINKS = 50
 MAX_ATTACHMENT_EVIDENCE = 10
@@ -38,6 +42,7 @@ SPEC = SignalSpec(
     network="none",
     emits=(
         "email.invalid",
+        "email.limit_exceeded",
         "email.auth_fail",
         "email.display_name_impersonation",
         "email.reply_to_mismatch",
@@ -86,6 +91,7 @@ class EmailAnalysis:
     evidence: list[Evidence] = field(default_factory=list)
     children: list[ChildInput] = field(default_factory=list)
     body_text: str = ""  # subject + body, untrusted: feed to analyze_message once (cascade)
+    raw_excerpt: str = ""  # body bytes read as text when a limit was exceeded (used if no part was readable)
 
 
 class _Html(HTMLParser):
@@ -208,6 +214,52 @@ def _invalid(reason: str) -> Evidence:
     )
 
 
+def _walk(msg: EmailMessage, limits: list[str], overflow: list[EmailMessage]) -> list[EmailMessage]:
+    """Depth-first parts in document order: at most MAX_PARTS parts and MAX_DEPTH levels (iterative).
+    Parts past the limits go to ``overflow`` (bounded) so their text can still be scanned for links."""
+    out: list[EmailMessage] = []
+    stack: list[tuple[EmailMessage, int]] = [(msg, 0)]
+    while stack:
+        part, depth = stack.pop()
+        if len(out) >= MAX_PARTS:
+            limits.append("too_many_parts")
+            if len(overflow) < MAX_OVERFLOW_PARTS:
+                overflow.append(part)
+                if part.is_multipart():
+                    stack.extend((p, depth + 1) for p in part.get_payload() if isinstance(p, EmailMessage))
+                continue
+            break
+        out.append(part)
+        if not part.is_multipart():
+            continue
+        subs = [p for p in part.get_payload() if isinstance(p, EmailMessage)]
+        if depth >= MAX_DEPTH:
+            if subs:
+                limits.append("too_deep")
+                overflow.extend(subs[: MAX_OVERFLOW_PARTS - len(overflow)])
+            continue
+        stack.extend((p, depth + 1) for p in reversed(subs))
+    return out
+
+
+def _headers_only(data: bytes) -> EmailMessage:
+    """Header block alone: sender checks survive a body that cannot be parsed."""
+    head = re.split(rb"\r?\n\r?\n", data, maxsplit=1)[0]
+    try:
+        m = message_from_bytes(head, policy=policy.default)
+        if isinstance(m, EmailMessage):
+            return m
+    except Exception:  # noqa: BLE001, S110
+        pass
+    return EmailMessage()
+
+
+def _raw_body(data: bytes) -> str:
+    chunks = re.split(rb"\r?\n\r?\n", data, maxsplit=1)
+    body = chunks[1] if len(chunks) > 1 else b""
+    return body[:MAX_BODY_CHARS].decode("utf-8", "replace")
+
+
 def _auth_evidence(msg: EmailMessage) -> Evidence | None:
     fails: set[str] = set()
     for h in ("Authentication-Results", "ARC-Authentication-Results"):
@@ -277,23 +329,40 @@ def _link_mismatches(links: list[tuple[str, str]]) -> tuple[list[dict[str, str]]
 def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysis:
     reg = reg or default_registry()
     res = EmailAnalysis()
-    if len(data) > MAX_EMAIL_BYTES:
-        res.evidence.append(_invalid("too_large"))
+    if not data.strip():
+        res.evidence.append(_invalid("empty"))
         return res
+    # Fail closed (SCORING §2, email.limit_exceeded): read what fits, scan the rest of the bytes for links,
+    # and flag the excess as risk. Padding therefore never lowers the verdict of the unpadded email.
+    limits: list[str] = []
+    original_size = len(data)
+    tail = b""
+    if original_size > MAX_EMAIL_BYTES:
+        limits.append("too_large")
+        tail = data[-RAW_TAIL_BYTES:]
+        data = data[:MAX_EMAIL_BYTES]
+    parts: list[EmailMessage] = []
+    overflow: list[EmailMessage] = []
     try:
         msg = message_from_bytes(data, policy=policy.default)
         if not isinstance(msg, EmailMessage):
-            res.evidence.append(_invalid("parse_error"))
-            return res
-        parts: list[EmailMessage] = []
-        for p in msg.walk():
-            parts.append(p)
-            if len(parts) > MAX_PARTS:
-                res.evidence.append(_invalid("too_many_parts"))
-                return res
+            raise TypeError("not an EmailMessage")
+        parts = _walk(msg, limits, overflow)
     except Exception as exc:  # noqa: BLE001 - includes RecursionError on nested multiparts
-        res.evidence.append(_invalid(f"parse_error:{type(exc).__name__}"))
-        return res
+        limits.append(f"parse_error:{type(exc).__name__}")
+        parts = []
+        msg = _headers_only(data)
+    if limits:
+        res.evidence.append(limit_exceeded_evidence("email", ",".join(dict.fromkeys(limits))[:120], original_size))
+        # Links anywhere in the raw bytes (including parts that were not read) are still judged.
+        raw = (data + b"\n" + tail).decode("utf-8", "replace")
+        res.children += [ChildInput("url", c.value, None, "email.raw") for c in extract_urls(raw)]
+        res.raw_excerpt = _raw_body(data)
+        for op in overflow:
+            if not op.is_multipart() and op.get_content_maintype() == "text":
+                res.children += [
+                    ChildInput("url", c.value, None, "email.overflow") for c in extract_urls(_decode_text(op))
+                ]
 
     if (ev := _auth_evidence(msg)) is not None:
         res.evidence.append(ev)
@@ -400,6 +469,8 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
         )
 
     res.body_text = (plain if plain.strip() else html_text)[:8192]
+    if not res.body_text.strip() and res.raw_excerpt:
+        res.body_text = res.raw_excerpt[:8192]
     subject = str(msg["Subject"] or "") if msg["Subject"] is not None else ""
     # The message pipeline is NOT run here: the cascade runs it once on ``body_text`` (subject + body),
     # so message.* evidence is never counted twice and email.analyze emits only its declared names.
