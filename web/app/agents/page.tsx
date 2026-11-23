@@ -4,6 +4,8 @@ import { LensGlyph } from "@/components/AgentChip";
 import { CapBadge } from "@/components/CapBadge";
 import { Icon } from "@/components/Icon";
 import { Radar } from "@/components/Radar";
+import { ArchDiagram } from "@/components/arch/ArchDiagram";
+import { at } from "@/lib/i18n-arch";
 import { loadCapabilities } from "@/lib/capabilities";
 import { translate, type MessageKey } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/meta";
@@ -81,6 +83,12 @@ export default async function AgentsPage() {
           <Icon name="refresh" size={24} />
           <span>{t("agents.handoff")}</span>
         </p>
+
+        <section aria-labelledby="biz-arch-h" data-testid="agents-arch">
+          <div className="sec-head"><h2 id="biz-arch-h">{at(lang, "arch.biz.title")}</h2></div>
+          <p className="muted">{at(lang, "arch.biz.lead")}</p>
+          <ArchDiagram lang={lang} caps={caps as unknown as Record<string, boolean>} view="biz" />
+        </section>
 
         <section aria-labelledby="promises-h">
           <div className="sec-head"><h2 id="promises-h">{t("agents.promises.title")}</h2></div>
