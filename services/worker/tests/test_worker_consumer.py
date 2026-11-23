@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +38,8 @@ from falcon_core.cascade.testing import (
     stub_resolver,
 )
 from falcon_core.signals.brands.registry import default_registry
+from falcon_core.signals.cache import RedisCache
+from falcon_core.signals.reputation.mirror import SET_KEY, UPDATED_KEY, FeedMirror
 from falcon_core.signals.url.canonical import canonicalize
 from falcon_worker import keys
 from falcon_worker.consumer import RedisVerdictCache, Worker
@@ -72,11 +76,17 @@ class Rig:
             cache=RedisVerdictCache(self.r, self.store),
             guard_policy=FIXTURE_POLICY,
             resolver=stub_resolver,
+            signal_cache=RedisCache(self.r),
+            mirror=FeedMirror(RedisCache(self.r)),  # the production hash-only mirror, on fakeredis
         )
+        # Mirror loaded 10 min ago and empty (the refresh job's state); tests add entries like smoke.
+        self.r_sync_updated = time.time() - 600
         wkw.setdefault("consumer", "w1")
         self.worker = Worker(self.r, Cascade(deps), self.store, registry, self.metrics, poll_s=0.02, **wkw)
 
     async def submit(self, url: str, input_type: str = "url", **payload: Any) -> str:
+        if not await self.r.exists(UPDATED_KEY):
+            await self.r.set(UPDATED_KEY, json.dumps(self.r_sync_updated))
         vid = new_verdict_id()
         c = canonicalize(url)
         body: dict[str, Any] = {"url": url, "canonical_sha256": url_sha256(c)} if url else {}
@@ -227,18 +237,50 @@ async def test_cache_hit_on_second_check() -> None:
     assert rig.metrics.registry.get_sample_value("fl_cache_hits_total", {"layer": "verdict"}) == 1
 
 
-@pytest.mark.parametrize("input_type", ["message", "email", "image"])
-async def test_unsupported_input_types_get_degraded_final(input_type: str) -> None:
+async def test_message_job_runs_the_message_pipeline_with_h5() -> None:
+    rig = Rig(StubSandboxClient(default=phish_features()))
+    await rig.worker.ensure_group()
+    vid = await rig.submit(
+        "", input_type="message", text=f"Verify your account: {DEMO_LOOKALIKE_URL}", sha256="ab" * 32
+    )
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    doc = rig.store.verdicts[vid]
+    VERDICT.validate(doc)
+    assert doc["final"] and doc["input_type"] == "message" and doc["verdict"] == "dangerous"
+    assert any(e.get("hard_rule") == "H5" for e in doc["evidence"])
+    assert not doc["degraded"]
+
+
+async def test_email_job_reads_the_blob_and_clears_it() -> None:
+    import base64
+
+    eml = (
+        b"From: Falcon Demo Bank <alerts@falcon-demo-bank-login.test>\r\nTo: u@example.test\r\n"
+        b"Subject: Verify\r\nContent-Type: text/plain\r\n\r\nSign in: " + DEMO_LOOKALIKE_URL.encode() + b"\r\n"
+    )
+    rig = Rig(StubSandboxClient(default=phish_features()))
+    await rig.worker.ensure_group()
+    vid = await rig.submit("", input_type="email", sha256="cd" * 32)
+    await rig.r.set(keys.blob_key(vid), base64.b64encode(eml).decode(), ex=600)
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    doc = rig.store.verdicts[vid]
+    VERDICT.validate(doc)
+    assert doc["input_type"] == "email" and doc["verdict"] == "dangerous"
+    assert await rig.r.get(keys.blob_key(vid)) is None
+
+
+@pytest.mark.parametrize("input_type", ["message", "image"])  # the API rejects non-.eml uploads
+async def test_missing_or_garbage_input_is_degraded_never_safe(input_type: str) -> None:
     rig = Rig(StubSandboxClient(error="unused"))
     await rig.worker.ensure_group()
     vid = await rig.submit("", input_type=input_type, sha256="ab" * 32)
-    await rig.r.set(keys.blob_key(vid), "aGVsbG8=", ex=600)
+    if input_type != "message":
+        await rig.r.set(keys.blob_key(vid), "aGVsbG8=", ex=600)  # "hello": not an image
     await rig.worker.read_batch(pending=False, block_ms=100)
     doc = rig.store.verdicts[vid]
     VERDICT.validate(doc)
     assert doc["final"] and doc["degraded"] and doc["verdict"] == "suspicious"
     assert doc["input_type"] == input_type
-    assert await rig.r.get(keys.blob_key(vid)) is None
 
 
 async def test_malformed_job_goes_to_dead_letter_and_is_acked() -> None:
@@ -280,3 +322,33 @@ def test_job_fields_roundtrip() -> None:
     assert back.url == "https://x.test/" and back.fingerprint == "ab" and back.verdict_id == vid
     with pytest.raises(ValueError):
         CheckJob.from_fields({"verdict_id": "vd_bad", "payload_json": "{}"})
+
+
+async def test_smoke_check3_synthetic_feed_entry_is_h2_at_t0() -> None:
+    """What `make smoke` check 3 does: SADD sha256(canonical URL) + sha256(host), fresh updated_at."""
+    sandbox = StubSandboxClient(error="must_not_render")
+    rig = Rig(sandbox)
+    await rig.worker.ensure_group()
+    url = "http://synthetic-openphish.test/ab12cd34"
+    hashes = [hashlib.sha256(x.encode()).hexdigest() for x in (url, "synthetic-openphish.test")]
+    await rig.r.sadd(SET_KEY, *hashes)
+    await rig.r.set(UPDATED_KEY, json.dumps(time.time() - 60))
+    vid = await rig.submit(url)
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    final = rig.store.verdicts[vid]
+    VERDICT.validate(final)
+    assert final["verdict"] == "dangerous" and final["tier_reached"] == "T0"
+    assert any(e.get("hard_rule") == "H2" and e["tier"] == "T0" for e in final["evidence"])
+    assert sandbox.calls == []
+
+
+async def test_stale_mirror_entry_is_not_h2() -> None:
+    rig = Rig(StubSandboxClient(default=benign_features("http://synthetic-openphish.test/x")))
+    await rig.worker.ensure_group()
+    url = "http://synthetic-openphish.test/x"
+    await rig.r.sadd(SET_KEY, hashlib.sha256(url.encode()).hexdigest())
+    await rig.r.set(UPDATED_KEY, json.dumps(time.time() - 7 * 3600))
+    vid = await rig.submit(url)
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    final = rig.store.verdicts[vid]
+    assert not any(e.get("hard_rule") == "H2" for e in final["evidence"])

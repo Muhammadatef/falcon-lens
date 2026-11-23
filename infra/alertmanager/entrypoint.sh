@@ -1,8 +1,26 @@
 #!/bin/sh
-# Renders the Alertmanager config at start-up. Alertmanager has no env substitution, so the
-# receiver is chosen here: Telegram only if BOTH token and chat id are set, a webhook if
-# ALERT_WEBHOOK_URL is set, otherwise a null receiver (alerts stay in Grafana + Prometheus).
-# Secrets go to 0600 files referenced by bot_token_file / chat_id_file, never into the YAML.
+# entrypoint.sh - container entrypoint that renders the Alertmanager config, then starts Alertmanager.
+#
+# What it does:
+#   Alertmanager has no env substitution, so this script picks the receiver at start-up: Telegram only if
+#   BOTH TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set; otherwise a webhook if ALERT_WEBHOOK_URL is set;
+#   otherwise a null receiver (alerts stay visible in Grafana and Prometheus). Alerts with source="replay"
+#   (demo data) always go to the null receiver, so they never page anyone. It then `exec`s alertmanager.
+#
+# When to use it:
+#   You do not run it by hand; the alertmanager container runs it (see the compose file).
+#
+# How to run:
+#   make up        (starts the whole stack, including this container)
+#
+# Inputs:
+#   Env TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ALERT_WEBHOOK_URL (all optional) and any extra arguments, which
+#   are passed on to alertmanager.
+#
+# Outputs / side effects:
+#   Writes /alertmanager/alertmanager.rendered.yml and, if used, secret files in /alertmanager with
+#   permissions 0600 (the secrets are referenced by file, never copied into the YAML). Deletes secret files
+#   left over from a previous mode. Logs which receiver is enabled but never the secret values.
 set -eu
 DIR=/alertmanager
 OUT="$DIR/alertmanager.rendered.yml"

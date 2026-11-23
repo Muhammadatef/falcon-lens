@@ -1,8 +1,25 @@
 #!/usr/bin/env bash
-# Set branch protection on main. Needs `gh` authenticated as a repo admin. Run it ONCE, deliberately:
-#   scripts/protect_main.sh [owner/repo]
-# Required checks are the CI job names `lint`, `typecheck`, `test`, `contracts`, `security`.
-# `docker-build` and `eval-gate` are intentionally NOT required (slow / not yet a real gate).
+# protect_main.sh - turn on branch protection for `main` on GitHub.
+#
+# What it does:
+#   Calls the GitHub API (through `gh`) to require pull requests with one approving review and code-owner
+#   review, require the CI checks lint, typecheck, test, contracts and security, resolve all conversations,
+#   and forbid force pushes and branch deletion. `docker-build` and `eval-gate` are intentionally NOT
+#   required (slow, or not yet a real gate).
+#
+# When to use it:
+#   Once, deliberately, by a repo admin, after the CI job names exist. Re-running it just re-applies the
+#   same settings.
+#
+# How to run:
+#   scripts/protect_main.sh [owner/repo]       (no make target; repo defaults to the current `gh` repo)
+#
+# Inputs:
+#   Optional first argument owner/repo. Needs `gh` logged in as an admin of the repo.
+#
+# Outputs / side effects:
+#   One PUT request to repos/<repo>/branches/main/protection. Changes repository settings on GitHub;
+#   writes nothing locally.
 set -euo pipefail
 
 REPO="${1:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"

@@ -154,14 +154,13 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <g>
 <rect class="card" x="700" y="104" width="460" height="262" rx="14"/>
 <text x="716" y="129" class="h">worker <tspan class="b" font-weight="400">· Investigator cascade</tspan></text>
-<text x="1146" y="129" text-anchor="end" class="c">exit after any tier</text>
 <g>
 <rect class="card" x="712" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow on" style="animation-delay:3.2s" x="712" y="142" width="100" height="90" rx="10"/>
 <rect class="card" x="824" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow on" style="animation-delay:4.2s" x="824" y="142" width="100" height="90" rx="10"/>
 <rect class="card" x="936" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow onl" style="animation-delay:5.4s" x="936" y="142" width="100" height="90" rx="10"/>
 <rect class="card" x="1048" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow on" style="animation-delay:9s" x="1048" y="142" width="100" height="90" rx="10"/>
 <g class="m h tl"><text x="722" y="164">T0</text><text x="834" y="164">T1</text><text x="946" y="164">T2</text><text x="1058" y="164">T3</text></g>
-<g class="m c" text-anchor="end"><text x="802" y="164">50 ms</text><text x="914" y="164">1 s</text><text x="1026" y="164">6 s</text><text x="1138" y="164">15 s</text></g>
+<g class="m c" text-anchor="end"><text x="1146" y="129">design budgets</text><text x="802" y="164">50 ms</text><text x="914" y="164">1 s</text><text x="1026" y="164">6 s</text><text x="1138" y="164">15 s</text></g>
 <g class="c">
 <text x="722" y="186">cache</text><text x="722" y="203">official list</text><text x="722" y="220">feed mirror</text>
 <text x="834" y="186">URL + domain</text><text x="834" y="203">reputation</text><text x="834" y="220">GBM score</text>
@@ -261,7 +260,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <rect class="card" x="426" y="758" width="120" height="64" rx="12"/><text x="440" y="784" class="h">Prometheus</text><text x="440" y="804" class="c">fl_ metrics</text>
 <rect class="card" x="566" y="758" width="110" height="64" rx="12"/><text x="580" y="784" class="h">Loki</text><text x="580" y="804" class="c">logs via Alloy</text>
 <rect class="card" x="696" y="758" width="120" height="64" rx="12"/><text x="710" y="784" class="h">Phoenix</text><text x="710" y="804" class="c">LLM traces</text>
-<rect class="card" x="856" y="758" width="130" height="64" rx="12"/><text x="870" y="784" class="h">Grafana</text><text x="870" y="804" class="c">6 dashboards</text>
+<rect class="card" x="856" y="758" width="130" height="64" rx="12"/><text x="870" y="784" class="h">Grafana</text><text x="870" y="804" class="c">dashboards</text>
 <rect class="card" x="1016" y="758" width="140" height="64" rx="12"/><text x="1030" y="784" class="h">Alertmanager</text><text x="1030" y="804" class="c">runbook per alert</text>
 </g>
 </g>

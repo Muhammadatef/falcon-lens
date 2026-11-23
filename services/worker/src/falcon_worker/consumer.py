@@ -17,6 +17,7 @@ On any failure the entry stays pending; ``XAUTOCLAIM`` picks up entries idle for
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -300,7 +301,7 @@ class Worker:
             return last_final
 
         if job.input_type != "url":
-            await self._unsupported(job, sink)
+            await self._input(job, sink)
         else:
             await self._url(job, sink)
         await self._ack(entry_id)
@@ -357,9 +358,38 @@ class Worker:
             log.error("degraded final after max deliveries failed: %s", type(exc).__name__)
         await self._ack(entry_id)
 
-    async def _unsupported(self, job: CheckJob, sink: RedisSink) -> None:
-        """message/email/image pipelines are not built yet: answer degraded, never silent."""
-        doc = self._degraded_doc(job, f"input_type_not_supported_yet:{job.input_type}")
+    async def _payload_bytes(self, job: CheckJob) -> bytes | None:
+        """Message text (in the payload) or the base64 upload blob the API parked in Redis."""
+        if job.input_type == "message":
+            text = job.payload.get("text")
+            return text.encode() if isinstance(text, str) and text else None
+        raw = await self.r.get(keys.blob_key(job.verdict_id))
+        if not raw:
+            return None
+        try:
+            return base64.b64decode(raw, validate=True)
+        except ValueError:
+            return None
+
+    async def _input(self, job: CheckJob, sink: RedisSink) -> None:
+        """message / email / image: deterministic analyzers, child URLs through the URL pipeline (H5)."""
+        data = await self._payload_bytes(job)
+        if data is None or job.input_type == "url":
+            await self._unsupported(job, sink, "input_missing")
+            return
+        await self.cascade.run_input(
+            job.verdict_id,
+            job.input_type,
+            data,
+            sink,
+            source=job.source,
+            input_fingerprint=job.fingerprint,
+        )
+        await self.r.delete(keys.blob_key(job.verdict_id))
+
+    async def _unsupported(self, job: CheckJob, sink: RedisSink, reason: str = "input_not_supported") -> None:
+        """Input could not be processed: answer degraded, never silent."""
+        doc = self._degraded_doc(job, f"{reason}:{job.input_type}")
         await sink.emit(doc, {})
         await self.r.delete(keys.blob_key(job.verdict_id))
         self.metrics.record_final(job.input_type, doc["verdict"], "T0", "none", job.source)

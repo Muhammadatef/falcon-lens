@@ -1,0 +1,15 @@
+test-results/
+playwright-report/
+next-env.d.ts
+*.tsbuildinfo
+# Screenshots are regenerated on demand (SHOTS=1 pnpm exec playwright test --project=shots);
+# only four key ones are kept in git.
+design/app-shots/*
+!design/app-shots/01-hero-390-ar-night.png
+!design/app-shots/03-check-dangerous-390-ar-night.png
+!design/app-shots/04-check-no-warning-signs-390-ar-night.png
+!design/app-shots/08-campaigns-live-1440-ar-night.png
+# Phase A prototype screenshots (8 MB): regenerate with design/scripts/capture-shots.mjs
+design/prototype/shots/
+!design/app-shots/committee/
+!design/app-shots/committee/*.jpg

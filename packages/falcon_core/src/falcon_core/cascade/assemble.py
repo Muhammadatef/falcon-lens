@@ -83,8 +83,12 @@ def build_verdict(
     source: str = "live",
     channels: ReportingChannels | None = None,
     created_at: datetime | None = None,
+    reasons: Sequence[dict[str, Any]] | None = None,
+    model_route: Literal["cloud", "local", "none"] = "none",
 ) -> dict[str, Any]:
     core = verdict_core_fields(result, channels)
+    if reasons is not None:  # responder output (already verified against the evidence); template otherwise
+        core["reasons"] = list(reasons)
     doc: dict[str, Any] = {
         "schema_version": "1.0",
         "verdict_id": verdict_id,
@@ -93,7 +97,7 @@ def build_verdict(
         **core,
         "impersonated_brand": impersonated_brand(result, registry),
         "tier_reached": tier,
-        "model_route": "none",
+        "model_route": model_route,
         "final": final,
         "screenshot_url": None,
         "source": source,

@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
-# Print the local URLs of the running stack. Ports come from the environment, then .env, then defaults.
+# urls.sh - print the local URLs of the running stack.
+#
+# What it does:
+#   Prints the app, Grafana and Prometheus addresses. Each port comes from the environment first
+#   (FL_GATEWAY_PORT, FL_GRAFANA_PORT, FL_PROMETHEUS_PORT), then from .env, then defaults 8443, 3001 and 9090.
+#
+# When to use it:
+#   When you forgot which port a service is on. `make up` and `make demo` already call it at the end.
+#
+# How to run:
+#   make urls                       (the Makefile target uses the Python version; direct: scripts/urls.sh)
+#
+# Inputs:
+#   Optional env vars above and .env in the current directory.
+#
+# Outputs / side effects:
+#   Prints to the terminal only. Starts nothing and does not check that the services are up.
 set -euo pipefail
 
 env_or_file() { # name default

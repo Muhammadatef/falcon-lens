@@ -1,0 +1,26 @@
+{
+  "_comment": "Snapshot of the on-device lexicon. free_host_suffixes mirrors FREE_HOST_SUFFIXES in packages/falcon_core/src/falcon_core/signals/url/canonical.py and combo_words mirrors COMBO_EN + COMBO_TRANSLIT in squatting.py; scripts/gen-data.mjs warns when they drift. weak_tokens are brand tokens that are also ordinary words, so they need a second hint before the extension interrupts a navigation.",
+  "free_host_suffixes": [
+    "ngrok-free.app", "ngrok-free.dev", "ngrok.io", "ngrok.app", "ngrok.dev", "trycloudflare.com", "loca.lt",
+    "localtunnel.me", "serveo.net", "localhost.run", "lhr.life", "pinggy.link", "pinggy.io", "workers.dev",
+    "pages.dev", "github.io", "gitlab.io", "netlify.app", "vercel.app", "herokuapp.com", "web.app",
+    "firebaseapp.com", "glitch.me", "repl.co", "replit.app", "replit.dev", "blogspot.com", "weebly.com",
+    "wixsite.com", "000webhostapp.com", "infinityfreeapp.com", "rf.gd", "epizy.com", "onrender.com", "fly.dev",
+    "railway.app", "surge.sh", "duckdns.org", "no-ip.org", "no-ip.biz", "ddns.net", "hopto.org", "zapto.org",
+    "servebeer.com", "myftp.org", "webflow.io", "framer.app", "carrd.co", "sites.google.com", "linkpc.net",
+    "bubbleapps.io", "godaddysites.com", "square.site", "azurewebsites.net", "cloudfront.net", "r2.dev",
+    "ipfs.io", "dweb.link", "w3spaces.com"
+  ],
+  "combo_words": [
+    "pay", "payment", "secure", "security", "track", "tracking", "verify", "verification", "update", "login",
+    "signin", "logon", "fine", "fines", "bill", "refund", "claim", "account", "support", "help", "portal",
+    "online", "service", "services", "customs", "delivery", "parcel", "renew", "recharge", "confirm", "unlock",
+    "suspend", "otp", "kyc", "wallet", "reward", "rewards", "gift", "violation", "violations", "traffic",
+    "official", "gov", "appeal", "clearance", "invoice",
+    "mukhalafa", "mukhalafat", "mokhalafa", "mokhalafat", "mokhalfat", "mukhalfat", "tahdeeth", "tahdith",
+    "tahqeeq", "tahaqoq", "sadad", "dafaa", "daf3", "fatoora", "fatura", "fatoura", "tajdeed", "tajdid", "shahn",
+    "raseed", "rasid", "hesab", "hisab", "khidma", "khedmat", "khadamat", "balagh", "tawseel", "tawsil", "tatbeeq"
+  ],
+  "weak_tokens": ["centralbank", "ministryofinterior", "demobank", "falconbank"],
+  "region_hints": ["uae", "ae", "dubai", "abudhabi", "sharjah", "emirates", "emirate", "dxb", "auh"]
+}

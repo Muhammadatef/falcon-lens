@@ -20,12 +20,23 @@ _URL_RE = re.compile(r"(?i)^(?:https?|hxxps?)://")
 TEXT_PLACEHOLDER = "<text>"
 
 
+def host_only(value: str) -> str:
+    """Defanged ``scheme://host`` of a URL-like string: paths, queries and fragments (attacker-chosen
+    text, e.g. CamelCase instructions in a QR link) never reach an LLM."""
+    m = re.match(r"(?i)^((?:https?|hxxps?)://)?([^/?#\s]{1,100})", value)
+    if m is None:
+        return TEXT_PLACEHOLDER
+    return defang(f"{m.group(1) or ''}{m.group(2)}")[:120]
+
+
 def safe_value(value: Any, depth: int = 0) -> Any:
     if value is None or isinstance(value, bool | int | float):
         return value
     if isinstance(value, str):
         if _URL_RE.match(value):
-            return defang(value)[:120]
+            return host_only(value)
+        if "/" in value and _TOKEN_RE.match(value):
+            return host_only(value)  # host/path token: keep the host only
         return value if _TOKEN_RE.match(value) else TEXT_PLACEHOLDER
     if depth >= 2:
         return TEXT_PLACEHOLDER
