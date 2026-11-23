@@ -52,7 +52,7 @@ Use it if the form or a later round allows two minutes. Same rules. Add these be
 ## If a judge asks about the numbers
 
 - Offline numbers: they come from the frozen test split, offline model plus arbiter on URLs, real data only. They are not a measurement of the whole system. Read the scope line on the results slide.
-- Live false alarms: The live end-to-end run on 200 held-out legitimate sites flagged 28.5% of them as Suspicious or Dangerous, against our target of 2.0%. Say it plainly: it is above target, many of those runs could not complete every check, and fixing it is our top item. Do not hide it and do not round it.
+- Live false alarms: The live end-to-end run on 200 held-out legitimate sites flagged 27.0% of them as Suspicious or Dangerous, against our target of 2.0%. Say it plainly: it is above target, many of those runs could not complete every check, and fixing it is our top item. Do not hide it and do not round it.
 - Anything not measured yet (Arabic clarity, cost per check, injection attack success rate and others) is listed on the results and roadmap slides. Say "not measured yet", never a guess.
 
 ## Do and do not
