@@ -43,4 +43,5 @@ out/
 # private owner notes
 REMOTE_ACCESS.md
 *.tsbuildinfo
+evals/results/.dspy_cache/
 coverage.xml
