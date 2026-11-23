@@ -63,6 +63,12 @@ class SentinelClient:
             raise Problem(502, "sentinel-error", "Sentinel returned an unexpected body")
         return data
 
+    async def trace(self, incident_id: str) -> dict[str, Any]:
+        data = await self._call("GET", f"/internal/incidents/{incident_id}/trace")
+        if not isinstance(data, dict):
+            raise Problem(502, "sentinel-error", "Sentinel returned an unexpected body")
+        return data
+
     async def decide(self, incident_id: str, action_id: str, approve: bool, name: str) -> dict[str, Any]:
         verb = "approve" if approve else "reject"
         data = await self._call("POST", f"/internal/incidents/{incident_id}/actions/{action_id}/{verb}", name=name)
@@ -80,6 +86,24 @@ def view_incident(inc: dict[str, Any], *, operator: bool) -> dict[str, Any]:
         return inc
     out = dict(inc)
     out["actions"] = [{k: v for k, v in a.items() if k not in _ACTION_PRIVATE} for a in inc.get("actions", [])]
+    return out
+
+
+_INTERRUPT_PRIVATE = ("decision", "decided_by")
+
+
+def view_trace(trace: dict[str, Any], *, operator: bool) -> dict[str, Any]:
+    """Operators see who decided what; other scopes never see approver names or decisions (as for incidents)."""
+    if operator:
+        return trace
+    out = dict(trace)
+    runs = []
+    for r in trace.get("runs", []):
+        r = dict(r)
+        if isinstance(r.get("interrupt"), dict):
+            r["interrupt"] = {k: v for k, v in r["interrupt"].items() if k not in _INTERRUPT_PRIVATE}
+        runs.append(r)
+    out["runs"] = runs
     return out
 
 

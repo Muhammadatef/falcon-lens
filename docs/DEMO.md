@@ -213,7 +213,7 @@ curl -s "$FL_PUBLIC_BASE_URL/mcp" -H "Authorization: Bearer $FL_MCP_BEARER_TOKEN
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-Expected: a tool list with `check_url`, `check_message`, `check_email`, `get_verdict`, `list_campaigns`, `list_incidents`, `get_incident` and `submit_report`.
+Expected: a tool list with `check_url`, `check_message`, `check_email`, `get_verdict`, `list_campaigns`, `list_incidents`, `get_incident`, `get_incident_trace` and `submit_report`.
 
 ## The phone scene: sharing a message into the installed app
 

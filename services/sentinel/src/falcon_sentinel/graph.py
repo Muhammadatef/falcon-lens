@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -21,6 +22,7 @@ from datetime import UTC, datetime
 from typing import Any, TypedDict
 
 import httpx
+from langgraph.errors import GraphInterrupt
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, RetryPolicy, interrupt
 from redis.exceptions import RedisError
@@ -35,8 +37,6 @@ from falcon_core.tools.sentinel import (
     ToolContext,
     ToolError,
     action_id_for,
-    run_action,
-    run_read,
 )
 
 from .llm import (
@@ -44,6 +44,7 @@ from .llm import (
     BudgetExceeded,
     LLMClient,
     LLMOutputError,
+    LLMUnavailable,
     ProposeOut,
     SummaryOut,
     structured,
@@ -55,6 +56,15 @@ from .metrics import (
     NODE_SECONDS,
     REQUEUE_FAILURES,
     TEXT_SOURCE,
+)
+from .trace import (
+    CUR_RUN,
+    CUR_STEP,
+    StepRec,
+    TraceRecorder,
+    summarise_step,
+    traced_action,
+    traced_read,
 )
 from .verify import LLM_PROPOSABLE, verify_proposals, verify_reason, verify_summary
 
@@ -108,6 +118,7 @@ class Deps:
         default_factory=lambda: RetryPolicy(initial_interval=0.5, max_attempts=3, retry_on=TRANSIENT)
     )
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)
+    tracer: TraceRecorder | None = None
 
 
 def iso(dt: datetime) -> str:
@@ -206,6 +217,12 @@ def _budget(state: TriageState) -> dict[str, Any]:
     return dict(state.get("budget") or {"steps": 0, "tokens": 0, "elapsed_s": 0.0})
 
 
+def _error_code(exc: BaseException) -> str:
+    if isinstance(exc, ToolError):
+        return re.sub(r"[^a-z0-9_]", "_", str(exc.reason).lower())[:40] or "tool_error"
+    return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", type(exc).__name__).lower()[:40] or "error"
+
+
 def _exhausted(b: dict[str, Any]) -> bool:
     return b["steps"] >= MAX_STEPS or b["tokens"] >= MAX_TOKENS or b["elapsed_s"] >= MAX_SECONDS
 
@@ -216,10 +233,12 @@ def _exhausted(b: dict[str, Any]) -> bool:
 def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageState]:
     ctx = deps.tools
     cache = ctx.incidents
+    tracer = deps.tracer or TraceRecorder(ctx.repo, deps.clock)
+    llm_model = str(getattr(deps.llm, "model", "stub"))
 
     async def write(incident_id: str, patch: dict[str, Any], evidence_ids: list[str]) -> None:
         aid = action_id_for(incident_id, "upsert_incident", patch)
-        await run_action(
+        await traced_action(
             ctx,
             "upsert_incident",
             {"incident_id": incident_id, "patch": patch},
@@ -237,12 +256,22 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         budget: dict[str, Any],
         extra: dict[str, Any] | None = None,
     ) -> Any:
+        rec = CUR_STEP.get()
         if _exhausted(budget):
             LLM_CALLS.labels(task, "budget").inc()
+            if rec is not None:
+                rec.fallback = True
             raise BudgetExceeded(task)
         used = 0
         t_ask = time.monotonic()
         outcome = "invalid"
+        llm_rec = rec.use_llm(str(getattr(deps.llm, "route", "local")), llm_model) if rec is not None else None
+
+        def on_usage(t_in: int, t_out: int, repaired: bool) -> None:
+            if llm_rec is not None:
+                llm_rec["tokens_in"] += t_in
+                llm_rec["tokens_out"] += t_out
+                llm_rec["repaired"] = llm_rec["repaired"] or repaired
 
         def add(n: int) -> None:
             nonlocal used
@@ -257,11 +286,19 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                     system=SYSTEM + f" Task: {task}.",
                     user_json={"task": task, "evidence": view, **(extra or {})},
                     on_tokens=add,
+                    on_usage=on_usage,
                 ),
                 timeout=remaining,
             )
+            if llm_rec is not None:
+                llm_rec["route"] = str(getattr(deps.llm, "route", llm_rec["route"]))
             outcome = "ok"
             return res
+        except LLMUnavailable:
+            outcome = "unavailable"
+            if llm_rec is not None:
+                llm_rec["route"] = "none"
+            raise
         except TimeoutError:
             outcome = "timeout"
             raise
@@ -278,16 +315,68 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         async def node(state: TriageState) -> dict[str, Any]:
             t0 = time.monotonic()
             b = _budget(state)
-            token = incident_id_var.set(state["incident_id"])
+            iid = state["incident_id"]
+            base_s = float(b["elapsed_s"])
+            rec = StepRec()
+            tok = CUR_STEP.set(rec)
+            run_id = CUR_RUN.get()
+            seq = await tracer.next_seq(iid)
+            started = iso(deps.clock())
+
+            async def emit(status: str, out: dict[str, Any], err: str | None = None, pending: int = 0) -> None:
+                en, ar = summarise_step(name, out, rec, status, pending)
+                llm = None
+                if name in ("assess", "summarise", "propose"):
+                    llm = dict(rec.llm or StepRec().use_llm("none", "none"))
+                    llm["fallback_template"] = rec.fallback
+                gen = ("rule" if rec.rule_fallback else "template" if rec.fallback else "llm") if llm else None
+
+                await tracer.step(
+                    iid,
+                    run_id,
+                    seq,
+                    {
+                        "node": name,
+                        "started_at": started,
+                        "duration_ms": int((time.monotonic() - t0) * 1000),
+                        "status": status,
+                        "summary_en": en,
+                        "summary_ar": ar,
+                        "tools": list(rec.tools),
+                        "llm": llm,
+                        "generated_by": gen,
+                        "budget": {
+                            "steps_used": int(b["steps"]),
+                            "tokens_used": int(b["tokens"]),
+                            "elapsed_ms": int((base_s + time.monotonic() - t0) * 1000),
+                        },
+                        "error_code": err,
+                    },
+                )
+
+            await emit("running", {})
             try:
-                with fl_span(f"sentinel.{name}", "CHAIN", **{"fl.node": name}):
-                    out = await fn(state, b)
+                token = incident_id_var.set(iid)
+                try:
+                    with fl_span(f"sentinel.{name}", "CHAIN", **{"fl.node": name}):
+                        out = await fn(state, b)
+                finally:
+                    incident_id_var.reset(token)
+                if count_step:
+                    b["steps"] += 1
+                b["elapsed_s"] = round(b["elapsed_s"] + time.monotonic() - t0, 3)
+                await emit("completed", out, pending=int(out.get("pending_count", 0)))
+            except GraphInterrupt:
+                inc = cache.get(iid) or {}
+                n = sum(1 for a in inc.get("actions", []) if a["status"] == "awaiting_approval")
+                await emit("interrupted", {}, pending=n)
+                raise
+            except Exception as exc:
+                await emit("failed", {}, err=_error_code(exc))
+                raise
             finally:
-                incident_id_var.reset(token)
+                CUR_STEP.reset(tok)
             NODE_SECONDS.labels(name).observe(time.monotonic() - t0)
-            if count_step:
-                b["steps"] += 1
-            b["elapsed_s"] = round(b["elapsed_s"] + time.monotonic() - t0, 3)
             return {**out, "budget": b}
 
         node.__name__ = name
@@ -305,16 +394,18 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         related: dict[str, Any] = {}
         brand = inc.get("brand_id")
         if brand:
-            related["verdicts"] = (await run_read(ctx, "search_verdicts", {"brand_id": brand, "limit": 50})).result
+            related["verdicts"] = (await traced_read(ctx, "search_verdicts", {"brand_id": brand, "limit": 50})).result
         related["related_domains"] = (
-            await run_read(
+            await traced_read(
                 ctx,
                 "find_related_domains",
                 {"incident_id": iid, "keys": ["dom_simhash", "asn", "registrar", "cert_issuer"]},
             )
         ).result
-        related["past_incidents"] = (await run_read(ctx, "get_past_incidents", {"brand_id": brand, "limit": 10})).result
-        related["feeds"] = (await run_read(ctx, "feed_status", {})).result
+        related["past_incidents"] = (
+            await traced_read(ctx, "get_past_incidents", {"brand_id": brand, "limit": 10})
+        ).result
+        related["feeds"] = (await traced_read(ctx, "feed_status", {})).result
         return {"evidence": view, "related": related, "degraded": []}
 
     async def compare(state: TriageState, b: dict[str, Any]) -> dict[str, Any]:
@@ -347,6 +438,8 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         TEXT_SOURCE.labels("assess", "template" if reason is None else "llm").inc()
         if reason is None:
             reason = template_reason(view)
+            if (r := CUR_STEP.get()) is not None:
+                r.fallback = True
         await write(iid, {"severity_reason": reason}, reason["evidence_ids"])
         return {"degraded": degraded}
 
@@ -366,6 +459,8 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         TEXT_SOURCE.labels("summarise", "template" if summary is None else "llm").inc()
         if summary is None:
             summary = template_summary(view)
+            if (r := CUR_STEP.get()) is not None:
+                r.fallback = True
         await write(iid, {"summary": summary}, [e for c in summary["claims"] for e in c["evidence_ids"]])
         return {"degraded": degraded}
 
@@ -392,6 +487,8 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             raw = (await ask(state, ProposeOut, "propose", view, b, propose_hint())).actions
         except (LLMOutputError, BudgetExceeded, TimeoutError):
             degraded.append("propose")
+            if (r := CUR_STEP.get()) is not None:
+                r.fallback = True
         accepted, rejected = verify_proposals(ProposeOut(actions=raw), view, {**inc, "incident_id": iid})
         proposals.extend(mk_action(iid, tool, args, ev_ids) for tool, args, ev_ids in accepted)
         rule_ev = [f"rule:{r}" for r in inc["rule_ids"]]
@@ -435,6 +532,18 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
 
         cache.update(iid, add)
         await cache.flush()
+        if fallback_td is not None and (r := CUR_STEP.get()) is not None:
+            r.rule_fallback = True
+            r.tools.append(
+                {
+                    "name": "draft_takedown",
+                    "mode": "external_draft",
+                    "status": "ok",
+                    "evidence_ids": rule_ev[:20],
+                    "duration_ms": 0,
+                    "origin": "rule_fallback",
+                }
+            )
         if queued_fallback and fallback_td is not None:
             await ctx.repo.audit_append(
                 {
@@ -470,7 +579,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         todo.sort(key=lambda a: EXEC_ORDER.index(a["tool"]) if a["tool"] in EXEC_ORDER else 99)
         for a in todo:
             try:
-                res = await run_action(
+                res = await traced_action(
                     ctx,
                     a["tool"],
                     a["args"],
@@ -486,7 +595,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         inc = cache.get(iid) or inc
         for a in [x for x in inc["actions"] if x["tool"] in DRAFT_TOOLS and x["status"] == "proposed"]:
             try:
-                res = await run_action(
+                res = await traced_action(
                     ctx,
                     a["tool"],
                     a["args"],
@@ -593,7 +702,10 @@ class ApprovalError(Exception):
 
 class TriageRunner:
     def __init__(self, deps: Deps, checkpointer: Any) -> None:
+        if deps.tracer is None:
+            deps.tracer = TraceRecorder(deps.tools.repo, deps.clock)
         self.deps = deps
+        self.tracer: TraceRecorder = deps.tracer
         self.graph = build_graph(deps).compile(checkpointer=checkpointer)
         self._locks: dict[str, asyncio.Lock] = {}
 
@@ -604,10 +716,40 @@ class TriageRunner:
     def _lock(self, iid: str) -> asyncio.Lock:
         return self._locks.setdefault(iid, asyncio.Lock())
 
+    async def _invoke(self, iid: str, inp: Any, trigger: str, decision: dict[str, Any] | None = None) -> dict[str, Any]:
+        """One traced graph invocation = one run in the agent trace."""
+        run_id = await self.tracer.run_start(iid, trigger, decision)
+        tok = CUR_RUN.set(run_id)
+        try:
+            token = incident_id_var.set(iid)
+            try:
+                with fl_span("sentinel.triage", "AGENT"):
+                    out = dict(await self.graph.ainvoke(inp, self._cfg(iid)))
+            finally:
+                incident_id_var.reset(token)
+        except Exception:
+            await self.tracer.run_end(iid, run_id, "failed", None)
+            raise
+        finally:
+            CUR_RUN.reset(tok)
+        interrupt_info: dict[str, Any] | None = None
+        if out.get("__interrupt__"):
+            pend = list(out["__interrupt__"][0].value.get("pending", []))
+            if pend:
+                interrupt_info = {
+                    "action_id": pend[0]["action_id"],
+                    "tool": pend[0]["tool"],
+                    "waiting_since": iso(self.deps.clock()),
+                    "pending_count": len(pend),
+                }
+        await self.tracer.run_end(iid, run_id, "interrupted" if interrupt_info else "completed", interrupt_info)
+        return out
+
     async def run(self, incident_id: str) -> dict[str, Any]:
         """Start triage, or resume from the checkpoint after a restart. Returns the final/paused state."""
         async with self._lock(incident_id):
             snap = await self.graph.aget_state(self._cfg(incident_id))
+            trigger = "resume"
             if snap.next:
                 inp: Any = None  # resume mid-run from the last checkpoint
                 if snap.tasks and any(t.interrupts for t in snap.tasks):
@@ -616,13 +758,8 @@ class TriageRunner:
                 return dict(snap.values)  # already finished
             else:
                 inp = {"incident_id": incident_id}
-            token = incident_id_var.set(incident_id)
-            try:
-                with fl_span("sentinel.triage", "AGENT"):
-                    out = await self.graph.ainvoke(inp, self._cfg(incident_id))
-            finally:
-                incident_id_var.reset(token)
-            return dict(out)
+                trigger = "start"
+            return await self._invoke(incident_id, inp, trigger)
 
     async def pending_approvals(self, incident_id: str) -> list[dict[str, Any]]:
         snap = await self.graph.aget_state(self._cfg(incident_id))
@@ -638,11 +775,8 @@ class TriageRunner:
         async with self._lock(incident_id):
             if action_id not in {p["action_id"] for p in await self.pending_approvals(incident_id)}:
                 raise ApprovalError(f"{action_id} is not awaiting approval on {incident_id}")
-            out = await self.graph.ainvoke(
-                Command(resume={"decision": decision, "action_id": action_id, "operator": operator}),
-                self._cfg(incident_id),
-            )
-            return dict(out)
+            resume = {"decision": decision, "action_id": action_id, "operator": operator}
+            return await self._invoke(incident_id, Command(resume=resume), decision, resume)
 
     async def approve(self, incident_id: str, action_id: str, operator: str) -> dict[str, Any]:
         return await self._decide(incident_id, action_id, operator, "approve")

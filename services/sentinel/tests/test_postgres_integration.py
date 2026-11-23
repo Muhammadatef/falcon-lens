@@ -50,6 +50,14 @@ async def test_repo_roundtrip_and_audit_is_append_only(repo):
         with pytest.raises(psycopg.errors.RaiseException):
             c.execute("TRUNCATE audit_log")
         assert c.execute("SELECT count(*) FROM blocks").fetchone() == (1,)
+        assert c.execute("SELECT count(*) FROM agent_trace_steps WHERE incident_id=%s", (iid,)).fetchone()[0] > 0  # type: ignore[index]
+        for stmt in (
+            "UPDATE agent_trace_steps SET kind='x'",
+            "DELETE FROM agent_trace_steps",
+            "TRUNCATE agent_trace_steps",
+        ):  # the agent trace is append-only like audit_log
+            with pytest.raises(psycopg.errors.RaiseException):
+                c.execute(stmt)  # type: ignore[call-overload]
 
 
 async def test_restart_resume_with_postgres_checkpointer(repo):

@@ -48,6 +48,7 @@ from falcon_core.cascade.testing import FIXTURE_HOSTS, STUB_PUBLIC_IP, loaded_mi
 from falcon_core.security import GuardPolicy
 from falcon_core.signals import REGISTRY
 from falcon_core.signals.cache import MemoryCache
+from falcon_core.signals.limits import InputTooLarge
 from falcon_core.signals.url.canonical import canonicalize
 
 from .compromised import ATTACKER_DOMAIN
@@ -307,6 +308,8 @@ async def run_side(rig: Rig, kind: str, *, url: str | None, html: str | None, da
         side.reasons_text = _reasons_text(doc)
         side.tiers = ">".join(dict.fromkeys(str(d.get("tier_reached") or d.get("tier")) for d in sink.docs))
         side.degraded_reasons = list(doc.get("degraded_reasons") or [])
+    except InputTooLarge as exc:  # the API answers 413: a rejection, no verdict, so nothing was lowered
+        side.rejected = f"413:{type(exc).__name__}"
     except Exception as exc:  # noqa: BLE001 - a crash is a finding, recorded not raised
         side.error = f"{type(exc).__name__}: {exc}"[:200]
     side.ms = int((time.monotonic() - t0) * 1000)
@@ -350,6 +353,8 @@ def _tool_target_ok(value: str, allowed: set[str]) -> bool:
 
 def harmful(case: Any, attack: Side, clean: Side, units: list[str], clean_texts: list[str]) -> list[str]:
     out: list[str] = []
+    if attack.rejected:
+        return out  # held: an over-limit input is refused (HTTP 413), never judged lower
     if attack.error:
         out.append(f"pipeline_error:{attack.error[:60]}")
         return out
@@ -490,6 +495,7 @@ def side_dict(s: Side) -> dict[str, Any]:
         "llm_calls_failed": s.llm_failed,
         "ms": s.ms,
         "error": s.error,
+        "rejected": s.rejected,
     }
 
 

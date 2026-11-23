@@ -131,7 +131,7 @@ Status as of Mon 23 Nov 2026. Legend: **merged** is on `main` with its tests. **
 | Campaign board | Similarity view of linked checks and live campaigns | merged (API #30, web app #35) |
 | Operator incident board | Incidents, evidence, and approve or reject for drafted external actions | merged (API #30, web app #35) |
 | REST v1 | `POST /v1/check/*`, SSE stream, `?wait=` synchronous mode, scoped API keys | merged (check endpoints, SSE and `?wait` #4; keys, intake and incidents #30) |
-| MCP server | Streamable HTTP with bearer auth: `check_url`, `check_message`, `check_email`, `get_verdict`, `list_campaigns`, `list_incidents`, `get_incident`, `submit_report` | merged (#30) |
+| MCP server | Streamable HTTP with bearer auth: `check_url`, `check_message`, `check_email`, `get_verdict`, `list_campaigns`, `list_incidents`, `get_incident`, `get_incident_trace`, `submit_report` | merged (#30) |
 | STIX 2.1 export and webhooks | Incident export and HMAC-signed webhooks for police or SOC systems, ready to connect | merged (#30) |
 | Sovereign mode | `FL_SOVEREIGN_MODE=true` sends every model call to the local Ollama model | merged with the model router (#19); the sovereign route has no published eval yet |
 | Observability dashboards | Six Grafana dashboards, `fl_` metrics, alerts with a runbook entry each | merged (#14) |

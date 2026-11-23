@@ -102,11 +102,12 @@ async def structured[M: BaseModel](
     system: str,
     user_json: dict[str, Any],
     on_tokens: Callable[[int], None] | None = None,
+    on_usage: Callable[[int, int, bool], None] | None = None,
 ) -> M:
     """complete_json -> pydantic, with one repair retry that feeds the validation error back."""
     complete_model = getattr(llm, "complete_model", None)
     if complete_model is not None:  # router-backed client: redaction, repair and budgets live in the router
-        return await complete_model(model, system=system, user_json=user_json, on_tokens=on_tokens)  # type: ignore[no-any-return]
+        return await complete_model(model, system=system, user_json=user_json, on_tokens=on_tokens, on_usage=on_usage)  # type: ignore[no-any-return]
     schema = model.model_json_schema()
     last_err = ""
     for attempt in range(2):
@@ -127,6 +128,8 @@ async def structured[M: BaseModel](
             continue
         if on_tokens:
             on_tokens(estimate_tokens(payload, data))
+        if on_usage:
+            on_usage(estimate_tokens(payload), estimate_tokens(data), attempt > 0)
         try:
             return model.model_validate(data)
         except ValidationError as exc:
@@ -160,6 +163,7 @@ class RouterLLM:
         system: str,
         user_json: dict[str, Any],
         on_tokens: Callable[[int], None] | None = None,
+        on_usage: Callable[[int, int, bool], None] | None = None,
     ) -> M:
         res = await self.router.complete_json(
             JsonRequest(
@@ -175,6 +179,8 @@ class RouterLLM:
             self._last_route = res.route
         if on_tokens:  # count tokens even when the output turns out unusable
             on_tokens(res.usage.input_tokens + res.usage.output_tokens)
+        if on_usage:
+            on_usage(res.usage.input_tokens, res.usage.output_tokens, len(res.calls) > 1)
         if res.ok and res.value is not None:
             return res.value
         if res.route == "none" or all(c.error for c in res.calls):

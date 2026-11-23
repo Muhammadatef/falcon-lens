@@ -132,6 +132,11 @@ def build_mcp(api: ApiClient, *, name: str = "falcon-lens") -> MCPServer:
         """Get one incident: indicators (defanged), timeline, linked verdicts, proposed and held actions."""
         return dict((await api.request("GET", f"/v1/incidents/{incident_id}")).json())
 
+    @mcp.tool(annotations=READ_ONLY)
+    async def get_incident_trace(incident_id: INCIDENT_ID) -> dict[str, Any]:
+        """Get the Sentinel agent's run trace for one incident: nodes, tools, model route, tokens, approval wait."""
+        return dict((await api.request("GET", f"/v1/incidents/{incident_id}/trace")).json())
+
     @mcp.tool(annotations=WRITE)
     async def submit_report(
         kind: Annotated[Literal["url", "message", "email", "phone", "other"], Field(description="What is reported.")],

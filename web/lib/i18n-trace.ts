@@ -1,0 +1,106 @@
+/**
+ * Strings of the agent-trace page, kept apart from lib/i18n.ts so the page stays self-contained.
+ * Arabic is written natively. The word "safe" never appears.
+ */
+import type { Lang } from "./contracts";
+
+const ar = {
+  "tr.link": "مسار الوكيل",
+  "tr.title": "مسار عمل الحارس",
+  "tr.loading": "نحمّل مسار الوكيل…",
+  "tr.nf.title": "الحادثة غير موجودة",
+  "tr.brand": "العلامة",
+  "tr.run": "التشغيل {n}",
+  "tr.node.compare": "المقارنة",
+  "tr.node.summarise": "التلخيص",
+  "tr.node.act": "التنفيذ",
+  "tr.status.completed": "اكتملت",
+  "tr.status.interrupted": "بانتظار إنسان",
+  "tr.mode.internal_auto": "تلقائي",
+  "tr.route.cloud": "نموذج سحابي",
+  "tr.route.none": "قالب بلا نموذج",
+  "tr.cost": "التكلفة",
+  "tr.fallback": "استُخدم قالب بدل مخرج النموذج",
+  "tr.budget": "الميزانية",
+  "tr.wait.body": "لن تُرسَل المسودة الخارجية قبل أن يوافق مشغّل.",
+  "tr.decided.approved": "وافق المشغّل",
+  "tr.wait.nokey": "أدخل مفتاح المشغّل في لوحة الحوادث للموافقة أو الرفض.",
+  "tr.back": "العودة إلى لوحة الحوادث",
+  "tr.sub": "كل خطوة نفّذها وكيل الحارس لهذه الحادثة. لا نعرض أوامر النموذج ولا مخرجاته ولا نصوص الرسائل.",
+  "tr.empty": "لم يبدأ الوكيل العمل على هذه الحادثة بعد.",
+  "tr.nf.body": "تأكد من الرابط أو عد إلى لوحة الحوادث.",
+  "tr.verdicts": "الأحكام المرتبطة",
+  "tr.node.enrich": "إثراء السياق",
+  "tr.node.assess": "تقييم الخطورة",
+  "tr.node.propose": "اقتراح الإجراءات",
+  "tr.status.running": "قيد التنفيذ",
+  "tr.status.failed": "فشلت",
+  "tr.mode.read": "قراءة",
+  "tr.mode.external_draft": "يحتاج موافقة بشرية",
+  "tr.route.local": "نموذج محلي",
+  "tr.tokens": "الرموز",
+  "tr.repaired": "أُصلح المخرج مرة واحدة",
+  "tr.error": "رمز الخطأ",
+  "tr.wait.title": "بانتظار قرار بشري",
+  "tr.wait.since": "منذ",
+  "tr.decided.rejected": "رفض المشغّل",
+  "tr.gen.llm": "كتبه النموذج",
+  "tr.gen.template": "كُتب من قالب",
+  "tr.gen.rule": "كُتب وفق القواعد",
+  "tr.rule_draft": "مسودة وفق القواعد، تحتاج موافقة بشرية",
+} as const;
+
+const en: Record<keyof typeof ar, string> = {
+  "tr.link": "Agent trace",
+  "tr.title": "Sentinel agent run",
+  "tr.loading": "Loading the agent trace…",
+  "tr.nf.title": "Incident not found",
+  "tr.brand": "Brand",
+  "tr.run": "Run {n}",
+  "tr.node.compare": "Compare",
+  "tr.node.summarise": "Summarise",
+  "tr.node.act": "Act",
+  "tr.status.completed": "Done",
+  "tr.status.interrupted": "Waiting for a human",
+  "tr.mode.internal_auto": "automatic",
+  "tr.route.cloud": "cloud model",
+  "tr.route.none": "template, no model",
+  "tr.cost": "Cost",
+  "tr.fallback": "Template used instead of model output",
+  "tr.budget": "Budget",
+  "tr.wait.body": "The external draft is not sent until an operator approves.",
+  "tr.decided.approved": "An operator approved",
+  "tr.wait.nokey": "Enter the operator key on the incident board to approve or reject.",
+  "tr.back": "Back to the incident board",
+  "tr.sub": "Every step the Sentinel agent took on this incident. Model prompts, model output and message text are never shown.",
+  "tr.empty": "The agent has not started on this incident yet.",
+  "tr.nf.body": "Check the link, or go back to the incident board.",
+  "tr.verdicts": "Linked verdicts",
+  "tr.node.enrich": "Enrich",
+  "tr.node.assess": "Assess severity",
+  "tr.node.propose": "Propose actions",
+  "tr.status.running": "Running",
+  "tr.status.failed": "Failed",
+  "tr.mode.read": "read",
+  "tr.mode.external_draft": "needs human approval",
+  "tr.route.local": "local model",
+  "tr.tokens": "Tokens",
+  "tr.repaired": "Output repaired once",
+  "tr.error": "Error code",
+  "tr.wait.title": "Waiting for a human",
+  "tr.wait.since": "since",
+  "tr.decided.rejected": "An operator rejected",
+  "tr.gen.llm": "written by the model",
+  "tr.gen.template": "written from a template",
+  "tr.gen.rule": "written by rule",
+  "tr.rule_draft": "rule-based draft, needs human approval",
+};
+
+export type TraceKey = keyof typeof ar;
+export const TRACE_MESSAGES: Record<Lang, Record<TraceKey, string>> = { ar, en };
+
+export function trT(lang: Lang, key: TraceKey, vars?: Record<string, string | number>): string {
+  let s: string = TRACE_MESSAGES[lang][key];
+  for (const [k, v] of Object.entries(vars ?? {})) s = s.replaceAll(`{${k}}`, String(v));
+  return s;
+}

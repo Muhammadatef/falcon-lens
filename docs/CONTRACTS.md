@@ -10,6 +10,7 @@ The machine-readable sources of truth are in `contracts/`. Pydantic models in `p
 | `event.schema.json` | Redis Stream `fl:events` → Sentinel |
 | `incident.schema.json` | Sentinel → board, REST, MCP, STIX. Timeline entries carry `what` (compat) plus optional bilingual `what_ar` / `what_en` |
 | `campaign.schema.json` | `GET /v1/campaigns`, SSE `/v1/campaigns/stream` (projection of an incident; computed by the API) |
+| `agent_trace.schema.json` | `GET /v1/incidents/{id}/trace`, MCP `get_incident_trace`, web `/incidents/[id]`: the Sentinel agent's run trace per incident (nodes, tools, model route, tokens, human-approval wait). Template fields only: no prompts, no model output, no raw text, defanged hosts. Approver and decision are operator-scope only |
 | `tools.schema.json` | investigator, Sentinel and MCP tool registry plus the JSON `Action` |
 | `openapi.yaml` | REST v1. FastAPI generates it; CI checks it hasn't drifted from the committed file |
 

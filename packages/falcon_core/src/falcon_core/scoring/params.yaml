@@ -119,6 +119,7 @@ weights:
   email.link_verdict: 0.0
   llm.extraction: 0.0            # quarantined extractor output, informational
   page.truncated: 0.0            # page judged from a cut-off or half-loaded read
+  page.static_fallback: 0.0      # browser failed; features read from the main document without JavaScript
   page.cloaking_inconclusive: 0.0  # comparison skipped: a profile was read partially or cut
   page.telemetry_beacon: 0.0     # script POST with no form-field data (analytics, pixels)
   email.attachment: 0.0          # see email_attachment.risky_weight

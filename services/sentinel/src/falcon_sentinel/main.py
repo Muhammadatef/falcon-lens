@@ -52,6 +52,7 @@ from .db import IncidentCache, PgRepo
 from .graph import ApprovalError, Deps, TriageRunner, set_default_runner
 from .llm import LLMClient, RouterLLM, StubLLM
 from .metrics import REQUEUE_FAILURES, SentinelMetrics
+from .trace import assemble_trace
 
 log = logging.getLogger("falcon.sentinel")
 settings = get_settings()
@@ -237,6 +238,15 @@ async def get_stix(incident_id: str, x_operator_key: str | None = Header(None)) 
     if bundle is None:
         raise HTTPException(404, "no STIX bundle exported for this incident")
     return bundle
+
+
+@app.get("/internal/incidents/{incident_id}/trace")
+async def get_trace(incident_id: str, x_operator_key: str | None = Header(None)) -> dict[str, Any]:
+    """GET /internal/incidents/{id}/trace: the agent run trace (contracts/agent_trace.schema.json)."""
+    _operator(x_operator_key)
+    if rt.cache is None or rt.repo is None or rt.cache.get(incident_id) is None:
+        raise HTTPException(404, "not found")
+    return assemble_trace(incident_id, await rt.repo.trace_list(incident_id))
 
 
 async def _decide(incident_id: str, action_id: str, who: str, ok: bool) -> dict[str, Any]:

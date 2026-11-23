@@ -203,3 +203,50 @@ async def test_credential_page_on_an_old_typosquat_domain_is_dangerous() -> None
     final = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]
     assert any(e["signal"].startswith("url.") and e["weight"] > 0 for e in final["evidence"])
     assert final["verdict"] == "dangerous"
+
+
+def _static(**kw: object) -> SandboxFeatures:
+    return SandboxFeatures.model_validate(
+        {"final_url": DEMO_BENIGN_URL, "title": "Garden club events", "static_fallback": True, "error": None, **kw}
+    )  # note: partial is NOT set here, to prove the cascade itself treats a static read as partial
+
+
+async def test_static_fallback_is_informational_and_never_clears_without_trust() -> None:
+    cascade, _ = make_cascade(force_t2=True, sandbox=StubSandboxClient(default=_static()), signals=offline_signals())
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert_valid(final)
+    assert final["degraded"] and "static_fallback" in final["degraded_reasons"]
+    assert final["verdict"] != "no_warning_signs"
+    ev = next(e for e in final["evidence"] if e["signal"] == "page.static_fallback")
+    assert ev["weight"] == 0
+
+
+async def test_static_fallback_on_established_domain_without_risk_may_clear() -> None:
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=_static()), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert not final["degraded"], final["degraded_reasons"]
+    assert final["verdict"] == "no_warning_signs"
+    assert any(e["signal"] == "page.static_fallback" and e["weight"] == 0 for e in final["evidence"])
+
+
+async def test_static_fallback_with_credential_form_is_degraded_even_on_established_domain() -> None:
+    feats = _static(forms=[{"fields": ["password"], "action_origin": None}])
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert final["degraded"] and "static_fallback" in final["degraded_reasons"]
+    assert final["verdict"] != "no_warning_signs"
+
+
+async def test_dns_and_slow_failures_carry_different_reasons() -> None:
+    for code, needle in (("dns_failure", "No website answers"), ("timeout", "could not open the page")):
+        feats = SandboxFeatures.model_validate({"error": code, "final_url": None})
+        cascade, _ = make_cascade(
+            force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+        )
+        final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+        ev = next(e for e in final["evidence"] if e["signal"] == "sandbox.not_rendered")
+        assert ev["observed"]["reason"] == code and needle in ev["display"]["en"]
