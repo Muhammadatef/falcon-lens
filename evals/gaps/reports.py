@@ -346,7 +346,30 @@ def cost() -> dict[str, Any]:
         tokens_in.append(sum(c["input_tokens"] + c["cache_read_tokens"] + c["cache_write_tokens"] for c in r["calls"]))
         tokens_out.append(sum(c["output_tokens"] for c in r["calls"]))
     loc = [r for r in load_runs("local_s12") + load_runs("local_rest") if r["ok"]]
+
+    def _usd(c: dict[str, Any], model: str | None = None) -> float:
+        p = PRICES.get(str(model or c.get("model")))
+        if p is None:
+            return 0.0
+        return (
+            c["input_tokens"] * p["input"]
+            + c["output_tokens"] * p["output"]
+            + c.get("cache_write_tokens", 0) * p["cache_write_5m"]
+            + c.get("cache_read_tokens", 0) * p["cache_read"]
+        ) / 1_000_000
+
+    ex = load_json("extractor_cloud")
+    sn = load_json("sentinel_cloud")
+    spend = (
+        sum(call_cost(c) or 0.0 for r in cl for c in r["calls"])
+        + (sum(_usd(r, ex["model"]) for r in ex["rows"]) if ex else 0.0)
+        + (sum(call_cost(c) or 0.0 for c in sn["router_calls"]) if sn else 0.0)
+    )
     body = {
+        "total_spend_usd": {
+            "value": round(spend, 4),
+            "method": "all cloud calls of this evaluation (cascade, extractor eval, sentinel replay): logged tokens x recorded prices",  # noqa: E501
+        },
         "prices": {
             "source": PRICES_SOURCE,
             "read_on": PRICES_DATE,
