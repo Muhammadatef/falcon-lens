@@ -43,13 +43,14 @@ from redis.exceptions import RedisError
 from sentinel_core.incidents import Sentinel
 
 from falcon_core.config import get_settings
+from falcon_core.llm import LLMRouter, RouterConfig
 from falcon_core.service import create_app, run
 from falcon_core.tools.sentinel import ToolContext
 
 from .consumer import Consumer
 from .db import IncidentCache, PgRepo
 from .graph import ApprovalError, Deps, TriageRunner, set_default_runner
-from .llm import AnthropicLLM, LLMClient, OpenAICompatLLM, StubLLM
+from .llm import LLMClient, RouterLLM, StubLLM
 from .metrics import REQUEUE_FAILURES, SentinelMetrics
 
 log = logging.getLogger("falcon.sentinel")
@@ -67,20 +68,12 @@ def official_domains() -> list[str]:
 
 
 def make_llm() -> LLMClient:
-    """Triage LLM client. FL_SENTINEL_LLM=stub -> stub. Otherwise the Anthropic API when ANTHROPIC_API_KEY is set
-    and sovereign mode is off (cloud default), else the local OpenAI-compatible server. Local json mode is opt-in
-    (FL_LOCAL_STRUCTURED=true) because the local model answers 501 to response_format."""
-    choice = os.environ.get("FL_SENTINEL_LLM", "auto")
-    if choice == "stub":
+    """Triage LLM client. FL_SENTINEL_LLM=stub -> stub. Otherwise every call goes through falcon_core's router:
+    Anthropic when ANTHROPIC_API_KEY is set and FL_SOVEREIGN_MODE is off (cloud default), else the local model;
+    PII redaction and the canary run inside the router for both routes."""
+    if os.environ.get("FL_SENTINEL_LLM", "auto") == "stub":
         return StubLLM()
-    key = settings.anthropic_api_key.get_secret_value() if settings.anthropic_api_key else ""
-    if choice in ("auto", "anthropic") and key and not settings.fl_sovereign_mode:
-        return AnthropicLLM(key, os.environ.get("FL_CLOUD_MODEL_SENTINEL", "claude-sonnet-5-5"))
-    return OpenAICompatLLM(
-        settings.ollama_base_url,
-        os.environ.get("FL_SENTINEL_MODEL", os.environ.get("FL_LOCAL_MODEL", "inkling-2-mini-chat")),
-        structured=os.environ.get("FL_LOCAL_STRUCTURED", "false").lower() in ("1", "true", "yes"),
-    )
+    return RouterLLM(LLMRouter(RouterConfig.from_env()))
 
 
 class Runtime:

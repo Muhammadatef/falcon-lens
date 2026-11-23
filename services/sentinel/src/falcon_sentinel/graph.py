@@ -402,21 +402,48 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             ("update_campaign_board", {"incident_id": iid}),
             ("export_stix", {"incident_id": iid}),
         ]
-        if "propose" in degraded and any(i["kind"] == "domain" for i in inc["indicators"]):
-            # LLM unavailable: still queue the takedown draft (rules, not the model, decide); it waits for approval
-            det.append(("draft_takedown", {"incident_id": iid, "recipient_kind": "registrar"}))
+        fallback_td: dict[str, Any] | None = None
+        if "propose" in degraded and rule_ev and any(i["kind"] == "domain" for i in inc["indicators"]):
+            # LLM unavailable: still queue the takedown draft. Rules, not the model, decide; it waits for approval.
+            fallback_td = mk_action(iid, "draft_takedown", {"incident_id": iid, "recipient_kind": "registrar"}, rule_ev)
+            fallback_td["origin"] = "rule_fallback"
+            proposals.append(fallback_td)
         if inc["severity"] in ("high", "critical"):
             det.append(("raise_alert", {"incident_id": iid, "severity": inc["severity"]}))
         for tool, args in det:
             proposals.append(mk_action(iid, tool, args, rule_ev))
         have = {a["action_id"] for a in inc["actions"]}
         new = [p for p in proposals if p["action_id"] not in have]
+        queued_fallback = fallback_td is not None and fallback_td["action_id"] not in have
 
         def add(i: dict[str, Any]) -> None:
             i["actions"].extend(new)
+            if queued_fallback:
+                i["timeline"].append(
+                    {
+                        "at": iso(deps.clock()),
+                        "what": "rule_fallback: takedown draft queued (LLM unavailable)",
+                        "what_en": "Takedown draft queued by rule fallback (LLM unavailable); awaits human approval.",
+                        "what_ar": "تمت إضافة مسودة بلاغ إزالة وفق القواعد (النموذج غير متاح)، وهي بانتظار موافقة المشغّل.",
+                    }
+                )
 
         cache.update(iid, add)
         await cache.flush()
+        if queued_fallback and fallback_td is not None:
+            await ctx.repo.audit_append(
+                {
+                    "at": deps.clock(),
+                    "actor": "sentinel",
+                    "incident_id": iid,
+                    "action_id": fallback_td["action_id"],
+                    "tool": "draft_takedown",
+                    "mode": "external_draft",
+                    "args": fallback_td["args"],
+                    "result": {"queued": "rule_fallback", "sent": False},
+                    "evidence_ids": fallback_td["evidence_ids"],
+                }
+            )
         return {"proposals": proposals, "rejected": rejected, "degraded": degraded}
 
     def _set(iid: str, action_id: str, **fields: Any) -> None:

@@ -2,7 +2,7 @@
 
 The graph codes to the `LLMClient` protocol only (agent-core's router in falcon_core.llm will satisfy it).
 Here: a deterministic stub (tests, offline demo) and a thin adapter to an OpenAI-compatible endpoint
-(Ollama at OLLAMA_BASE_URL, model inkling-2-mini-chat) for live runs. Outputs are parsed with pydantic and
+(the falcon_core router: cloud or local) for live runs. Outputs are parsed with pydantic and
 get ONE repair retry; the model never sets a score and only ever sees structured evidence.
 """
 
@@ -13,8 +13,9 @@ import re
 from collections.abc import Callable
 from typing import Any, Protocol
 
-import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+from falcon_core.llm import JsonRequest, LLMRouter
 
 END_TOKENS = ("<|end_message|>", "<|im_end|>", "<|endoftext|>")
 
@@ -101,6 +102,9 @@ async def structured[M: BaseModel](
     on_tokens: Callable[[int], None] | None = None,
 ) -> M:
     """complete_json -> pydantic, with one repair retry that feeds the validation error back."""
+    complete_model = getattr(llm, "complete_model", None)
+    if complete_model is not None:  # router-backed client: redaction, repair and budgets live in the router
+        return await complete_model(model, system=system, user_json=user_json, on_tokens=on_tokens)  # type: ignore[no-any-return]
     schema = model.model_json_schema()
     last_err = ""
     for attempt in range(2):
@@ -131,114 +135,48 @@ async def structured[M: BaseModel](
 # ------------------------------------------------------------------ OpenAI-compatible adapter
 
 
-def parse_json_text(content: str) -> dict[str, Any]:
-    """Model text -> JSON object. Strips end tokens and code fences; tolerates prose around one object."""
-    text = clean_text(content)
-    try:
-        out = json.loads(text)
-    except json.JSONDecodeError as exc:
-        lo, hi = text.find("{"), text.rfind("}")
-        if lo < 0 or hi <= lo:
-            raise LLMOutputError(f"not json: {exc}") from exc
-        try:
-            out = json.loads(text[lo : hi + 1])
-        except json.JSONDecodeError as exc2:
-            raise LLMOutputError(f"not json: {exc2}") from exc2
-    if not isinstance(out, dict):
-        raise LLMOutputError("json root is not an object")
-    return out
+class RouterLLM:
+    """The only live LLM client: every Sentinel call goes through falcon_core.llm.router.LLMRouter, which applies
+    normalise -> redact -> (spotlight) -> canary -> one repair retry, honours sovereign mode (no cloud route
+    without a key or in sovereign mode) and falls back cloud -> local. Failures raise LLMUnavailable/LLMOutputError
+    so every node degrades to its template."""
 
+    def __init__(self, router: LLMRouter, max_output_tokens: int = 1200) -> None:
+        self.router = router
+        self.max_output_tokens = max_output_tokens
+        self._last_route: str | None = None
 
-def _structured_unsupported(resp: httpx.Response) -> bool:
-    return resp.status_code in (400, 422, 501) and "structured" in resp.text.lower()
+    @property
+    def route(self) -> str:
+        """Route of the latest call (cloud | local); the planned primary route before any call."""
+        return self._last_route or self.router.primary_route("sentinel")
 
-
-class OpenAICompatLLM:
-    """Ollama exposes /v1/chat/completions; any OpenAI-compatible server works.
-
-    response_format (json mode) is sent only when `structured` is True (FL_LOCAL_STRUCTURED, default off: the
-    local inkling model answers 501 to it). If a server rejects it anyway, retry once without and remember."""
-
-    route = "local"
-
-    def __init__(
+    async def complete_model[M: BaseModel](
         self,
-        base_url: str,
-        model: str = "inkling-2-mini-chat",
-        timeout: float = 30.0,
-        client: httpx.AsyncClient | None = None,
-        structured: bool = False,
-    ) -> None:
-        self.url = base_url.rstrip("/") + "/v1/chat/completions"
-        self.model = model
-        self.structured = structured
-        self._client = client or httpx.AsyncClient(timeout=timeout)
-
-    async def complete_json(
-        self, *, role: str, system: str, user_json: dict[str, Any], schema: dict[str, Any]
-    ) -> dict[str, Any]:
-        sys_prompt = f"{system}\nReturn ONLY a JSON object matching this JSON Schema:\n{json.dumps(schema)}"
-        body: dict[str, Any] = {
-            "model": self.model,
-            "temperature": 0,
-            "messages": [
-                {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": json.dumps(user_json, ensure_ascii=False)},
-            ],
-        }
-        try:
-            if self.structured:
-                resp = await self._client.post(self.url, json={**body, "response_format": {"type": "json_object"}})
-                if _structured_unsupported(resp):
-                    self.structured = False  # remember for the process
-                    resp = await self._client.post(self.url, json=body)
-            else:
-                resp = await self._client.post(self.url, json=body)
-            resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"]["content"]
-        except (httpx.HTTPError, OSError, KeyError, IndexError, TypeError, ValueError) as exc:
-            raise LLMUnavailable(f"{type(exc).__name__}: {exc}"[:200]) from exc
-        return parse_json_text(str(content))
-
-
-class AnthropicLLM:
-    """Cloud route: Anthropic Messages API over httpx. Same contract; errors map to LLMUnavailable."""
-
-    route = "cloud"
-    url = "https://api.anthropic.com/v1/messages"
-
-    def __init__(
-        self,
-        api_key: str,
-        model: str = "claude-sonnet-5-5",
-        timeout: float = 30.0,
-        client: httpx.AsyncClient | None = None,
-    ) -> None:
-        self._key = api_key
-        self.model = model
-        self._client = client or httpx.AsyncClient(timeout=timeout)
-
-    async def complete_json(
-        self, *, role: str, system: str, user_json: dict[str, Any], schema: dict[str, Any]
-    ) -> dict[str, Any]:
-        sys_prompt = f"{system}\nReturn ONLY a JSON object matching this JSON Schema:\n{json.dumps(schema)}"
-        try:
-            resp = await self._client.post(
-                self.url,
-                headers={"x-api-key": self._key, "anthropic-version": "2023-06-01"},
-                json={
-                    "model": self.model,
-                    "max_tokens": 1500,
-                    "temperature": 0,
-                    "system": sys_prompt,
-                    "messages": [{"role": "user", "content": json.dumps(user_json, ensure_ascii=False)}],
-                },
+        model: type[M],
+        *,
+        system: str,
+        user_json: dict[str, Any],
+        on_tokens: Callable[[int], None] | None = None,
+    ) -> M:
+        res = await self.router.complete_json(
+            JsonRequest(
+                role="sentinel",
+                task=system,
+                schema=model,
+                context=json.dumps(user_json, ensure_ascii=False, default=str),
+                max_output_tokens=self.max_output_tokens,
             )
-            resp.raise_for_status()
-            content = "".join(b.get("text", "") for b in resp.json()["content"] if b.get("type") == "text")
-        except (httpx.HTTPError, OSError, KeyError, IndexError, TypeError, ValueError, AttributeError) as exc:
-            raise LLMUnavailable(type(exc).__name__) from exc
-        return parse_json_text(content)
+        )
+        if res.route != "none":
+            self._last_route = res.route
+        if on_tokens:  # count tokens even when the output turns out unusable
+            on_tokens(res.usage.input_tokens + res.usage.output_tokens)
+        if res.ok and res.value is not None:
+            return res.value
+        if res.route == "none" or all(c.error for c in res.calls):
+            raise LLMUnavailable(res.error or "no route answered")
+        raise LLMOutputError(res.error or "invalid model output")
 
 
 # ------------------------------------------------------------------ deterministic stub
