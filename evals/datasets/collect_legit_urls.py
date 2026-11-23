@@ -428,6 +428,169 @@ NEW_DOMAIN_CANDIDATES = [
     "phind.com",
 ]
 
+
+# C06 (contributor): new domains verified by hand on 2026-11-22. The RDAP registration date comes from
+# the TLD's authoritative RDAP server (IANA bootstrap); the linking page is the owner's established site or
+# official announcement and contains the domain. The date is pinned, so a re-run does not need rdap.org.
+# (domain, rdap_registration, rdap_server, linked_from, note)
+NEW_DOMAIN_VERIFIED: list[tuple[str, str, str, str, str]] = [
+    (
+        "k2think.ai",
+        "2025-08-21",
+        "rdap.identitydigital.services",
+        "hxxps://mbzuai.ac.ae/news/mbzuai-and-g42-launch-k2-think-a-leading-open-source-system-for-advanced-ai-reasoning/",
+        "MBZUAI + G42 K2 Think",
+    ),
+    (
+        "inceptionai.ai",
+        "2024-07-03",
+        "rdap.identitydigital.services",
+        "hxxps://www.g42.ai/companies/inception-institute-of-ai",
+        "G42 company Inception (Jais)",
+    ),
+    (
+        "investwithabudhabi.com",
+        "2024-10-03",
+        "rdap.verisign.com",
+        "hxxps://www.investinabudhabi.ae/About-Us",
+        "Abu Dhabi Investment Office (ADIO)",
+    ),
+    (
+        "adif.abudhabi",
+        "2025-05-29",
+        "rdap.nic.abudhabi",
+        "hxxps://www.investinabudhabi.ae/About-Us",
+        "Abu Dhabi Investment Forum (ADIO)",
+    ),
+    (
+        "aieverythingabudhabi.com",
+        "2025-09-16",
+        "rdap.verisign.com",
+        "hxxps://u.ae/en/",
+        "AI Everything Abu Dhabi, linked from the UAE gov portal",
+    ),
+    ("aieverythingglobal.com", "2024-01-11", "rdap.verisign.com", "hxxps://www.gitex.com/", "DWTC/KAOUN AI Everything"),
+    (
+        "gitexvietnam.com",
+        "2024-07-23",
+        "rdap.verisign.com",
+        "hxxps://www.gitex.com/News/gitex-expands-to-vietnam-igniting-us200bn-national-digital-economy-potential",
+        "DWTC/KAOUN GITEX edition",
+    ),
+    ("gitexturkiye.com", "2025-08-19", "rdap.verisign.com", "hxxps://www.gitex.com/", "DWTC/KAOUN GITEX edition"),
+    ("gitexlatam.com", "2025-08-19", "rdap.verisign.com", "hxxps://www.gitex.com/", "DWTC/KAOUN GITEX edition"),
+    ("gitexfuturehealth.com", "2025-03-14", "rdap.verisign.com", "hxxps://www.gitex.com/", "DWTC/KAOUN GITEX edition"),
+    (
+        "gitexserbia.com",
+        "2024-10-30",
+        "rdap.verisign.com",
+        "hxxps://www.gitex.com/",
+        "DWTC/KAOUN GITEX edition (redirects to gitexbelgrade.com)",
+    ),
+    ("gitexitaly.com", "2026-01-22", "rdap.verisign.com", "hxxps://www.gitex.com/", "DWTC/KAOUN GITEX edition"),
+    (
+        "aieverythingegypt.com",
+        "2025-01-31",
+        "rdap.verisign.com",
+        "hxxps://www.gitex.com/",
+        "DWTC/KAOUN AI Everything edition",
+    ),
+    ("gqxdubai.com", "2026-04-30", "rdap.verisign.com", "hxxps://www.gitex.com/", "DWTC/KAOUN GITEX event"),
+    ("gitexnewenergy.com", "2026-05-14", "rdap.verisign.com", "hxxps://www.gitex.com/", "DWTC/KAOUN GITEX event"),
+    ("gitex-india.com", "2025-10-08", "rdap.verisign.com", "hxxps://www.gitex.com/", "DWTC/KAOUN GITEX edition"),
+    (
+        "aistudio.google",
+        "2026-05-19",
+        "pubapi.registry.google",
+        "hxxps://labs.google/",
+        "closed .google brand TLD (Google AI Studio)",
+    ),
+    (
+        "antigravity.google",
+        "2025-09-19",
+        "pubapi.registry.google",
+        "hxxps://ai.google.dev/",
+        "closed .google brand TLD",
+    ),
+    ("jules.google", "2025-01-16", "pubapi.registry.google", "hxxps://ai.google.dev/", "closed .google brand TLD"),
+    (
+        "notebook.google",
+        "2026-06-25",
+        "pubapi.registry.google",
+        "hxxps://notebooklm.google/",
+        "closed .google brand TLD",
+    ),
+    (
+        "flow.google",
+        "2025-05-05",
+        "pubapi.registry.google",
+        "hxxps://blog.google/technology/ai/google-flow-veo-ai-filmmaking-tool/",
+        "closed .google brand TLD",
+    ),
+    (
+        "beam.google",
+        "2024-04-10",
+        "pubapi.registry.google",
+        "hxxps://blog.google/technology/research/project-starline-google-beam-update/",
+        "closed .google brand TLD",
+    ),
+    (
+        "googlebook.google",
+        "2026-03-09",
+        "pubapi.registry.google",
+        "hxxps://about.google/products/",
+        "closed .google brand TLD",
+    ),
+    ("tabletop.google", "2026-10-13", "pubapi.registry.google", "hxxps://labs.google/", "closed .google brand TLD"),
+    ("hailuoai.video", "2024-09-05", "rdap.identitydigital.services", "hxxps://www.minimax.io/", "MiniMax Hailuo"),
+    ("diabrowser.com", "2024-10-18", "rdap.verisign.com", "hxxps://thebrowser.company/", "The Browser Company Dia"),
+    ("grokipedia.com", "2025-04-28", "rdap.verisign.com", "hxxps://x.ai/", "xAI"),
+    (
+        "lmarena.ai",
+        "2024-06-21",
+        "rdap.identitydigital.services",
+        "hxxps://github.com/lm-sys/FastChat",
+        "LMArena (redirects to arena.ai)",
+    ),
+    (
+        "a2a-protocol.org",
+        "2025-07-04",
+        "rdap.publicinterestregistry.org",
+        "hxxps://github.com/a2aproject/A2A",
+        "Agent2Agent protocol",
+    ),
+    (
+        "llmstxt.org",
+        "2024-09-02",
+        "rdap.publicinterestregistry.org",
+        "hxxps://www.answer.ai/posts/2024-09-03-llmstxt.html",
+        "Answer.AI llms.txt",
+    ),
+    ("voidzero.dev", "2024-03-15", "pubapi.registry.google", "hxxps://vite.dev/", "VoidZero (Vite)"),
+    (
+        "zen-browser.app",
+        "2024-08-06",
+        "pubapi.registry.google",
+        "hxxps://github.com/zen-browser/desktop",
+        "Zen Browser",
+    ),
+    (
+        "omarchy.org",
+        "2025-06-01",
+        "rdap.publicinterestregistry.org",
+        "hxxps://github.com/basecamp/omarchy",
+        "Basecamp Omarchy",
+    ),
+    (
+        "blackforestlabs.ai",
+        "2024-03-12",
+        "rdap.identitydigital.services",
+        "hxxps://huggingface.co/black-forest-labs",
+        "Black Forest Labs (redirects to bfl.ai)",
+    ),
+    ("trae.ai", "2024-12-16", "rdap.identitydigital.services", "hxxps://github.com/Trae-AI", "Trae"),
+]
+
 LOGIN = """hxxps://accounts.google.com/signin|hxxps://github.com/login|hxxps://www.facebook.com/login/
 hxxps://www.paypal.com/signin|hxxps://appleid.apple.com/sign-in|hxxps://login.live.com/|hxxps://www.linkedin.com/login
 hxxps://www.netflix.com/login|hxxps://www.dropbox.com/login|hxxps://accounts.spotify.com/en/login
@@ -520,6 +683,35 @@ hxxps://go.microsoft.com/fwlink/?linkid=2086080|hxxps://go.microsoft.com/fwlink/
 """.replace("\n", "|").split("|")
 
 
+# C06 (contributor): short links on the destination organisation's own shortener, checked 2026-11-22
+# (>= 1 redirect, final 2xx on the owner's registrable domain). (url, owner_final_domain)
+SHORTENED_C06: list[tuple[str, str]] = [
+    ("hxxps://aka.ms/authapp", "microsoft.com"),
+    ("hxxps://aka.ms/mfasetup", "microsoft.com"),
+    ("hxxps://aka.ms/sspr", "microsoftonline.com"),
+    ("hxxps://aka.ms/powershell", "microsoft.com"),
+    ("hxxps://aka.ms/vs", "microsoft.com"),
+    ("hxxps://aka.ms/windowsinsider", "microsoft.com"),
+    ("hxxps://youtu.be/OPf0YbXqDm0", "youtube.com"),
+    ("hxxps://youtu.be/RgKAFK5djSk", "youtube.com"),
+    ("hxxps://youtu.be/JGwWNGJdvx8", "youtube.com"),
+    ("hxxps://youtu.be/60ItHLz5WEA", "youtube.com"),
+    ("hxxps://youtu.be/CevxZvSJLk8", "youtube.com"),
+    ("hxxps://g.co/play", "google.com"),
+    ("hxxps://g.co/meet", "google.com"),
+    ("hxxps://g.co/nest", "google.com"),
+    ("hxxps://g.co/privacytools", "google.com"),
+    ("hxxps://g.co/safety", "safety.google"),
+    ("hxxps://goo.gle/gemini", "google.com"),
+    ("hxxps://goo.gle/devfest", "google.com"),
+    ("hxxps://goo.gle/gemini-api", "google.com"),
+    ("hxxps://apple.co/applecard", "apple.com"),
+    ("hxxps://m.me/meta", "messenger.com"),
+    ("hxxps://fb.me/facebook", "facebook.com"),
+    ("hxxps://gh.io/copilot", "github.com"),
+]
+
+
 def refang(url: str) -> str:
     """URLs are stored defanged (hxxps://) in this file and the CSV so the repo guard passes."""
     return url.replace("hxxp", "http", 1)
@@ -569,6 +761,16 @@ def build_candidates() -> list[dict[str, str]]:
         rows.append(
             {"url": f"hxxps://{d}/", "category": "hard_negative_new_domain", "brand_id": "", "source": "candidate"}
         )
+    for d, created, server, linked_from, _note in NEW_DOMAIN_VERIFIED:
+        rows.append(
+            {
+                "url": f"hxxps://{d}/",
+                "category": "hard_negative_new_domain",
+                "brand_id": "",
+                "source": f"RDAP registration event {created} ({server}, {COLLECTED}); legitimate site linked from {linked_from}",
+                "_rdap_pinned": created,
+            }
+        )
     for u in LOGIN:
         rows.append(
             {
@@ -596,7 +798,7 @@ def build_candidates() -> list[dict[str, str]]:
                 "source": "deep link (path/query/fragment) on a legitimate site",
             }
         )
-    for u in SHORTENED:
+    for u in SHORTENED + [u for u, _owner in SHORTENED_C06]:
         u = u.strip()
         if not u:
             continue
@@ -659,11 +861,13 @@ def main() -> None:
             except Exception as e:  # noqa: BLE001
                 rec["error"] = type(e).__name__
             if ok and r["category"] == "hard_negative_new_domain":
-                time.sleep(1.0)
-                created = rdap_created(client, reg_domain(r["url"]))
+                created = r.get("_rdap_pinned")
+                if not created:
+                    time.sleep(1.0)
+                    created = rdap_created(client, reg_domain(r["url"]))
                 rec["rdap_registered"] = created
                 ok = bool(created) and created >= "2024-01-01"
-                if ok:
+                if ok and not r.get("_rdap_pinned"):
                     r["source"] = (
                         f"RDAP registration event {created} (rdap.org, {COLLECTED}); legitimate product/company site"
                     )
