@@ -428,3 +428,23 @@ async def test_extractor_hook_is_called() -> None:
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
     assert Ext.calls == 1
     assert any(e["signal"] == "injection.instruction_like_text" for e in final["evidence"])
+
+
+# --- privacy: the stored/display copy of the URL carries no personal data (docs/PRIVACY.md) -------
+
+
+async def test_personal_data_in_the_checked_url_is_not_stored_or_returned() -> None:
+    """Phishing links often carry the recipient (?email=..., a phone, an ID). The sandbox still visits the
+    full URL, but no emitted verdict document, partial or final, repeats those values."""
+    sandbox = StubSandboxClient(default=phish_features())
+    cascade, _ = make_cascade(sandbox)
+    url = DEMO_LOOKALIKE_URL.rstrip("/") + "?email=test.user%40example.invalid&phone=0501234567&id=784-1990-1234567-1#x"
+    sink = await run(cascade, url)
+    _all_valid(sink.docs)
+    assert sandbox.calls == [canonicalize(url).url]  # the check itself is unchanged
+    for doc in sink.docs:
+        shown = doc["canonical_url"]
+        assert "[EMAIL]" in shown and "[PHONE]" in shown and "[EMIRATES_ID]" in shown, shown
+        for secret in ("test.user", "test[.]user", "0501234567", "1234567"):
+            assert secret not in shown, shown
+        assert "#" not in shown

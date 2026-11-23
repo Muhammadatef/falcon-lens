@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol, TypeGuard
 
 from falcon_core.cascade.ai import InjectionDetect, injection_evidence, risk_only, to_contract_model, to_scoring
-from falcon_core.cascade.assemble import TraceStep, build_verdict, reissue
+from falcon_core.cascade.assemble import TraceStep, build_verdict, display_url, reissue
 from falcon_core.cascade.evidence import dedupe, from_signal, make_evidence
 from falcon_core.cascade.metrics import CascadeMetrics
 from falcon_core.cascade.page import page_evidence
@@ -250,7 +250,7 @@ class Cascade:
             final=final,
             latency_ms=run.ms(),
             registry=self.d.registry,
-            canonical_url_defanged=defang(run.canonical.url) if run.canonical else None,
+            canonical_url_defanged=defang(display_url(run.canonical.url)) if run.canonical else None,
             input_fingerprint=run.fingerprint,
             trace=run.trace,
             source=run.source,

@@ -11,14 +11,46 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
+from urllib.parse import unquote
 
 from falcon_core.contracts.verdict import Verdict as VerdictModel
+from falcon_core.llm.redaction import redact
 from falcon_core.scoring.arbiter import ArbiterResult
 from falcon_core.scoring.evidence import is_present, observed_get
 from falcon_core.scoring.reasons import ReportingChannels, verdict_core_fields
 from falcon_core.signals.brands.registry import BrandRegistry
 
 Tier = Literal["T0", "T1", "T2", "T3"]
+
+
+def display_url(url: str) -> str:
+    """The copy of a checked URL that is stored, returned and shown: host kept, personal data removed.
+
+    Phishing links often carry the recipient in the address (``?email=...``, ``/u/<phone>``). The verdict's
+    ``canonical_url`` is "for display" (contracts/verdict.schema.json), so everything after the host is passed
+    through the same redaction as text sent to a cloud model (emails, UAE phones, Emirates ID, cards, IBAN),
+    also when percent-encoded, and the fragment is dropped (it is never sent to a server). The check itself
+    and the cache key still use the full canonical URL; only this copy is reduced.
+    """
+    scheme, sep, rest = url.partition("://")
+    if not sep:
+        return url
+    host, slash, tail = rest.partition("/")
+    if not slash:
+        host, q, query = rest.partition("?")
+        tail = f"?{query}" if q else ""
+    else:
+        tail = "/" + tail
+    tail = tail.split("#", 1)[0]
+    if not tail:
+        return f"{scheme}://{host}"
+    res = redact(tail)
+    if "%" in tail:
+        decoded = redact(unquote(tail))
+        if decoded.redacted:
+            res = decoded
+    return f"{scheme}://{host}{res.text if res.redacted else tail}"
+
 
 BRAND_SIGNALS = frozenset(
     [

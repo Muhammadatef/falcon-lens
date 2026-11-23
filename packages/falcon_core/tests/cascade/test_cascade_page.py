@@ -201,3 +201,37 @@ def test_invariant_degraded_no_warning_signs_rejected() -> None:
     d["actions"]["caution"] = {"ar": ["x"], "en": ["x"]}
     with pytest.raises(VerdictInvariantError):
         check_invariants(d)
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://falcon-demo-bank.test/", "https://falcon-demo-bank.test/"),
+        ("https://falcon-demo-bank.test", "https://falcon-demo-bank.test"),
+        (
+            "https://falcon-demo-bank.test/a/b?run=1f2e3d4c&lang=ar",
+            "https://falcon-demo-bank.test/a/b?run=1f2e3d4c&lang=ar",
+        ),
+        ("https://falcon-demo-bank.test/x#section", "https://falcon-demo-bank.test/x"),
+        (
+            "http://falcon-demo-bank.test/reset?email=test.user@example.invalid&token=abc123",
+            "http://falcon-demo-bank.test/reset?email=[EMAIL]&token=abc123",
+        ),
+        (
+            "https://falcon-demo-bank.test/login?u=test.user%40example.invalid",
+            "https://falcon-demo-bank.test/login?u=[EMAIL]",
+        ),
+        ("https://falcon-demo-bank.test/u/+971501234567/verify", "https://falcon-demo-bank.test/u/[PHONE]/verify"),
+        ("https://falcon-demo-bank.test?id=784-1990-1234567-1", "https://falcon-demo-bank.test?id=[EMIRATES_ID]"),
+        ("https://falcon-demo-bank.test/pay?card=4111111111111111", "https://falcon-demo-bank.test/pay?card=[CARD]"),
+        (
+            "https://falcon-demo-bank.test/%D8%AA%D8%AD%D9%82%D9%82?v=2.0.1",
+            "https://falcon-demo-bank.test/%D8%AA%D8%AD%D9%82%D9%82?v=2.0.1",
+        ),
+        ("not a url", "not a url"),
+    ],
+)
+def test_display_url_keeps_the_address_and_drops_personal_data(url: str, expected: str) -> None:
+    from falcon_core.cascade.assemble import display_url
+
+    assert display_url(url) == expected
