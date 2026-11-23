@@ -199,7 +199,7 @@ def _budget(state: TriageState) -> dict[str, Any]:
 def _error_code(exc: BaseException) -> str:
     if isinstance(exc, ToolError):
         return re.sub(r"[^a-z0-9_]", "_", str(exc.reason).lower())[:40] or "tool_error"
-    return re.sub(r"(?<!^)(?=[A-Z])", "_", type(exc).__name__).lower()[:40] or "error"
+    return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", type(exc).__name__).lower()[:40] or "error"
 
 
 def _exhausted(b: dict[str, Any]) -> bool:
