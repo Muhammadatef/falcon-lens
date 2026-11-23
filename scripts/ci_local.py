@@ -86,7 +86,7 @@ JOBS: dict[str, tuple[tuple[str, ...], str]] = {
         " --skip-dirs work --skip-dirs web/.next ."
         " && python3 scripts/check_no_live_urls.py",
     ),
-    "docker-build": (("docker", "python3"), "python3 scripts/ci_local.py --docker-build"),
+    "docker-build": (("docker", "python3"), f"python3 {Path(__file__).resolve()} --docker-build"),
     "eval-gate": (("uv", "make"), "make eval-gate"),
 }
 
@@ -211,7 +211,8 @@ def table(results: list[Result], sha: str, extra: str = "") -> str:
 
 
 def run_pr(pr: int, log_root: Path, names: list[str], comment: bool) -> int:
-    git("fetch", "-q", "origin", "main", f"pull/{pr}/head")
+    git("fetch", "-q", "origin", "main")
+    git("fetch", "-q", "origin", f"pull/{pr}/head")
     head = git("rev-parse", "FETCH_HEAD")
     main_sha = git("rev-parse", "origin/main")
     tmp = Path(tempfile.mkdtemp(prefix=f"falcon-ci-pr{pr}-"))
