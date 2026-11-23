@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 
 from falcon_core.signals.page.features import (
     MAX_VISIBLE_TEXT_BYTES,
@@ -70,7 +72,7 @@ def build_forms(raw_forms: Iterable[Mapping[str, Any]], page_url: str) -> list[F
 
 
 def build_static_post_targets(
-    typed: Sequence[Mapping[str, str]], literals: Iterable[str], page_url: str
+    typed: Sequence[Mapping[str, Any]], literals: Iterable[str], page_url: str
 ) -> list[PostTarget]:
     """Targets found by reading inline script text (``typed``: kind+url) plus URL literals that
     match a known exfil channel (``literals``). Literal URLs that are not exfil are ignored."""
@@ -78,7 +80,7 @@ def build_static_post_targets(
     seen: set[tuple[str, str, str]] = set()
     out: list[PostTarget] = []
 
-    def add(url: str, kind: str, source: str) -> None:
+    def add(url: str, kind: str, source: str, body: bool = False) -> None:
         origin = origin_of(url)
         if origin is None:
             return
@@ -96,11 +98,12 @@ def build_static_post_targets(
                 cross_origin=not same_site(host_of(url), page_host),
                 exfil=cls.exfil,
                 exfil_category=cls.category,
+                carries_form_data=cls.exfil or body,
             )
         )
 
     for t in typed:
-        add(t["url"], t["kind"], "static")
+        add(t["url"], t["kind"], "static", bool(t.get("body")))
     for url in literals:
         if classify_post_target(url).exfil:
             add(url, "script_literal", "static")
@@ -121,7 +124,61 @@ def build_dynamic_post_target(url: str, resource_type: str, page_url: str) -> Po
         cross_origin=not same_site(host_of(url), host_of(page_url)),
         exfil=cls.exfil,
         exfil_category=cls.category,
+        carries_form_data=cls.exfil,  # refined once the page's own field names are known
     )
+
+
+_MP_NAME = re.compile(r'name="([^"]{1,60})"')
+
+
+def body_field_names(post_data: str | None, content_type: str = "") -> list[str]:
+    """Field NAMES (never values) in a request body: JSON keys, urlencoded keys or multipart part names."""
+    if not post_data:
+        return []
+    names: list[str] = []
+
+    def walk(o: Any, depth: int) -> None:
+        if depth > 3 or len(names) >= 40:
+            return
+        if isinstance(o, dict):
+            for k, v in o.items():
+                names.append(str(k)[:60])
+                walk(v, depth + 1)
+        elif isinstance(o, list):
+            for v in o[:10]:
+                walk(v, depth + 1)
+
+    text = post_data[:20000]
+    if "multipart" in content_type.lower():
+        names = _MP_NAME.findall(text)
+    else:
+        try:
+            walk(json.loads(text), 0)
+        except ValueError:
+            names = [k for k, _ in parse_qsl(text, keep_blank_values=True)][:40]
+    return names[:40]
+
+
+def body_carries_form_data(keys: Iterable[str], page_field_names: set[str]) -> bool:
+    """Does a request body use the page's own form-field names, or names of credential/ID-like fields?"""
+    for k in keys:
+        kl = k.lower()
+        if kl in page_field_names:
+            return True
+        if classify_field({"type": "text", "name": k}) in SENSITIVE_KINDS:
+            return True
+    return False
+
+
+def page_field_names(raw_forms: Iterable[Mapping[str, Any]]) -> set[str]:
+    out: set[str] = set()
+    for f in raw_forms:
+        for fld in f.get("fields", []):
+            for key in ("name", "id"):
+                v = str(fld.get(key) or "").lower()
+                if len(v) >= 3:
+                    out.add(v)
+    return out
 
 
 def build_js(raw: Mapping[str, Any]) -> JsIndicators:

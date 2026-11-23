@@ -45,6 +45,11 @@ class PostTarget(_M):
     cross_origin: bool = True
     exfil: bool = False
     exfil_category: str | None = None
+    carries_form_data: bool = Field(
+        default=False,
+        description="the request carries the page's form-field values (or goes to a known relay); "
+        "False = telemetry-style beacon with no form data",
+    )
 
 
 class BlockedRequest(_M):
@@ -63,6 +68,13 @@ class NetworkSummary(_M):
     non_get_blocked: int = 0
     size_cap_hit: bool = False
     redirect_limit_hit: bool = False
+    # Timing/size of the main document (diagnostics + truncation evidence; numbers only, no content).
+    doc_bytes: int = Field(default=0, description="bytes of the main document body kept")
+    doc_fetch_ms: int | None = Field(default=None, description="ms to fetch the main document")
+    dcl_ms: int | None = Field(default=None, description="ms from visit start to DOMContentLoaded")
+    truncated: bool = Field(default=False, description="the main document was cut at the cap (still evidence)")
+    partial: bool = Field(default=False, description="extracted before DOMContentLoaded/load finished")
+    pending_hosts: list[str] = Field(default_factory=list, description="hosts still loading at the nav deadline")
 
 
 class JsIndicators(_M):
@@ -119,6 +131,7 @@ class Cloaking(_M):
     reasons: list[str] = Field(default_factory=list)
     simhash_distance: int | None = None
     text_similarity: float | None = None
+    inconclusive: bool = Field(default=False, description="comparison skipped: a profile was read partially/cut")
 
 
 class RenderFeatures(_M):

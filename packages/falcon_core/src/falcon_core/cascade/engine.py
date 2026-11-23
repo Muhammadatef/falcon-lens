@@ -583,11 +583,20 @@ class Cascade:
     def _may_clear_unrendered(self, run: _Run) -> bool:
         return not self._t1_risky(run) and self._has_trust(run)
 
+    def _may_clear_partial(self, run: _Run, added: list[Evidence]) -> bool:
+        """Like `_may_clear_unrendered`, and the part that WAS read must show no risk either."""
+        informational = {
+            "page.truncated", "page.telemetry_beacon", "page.cloaking_inconclusive", "sandbox.not_rendered",
+        }  # fmt: skip
+        page_risk = any(e.family == "page" and e.signal not in informational and e.error is None for e in added)
+        return not page_risk and self._may_clear_unrendered(run)
+
     async def _t2(self, run: _Run, sink: VerdictSink) -> dict[str, Any]:
         if run.canonical is None:
             raise RuntimeError("T0 did not canonicalise")
         t0 = time.perf_counter()
         added: list[Evidence] = []
+        features_partial = False
         summary = "Page rendered in the sandbox"
         try:
             features = await asyncio.wait_for(
@@ -613,6 +622,7 @@ class Cascade:
             else:
                 run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
         else:
+            features_partial = bool(features.partial)
             added.extend(page_evidence(features, run.canonical.registrable, self.d.registry, self.d.favicons))
             final_reg = canonicalize(features.final_url).registrable if features.final_url else ""
             run.meta["fingerprints"] = {
@@ -641,6 +651,10 @@ class Cascade:
                         self.llm_trip()
         run.evidence.extend(added)
         run.page_tier = True
+        if features_partial and not self._may_clear_partial(run, added):
+            # A half-read page is held to the same rule as an unopened one (SCORING section 4): it may end
+            # `no_warning_signs` only with page-independent trust and no risk evidence, else degraded.
+            run.degraded_reasons.append("partial_render")
         result = self._score(run)
         ms = self._observe("T2", t0)
         hard = ",".join(r.rule_id for r in result.fired_rules)

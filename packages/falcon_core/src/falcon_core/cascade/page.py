@@ -318,6 +318,52 @@ def page_evidence(
             )
         )
 
+    # page.telemetry_beacon (informational, weight 0): script POSTs that carry no form-field data stay visible
+    beacons = sorted({_origin_defanged(o) for o in features.beacon_origins if _registrable(o) not in ("", page_reg)})
+    if beacons:
+        out.append(
+            make_evidence(
+                "page.telemetry_beacon",
+                "page",
+                {"targets": beacons[:5], "count": len(beacons)},
+                tier="T2",
+                source="sandbox",
+                confidence=0.5,
+                en="The page sends data without form fields to other servers (for example statistics)",
+                ar="الصفحة ترسل بيانات لا تحتوي حقول نماذج إلى خوادم أخرى (مثل الإحصاءات)",
+            )
+        )
+
+    # page.truncated (informational, weight 0): judged from a cut-off or half-loaded page, never an error
+    if features.truncated or features.partial:
+        out.append(
+            make_evidence(
+                "page.truncated",
+                "page",
+                {"truncated": features.truncated, "partial": features.partial},
+                tier="T2",
+                source="sandbox",
+                confidence=0.5,
+                en="Only part of the page could be read",
+                ar="قرأنا جزءًا من الصفحة فقط",
+            )
+        )
+
+    # page.cloaking_inconclusive (informational, weight 0): the two profiles were not read equally, so no verdict
+    if features.cloaking.get("inconclusive") is True and features.cloaking.get("detected") is not True:
+        out.append(
+            make_evidence(
+                "page.cloaking_inconclusive",
+                "page",
+                {"inconclusive": True},
+                tier="T2",
+                source="sandbox",
+                confidence=0.5,
+                en="We could not compare how the page looks to different visitors",
+                ar="تعذّرت مقارنة شكل الصفحة بين زائر وآخر",
+            )
+        )
+
     # page.cloaking
     if features.cloaking.get("detected") is True:
         obs = {str(k)[:40]: v for k, v in list(features.cloaking.items())[:10] if isinstance(v, bool | int | float)}

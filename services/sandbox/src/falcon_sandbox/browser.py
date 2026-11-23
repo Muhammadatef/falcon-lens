@@ -9,6 +9,7 @@ import hashlib
 import io
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urljoin
@@ -37,21 +38,29 @@ from falcon_core.signals.page.simhash import dom_simhash
 from falcon_core.signals.visual.phash import phash_from_gray32
 
 from .build import (
+    body_carries_form_data,
+    body_field_names,
     build_dynamic_post_target,
     build_forms,
     build_js,
     build_static_post_targets,
+    page_field_names,
     truncate_utf8,
 )
 from .extract_js import EXTRACT_JS
 from .policy import (
+    MAIN_DOC_HARD_BYTES,
+    MAIN_DOC_MAX_BYTES,
     MAX_REDIRECTS,
     MAX_TOTAL_BYTES,
+    NAV_BUDGET_S,
+    SUBRESOURCE_TIMEOUT_S,
     TOTAL_TIMEOUT_S,
     ByteBudget,
     RequestPolicy,
     classify_fetch_error,
     declared_length,
+    partial_read_allowed,
     proxy_refusal,
 )
 from .profiles import PROFILES
@@ -60,7 +69,11 @@ from .settings import Settings
 log = logging.getLogger("falcon.sandbox")
 ASSET_TYPES = frozenset({"image", "stylesheet", "script", "font", "media"})
 FAVICON_MAX_BYTES = 256 * 1024
-HARD_TIMEOUT_GRACE_S = 3.0
+HARD_TIMEOUT_GRACE_S = 0.5  # keeps one visit under the worker's 7 s wait (TOTAL 6.0 + this)
+EXTRACT_TIMEOUT_S = 1.5
+FAVICON_TIMEOUT_S = 1.0
+SHOT_TIMEOUT_S = 1.2
+POST_SAFETY_S = 0.15
 
 try:  # Pillow is a sandbox dependency; hashing degrades to sha256-only without it
     from PIL import Image
@@ -105,6 +118,7 @@ class _State:
     by_type: dict[str, int] = field(default_factory=dict)
     assets: set[str] = field(default_factory=set)
     posts: list[PostTarget] = field(default_factory=list)
+    post_keys: list[list[str]] = field(default_factory=list)  # field names of each dynamic POST body (no values)
     non_get_blocked: int = 0
     non_get_sent: int = 0
     size_cap_hit: bool = False
@@ -117,6 +131,12 @@ class _State:
     hops: list[Hop] = field(default_factory=list)
     nav: list[str] = field(default_factory=list)
     images: dict[str, Any] = field(default_factory=dict)
+    inflight: dict[int, str] = field(default_factory=dict)  # request id -> host, for timeout diagnostics
+    doc_bytes: int = 0
+    doc_fetch_ms: int | None = None
+    dcl_ms: int | None = None
+    truncated: bool = False
+    partial: bool = False
 
 
 class SandboxBrowser:
@@ -128,6 +148,12 @@ class SandboxBrowser:
         self._sem = asyncio.Semaphore(settings.max_concurrent)
         self._visits = 0
         self._active = 0
+        self._closing: set[asyncio.Future[Any]] = set()
+
+    def _closed(self, task: asyncio.Future[Any]) -> None:
+        self._closing.discard(task)
+        if not task.cancelled():
+            task.exception()  # retrieved: a failed close is not an unhandled error
 
     async def start(self) -> None:
         await self._launch()
@@ -225,18 +251,30 @@ class SandboxBrowser:
             finally:
                 self._active -= 1
                 if ctx is not None:
-                    with contextlib.suppress(PlaywrightError, TimeoutError):
-                        await asyncio.wait_for(ctx.close(), 3)
+                    # teardown must not eat the caller's time budget: wait briefly, finish in the background
+                    task: asyncio.Future[Any] = asyncio.ensure_future(asyncio.wait_for(ctx.close(), 5))
+                    self._closing.add(task)
+                    task.add_done_callback(self._closed)
+                    await asyncio.wait({task}, timeout=0.5)
 
     async def _visit(self, ctx: BrowserContext, url: str, profile: str, visual: bool, keep: bool) -> VisitResult:
         loop = asyncio.get_running_loop()
-        deadline = loop.time() + TOTAL_TIMEOUT_S
+        start = loop.time()
+        deadline = start + TOTAL_TIMEOUT_S
+        nav_deadline = start + min(NAV_BUDGET_S, TOTAL_TIMEOUT_S)
         policy = RequestPolicy(self.settings.guard, visual=visual)
         st = _State()
-        budget = ByteBudget(MAX_TOTAL_BYTES)
+        budget = ByteBudget(MAX_TOTAL_BYTES)  # sub-resources only; the main document has its own caps
 
         def remaining_ms() -> int:
-            return max(200, int((deadline - loop.time()) * 1000))
+            """Navigation budget left (redirect hops + DOMContentLoaded); the rest is kept for extraction."""
+            return max(200, int((nav_deadline - loop.time()) * 1000))
+
+        def sub_timeout_ms() -> int:
+            return max(200, int(min(SUBRESOURCE_TIMEOUT_S, deadline - loop.time()) * 1000))
+
+        def left_s() -> float:
+            return deadline - loop.time() - POST_SAFETY_S
 
         def record_block(target: str, reason: str, rtype: str) -> None:
             st.blocked_total += 1
@@ -264,6 +302,11 @@ class SandboxBrowser:
                     tgt = build_dynamic_post_target(req.url, req.resource_type, url)
                     if tgt and len(st.posts) < 20:
                         st.posts.append(tgt)
+                        try:
+                            body = req.post_data
+                        except (UnicodeDecodeError, PlaywrightError):
+                            body = None
+                        st.post_keys.append(body_field_names(body, req.headers.get("content-type", "")))
                 with contextlib.suppress(PlaywrightError):
                     await route.abort("blockedbyclient")
                 return
@@ -275,13 +318,27 @@ class SandboxBrowser:
             # Every request is fetched here WITHOUT following redirects (Chromium would follow up
             # to 20 hops internally and never re-enter this handler), so each hop is re-validated
             # against the SSRF policy, counted, and its bytes are capped. The proxy still applies.
+            if not main_nav and budget.exhausted:
+                # sub-resource budget spent: refuse WITHOUT fetching; the page itself is still judged
+                st.size_cap_hit = True
+                record_block(req.url, "size_cap", req.resource_type)
+                with contextlib.suppress(PlaywrightError):
+                    await route.abort("blockedbyclient")
+                return
             target = req.url
             hops = 0
+            t_req = loop.time()
+            st.inflight[id(req)] = host_of(req.url) or ""
             try:
                 while True:
-                    resp = await route.fetch(url=target, max_redirects=0, timeout=remaining_ms())
+                    resp = await route.fetch(
+                        url=target, max_redirects=0, timeout=remaining_ms() if main_nav else sub_timeout_ms()
+                    )
                     declared = declared_length(resp.headers)
-                    if declared is not None and budget.would_exceed(declared):
+                    over = declared is not None and (
+                        declared > MAIN_DOC_HARD_BYTES if main_nav else budget.would_exceed(declared)
+                    )
+                    if over:
                         # refuse BEFORE the body is transferred out of the Playwright driver
                         st.size_cap_hit = True
                         if main_nav:
@@ -290,6 +347,8 @@ class SandboxBrowser:
                             await route.abort("blockedbyclient")
                         return
                     body = await resp.body()
+                    if main_nav:
+                        st.doc_fetch_ms = int((loop.time() - t_req) * 1000)
                     location = resp.headers.get("location")
                     if not (300 <= resp.status < 400 and location):
                         break
@@ -323,6 +382,8 @@ class SandboxBrowser:
                 with contextlib.suppress(PlaywrightError):
                     await route.abort("failed")
                 return
+            finally:
+                st.inflight.pop(id(req), None)
             if main_nav:
                 refusal = proxy_refusal(resp.status, resp.headers, len(body), self._via_proxy(host_of(req.url)))
                 if refusal:
@@ -330,10 +391,16 @@ class SandboxBrowser:
                     with contextlib.suppress(PlaywrightError):
                         await route.abort("failed")
                     return
-            if budget.add(len(body)):
+            if main_nav:
+                if len(body) > MAIN_DOC_MAX_BYTES:
+                    # cut, don't fail: the part we have is still evidence (truncated=true, weight 0)
+                    body = body[:MAIN_DOC_MAX_BYTES]
+                    st.truncated = True
+                    st.size_cap_hit = True
+                st.doc_bytes = len(body)
+            elif budget.add(len(body)):
                 st.size_cap_hit = True
-                if main_nav:
-                    st.nav_fail = "size_cap"
+                record_block(req.url, "size_cap", req.resource_type)
                 with contextlib.suppress(PlaywrightError):
                     await route.abort("blockedbyclient")
                 return
@@ -403,6 +470,7 @@ class SandboxBrowser:
             response = None  # a timeout/failure must never leave the previous hop's response behind
             try:
                 got = await page.goto(target, wait_until="domcontentloaded", timeout=remaining_ms())
+                st.dcl_ms = int((loop.time() - start) * 1000)
                 # fail closed: the inert redirect stub is never a page (only the next goto's result is)
                 response = None if got is not None and STUB_HEADER in got.headers else got
             except PlaywrightTimeout:
@@ -445,10 +513,19 @@ class SandboxBrowser:
 
         await go(url)
         await follow_redirects()
-        if response is not None and not st.pending:
-            with contextlib.suppress(PlaywrightTimeout, PlaywrightError):
-                await page.wait_for_load_state("load", timeout=min(2000, remaining_ms()))
-            await asyncio.sleep(min(0.3, max(0.0, deadline - loop.time())))
+        if response is None and feats.timed_out and not st.pending and not feats.error and not st.doc_blocked:
+            # The navigation budget ran out but a real document had already answered (a slow script or
+            # frame is holding DOMContentLoaded): judge what has loaded instead of failing the visit.
+            nr = st.nav_response
+            if nr is not None and partial_read_allowed(policy, page.url):
+                response, feats.timed_out, st.partial = nr, False, True
+        if response is not None and not st.pending and not st.partial:
+            settle = min(1.5, max(0.0, nav_deadline - loop.time()))
+            if settle > 0.05:
+                with contextlib.suppress(PlaywrightTimeout, PlaywrightError):
+                    await page.wait_for_load_state("load", timeout=int(settle * 1000))
+            if left_s() > 1.8:
+                await asyncio.sleep(0.3)
             await follow_redirects()  # redirects triggered by scripts/meta refresh
         if st.doc_blocked and response is not None and not feats.error and not st.pending:
             nav_error = nav_error or st.nav_fail or "blocked_by_policy:blocked_final_url"  # client redirect refused
@@ -468,8 +545,11 @@ class SandboxBrowser:
         raw: dict[str, Any] | None = None
         if response is not None and not feats.error:
             feats.final_url = page.url[:512]
-            raw = await self._extract(page)
-        if raw is None and response is not None and not feats.error and not feats.timed_out:
+            raw = await self._extract(page, left_s)
+        if raw is None and response is not None and not feats.error and st.partial:
+            # nothing usable came out of a half-loaded page: that is a timeout, not a rendered empty page
+            feats.error, feats.timed_out, feats.final_url = "timeout", True, None
+        elif raw is None and response is not None and not feats.error and not feats.timed_out:
             feats.error = "extract_failed"
         if raw is not None:
             final = page.url
@@ -478,28 +558,52 @@ class SandboxBrowser:
             feats.visible_text = truncate_utf8(str(raw.get("text", "")))
             feats.forms = build_forms(raw.get("forms", []), final)
             feats.js = build_js(raw.get("js", {}))
+            names = page_field_names(raw.get("forms", []))
+            for tgt, keys in zip(st.posts, st.post_keys, strict=False):
+                tgt.carries_form_data = tgt.carries_form_data or body_carries_form_data(keys, names)
             feats.script_post_targets = [
                 *build_static_post_targets(raw.get("typed", []), raw.get("literals", []), final),
                 *st.posts,
             ][:40]
+            if any(f.cred_form for f in feats.forms):
+                # A page that asks for a password/OTP/card/ID: ANY script POST to another site is treated as
+                # carrying that data, whatever the body analysis says (fail closed).
+                for t in feats.script_post_targets:
+                    if t.cross_origin:
+                        t.carries_form_data = True
             feats.dom_simhash = dom_simhash(raw.get("struct", []))
             fh = host_of(final)
             feats.asset_origins = sorted(h for h in st.assets if not same_site(h, fh))[:30]
             feats.client_navigations = st.nav[1:][:10]
-            feats.favicon = await self._favicon(page, st, str(raw.get("favicon", "")), policy)
-            with contextlib.suppress(PlaywrightError, TimeoutError):
-                shot = await page.screenshot(type="png", timeout=min(3000, remaining_ms()))
+
+            # favicon and screenshot are optional extras: run together, each inside what is left of the budget
+            async def get_favicon() -> Favicon:
+                with contextlib.suppress(PlaywrightError, TimeoutError):
+                    return await asyncio.wait_for(
+                        self._favicon(page, st, str(raw.get("favicon", "")), policy),
+                        max(0.05, min(FAVICON_TIMEOUT_S, left_s())),
+                    )
+                return Favicon()
+
+            async def get_shot() -> bytes | None:
+                with contextlib.suppress(PlaywrightError, TimeoutError):
+                    return await page.screenshot(
+                        type="png", timeout=int(max(0.1, min(SHOT_TIMEOUT_S, left_s())) * 1000)
+                    )
+                return None
+
+            feats.favicon, shot = await asyncio.gather(get_favicon(), get_shot())
             if shot:
                 feats.screenshot_sha256 = hashlib.sha256(shot).hexdigest()
                 feats.screenshot_phash = image_phash(shot)
             if keep:
-                with contextlib.suppress(PlaywrightError):
-                    dom = await page.content()
+                with contextlib.suppress(PlaywrightError, TimeoutError):
+                    dom = await asyncio.wait_for(page.content(), max(0.2, left_s()))
         elif st.posts:
             feats.script_post_targets = st.posts[:20]
         feats.network = NetworkSummary(
             requests=st.requests,
-            bytes=budget.total,
+            bytes=budget.total + st.doc_bytes,
             by_type=st.by_type,
             blocked=st.blocked,
             blocked_total=st.blocked_total,
@@ -507,20 +611,29 @@ class SandboxBrowser:
             non_get_blocked=st.non_get_blocked,
             size_cap_hit=st.size_cap_hit,
             redirect_limit_hit=st.redirect_limit_hit,
+            doc_bytes=st.doc_bytes,
+            doc_fetch_ms=st.doc_fetch_ms,
+            dcl_ms=st.dcl_ms,
+            truncated=st.truncated,
+            partial=st.partial,
+            pending_hosts=sorted({h for h in st.inflight.values() if h})[:8],
         )
-        if st.size_cap_hit and not feats.error:
-            feats.error = "size_cap"
+        # size_cap_hit is telemetry: only a main document refused outright (nav_fail) is an error.
         return VisitResult(feats, dom=dom, screenshot=shot, redirects=redirects)
 
     @staticmethod
-    async def _extract(page: Page) -> dict[str, Any] | None:
+    async def _extract(page: Page, left_s: Callable[[], float]) -> dict[str, Any] | None:
         for _ in range(2):
+            budget = min(EXTRACT_TIMEOUT_S, left_s())
+            if budget < 0.1:
+                return None
             try:
-                out = await asyncio.wait_for(page.evaluate(EXTRACT_JS), 3)
+                out = await asyncio.wait_for(page.evaluate(EXTRACT_JS), budget)
                 return out if isinstance(out, dict) else None
             except (PlaywrightError, TimeoutError):
                 with contextlib.suppress(PlaywrightError, TimeoutError):
-                    await page.wait_for_load_state("domcontentloaded", timeout=1000)
+                    wait = max(0.05, min(0.5, left_s()))
+                    await page.wait_for_load_state("domcontentloaded", timeout=int(wait * 1000))
         return None
 
     @staticmethod

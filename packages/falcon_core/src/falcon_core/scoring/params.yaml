@@ -112,6 +112,9 @@ weights:
   message.link_verdict: 0.0
   email.link_verdict: 0.0
   llm.extraction: 0.0            # quarantined extractor output, informational
+  page.truncated: 0.0            # page judged from a cut-off or half-loaded read
+  page.cloaking_inconclusive: 0.0  # comparison skipped: a profile was read partially or cut
+  page.telemetry_beacon: 0.0     # script POST with no form-field data (analytics, pixels)
   email.attachment: 0.0          # see email_attachment.risky_weight
   email.return_path_mismatch: 0.0
   email.invalid: 0.0
