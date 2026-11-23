@@ -1,6 +1,6 @@
 {
   "algorithm": "sklearn.ensemble.HistGradientBoostingClassifier + Platt calibration (validation)",
-  "dataset_hash": "382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1",
+  "dataset_hash": "3467e9f6b9f930c23a3a001f7126330bd0d129b32e01f40678e003b03bb07ac2",
   "feature_names": [
     "url_len",
     "host_len",
@@ -40,8 +40,8 @@
     "has_embedded_url_in_query"
   ],
   "fit_date": "2026-11-23",
-  "fit_items_hash": "604dd99801e3055d56c8e0499b8b648f94977f5af1641fcb3f675aa7389774b3",
-  "git_sha": "d977f04791a60a69b21d41b59f0648ea8e45dc4f",
+  "fit_items_hash": "d224ffbccd7dbb78df68dfe0912e7ed8852ec05c97df84c2a3266ba2b849ec69",
+  "git_sha": "d7f8d9ae627d6eb1594d3ce3eeb54c80a4fd5c81",
   "hyperparameters": {
     "early_stopping": false,
     "l2_regularization": 1.0,
@@ -52,9 +52,9 @@
   },
   "joblib_version": "1.6.0",
   "model_id": "t1_hgb",
-  "model_sha256": "41db3ba644d5084d45c3ff0fa0a11ca258caa145d7d81856a0c4fe8b9b179ed3",
-  "n_train": 426,
-  "n_val": 144,
+  "model_sha256": "138b39f5fb22e6cfa291c5d6b2d36a5ec901fb2a06f32802c35c7bec61b34631",
+  "n_train": 644,
+  "n_val": 246,
   "numpy_version": "2.5.5",
   "seed": 20261122,
   "sklearn_version": "1.9.1",

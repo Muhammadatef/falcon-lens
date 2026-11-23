@@ -109,3 +109,24 @@ async def test_vet_rejects_urls_and_hosts_not_in_the_incident() -> None:
         "ip 203.0.113.9",
     ):
         assert vet(bad, view) is None, bad
+
+
+async def test_vet_rejects_event_type_in_timeline_but_not_in_the_contract() -> None:
+    """Fails if the contract-schema check in allowed_event_types is removed (the timeline alone is not trusted)."""
+    from falcon_sentinel.textsafe import allowed_event_types, vet
+
+    view = await _view()
+    extra = {"at": "2026-11-21T10:00:00Z", "what": "domain.compromised x", "event_id": "evt_x"}
+    view["timeline"] = [*view["timeline"], extra]
+    assert "domain.compromised" not in allowed_event_types(view)
+    assert vet("seen domain.compromised", view) is None
+    assert vet("seen domain.observed", view) is not None
+
+
+async def test_vet_strips_only_the_conjunction_waw_before_a_known_host() -> None:
+    from falcon_sentinel.textsafe import vet
+
+    view = await _view()
+    assert vet("تشترك وfalcon-demo-bank-verify[.]test", view) is not None
+    for prefix in ("ب", "ف", "ل", "ك", "وو", "أو"):
+        assert vet(f"تشترك {prefix}falcon-demo-bank-verify[.]test", view) is None, prefix

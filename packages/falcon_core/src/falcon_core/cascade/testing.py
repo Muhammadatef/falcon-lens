@@ -125,3 +125,14 @@ def slow_signal(
         return []
 
     return spec, run
+
+
+class PriorT1Model:
+    """Test stand-in for the fitted T1 model: the draft prior p ~= 0.10 for every URL (no model file needed).
+
+    Without any T1 model a URL verdict is degraded (``t1_model_unavailable``), so cascade tests that are not about
+    that path inject this.
+    """
+
+    def p_clf(self, url: str) -> float:
+        return 0.0998
