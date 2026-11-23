@@ -52,7 +52,7 @@ def main() -> int:
     PARAMS_YAML.write_text(text, encoding="utf-8")
     art = {
         "kind": "message_scam_intent_weight_fit",
-        "label": "synthetic, single-author, pending audit",
+        "label": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
         "procedure": "maximise val recall s.t. val legit FPR <= 2%; ties to the smallest weight (as L1 D2 model_cap fit)",
         "git_sha": git_sha(),
         "dataset_hash": data.dataset_hash(),

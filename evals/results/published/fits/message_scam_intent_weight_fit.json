@@ -1,14 +1,14 @@
 {
  "kind": "message_scam_intent_weight_fit",
- "label": "synthetic, single-author, pending audit",
+ "label": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
  "procedure": "maximise val recall s.t. val legit FPR <= 2%; ties to the smallest weight (as L1 D2 model_cap fit)",
- "git_sha": "93134f4a6149bc4a72761469ae293cc423661b1e",
- "dataset_hash": "036de1048cd68797338115ca65a840508aebf4dfa193b2bac8fe17f304ddf7a7",
+ "git_sha": "d80de23eb52fa6e788a332da391a6ac78e181d6c-dirty",
+ "dataset_hash": "7cb0f6585fe53be4b5a943a9f331b3ae0c2c76c03e576e8fa41a28e5fa8ce14e",
  "n_val_scam": 26,
  "n_val_legit": 15,
  "chosen": {
   "weight": 3.0,
-  "val_recall": 0.9231,
+  "val_recall": 0.7692,
   "val_fpr": 0.0
  },
  "grid": [
@@ -29,92 +29,92 @@
   },
   {
    "weight": 1.5,
-   "val_recall": 0.7308,
+   "val_recall": 0.6923,
    "val_fpr": 0.0
   },
   {
    "weight": 2.0,
-   "val_recall": 0.7308,
+   "val_recall": 0.6923,
    "val_fpr": 0.0
   },
   {
    "weight": 2.5,
-   "val_recall": 0.8846,
+   "val_recall": 0.7308,
    "val_fpr": 0.0
   },
   {
    "weight": 3.0,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 3.5,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 4.0,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 4.5,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 5.0,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 5.5,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 6.0,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 6.5,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 7.0,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 7.5,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 8.0,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 8.5,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 9.0,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 9.5,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   },
   {
    "weight": 10.0,
-   "val_recall": 0.9231,
+   "val_recall": 0.7692,
    "val_fpr": 0.0
   }
  ]

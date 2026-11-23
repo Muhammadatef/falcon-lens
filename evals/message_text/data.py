@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 HERE = Path(__file__).resolve().parent
-FILES = ("hand.jsonl", "reviewed.jsonl")
+FILES = ("hand.jsonl", "reviewed.jsonl", "hard_neg.jsonl")
 LOCK = HERE / "splits.lock"
 
 

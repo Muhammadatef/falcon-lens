@@ -114,9 +114,9 @@ def main(argv: list[str] | None = None) -> int:
         "schema_version": 1,
         "kind": "message_text_eval",
         "synthetic": True,
-        "label": "synthetic, single-author, pending audit",
-        "provenance": "synthetic, single-author, pending audit",
-        "test_read": "second read after floor rules (first read: message_text_21516c13e0c7_20261123T115126Z.json, before RF1-RF3 and the val-fitted weight)",
+        "label": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
+        "provenance": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
+        "test_read": "third read, after the PR-88 review fixes (anchor gate, scoring cap, train-only hard negatives); earlier reads: second after floor rules, first message_text_21516c13e0c7_20261123T115126Z.json, before RF1-RF3 and the val-fitted weight)",
         "note": "Synthetic, link-free messages (Falcon Demo Bank and generic roles). Recall/FPR with Wilson 95% intervals; "
         "small n means wide intervals. Test is evaluated once per build; report-only (not in evals/baseline.json).",
         "git_sha": sha,

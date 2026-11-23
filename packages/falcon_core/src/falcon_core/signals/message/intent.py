@@ -28,6 +28,9 @@ WEIGHTS_PATH = Path(__file__).with_name("intent_weights.json")
 AUTHORITY = ("authority", "claim_bank_staff", "claim_service_role")
 ASKS = ("otp_request", "ask_card_data", "remote_access", "pay_ask", "gift_card_crypto", "personal_account")
 PRESSURE = ("urgency", "penalty")
+# A lone pressure word (urgency, penalty, fine) is ordinary speech ("hurry up, we are late", "closed for the
+# holiday"). scam_intent needs at least one ANCHOR: an ask, an authority claim, a call-back or an off-platform move.
+ANCHORS = (*ASKS, *AUTHORITY, "callback", "off_platform")
 PROTECTIVE = ("warning_never_share", "code_delivery")
 
 # conjunction features (name -> (any-of A, any-of B))
@@ -139,6 +142,8 @@ def scam_intent(text: str, model: dict[str, Any] | None = None) -> list[Evidence
     if model is None or not text.strip():
         return []
     feats = extract_features(text)
+    if not any(k in feats for k in ANCHORS):
+        return []  # pressure or lure words alone never make intent evidence
     p = probability(feats, model)
     if p < float(model["theta"]):
         return []
