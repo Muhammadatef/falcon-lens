@@ -18,8 +18,7 @@ Rules (CLAUDE.md), enforced by construction and by `check_text()`:
 - Never the word "safe", never an implied link to Abu Dhabi Police, no police logo or mark.
 - Images are PNG. Demo and replay data is labelled on the slide.
 
-Fonts: Readex Pro (Google Fonts, SIL OFL), the font of the product. Google Slides has it built
-in. PowerPoint without it installed falls back to a system font, so layouts keep slack.
+Fonts: the .pptx uses Arial (no missing-font prompt in Keynote, PowerPoint or Google Slides); the PDF embeds Readex Pro, the product font.
 """
 
 from __future__ import annotations
@@ -60,6 +59,9 @@ REPO_URL_DEFAULT = "https://github.com/Muhammadatef/falcon-lens"
 W, H = 13.333, 7.5
 MARGIN = 0.6
 FONT = "Readex Pro"
+# The .pptx names a font every Mac and Windows machine has: Keynote shows a missing-font sheet for Readex Pro and
+# blocks scripted opens. Arial carries Arabic. The PDF and the QA renders keep Readex Pro (embedded).
+PPTX_FONT = "Arial"
 FONT_FILES = {
     "latin": ("web/public/fonts/readex-pro-latin-wght-normal.woff2", "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD"),
     "arabic": ("web/public/fonts/readex-pro-arabic-wght-normal.woff2", "U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0898-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC"),
@@ -1034,6 +1036,24 @@ def set_font(run: Any, name: str, rtl: bool) -> None:
         el.set("typeface", name)
 
 
+def register_notes_master(prs: Any) -> None:
+    """List the notes master in presentation.xml.
+
+    python-pptx creates the notes master part and relates it to the presentation, but never writes
+    `<p:notesMasterIdLst>`. PowerPoint and Google Slides tolerate that; Keynote rejects the whole file
+    ("format is not valid", AppleScript open returns missing value). Found by bisecting with Keynote.
+    """
+    pres = prs.part._element
+    if pres.find(qn("p:notesMasterIdLst")) is not None:
+        return
+    rids = [rid for rid, rel in prs.part.rels.items() if rel.reltype.endswith("/notesMaster")]
+    if not rids:
+        return
+    lst = pres.makeelement(qn("p:notesMasterIdLst"), {})
+    lst.append(lst.makeelement(qn("p:notesMasterId"), {qn("r:id"): rids[0]}))
+    pres.find(qn("p:sldMasterIdLst")).addnext(lst)
+
+
 def write_pptx(slides: list[Slide], out: Path) -> None:
     prs = Presentation()
     prs.slide_width, prs.slide_height = Inches(W), Inches(H)
@@ -1099,9 +1119,10 @@ def write_pptx(slides: list[Slide], out: Path) -> None:
                         r.font.size = Pt(run.size)
                         r.font.bold = run.bold
                         r.font.color.rgb = rgb(run.color)
-                        set_font(r, FONT, rtl)
+                        set_font(r, PPTX_FONT, rtl)
         slide.notes_slide.notes_text_frame.text = sl.notes
     out.parent.mkdir(parents=True, exist_ok=True)
+    register_notes_master(prs)
     prs.save(str(out))
 
 
