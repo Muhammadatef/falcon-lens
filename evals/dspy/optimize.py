@@ -63,6 +63,10 @@ CACHE_DIR = ROOT / "work" / "dspy_cache"  # work/ is gitignored
 COMPILED_DIR = ROOT / "packages" / "falcon_core" / "src" / "falcon_core" / "prompts" / "compiled"
 RECORDED = HERE / "tests" / "recorded"
 SEED = R.SEED
+NOTES = {
+    "sentinel_assess": "Run-to-run instability on the local model: the hand-written prompt scored 1.0 on VALIDATION in "
+    "one run and 0.75 in another (n=8). The paired CI of (after - before) includes 0, so it is not adopted.",
+}
 NONCE_RE = re.compile(r"UNTRUSTED:([0-9a-f]{16})")
 
 
@@ -462,6 +466,7 @@ def run_role(args: argparse.Namespace, spec: R.RoleSpec, route: str, ts: str) ->
             "threads": args.threads,
         },
         "errors": errors,
+        "notes": NOTES.get(spec.name),
         "exported": exported,
         "seconds": round(time.time() - t0, 1),
     }

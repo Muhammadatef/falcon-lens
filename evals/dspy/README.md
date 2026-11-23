@@ -34,3 +34,9 @@ excludes 0. Otherwise nothing is written (a stale file for that role and route i
 The production validators (`falcon_core.llm.router` parse, `falcon_sentinel.verify`, `ToolRegistry.validate`) plus a
 task score on labelled synthetic data. See `roles.py`. TRAIN optimises, VALIDATION selects; the frozen test split
 is never read.
+
+## Known instability
+
+Local-model runs are not fully repeatable at n=8. `sentinel_assess` scored 1.0 before in one run and 0.75 in the
+next (same prompt, same cases); the paired CI of the re-run was [0.0, 0.625], so it was not adopted. Treat any
+Sentinel result at n=8 as noisy, and re-run before trusting a "not adopted" or an "adopted" at that size.
