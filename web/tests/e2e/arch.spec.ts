@@ -153,3 +153,18 @@ for (const lang of ["ar", "en"] as const) {
     });
   }
 }
+
+test.describe("LLM tracing follows its flag", () => {
+  test("flags false: In progress; flags true: Live (node, panel and section)", async ({ page, context, baseURL }) => {
+    await setPrefs(context, baseURL!, { lang: "en" });
+    for (const [mode, word] of [["false", "In progress"], ["true", "Live"]] as const) {
+      await forceCaps(context, baseURL!, mode);
+      await page.goto("/docs/agents");
+      await page.getByTestId("arch-node-phoenix").click();
+      await expect(page.getByTestId("arch-panel").getByTestId("cap-badge")).toContainText(word);
+      const why = page.getByTestId("why-dspy-langgraph");
+      if (mode === "false") await expect(why).toContainText("do not start the tracer yet");
+      else await expect(why).toContainText("Every LLM call is traced");
+    }
+  });
+});

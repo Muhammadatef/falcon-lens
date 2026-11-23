@@ -83,6 +83,8 @@ for cap in c.CAPABILITIES:
 out["t1_measured_model"] = any(c.probe(c.ROOT, s) for s in ("grep:services/worker/src/**/*.py::t1_model", "grep:packages/falcon_core/src/falcon_core/cascade/*.py::t1_model"))
 # DSPy compiled prompts: live only when the frozen-prompt loader AND at least one adopted compiled file are in the tree.
 out["dspy_compiled_prompts"] = c.probe(c.ROOT, "path:packages/falcon_core/src/falcon_core/prompts/compiled/__init__.py") and c.probe(c.ROOT, "path:packages/falcon_core/src/falcon_core/prompts/compiled/*.json")
+# LLM tracing: live only when a service start-up really calls setup_tracing( (not just defines it) and the collector forwards to Phoenix.
+out["llm_tracing"] = c.probe(c.ROOT, r"grep:services/*/src/**/*.py::(?<!def )setup_tracing\\(") and c.probe(c.ROOT, "grep:infra/otel/otel-collector.yml::otlphttp/phoenix")
 print(json.dumps(out))
 `;
 if (existsSync(join(repo, "scripts", "submission", "capabilities.py"))) {

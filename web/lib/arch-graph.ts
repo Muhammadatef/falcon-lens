@@ -85,7 +85,7 @@ export const NODES: readonly NodeDef[] = [
   // Observability
   { id: "prometheus", group: "obs", kind: "store", cap: "observability", repo: "infra/prometheus", repoMore: [`${CORE}/telemetry/metrics.py`], doc: "architecture", docFile: "docs/OBSERVABILITY.md" },
   { id: "grafana", group: "obs", kind: "io", cap: "observability", repo: "infra/grafana/dashboards", doc: "architecture", docFile: "docs/OBSERVABILITY.md" },
-  { id: "phoenix", group: "obs", kind: "io", cap: "observability", repo: `${CORE}/telemetry/tracing.py`, repoMore: ["infra/otel", "docker-compose.yml"], doc: "architecture", docFile: "docs/OBSERVABILITY.md" },
+  { id: "phoenix", group: "obs", kind: "io", cap: "llm_tracing", repo: `${CORE}/telemetry/tracing.py`, repoMore: ["infra/otel", "docker-compose.yml"], doc: "architecture", docFile: "docs/OBSERVABILITY.md" },
 
   // Integration
   { id: "rest", group: "integ", kind: "io", cap: "rest_api", repo: "contracts/openapi.yaml", repoMore: ["services/api/src/falcon_api/app.py"], doc: "integration", docFile: "docs/INTEGRATION.md" },
@@ -204,7 +204,6 @@ const EXTRA_LINKS: readonly (readonly [string, string])[] = [
 const FLOW_PAIRS: readonly (readonly [string, string])[] = [
   ...pairs(["t0", "t1", "t2", "t3", "arbiter", "verdict"]),
   ...pairs(["bus", "correlate", "rules", "enrich", "compare", "assess", "summarise", "propose", "act", "approval", "audit"]),
-  ...pairs(["t0", "t1", "t2", "t3", "arbiter", "verdict"]),
 ];
 
 function pairs(ids: readonly string[]): (readonly [string, string])[] {

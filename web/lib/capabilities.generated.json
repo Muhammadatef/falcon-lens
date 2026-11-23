@@ -17,5 +17,6 @@
   "stix": true,
   "observability": true,
   "t1_measured_model": true,
-  "dspy_compiled_prompts": false
+  "dspy_compiled_prompts": false,
+  "llm_tracing": false
 }

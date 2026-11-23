@@ -131,7 +131,7 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
         <Fig id="sentinel" lang={lang} />
       </Agent>
 
-      <WhyDspyLanggraph lang={lang} dspyLive={flag(caps, "dspy_compiled_prompts")} />
+      <WhyDspyLanggraph lang={lang} dspyLive={flag(caps, "dspy_compiled_prompts")} tracingLive={flag(caps, "llm_tracing")} />
 
       <p><Link className="btn" href="/agents">{dt(lang, "docs.agents.back")}</Link></p>
     </>

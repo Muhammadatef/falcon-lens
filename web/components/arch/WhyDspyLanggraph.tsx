@@ -6,7 +6,7 @@ import { at, type ArchKey } from "@/lib/i18n-arch";
 const fmt = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 4 });
 
 /** "Why DSPy and LangGraph" (docs/TECHNICAL.md has the same text). Server component; the badge comes from the capability flag. */
-export function WhyDspyLanggraph({ lang, dspyLive }: { lang: Lang; dspyLive: boolean }) {
+export function WhyDspyLanggraph({ lang, dspyLive, tracingLive }: { lang: Lang; dspyLive: boolean; tracingLive: boolean }) {
   const t = (k: ArchKey) => at(lang, k);
   const rows = dspyLive ? bundledDspyRows() : [];
   return (
@@ -48,15 +48,15 @@ export function WhyDspyLanggraph({ lang, dspyLive }: { lang: Lang; dspyLive: boo
         </div>
       ) : null}
 
-      <h3>{t("why.trace.title")}</h3>
-      <p>{t("why.trace.p1")}</p>
+      <h3>{t("why.trace.title")} <CapBadge live={tracingLive} lang={lang} /></h3>
+      <p>{t(tracingLive ? "why.trace.p1" : "why.trace.pending")}</p>
 
       <h3>{t("why.lg.title")}</h3>
       <p>{t("why.lg.p1")}</p>
       <ul>
         <li>{t("why.lg.li1")}</li>
         <li>{t("why.lg.li2")}</li>
-        <li>{t("why.lg.li3")}</li>
+        <li>{t(tracingLive ? "why.lg.li3" : "why.lg.li3.pending")}</li>
         <li>{t("why.lg.li4")}</li>
       </ul>
 
