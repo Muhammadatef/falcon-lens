@@ -108,6 +108,25 @@ def test_committed_manifest_and_lock_are_consistent():
     assert dataset_hash(rows) == load_lock()["dataset_hash"]
 
 
+def test_post_freeze_items_never_change_test_hash_and_are_deterministic():
+    from evals.splits import test_hash as _test_hash
+
+    items = _items()
+    first, _ = assign_splits(items, seed=1)
+    before = _test_hash(_rows(items, first))
+    new = [SplitItem(f"n{i}", 1, f"dn{i % 70}", "2026-11-23T00:00:00Z") for i in range(300)]
+    test_dom = next(i.domain_key for i in items if first[i.item_id] == "test")
+    new.append(SplitItem("on_test_domain", 1, test_dom, "2026-11-23T00:00:00Z"))
+    allitems = items + new
+    a, _ = assign_splits(allitems, seed=1, existing=first)
+    b, _ = assign_splits(allitems, seed=1, existing=first)
+    assert a == b
+    assert _test_hash(_rows(allitems, a)) == before
+    assert a["on_test_domain"] == EXCLUDED
+    fresh = [a[i.item_id] for i in new if i.item_id != "on_test_domain"]
+    assert set(fresh) == {"train", "val"}
+
+
 def test_fit_refuses_test_split():
     from evals.train.fit import TestSplitAccess, load_items
 
