@@ -89,6 +89,15 @@ SPEC_INTENT = SignalSpec(
     network="none",
     emits=("message.scam_intent", "message.floor_pair"),
 )
+SPEC_INTENT = SignalSpec(
+    name="message.scam_intent",
+    family="message",
+    tier="T1",
+    input_types=_IN,
+    timeout_ms=T1_MS,
+    network="none",
+    emits=("message.scam_intent",),
+)
 SPEC_BRAND = SignalSpec(
     name="message.brand_mention",
     family="message",
