@@ -4,6 +4,33 @@
 Env: FL_GATEWAY_URL (default https://localhost:8443), COMPOSE_PROJECT_NAME (docker compose),
 FL_SMOKE_FAKE_WORKER=1 (a test double answers jobs; worker-metric checks are then SKIPPED and
 reported as such: only the real worker proves G1), FL_SMOKE_PHISH_URL / FL_SMOKE_OFFICIAL_URL.
+
+What it does:
+    Runs eight end-to-end checks through the gateway: a fixture phish reaches `dangerous` and cites H1; a
+    fixture official site gets `no_warning_signs`; a synthetic feed entry reaches `dangerous` via H2; a
+    metadata-IP URL is rejected and `fl_ssrf_blocked_total` rises; the SSE stream ends on a final event;
+    `?wait=8` answers in budget; every response validates against the verdict JSON schema; and
+    `fl_checks_total` increased. Each step prints PASS, FAIL or SKIP.
+
+When to use it:
+    After the stack is up, to prove the whole path works (gate G1). Usually started through `make smoke`.
+
+How to run:
+    make smoke                      (starts the stack if needed, then runs this file)
+    uv run python scripts/smoke.py  (direct form; the stack must already be running)
+
+Inputs:
+    Env FL_GATEWAY_URL, COMPOSE_PROJECT_NAME, FL_SMOKE_FAKE_WORKER, FL_SMOKE_PHISH_URL and
+    FL_SMOKE_OFFICIAL_URL (all described above), plus contracts/verdict.schema.json.
+
+Outputs / side effects:
+    Sends HTTPS requests to the local gateway (TLS verification is off for the local CA) and runs
+    `docker compose exec` to read worker metrics. Submitting checks adds rows to the running stack's
+    database and counters. Exit code is 1 if any step fails.
+
+Safety notes:
+    It only submits fixture inputs served by the local `fixtures` container, never a live
+    phishing URL. Fake-worker mode is NOT a G1 pass; the output says so.
 """
 
 from __future__ import annotations
@@ -27,8 +54,8 @@ from falcon_api.canon import canonicalize_url, sha256_hex
 ROOT = Path(__file__).resolve().parents[1]
 BASE = os.environ.get("FL_GATEWAY_URL", "https://localhost:8443").rstrip("/")
 FAKE = os.environ.get("FL_SMOKE_FAKE_WORKER") == "1"
-PHISH = os.environ.get("FL_SMOKE_PHISH_URL", "http://fixtures/phish/")
-OFFICIAL = os.environ.get("FL_SMOKE_OFFICIAL_URL", "http://fixtures/official/")
+PHISH = os.environ.get("FL_SMOKE_PHISH_URL", "http://falcon-demo-bank-secure.test/login")
+OFFICIAL = os.environ.get("FL_SMOKE_OFFICIAL_URL", "http://falcon-demo-bank.test/")
 SSRF_URL = "http://169.254.169.254/"
 FINAL_TIMEOUT_S = 90
 
@@ -37,15 +64,18 @@ results: list[tuple[str, str, str]] = []
 
 
 def record(name: str, status: str, note: str = "") -> None:
+    """Remember and print one step result (PASS, FAIL or SKIP)."""
     results.append((name, status, note))
     print(f"[{status:4}] {name} {note}".rstrip(), flush=True)
 
 
 def fresh(url: str) -> str:
+    """Make a URL unique per run so cached verdicts do not hide a failure."""
     return f"{url}{'&' if '?' in url else '?'}r={secrets.token_hex(4)}"
 
 
 def compose(*args: str, stdin: str | None = None) -> str:
+    """Run `docker compose <args>` in the repo root and return its stdout."""
     cmd = ["docker", "compose", "--profile", "core", "--profile", "obs", *args]
     return subprocess.run(  # noqa: S603
         cmd, cwd=ROOT, input=stdin, capture_output=True, text=True, check=True, timeout=60
@@ -66,6 +96,7 @@ def worker_metric(name: str) -> float | None:
 
 
 def validator() -> jsonschema.Draft202012Validator:
+    """JSON-schema validator for contracts/verdict.schema.json (with its sibling schemas)."""
     resources = [
         (f.name, Resource.from_contents(json.loads(f.read_text()))) for f in (ROOT / "contracts").glob("*.schema.json")
     ]
@@ -75,10 +106,12 @@ def validator() -> jsonschema.Draft202012Validator:
 
 
 def submit(c: httpx.Client, url: str, **params: Any) -> httpx.Response:
+    """POST a URL check to the gateway."""
     return c.post("/v1/check/url", json={"url": url}, params=params, timeout=15)
 
 
 def final_verdict(c: httpx.Client, url: str) -> dict[str, Any]:
+    """Submit a URL and poll until the verdict is final (or time out)."""
     r = submit(c, url)
     if r.status_code not in (200, 202):
         raise AssertionError(f"submit -> {r.status_code}")
@@ -95,10 +128,12 @@ def final_verdict(c: httpx.Client, url: str) -> dict[str, Any]:
 
 
 def has_rule(doc: dict[str, Any], rule: str) -> bool:
+    """True if the verdict document cites the given rule id."""
     return any(e.get("hard_rule") == rule for e in doc.get("evidence", []))
 
 
 def step(name: str, fn: Any) -> None:
+    """Run one named check, catching failures so the remaining steps still run."""
     try:
         note = fn()
         record(name, "PASS", note or "")
@@ -109,44 +144,66 @@ def step(name: str, fn: Any) -> None:
 
 
 class SkipError(Exception):
+    """Raised by a step that cannot run in this mode (for example worker metrics with a fake worker)."""
+
     pass
 
 
 def main() -> int:
+    """Run all smoke steps and return 1 if any failed."""
     print(f"smoke: gateway={BASE} worker={'FAKE (test double)' if FAKE else 'real'}")
     c = httpx.Client(base_url=BASE, verify=False, timeout=15)  # noqa: S501 - local CA
 
     def t_phish() -> str:
+        """Step 1: a fixture phish ends `dangerous` and cites H1."""
         d = final_verdict(c, fresh(PHISH))
         assert d["verdict"] == "dangerous", d["verdict"]
         assert has_rule(d, "H1"), "H1 not cited"
         return d["verdict_id"]
 
     def t_official() -> str:
+        """Step 2: a fixture official site ends `no_warning_signs` with a caution."""
         d = final_verdict(c, fresh(OFFICIAL))
         assert d["verdict"] == "no_warning_signs", d["verdict"]
         assert d["actions"].get("caution", {}).get("en"), "caution missing"
         return d["verdict_id"]
 
     def t_feed() -> str:
+        """Step 3: a synthetic feed entry ends `dangerous` through H2 at T0."""
         url = f"http://synthetic-openphish.test/{secrets.token_hex(4)}"
         host = "synthetic-openphish.test"
         # feed:openphish stores sha256 hex of the canonical URL and of the host, never plaintext
         hashes = [sha256_hex(canonicalize_url(url)), sha256_hex(host)]
-        compose("exec", "-T", "redis", "redis-cli", "SADD", "feed:openphish", *hashes)
-        d = final_verdict(c, url)
-        assert d["verdict"] == "dangerous", d["verdict"]
-        assert has_rule(d, "H2"), "H2 not cited"
-        assert any(e["tier"] == "T0" for e in d["evidence"]), "not decided at T0"
+        rc = ("exec", "-T", "redis", "redis-cli")
+        prior_ts = compose(*rc, "GET", "feed:openphish:updated_at").strip()
+        prior_members = set(compose(*rc, "SMEMBERS", "feed:openphish").split())
+        added = [h for h in hashes if h not in prior_members]
+        try:
+            compose(*rc, "SADD", "feed:openphish", *hashes)
+            # H2 needs a fresh mirror (< 6 h): mark the mirror as just refreshed for the duration of this step.
+            compose(*rc, "SET", "feed:openphish:updated_at", str(time.time()))
+            d = final_verdict(c, url)
+            assert d["verdict"] == "dangerous", d["verdict"]
+            assert has_rule(d, "H2"), "H2 not cited"
+            assert any(e["tier"] == "T0" for e in d["evidence"]), "not decided at T0"
+        finally:  # restore the mirror exactly as found
+            if added:
+                compose(*rc, "SREM", "feed:openphish", *added)
+            if prior_ts:
+                compose(*rc, "SET", "feed:openphish:updated_at", prior_ts)
+            else:
+                compose(*rc, "DEL", "feed:openphish:updated_at")
         return d["verdict_id"]
 
     def t_ssrf() -> str:
+        """Step 4: the cloud-metadata address is rejected and fl_ssrf_blocked_total increases."""
         before = None if FAKE else worker_metric("fl_ssrf_blocked_total")
-        r = submit(c, SSRF_URL)
+        url = fresh(SSRF_URL)  # fresh: a cached verdict would not re-trigger the guard
+        r = submit(c, url)
         if r.status_code in (400, 403, 422):
             note = f"rejected at API ({r.status_code})"
         else:
-            d = final_verdict(c, SSRF_URL)
+            d = final_verdict(c, url)
             assert d["verdict"] != "no_warning_signs", "metadata IP not rejected"
             assert d["degraded"] or d["verdict"] == "dangerous", "expected degraded or dangerous"
             note = f"verdict={d['verdict']} degraded={d['degraded']}"
@@ -157,6 +214,7 @@ def main() -> int:
         return note + f"; fl_ssrf_blocked_total {before:g}->{after:g}"
 
     def t_sse() -> str:
+        """Step 5: the SSE stream carries at least two events, one verdict id, and ends final."""
         r = submit(c, fresh(PHISH))
         vid = r.json()["verdict_id"]
         events: list[dict[str, Any]] = []
@@ -172,6 +230,7 @@ def main() -> int:
         return f"{len(events)} events"
 
     def t_wait() -> str:
+        """Step 6: `?wait=8` returns within its budget."""
         t0 = time.monotonic()
         r = submit(c, fresh(PHISH), wait=8)
         took = time.monotonic() - t0
@@ -183,6 +242,7 @@ def main() -> int:
         return f"{r.status_code} in {took:.1f}s"
 
     def t_schema() -> str:
+        """Step 7: every collected response validates against verdict.schema.json."""
         v = validator()
         assert docs, "no verdicts collected"
         for d in docs:
@@ -193,6 +253,7 @@ def main() -> int:
     checks_before = None if FAKE else worker_metric("fl_checks_total")
 
     def t_metrics() -> str:
+        """Step 8: fl_checks_total increased during the run."""
         if FAKE:
             raise SkipError("fake worker exposes no fl_checks_total")
         after = worker_metric("fl_checks_total")

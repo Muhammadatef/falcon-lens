@@ -43,3 +43,6 @@ class SentinelMetrics:
                 )
             )
         APPROVALS_PENDING.set(sum(1 for i in incs for a in i["actions"] if a["status"] == "awaiting_approval"))
+
+
+REQUEUE_FAILURES = Counter("fl_sentinel_requeue_failures_total", "Stuck-incident requeue failures")

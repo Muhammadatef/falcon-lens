@@ -41,6 +41,8 @@ class SignalSpec:
     emits: tuple[str, ...]
     cache_ttl_s: int | None = None
     feature_names: tuple[str, ...] = ()
+    # "enrichment": errors are informational (weight 0) and never set degraded (SCORING §4).
+    criticality: Literal["critical", "enrichment"] = "critical"
 
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
@@ -146,6 +148,37 @@ def signal(spec: SignalSpec) -> Callable[[Callable[[SignalContext], list[Evidenc
 
         run.spec = spec  # type: ignore[attr-defined]
         run.sync = body  # type: ignore[attr-defined]
+        if spec.name in REGISTRY:
+            raise ValueError(f"duplicate signal {spec.name}")
+        REGISTRY[spec.name] = (spec, run)
+        return run
+
+    return deco
+
+
+def async_signal(spec: SignalSpec) -> Callable[[SignalFn], SignalFn]:
+    """Register a network signal whose body is already ``async def body(ctx)``.
+
+    Same guarantees as :func:`signal`: ``timeout_ms`` is enforced with ``asyncio.wait_for``, nothing is
+    raised (errors become ``Evidence.error``) and ``latency_ms`` is stamped. Network I/O inside the body
+    must go through ``ctx.http`` / ``ctx.cache`` / ``ctx.mirror`` only."""
+
+    def deco(body: SignalFn) -> SignalFn:
+        async def run(ctx: SignalContext) -> list[Evidence]:
+            t0 = time.perf_counter()
+            try:
+                out = await asyncio.wait_for(body(ctx), timeout=spec.timeout_ms / 1000)
+            except TimeoutError:
+                out = [_error(spec, "timeout")]
+            except Exception as exc:  # noqa: BLE001 - signals must never raise
+                out = [_error(spec, f"{type(exc).__name__}: {exc}"[:200])]
+            ms = int((time.perf_counter() - t0) * 1000)
+            for ev in out:
+                ev.latency_ms = ms
+            return out
+
+        run.spec = spec  # type: ignore[attr-defined]
+        run.body = body  # type: ignore[attr-defined]
         if spec.name in REGISTRY:
             raise ValueError(f"duplicate signal {spec.name}")
         REGISTRY[spec.name] = (spec, run)

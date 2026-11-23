@@ -3,6 +3,30 @@
 Everything is invented (.test domains, brand falcon_demo_bank) and every check and event carries
 source=replay. The campaign comes from sentinel_core.fixtures (same generator the Sentinel tests use),
 re-timed to "now" and re-keyed per run so the Sentinel treats the domains as new and an incident fires.
+
+What it does (details):
+    Builds a plan of invented checks at the given rate and, unless --no-campaign is used, a planted
+    campaign of Redis events so the Sentinel opens an incident. Then it plays the plan in real time and
+    prints progress. Ctrl-C stops it (exit 130).
+
+When to use it:
+    To make dashboards and the Sentinel incident view move during a demo or rehearsal.
+
+How to run:
+    make replay RATE=2/s DURATION=10m
+    PYTHONPATH=scripts uv run python -m falcon_demo replay --rate 2/s --duration 10m [--no-campaign] [--seed 7]
+
+Inputs:
+    Options above; .env values FL_MCP_SERVICE_KEY (120/min) or FL_SANDBOX_API_KEY (30/min); the rate is paced to 80% of
+    that key's limit so nothing is throttled (a note is printed when the rate is lowered),
+    FL_DEMO_REDIS_URL, ports.
+
+Outputs / side effects:
+    Sends checks to the local API and adds events to the Redis stream `fl:events`. All of it is labelled
+    source=replay, so alerts for it are routed to the null receiver. Nothing is written to disk.
+
+Safety notes:
+    Every domain is invented (.test) and nothing is sent to a real site.
 """
 
 from __future__ import annotations
@@ -21,7 +45,7 @@ from typing import Any
 
 from sentinel_core.fixtures import generate  # noqa: E402  (corpus.py put services/sentinel on sys.path)
 
-from .common import SOURCE, ApiClient, ApiError, EventSink, Sleep, Throttled
+from .common import SOURCE, ApiClient, ApiError, EventSink, Sleep, Throttled, paced_rate, pick_key
 from .corpus import make_ulid
 
 CLASS_WEIGHTS = (("dangerous", 0.35), ("suspicious", 0.2), ("no_warning_signs", 0.45))
@@ -37,6 +61,8 @@ CAMPAIGN_SPAN_FRACTION = 0.25  # and unfolds over 25% of it (the original takes 
 
 @dataclass(frozen=True)
 class Call:
+    """One planned action: a URL check or a Redis event, t seconds after the start, with the expected verdict."""
+
     t: float  # seconds after start
     kind: str  # url | event
     value: str = ""  # url for kind=url
@@ -107,6 +133,7 @@ def _tag_domain(d: str, tag: str, dot: str) -> str:
 
 
 def build_plan(rate: float, duration_s: float, start: datetime, seed: int = 7, campaign: bool = True) -> list[Call]:
+    """Plan steady background checks plus (optionally) the planted campaign for the given rate and length."""
     rng = random.Random(seed)
     n = round(rate * duration_s)
     classes = [c for c, _ in CLASS_WEIGHTS]
@@ -125,6 +152,8 @@ def build_plan(rate: float, duration_s: float, start: datetime, seed: int = 7, c
 
 @dataclass
 class Stats:
+    """Running counters of what the replay has sent so far."""
+
     checks: int = 0
     events: int = 0
     throttled: int = 0
@@ -132,6 +161,7 @@ class Stats:
     by_class: Counter[str] = field(default_factory=Counter)
 
     def line(self) -> str:
+        """One-line progress summary."""
         mix = " ".join(f"{k}={v}" for k, v in sorted(self.by_class.items()))
         return f"checks={self.checks} events={self.events} throttled={self.throttled} errors={self.errors} [{mix}]"
 
@@ -146,6 +176,7 @@ def run_plan(
     workers: int = 8,
     on_tick: Callable[[Stats], None] | None = None,
 ) -> Stats:
+    """Play the plan in real time against the API and the event sink, reporting progress."""
     st = Stats()
     t0 = clock()
     last_report = 0.0
@@ -191,6 +222,7 @@ def _collect(st: Stats, c: Call, exc: BaseException | None) -> None:
 
 
 def main(argv: list[str]) -> int:
+    """Parse options, warn about rate limits, build and run the plan; 130 on Ctrl-C."""
     import argparse
 
     from .common import Endpoints, default_sink, load_env
@@ -207,15 +239,17 @@ def main(argv: list[str]) -> int:
         print(f"replay: {exc}", file=sys.stderr)
         return 2
     env = load_env()
-    limit = int(env.get("FL_RATE_LIMIT_PER_IP_PER_MIN") or 30)
-    if rate * 60 > limit:
+    api_key, key_limit = pick_key(env)
+    paced = paced_rate(rate, key_limit)
+    if paced < rate:
         print(
-            f"warn: {rate * 60:.0f} checks/min exceeds FL_RATE_LIMIT_PER_IP_PER_MIN={limit}; the API will answer 429 "
-            "for the surplus. Raise it in .env (demo) and `make up` again.",
+            f"note: {rate * 60:.0f} checks/min exceeds the key limit of {key_limit}/min; pacing to "
+            f"{paced * 60:.0f}/min so no check is throttled. The planted campaign is unaffected.",
             file=sys.stderr,
         )
+        rate = paced
     ep = Endpoints.from_env(env)
-    client = ApiClient(ep.gateway, env.get("FL_SANDBOX_API_KEY"))
+    client = ApiClient(ep.gateway, api_key)
     if not client.healthy():
         print(f"replay: API not reachable at {ep.gateway}. Start the stack first (make up).", file=sys.stderr)
         return 1

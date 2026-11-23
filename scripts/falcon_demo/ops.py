@@ -1,4 +1,35 @@
-"""urls, prewarm, tunnel and tunnel-stop helpers behind `make demo`, `make urls`, `make tunnel`."""
+"""urls, prewarm, tunnel and tunnel-stop helpers behind `make demo`, `make urls`, `make tunnel`.
+
+What it does:
+    `urls` prints the local service URLs; `next` prints suggested follow-up commands; `prewarm` loads the
+    local model in Ollama and runs two fixture checks to warm the sandbox browser pool; `tunnel` starts a
+    cloudflared quick tunnel to the gateway; `tunnel-stop` stops it; `reset` deletes the demo Docker volumes
+    and seed state; `reset-state` only deletes the seed state file.
+
+When to use it:
+    `make demo` runs prewarm, urls and next for you. Use `make tunnel` to share the demo with a phone or
+    judge, and `make demo-reset` to return to a clean slate before a rehearsal.
+
+How to run:
+    make urls | make tunnel | make tunnel-stop | make demo-reset [YES=1]
+    PYTHONPATH=scripts uv run python -m falcon_demo prewarm     (also: next, reset-state)
+
+Inputs:
+    .env and env vars (FL_GATEWAY_PORT, OLLAMA_BASE_URL, FL_LOCAL_MODEL, FL_SANDBOX_API_KEY, YES), the
+    `cloudflared` binary for tunnels and `docker compose` for reset.
+
+Outputs / side effects:
+    tunnel writes data/private/tunnel_url.txt, tunnel.pid and tunnel.log, starts a background cloudflared
+    process, and checks that /v1/version answers JSON before saving the URL. reset runs
+    `docker compose down`, then `docker volume rm` on the Postgres and Redis volumes (names read from
+    `docker compose config`), then deletes data/private/seed_state.json. prewarm calls Ollama and the local
+    API only.
+
+Safety notes:
+    reset is destructive: it asks you to type the project name unless YES=1 is set. A tunnel makes your
+    local gateway reachable from the internet; stop it when done. Files under data/private/ are
+    gitignored; never commit them.
+"""
 
 from __future__ import annotations
 
@@ -25,19 +56,21 @@ TRYCLOUDFLARE_RE = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
 
 
 def url_table(env: Mapping[str, str]) -> list[tuple[str, str]]:
+    """Rows of (label, URL) for the services of the local stack."""
     ep = Endpoints.from_env(env)
     rows = [
         ("Web app", ep.gateway + "/"),
-        ("Incident board", ep.gateway + "/board"),
-        ("Incidents", ep.gateway + "/incidents"),
+        # Routes the web app serves (web/app/campaigns, web/app/ops). Keep in step with docs/DEMO.md.
+        ("Campaign board", ep.gateway + "/campaigns"),
+        ("Operator incident board", ep.gateway + "/ops"),
         ("MCP endpoint", ep.gateway + "/mcp"),
     ]
     names = (
         "Command overview",
         "Detection quality",
         "Pipeline performance",
-        "Signals and feeds",
-        "LLM and cost",
+        "AI operations",
+        "Security",
         "Sentinel",
     )
     rows += [(f"Grafana {i}: {n}", f"{ep.grafana}/dashboards?query={quote(n)}") for i, n in enumerate(names, 1)]
@@ -47,6 +80,7 @@ def url_table(env: Mapping[str, str]) -> list[tuple[str, str]]:
 
 
 def print_urls(env: Mapping[str, str], out: Callable[[str], None] = print) -> None:
+    """Print the local URLs table."""
     out("\nOpen these (local CA: accept the certificate warning once):")
     for name, u in url_table(env):
         out(f"  {name:<34} {u}")
@@ -55,6 +89,7 @@ def print_urls(env: Mapping[str, str], out: Callable[[str], None] = print) -> No
 
 
 def next_commands(out: Callable[[str], None] = print) -> None:
+    """Print the suggested commands to run after `make demo`."""
     out("\nNext:")
     out("  make replay RATE=2/s DURATION=10m   live traffic + planted campaign (an incident fires mid-run)")
     out("  make tunnel                         public URL for judges (make tunnel-stop to close it)")
@@ -108,6 +143,7 @@ def prewarm(env: Mapping[str, str], out: Callable[[str], None] = print) -> dict[
 
 
 def tunnel_command(env: Mapping[str, str]) -> list[str]:
+    """The cloudflared command line for a quick tunnel to the local gateway."""
     port = env.get("FL_GATEWAY_PORT") or "8443"
     # Caddy serves only the `localhost` site, so the Host header and SNI must be rewritten (L1-verified).
     return [
@@ -120,6 +156,7 @@ def tunnel_command(env: Mapping[str, str]) -> list[str]:
 
 
 def parse_tunnel_url(text: str) -> str | None:
+    """Find the trycloudflare.com URL in cloudflared's log text, or None."""
     m = TRYCLOUDFLARE_RE.search(text)
     return m.group(0) if m else None
 
@@ -157,6 +194,7 @@ def _pid_alive(pid: int) -> bool:
 
 
 def tunnel_start(env: Mapping[str, str], out: Callable[[str], None] = print, wait_s: float = 45.0) -> int:
+    """Start a cloudflared quick tunnel, verify it, save the URL under data/private; 0 on success."""
     if shutil.which("cloudflared") is None:
         out("tunnel: cloudflared not found. Install it with `brew install cloudflared`.")
         return 1
@@ -251,6 +289,7 @@ def reset_plan(config: dict[str, object]) -> tuple[str, list[str]]:
 
 
 def compose_config() -> dict[str, object]:
+    """`docker compose config` as parsed JSON (used to resolve project and volume names)."""
     r = subprocess.run(
         ["docker", "compose", "--profile", "core", "--profile", "obs", "--profile", "tools"]
         + ["config", "--format", "json"],
@@ -265,6 +304,7 @@ def compose_config() -> dict[str, object]:
 
 
 def demo_reset(assume_yes: bool, out: Callable[[str], None] = print, ask: Callable[[str], str] = input) -> int:
+    """Stop the stack and delete the Postgres and Redis volumes and the seed state (asks first)."""
     try:
         project, volumes = reset_plan(compose_config())
     except (ValueError, OSError) as exc:
@@ -283,6 +323,7 @@ def demo_reset(assume_yes: bool, out: Callable[[str], None] = print, ask: Callab
 
 
 def main(argv: list[str]) -> int:
+    """Run one ops command (urls, next, prewarm, tunnel, tunnel-stop, reset, reset-state)."""
     cmd = argv[0] if argv else ""
     env = load_env()
     if cmd == "urls":

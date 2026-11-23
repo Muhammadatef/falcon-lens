@@ -56,9 +56,26 @@ def test_check_url_allows_and_canonicalises() -> None:
     assert d.port == 80
 
 
-def test_policy_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("env", ["local", "demo", "ci"])
+def test_policy_from_env_honoured_in_fixture_envs(monkeypatch: pytest.MonkeyPatch, env: str) -> None:
+    monkeypatch.setenv("FL_ENV", env)
     monkeypatch.setenv("FL_EGRESS_ALLOW_HOSTS", " falcon-demo-bank.test , ")
-    pol = guard.policy_from_env()
-    assert pol.allow_hosts == frozenset({"falcon-demo-bank.test"})
+    assert guard.policy_from_env().allow_hosts == frozenset({"falcon-demo-bank.test"})
     monkeypatch.delenv("FL_EGRESS_ALLOW_HOSTS")
+    assert guard.policy_from_env().allow_hosts == frozenset()
+
+
+@pytest.mark.parametrize("env", ["production", "prod", "staging", "", "Local", "locall"])
+def test_policy_from_env_ignored_in_other_envs(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, env: str
+) -> None:
+    monkeypatch.setenv("FL_ENV", env)
+    monkeypatch.setenv("FL_EGRESS_ALLOW_HOSTS", "falcon-demo-bank.test")
+    assert guard.policy_from_env().allow_hosts == frozenset()
+    assert "ignored" in caplog.text
+
+
+def test_policy_from_env_ignored_when_fl_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("FL_ENV", raising=False)
+    monkeypatch.setenv("FL_EGRESS_ALLOW_HOSTS", "falcon-demo-bank.test")
     assert guard.policy_from_env().allow_hosts == frozenset()

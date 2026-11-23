@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
@@ -242,6 +243,13 @@ def test_client_sends_replay_source_and_key() -> None:
     assert seen["x-falcon-source"] == "replay" and seen["x-api-key"] == "k" and seen["idempotency-key"] == "i"
 
 
+def test_idempotency_key_matches_api_charset() -> None:
+    """Regression (G6 dry run): prewarm sent 'prewarm-https://...' and the API answered 422."""
+    c = ApiClient("https://localhost:1", "k", client=httpx.Client(base_url="https://localhost:1"))
+    key = c._headers("prewarm-https://falcon-demo-bank.test/?a=1#x " + "z" * 200)["Idempotency-Key"]
+    assert re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", key)
+
+
 def test_429_retry_after_is_honoured() -> None:
     calls = [Throttled(7), Throttled(3)]
     slept: list[float] = []
@@ -265,6 +273,16 @@ def test_load_env_overrides_and_strips_comments(tmp_path: Path) -> None:
 def test_urls_follow_remapped_ports() -> None:
     rows = dict(ops.url_table({"FL_GATEWAY_PORT": "9443", "FL_GRAFANA_PORT": "4000"}))
     assert rows["Web app"] == "https://localhost:9443/"
+    # the routes the web app serves (web/app/campaigns, web/app/ops), as docs/DEMO.md says
+    assert rows["Campaign board"] == "https://localhost:9443/campaigns"
+    assert rows["Operator incident board"] == "https://localhost:9443/ops"
+    assert not any(u.endswith(("/board", "/incidents")) for u in rows.values())
+    # Grafana names match the provisioned dashboard titles (infra/grafana/dashboards/[1-6]-*.json)
+    titles = {
+        json.loads(f.read_text())["title"].split(" | ")[0]
+        for f in (Path(__file__).resolve().parents[3] / "infra" / "grafana" / "dashboards").glob("[1-6]-*.json")
+    }
+    assert {k.split(": ", 1)[1] for k in rows if k.startswith("Grafana")} == titles
     assert sum(k.startswith("Grafana") for k in rows) == 6
     assert rows["Prometheus"].endswith(":9090")
 

@@ -20,7 +20,7 @@ from falcon_worker.store import PgStore
 def test_metrics_expose_checks_and_ssrf_counters() -> None:
     app = create_app("worker-test")
     r: Any = fakeredis.FakeAsyncRedis(decode_responses=True)
-    worker, _store, _sandbox = build_worker(app, r)
+    worker, _store, _closers = build_worker(app, r)
     worker.metrics.on_ssrf_block(BlockReason.METADATA)
     text = TestClient(app).get("/metrics").text
     assert "fl_checks_total" in text
@@ -30,8 +30,18 @@ def test_metrics_expose_checks_and_ssrf_counters() -> None:
 
 
 def test_guard_policy_allow_hosts(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FL_ENV", "local")
     monkeypatch.setenv("FL_SSRF_ALLOW_HOSTS", "fixtures, falcon-demo-bank.test")
     assert guard_policy().allow_hosts == frozenset({"fixtures", "falcon-demo-bank.test"})
+    for env in ("production", "staging", ""):  # fail closed outside local/demo/ci
+        monkeypatch.setenv("FL_ENV", env)
+        assert guard_policy().allow_hosts == frozenset()
+    monkeypatch.delenv("FL_ENV")  # unset: fail closed, no default
+    assert guard_policy().allow_hosts == frozenset()
+    for env in ("demo", "ci"):
+        monkeypatch.setenv("FL_ENV", env)
+        assert guard_policy().allow_hosts == frozenset({"fixtures", "falcon-demo-bank.test"})
+    monkeypatch.setenv("FL_ENV", "local")
     monkeypatch.delenv("FL_SSRF_ALLOW_HOSTS")
     assert guard_policy().allow_hosts == frozenset()
 

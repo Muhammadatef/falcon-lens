@@ -1,6 +1,7 @@
 [project]
 name = "falcon-egress"
 version = "0.1.0"
+license = "Apache-2.0"
 description = "Falcon Lens filtering egress proxy (CONNECT + absolute-form HTTP) using the shared SSRF guard"
 requires-python = ">=3.12,<3.13"
 # The image installs only falcon_core.security and its deps (requirements.lock), not all of falcon-core.

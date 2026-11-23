@@ -13,6 +13,29 @@ Data dir: env FL_DATA_DIR (the `data` dir), default main checkout's data/.
 
 Run: uv run --no-project --with httpx --with tldextract python evals/collect/openphish.py
 Exit codes: 0 ok, 3 refused by rate guard, 4 corrupt state.json, 1 fetch error.
+
+What it does (summary):
+    Downloads the public feed, removes URLs it has seen before, saves the raw rows privately, and appends
+    hash-only rows to the public manifest. A rate guard refuses to poll more than once per 12 hours.
+
+When to use it:
+    To grow the phishing eval set over time (the temporal split needs several polls). Normally run by
+    scripts/collect_loop.sh rather than by hand.
+
+How to run:
+    uv run --no-project --with httpx --with tldextract python evals/collect/openphish.py
+    ... evals/collect/openphish.py --rebuild-manifest     (no network; rebuild the manifest from raw rows)
+
+Inputs:
+    Env FL_DATA_DIR (optional), the OpenPhish feed over HTTPS, and state.json in the private feed folder.
+
+Outputs / side effects:
+    Appends to data/private/feeds/openphish/<date>.jsonl, state.json and snapshot_queue.jsonl (all
+    gitignored, they hold real URLs), and to evals/manifests/phishing.manifest.jsonl (hashes only,
+    committed). Prints new_rows=N.
+
+Safety notes:
+    Never print, paste or commit the raw rows; OpenPhish forbids redistribution. Never open the URLs.
 """
 
 from __future__ import annotations
@@ -72,6 +95,7 @@ class FeedTooLarge(Exception):
 
 
 def sha256(s: str) -> str:
+    """Hex SHA-256 of a string."""
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
 
 
@@ -130,6 +154,7 @@ def rebuild_manifest(feed_dir: Path, manifest: Path) -> int:
 
 
 def check_rate_guard(state_path: Path, now: datetime, interval: timedelta = POLL_INTERVAL) -> None:
+    """Raise PollTooEarly if the last poll was inside the 12-hour interval."""
     if not state_path.exists():
         return
     try:
@@ -142,6 +167,7 @@ def check_rate_guard(state_path: Path, now: datetime, interval: timedelta = POLL
 
 
 def known_hashes(feed_dir: Path) -> set[str]:
+    """Hashes of every URL already stored, so repeats are skipped."""
     seen: set[str] = set()
     for f in feed_dir.glob("2*.jsonl"):
         for line in f.read_text().splitlines():
@@ -185,6 +211,7 @@ def process_feed(text: str, now: datetime, feed_dir: Path, manifest: Path, queue
 
 
 def poll(now: datetime | None = None) -> int:
+    """Download the feed (size-capped) and store the new rows; returns how many were new."""
     import httpx
 
     now = now or datetime.now(UTC)
@@ -204,6 +231,7 @@ def poll(now: datetime | None = None) -> int:
 
 
 def main() -> int:
+    """Poll the feed, or with --rebuild-manifest rebuild the manifest; exit codes in the module docstring."""
     if "--rebuild-manifest" in sys.argv:
         print(f"manifest_rows={rebuild_manifest(FEED_DIR, MANIFEST)}")
         return 0

@@ -33,7 +33,6 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | page.cross_origin_post (bot API/webhook/form relay) | page | +3.0 | |
 | page.hotlinked_brand_assets | page | +2.0 | |
 | page.cloaking (mobile-AR vs desktop differ) | page | +2.5 | |
-| page.js_obfuscation / anti_inspection | page | +1.0 | |
 | visual.favicon_match_brand | visual | +1.0 | only risk if domain not owned |
 | brand.claimed_not_owned | brand | +3.0 | see H1 |
 | message.script_match (nearest known scam, sim ≥ θ) | message | +2.5 | |
@@ -54,25 +53,36 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |
 | domain.age_days > 3650 + no other risk | domain | −1.0 | |
 
+`page.js_obfuscation` and `page.anti_inspection` have no weight until a sandbox feature emits them (dropped from params.yaml, L1 2026-11-23).
+
+Informational evidence with no weight (proposed by builder-signals; fingerprints for the Sentinel, not scored): `domain.cert_issuer` (latest CT cert issuer), `domain.ct_siblings` (other registrable domains on the same certs).
+
 ## 3. Hard rules
 | Id | Condition | Effect |
 |---|---|---|
-| **H1 brand-mismatch (zero-day)** | claimed brand X (text/title/logo/favicon ≥ θ) AND page.cred_form or payment request AND registrable domain ∉ X.verified_domains | verdict = `dangerous`, p ≥ 0.95 |
+| **H1 brand-mismatch (zero-day)** | claimed brand X from DETERMINISTIC signals (page title/visible-text brand tokens, favicon, hotlinked brand assets; never an LLM claim) with confidence ≥ θ AND page.cred_form or payment request AND registrable domain ∉ X.verified_domains | verdict = `dangerous`, p ≥ 0.95 |
 | H2 known-bad | fresh feed hit (feed age < 6h) on the exact URL or host | `dangerous` |
 | H3 verified-official | registrable domain ∈ a brand's verified list AND no open-redirect abuse AND no feed hit | verdict capped at `no_warning_signs` (never `dangerous`). Open redirects are judged on their target. |
 | H4 exfil-to-bot | form or script posts credentials to a messaging-bot API or webhook relay | `dangerous` |
-| H5 message-with-dangerous-link | message/email contains a URL whose verdict is `dangerous` | message verdict ≥ `dangerous` |
+| H5 message-with-dangerous-link | message/email contains a URL whose verdict is `dangerous` (or `suspicious`) | message verdict ≥ the worst child link verdict: `dangerous` child → `dangerous`, `suspicious` child → ≥ `suspicious`; cites the child verdict evidence |
 | H6 OTP/remote-access ask | message requests an OTP or a remote-access app install AND authority/bank impersonation | ≥ `suspicious` |
+
+**Model cap (L1 D2, fitted on validation only).** The fitted T1 classifier alone never produces `dangerous`: its probability is capped `model_cap.margin` log-odds under `tau_high`, and `dangerous` without a floor rule needs `model_cap.strong_adj` log-odds of non-`url`, non-LLM risk evidence (and more than zero). Both values live in `params.yaml` (`model_cap`) and are fitted by `make fit-thresholds` (artifact `evals/results/published/fits/model_cap_fit.json`); the shipped fit chose margin 0 and strong_adj 0, i.e. "p ≥ tau_high AND any page/domain risk evidence". A model-driven warning cites a `url.classifier` evidence item so every warning has a reason. User-facing reasons are always evidence-grounded templates (the LLM never writes them).
 
 Hard rules are evidence too: the triggering evidence carries `hard_rule: H1`, so the reasons can cite it.
 
 ## 4. Degradation
-If any T1 signal errors or times out, the verdict sets `degraded=true` and lists the reasons. **A degraded verdict is never shown as `no_warning_signs`**: if p < τ_low and the input is degraded, show `suspicious` with "we couldn't complete every check" / «لم نتمكن من إكمال كل الفحوصات».
+Signals carry a `criticality` (`SignalSpec.criticality`, default `critical`). **Critical** signal errors or timeouts at T0/T1 set `degraded=true` and list `signal_error:<signal>`. **Enrichment** signals (`domain.cert_age_days`/`cert_issuer`/`ct_siblings` from third-party crt.sh; any feed reporting `feed_disabled`; `domain.age_days` with `rdap_unsupported_tld`, `rdap_not_found` or `rdap_no_registration_date`, i.e. the registry holds no data) are informational: their errors stay in the evidence at weight 0 and **never** set `degraded`. Transient RDAP failures (timeout, HTTP errors) still degrade.
+
+**Page not opened.** Egress/SSRF blocks (the SSRF guard at T0, the egress proxy's `X-Falcon-Block-Reason`, `blocked_by_policy`, redirect and size limits), the sandbox service's own errors (unreachable, `http_5xx`, bad response) and any unknown sandbox code **always degrade**. Only a failure that the browser-to-target leg alone can produce (`timeout`, `dns_failure`, `tls_error`, `http_403_empty` = an empty 403 from the target, `empty_response`) or a host that does not resolve at T0 is a *render failure*. A render failure ends in `no_warning_signs` only when ALL hold: T1 p < tau_low, no hard rule fired, no `url.*`/`brand.*`/`rep.*`/`domain.*` risk evidence (a domain younger than 30 days counts), AND there is page-independent trust evidence that did not error: `domain.age_days` above the established-domain threshold (3650 days, the trust row of section 2) or `registry.verified_official`. Then the verdict is `no_warning_signs` + caution, `degraded=false`, with informational evidence `sandbox.not_rendered` (weight 0): "We could not open the page itself; the address checks found no warning signs." / «تعذّر علينا فتح الصفحة نفسها؛ فحوصات العنوان لم تُظهر أي علامات تحذير.» Otherwise (young or unknown domain age, any risk) the verdict is degraded `suspicious` ("we could not open the page"): a page that refuses our browser on a domain we know nothing about is not cleared.
+
+**A degraded verdict is never shown as `no_warning_signs`**: if p < tau_low and the input is degraded, show `suspicious` with "we couldn't complete every check" / «لم نتمكن من إكمال كل الفحوصات».
 
 ## 5. Explanations
 The responder picks at most three reasons, ordered by |w|. Each must cite existing evidence ids. A verifier rejects anything else and falls back to the templates in `i18n/{ar,en}.yaml`.
 
-## 6. Draft values (accepted 2026-11-22; refit on validation)
+## 6. Draft values (accepted 2026-11-22)
+tau_*, eps_* and the T1 classifier are now fitted on validation (see `params.yaml` metadata); the evidence weights, hard-rule values and margins below remain draft.
 ε_low 0.05 · ε_high 0.98 · H1 brand-claim θ 0.70 · H3 p cap 0.05 · draft intercept −2.2 (used only while `p_clf` is not yet fitted; flagged `p_clf_draft`).
 Precedence: **degraded beats H3** (an official URL with a failed check shows `suspicious`). **H3 beats H1, H4 and H6** on verified-official domains; the overridden rules are recorded in `suppressed_rules`. The registry trust weight (−4.0) applies only when H3 holds.
 Typosquat tiers (T-007): brand labels shorter than 5 characters get no edit-distance matching; 5–7 characters allow distance 1, or 2 if both edits are QWERTY-adjacent; 8 or more allow distance 2. The same label on a different TLD counts as `tld_swap` at confidence 0.8.

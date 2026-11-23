@@ -31,6 +31,8 @@ class Indicator(BaseModel):
 class TimelineEntry(BaseModel):
     at: datetime
     what: str
+    what_ar: str | None = None
+    what_en: str | None = None
     event_id: str | None = None
 
 

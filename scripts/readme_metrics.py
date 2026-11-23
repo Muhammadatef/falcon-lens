@@ -16,6 +16,18 @@ Usage:
     python scripts/readme_metrics.py --print   # print the block, change nothing
 
 Standard library only, so it runs before `uv sync`.
+
+When to use it:
+    After a new eval artifact is published (`make eval` with --publish), and in CI with --check.
+
+How to run:
+    python scripts/readme_metrics.py [--check | --print] [--readme PATH] [--published DIR]
+    Run from the repo root. Uses only the standard library.
+
+Outputs / side effects:
+    Without flags it rewrites only the block between the metrics:start and metrics:end markers in README.md.
+    --check changes nothing and exits 1 if the block is stale; --print shows the block and changes nothing.
+    No network access. It never computes, rounds or estimates a number.
 """
 
 from __future__ import annotations
@@ -33,16 +45,40 @@ NO_ARTIFACT = "No published eval artifact yet"
 
 # Provenance fields copied when present (docs/EVALS.md, "Artifact").
 PROVENANCE_KEYS = (
+    "scope",
     "created_at",
     "timestamp",
     "git_sha",
     "dataset_hash",
     "split",
+    "temporal_cut",
     "source",
     "seeds",
     "seed",
 )
 MODEL_KEYS = ("models", "model_ids")
+
+# One plain sentence per known metric, keyed by the last part of its path. These
+# are fixed explanations of what a metric measures; they never contain a value.
+PLAIN = {
+    "recall": "Of the real scam checks in the set, the share we flagged. Higher is better.",
+    "precision": "Of the checks we flagged, the share that really were scams. Higher is better.",
+    "fpr": "Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better.",
+    "f1": "A single figure that balances recall and precision. Higher is better.",
+    "pr_auc": "How well scams are ranked above genuine checks overall. Higher is better.",
+    "ece": "How far our stated confidence is from what really happened. Closer to zero is better.",
+    "official_false_dangerous": "Verified official sites wrongly marked dangerous. The target is zero.",
+    "n": "How many checks are in this set.",
+}
+PLAIN_CI = "Likely range for the line above if the test were repeated (lower and upper bound)."
+
+
+def plain(path: str) -> str:
+    """Plain-language meaning of a metric path, or an empty string if unknown."""
+    leaf = path.rsplit(".", 1)[-1]
+    if leaf.endswith("_ci95"):
+        return PLAIN_CI if leaf.removesuffix("_ci95") in PLAIN else ""
+    return PLAIN.get(leaf, "")
 
 
 def latest_artifact(published: Path) -> Path | None:
@@ -101,10 +137,14 @@ def render(published: Path, root: Path = ROOT) -> str:
 
     metrics = flatten(data["metrics"]) if "metrics" in data else []
     if metrics:
-        lines += ["| Metric | Value |", "|---|---|"]
-        lines += [f"| `{key}` | {_cell(value)} |" for key, value in metrics]
+        lines += ["| Metric | Value | In plain words |", "|---|---|---|"]
+        lines += [f"| `{key}` | {_cell(value)} | {plain(key)} |" for key, value in metrics]
     else:
         lines.append("_The artifact has no `metrics` object, so no numbers are shown._")
+    skipped = data.get("not_evaluated")
+    if isinstance(skipped, list) and skipped:
+        names = ", ".join(f"`{_cell(item)}`" for item in skipped)
+        lines += ["", f"Not evaluated in this artifact, so no figure is shown for them: {names}."]
     return "\n".join(lines).rstrip()
 
 
@@ -118,6 +158,7 @@ def inject(readme_text: str, block: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Rewrite, check or print the README metrics block (see module docstring)."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--readme", type=Path, default=ROOT / "README.md")
     parser.add_argument("--published", type=Path, default=ROOT / "evals" / "results" / "published")

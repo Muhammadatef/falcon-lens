@@ -1,6 +1,7 @@
 [project]
 name = "falcon-core"
 version = "0.1.0"
+license = "Apache-2.0"
 description = "Shared contracts, service helper and config for Falcon Lens"
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -12,7 +13,9 @@ dependencies = [
   "httpx>=0.28.1,<0.29",  # security/http.py swaps the private AsyncHTTPTransport._pool (pinned by a test)
   "httpcore>=1,<2",
   "tldextract>=5",
+  "redis>=5.2",
   "pyyaml>=6",
+  "anthropic>=2.12.0,<3",
   "pillow>=11",
   "zxing-cpp>=2.3",
   "python-ulid>=4.2,<5",
