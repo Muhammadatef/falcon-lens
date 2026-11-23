@@ -101,7 +101,7 @@ const en: Pages = {
         { tag: "T2", title: "Looking at the page", body: "The sandbox opens the page once, passively. Page and visual features, the reference-based brand check (hard rule H1) and the quarantined extractor add evidence. Budget: about six seconds." },
         { tag: "T3", title: "AI second look", body: "A bounded investigator takes a few typed tool calls, only for cases still uncertain after the first three tiers. Budget: about fifteen seconds.", cap: "investigator" },
       ] },
-      { id: "exits", title: "Early exit", body: ["The cascade exits early so that speed and cost stay low."], list: [
+      { id: "exits", title: "Early exit", body: ["The cascade exits early so that work and cost stay bounded."], list: [
         "T1 exits when the classifier probability is below the fitted low bound or above the fitted high bound and there is no brand conflict.",
         "T2 exits when a hard rule fired or the probability is clearly outside the uncertain band. Otherwise the check escalates to T3.",
         "The fitted bounds are listed below, read from the published evaluation file.",
@@ -359,7 +359,7 @@ const ar: Pages = {
         { tag: "T2", title: "النظر في الصفحة", body: "تفتح البيئة المعزولة الصفحة مرة واحدة وبصورة سلبية. وتضيف سمات الصفحة والمظهر والتحقق من العلامة بالمرجع (القاعدة الحاسمة H1) والمستخرِج المعزول أدلة جديدة. الميزانية: نحو ست ثوانٍ." },
         { tag: "T3", title: "نظرة ثانية بالذكاء الاصطناعي", body: "محقّق محدود يستخدم بضعة استدعاءات أدوات مصنّفة، وللحالات التي ما زالت غامضة بعد الطبقات الثلاث الأولى فقط. الميزانية: نحو خمس عشرة ثانية.", cap: "investigator" },
       ] },
-      { id: "exits", title: "الخروج المبكر", body: ["يخرج الفحص مبكراً لتبقى السرعة والكلفة منخفضتين."], list: [
+      { id: "exits", title: "الخروج المبكر", body: ["يخرج الفحص مبكراً ليبقى العمل والكلفة ضمن حدود."], list: [
         "تخرج T1 حين تقلّ احتمالية المصنِّف عن الحد الأدنى المضبوط أو تزيد على الحد الأعلى المضبوط ولا يوجد تعارض في العلامة.",
         "تخرج T2 حين تنطبق قاعدة حاسمة أو تقع الاحتمالية بوضوح خارج النطاق الغامض. وإلا فينتقل الفحص إلى T3.",
         "الحدود المضبوطة مدرجة أدناه، منقولة من ملف التقييم المنشور.",

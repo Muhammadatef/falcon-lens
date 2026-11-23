@@ -214,7 +214,30 @@ test.describe("degraded because the page could not be opened", () => {
     await page.goto("/");
     await submitText(page, `https://falcon-demo-bank.test/?c=${t}`);
     await expect(page.getByTestId("page-not-opened")).toContainText("We couldn't open this page to check it — treat it with caution");
-    await expect(page.getByTestId("page-not-opened")).toContainText("does not mean we found a danger");
+    await expect(page.getByTestId("page-not-opened")).toContainText("That is not a sign the link is fine: do not enter any details there. Open the organisation's official app or website yourself instead.");
     await expect(page.getByTestId("degraded")).toHaveCount(0);
+  });
+});
+
+test.describe("the page-not-opened message never sits under a dangerous headline", () => {
+  test("verdict dangerous + degraded for a not-rendered reason: no message", async ({ page, request }) => {
+    const id = newVerdictId();
+    const t = token();
+    const verdict = withId(DEMO_DANGEROUS, id, { degraded: true, degraded_reasons: ["not_rendered:timeout"] });
+    await registerScenario(request, { match: t, verdictId: id, steps: [{ delayMs: 100, verdict }] });
+    await page.goto("/");
+    await submitText(page, `https://falcon-demo-bank-secure.test/?c=${t}`);
+    await expect(page.getByTestId("verdict-word")).toHaveText("خطِر");
+    await expect(page.getByTestId("page-not-opened")).toHaveCount(0);
+  });
+
+  test("Arabic wording is exact for a suspicious, not-rendered verdict", async ({ page, request }) => {
+    const id = newVerdictId();
+    const t = token();
+    const verdict = withId(DEMO_DANGEROUS, id, { verdict: "suspicious", risk_score: 50, impersonated_brand: null, degraded: true, degraded_reasons: ["not_rendered:dns_failure"], reasons: [], tier_reached: "T1" });
+    await registerScenario(request, { match: t, verdictId: id, steps: [{ delayMs: 100, verdict }] });
+    await page.goto("/");
+    await submitText(page, `https://falcon-demo-bank.test/?c=${t}`);
+    await expect(page.getByTestId("page-not-opened")).toContainText("لم نتمكن من فتح الصفحة نفسها، فلم نتحقق مما فيها. وهذا لا يعني أن الرابط موثوق؛ فلا تُدخل فيه أي بيانات، وافتح التطبيق أو الموقع الرسمي للجهة بنفسك.");
   });
 });

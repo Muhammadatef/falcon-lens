@@ -25,7 +25,7 @@ const ar = {
 
   // Degraded because the page could not be opened
   "noopen.title": "تعذّر فتح الصفحة للتحقق — تعامل معها بحذر",
-  "noopen.body": "لم نتمكن من فتح الصفحة نفسها، فلا نعرف ما فيها. وهذا لا يعني أننا وجدنا فيها خطراً.",
+  "noopen.body": "لم نتمكن من فتح الصفحة نفسها، فلم نتحقق مما فيها. وهذا لا يعني أن الرابط موثوق؛ فلا تُدخل فيه أي بيانات، وافتح التطبيق أو الموقع الرسمي للجهة بنفسك.",
 
   // Technical details (check result)
   "tech.toggle": "تفاصيل تقنية",
@@ -101,7 +101,7 @@ const en: Record<DocKey, string> = {
   "act.steps": "Check steps",
 
   "noopen.title": "We couldn't open this page to check it — treat it with caution",
-  "noopen.body": "We could not open the page itself, so we don't know what is on it. This does not mean we found a danger.",
+  "noopen.body": "We could not open the page itself, so we could not check what is on it. That is not a sign the link is fine: do not enter any details there. Open the organisation's official app or website yourself instead.",
 
   "tech.toggle": "Technical details",
   "tech.summary": "Evidence, rules, risk score and timings, for technical reviewers.",

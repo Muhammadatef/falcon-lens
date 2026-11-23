@@ -209,7 +209,7 @@ function VerdictBody({ state, still }: { state: CheckState; still: boolean }) {
       </m.div>
 
       <m.div className="vbody" variants={group} initial="hidden" animate="visible">
-        {v.degraded && pageNotOpened(v.degraded_reasons) ? (
+        {v.degraded && v.verdict !== "dangerous" && pageNotOpened(v.degraded_reasons) ? (
           <m.div className="degraded" variants={item} role="note" data-testid="page-not-opened">
             <Icon name="unplug" size={24} />
             <div>
