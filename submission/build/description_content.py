@@ -60,7 +60,7 @@ def build(a: Artifacts) -> list[Block]:
     add(
         (
             "ar_p",
-            "**النتائج الثلاث.** «خطير»، أو «مشبوه»، أو «لم نجد علامات تحذير». ولا يمنح النظام أي رابط شهادة سلامة مطلقة، لأن أحداً لا يستطيع ضمان ذلك، ويذكّر دائماً بالحذر. ويرافق كل نتيجة أسبابها المرتبطة بأدلة محددة، وما يجب فعله الآن، وما يجب فعله إن كان المستخدم قد ضغط الرابط.",
+            "**النتائج الثلاث.** «خطِر»، أو «مشبوه»، أو «لم نجد علامات تحذير». ولا يمنح النظام أي رابط شهادة سلامة مطلقة، لأن أحداً لا يستطيع ضمان ذلك، ويذكّر دائماً بالحذر. ويرافق كل نتيجة أسبابها المرتبطة بأدلة محددة، وما يجب فعله الآن، وما يجب فعله إن كان المستخدم قد ضغط الرابط.",
         )
     )
     add(
@@ -462,7 +462,7 @@ def build(a: Artifacts) -> list[Block]:
             "table",
             ["Verdict", "In Arabic", "What it means"],
             [
-                ["Dangerous", "خطير", "Strong signs of a scam. Do not open it."],
+                ["Dangerous", "خطِر", "Strong signs of a scam. Do not open it."],
                 ["Suspicious", "مشبوه", "Something does not add up, or we could not finish every check. Take care."],
                 [
                     "No warning signs found",
