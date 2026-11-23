@@ -262,6 +262,8 @@ services:
     <<: *hardened
     environment:
       FL_PUBLIC_BASE_URL: ${FL_PUBLIC_BASE_URL:-https://localhost:8443}
+      # read-scope service key for the public /campaigns board (server-side only; see .env.example)
+      FL_WEB_READ_KEY: ${FL_WEB_READ_KEY:-}
     networks: [app]
     mem_limit: 384m
     cpus: 1

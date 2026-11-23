@@ -55,7 +55,7 @@ export default defineConfig({
     {
       command: "node .next/standalone/server.js",
       url: `http://127.0.0.1:${APP_PORT}/api/health`,
-      env: { PORT: String(APP_PORT), HOSTNAME: "127.0.0.1", NODE_ENV: "production", FL_API_INTERNAL_URL: `http://127.0.0.1:${MOCK_PORT}` },
+      env: { PORT: String(APP_PORT), HOSTNAME: "127.0.0.1", NODE_ENV: "production", FL_API_INTERNAL_URL: `http://127.0.0.1:${MOCK_PORT}`, FL_WEB_READ_KEY: "test-read-key", FL_WEB_TEST_FORWARD_COOKIE: "mock_boards" },
       reuseExistingServer: false,
       timeout: 60_000,
     },

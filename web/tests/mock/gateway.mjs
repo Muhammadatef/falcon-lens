@@ -187,9 +187,12 @@ async function api(req, res, path) {
   const key = req.headers["x-api-key"] ?? (/^bearer /i.test(req.headers.authorization ?? "") ? req.headers.authorization.slice(7) : undefined);
   const authed = (b) => !b.requireKey || key === b.requireKey;
 
+  // Campaigns need a read key like the real API: the web server sends X-API-Key, a browser never does.
+  if (path.startsWith("/v1/campaigns") && (key !== "test-read-key" || board?.rejectKey)) return problem(req, res, 401, "unauthorized", "Unauthorized");
   if (path === "/v1/campaigns" && req.method === "GET") {
     if (!board || board.campaigns == null) return problem(req, res, 404, "not-found", "Not found");
-    return json(res, 200, { items: board.campaigns });
+    // operator-only extras on purpose: the public route must strip them
+    return json(res, 200, { items: board.campaigns.map((c) => ({ ...c, actions: [{ id: "act_x", draft: "SECRET-DRAFT" }], approver: "SECRET-APPROVER", raw_url: "http://evil.example/x" })) });
   }
   if (path === "/v1/campaigns/stream" && req.method === "GET") {
     if (!board || board.campaigns == null) return problem(req, res, 404, "not-found", "Not found");
@@ -240,10 +243,18 @@ async function api(req, res, path) {
   return problem(req, res, 404, "not-found", "Not found");
 }
 
+/** Like Caddy, the gateway stamps the visitor IP; tests get one per scenario so per-visitor limits never leak across tests. */
+function fakeVisitorIp(req) {
+  const seed = cookie(req, "mock_boards") ?? randomBytes(4).toString("hex");
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return `10.${(h >>> 16) & 255}.${(h >>> 8) & 255}.${h & 255}`;
+}
+
 function proxy(req, res) {
   const forced = cookie(req, "mock_caps");
   const port = forced === "false" || forced === "true" ? CAP_APPS[forced] : APP_PORT;
-  const upstream = http.request({ host: "127.0.0.1", port, path: req.url, method: req.method, headers: req.headers }, (up) => {
+  const upstream = http.request({ host: "127.0.0.1", port, path: req.url, method: req.method, headers: { ...req.headers, "x-falcon-client-ip": fakeVisitorIp(req) } }, (up) => {
     res.writeHead(up.statusCode ?? 502, up.headers);
     up.pipe(res);
   });
