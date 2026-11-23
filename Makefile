@@ -68,7 +68,7 @@ scan: ## gitleaks, pip-audit, pnpm audit, trivy, syft (a missing tool only warns
 smoke: ## T-015 assertions against the running stack (starts it if needed). FL_SMOKE_FAKE_WORKER=1 uses a test double (NOT a G1 pass)
 	@scripts/smoke.sh
 
-regress-legit: ## false-positive gate: 30 legit URLs through the running stack (needs LIVE=1, FL_GATEWAY_URL)
+regress-legit: ## false-positive gate: 30 random held-out legit URLs through the running stack (LIVE=1, FL_GATEWAY_URL); writes evals/results/published artifact
 	@test "$(LIVE)" = 1 || { echo "regress-legit needs a running stack: LIVE=1 make regress-legit" >&2; exit 2; }
 	uv run python scripts/fp_regress.py
 

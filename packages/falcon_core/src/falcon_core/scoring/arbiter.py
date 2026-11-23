@@ -51,6 +51,9 @@ BRAND_CONFLICT_SIGNALS: frozenset[str] = frozenset(
         "visual.favicon_match_brand",
     ]
 )
+# SCORING §2 domain-age rows: older than OLD is the established-domain trust row, younger than YOUNG is risk.
+OLD_DOMAIN_DAYS = 3650
+YOUNG_DOMAIN_DAYS = 30
 DEGRADING_TIERS: frozenset[str] = frozenset(["T0", "T1"])
 _P_EPS = 1e-6
 

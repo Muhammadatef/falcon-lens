@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """False-positive regression against a RUNNING stack: `LIVE=1 make regress-legit`.
 
-Usage: FL_GATEWAY_URL=https://localhost:8443 python scripts/fp_regress.py [--n 30] [--seed S] [--workers 3]
-       [--delay 0.5] [--out result.json]
+Usage: FL_GATEWAY_URL=https://localhost:8443 python scripts/fp_regress.py [--set heldout_legit_2.csv] [--n 30]
+       [--seed S] [--workers 3] [--delay 0.5] [--target 0.02] [--out PATH]
 
-Samples ``--n`` domains AT RANDOM from the held-out legitimate set (evals/datasets/heldout_legit.csv, built by
-build_heldout_legit.py: seeded Tranco sample never used for tuning). The sampling seed is random per run unless
-``--seed`` is given, and is always printed so a failing run can be replayed. Submits ``https://<domain>/`` through
-the normal pipeline and fails (exit 1) if any final verdict is suspicious or dangerous (or a check errors).
-Prints counts, a bootstrap 95% CI of the false-positive rate and the seed; never the URLs. ``--n 0`` = whole set.
+Samples ``--n`` domains (``--n 0`` = the whole set) from a HELD-OUT legitimate set in evals/datasets (seeded Tranco
+samples built by build_heldout_legit.py, never used for tuning), submits ``https://<domain>/`` through the normal
+pipeline and writes a result artifact (default evals/results/published/fp_regress_<sha>_<UTC>.json) with the head
+commit sha, set, seed, n, verdict counts, degraded reasons and the false-positive rate with a bootstrap 95% CI.
+Prints counts only, never the URLs.
+
+Exit status: 1 on any errored check, or when the LOWER bound of the CI exceeds ``--target`` (default 0.02, the
+EVALS.md FPR target), i.e. the false-positive rate is significantly above target. A single flagged site does not
+fail the run: with n=30 a lone hit is within noise.
 """
 
 from __future__ import annotations
@@ -18,10 +22,12 @@ import csv
 import json
 import os
 import random
+import subprocess
 import sys
 import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -30,11 +36,28 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 BASE = os.environ.get("FL_GATEWAY_URL", "https://localhost:8443").rstrip("/")
 TIMEOUT_S = 120
+DEFAULT_SET = "heldout_legit_2.csv"
+DEFAULT_SEED = 20261124
 
 
-def heldout() -> list[str]:
-    with (ROOT / "evals" / "datasets" / "heldout_legit.csv").open(newline="", encoding="utf-8") as f:
+def load_set(name: str) -> list[str]:
+    with (ROOT / "evals" / "datasets" / name).open(newline="", encoding="utf-8") as f:
         return [f"https://{r['domain']}/" for r in csv.DictReader(f)]
+
+
+def head_sha() -> str:
+    try:
+        sha = subprocess.run(  # noqa: S603
+            ["git", "rev-parse", "HEAD"],  # noqa: S607
+            cwd=ROOT, capture_output=True, text=True, check=True, timeout=10,
+        ).stdout.strip()  # fmt: skip
+        dirty = subprocess.run(  # noqa: S603
+            ["git", "status", "--porcelain", "--untracked-files=no"],  # noqa: S607
+            cwd=ROOT, capture_output=True, text=True, check=True, timeout=10,
+        ).stdout.strip()  # fmt: skip
+        return sha + ("-dirty" if dirty else "")
+    except (subprocess.SubprocessError, OSError):
+        return "unknown"
 
 
 def check(url: str, delay: float) -> dict[str, Any]:
@@ -62,7 +85,7 @@ def check(url: str, delay: float) -> dict[str, Any]:
 
 
 def bootstrap_ci(flags: list[int], n_boot: int = 2000, seed: int = 7) -> tuple[float, float]:
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 - statistics, not security
     n = len(flags)
     if n == 0:
         return (0.0, 0.0)
@@ -72,19 +95,17 @@ def bootstrap_ci(flags: list[int], n_boot: int = 2000, seed: int = 7) -> tuple[f
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--set", default=DEFAULT_SET)
     ap.add_argument("--n", type=int, default=30)
-    ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--seed", type=int, default=DEFAULT_SEED)
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--delay", type=float, default=0.5)
+    ap.add_argument("--target", type=float, default=0.02)
     ap.add_argument("--out", default=None)
-    ap.add_argument("--urls-file", default=None)
     a = ap.parse_args()
-    seed = a.seed if a.seed is not None else random.SystemRandom().randrange(2**31)
-    pool = heldout()
-    if a.urls_file:  # e.g. the private legit TEST split (never committed); one URL per line
-        pool = [u.strip() for u in Path(a.urls_file).read_text().splitlines() if u.strip()]
-    urls = pool if a.n <= 0 else random.Random(seed).sample(pool, min(a.n, len(pool)))
-    print(f"regress-legit: gateway={BASE} sample={len(urls)}/{len(pool)} seed={seed}", flush=True)
+    pool = load_set(a.set)
+    urls = pool if a.n <= 0 else random.Random(a.seed).sample(pool, min(a.n, len(pool)))  # noqa: S311
+    print(f"fp-regress: gateway={BASE} set={a.set} sample={len(urls)}/{len(pool)} seed={a.seed}", flush=True)
 
     def one(u: str) -> dict[str, Any]:
         try:
@@ -100,17 +121,44 @@ def main() -> int:
     degraded = sum(r["degraded"] for r in res)
     errors = sum(v for k, v in counts.items() if k.startswith("error:"))
     fpr = sum(flagged) / max(1, len(flagged))
-    print(
-        f"regress-legit: n={len(res)} {dict(counts)} degraded={degraded} errors={errors} "
-        f"fpr={fpr:.4f} ci95=[{lo:.4f},{hi:.4f}] seed={seed}"
-    )
     why = Counter(r for x in res for r in x.get("degraded_reasons", []))
     top = Counter(x["risk_signals"][0] for x in res if x["verdict"] != "no_warning_signs" and x.get("risk_signals"))
+    print(
+        f"fp-regress: n={len(res)} {dict(counts)} degraded={degraded} errors={errors} "
+        f"fpr={fpr:.4f} ci95=[{lo:.4f},{hi:.4f}] target={a.target}"
+    )
     print(f"degraded_reasons={dict(why)} top_risk_signal_of_flagged={dict(top)}")
-    if a.out:
-        Path(a.out).write_text(json.dumps({"seed": seed, "counts": counts, "fpr": fpr, "ci95": [lo, hi],
-                                           "degraded": degraded, "errors": errors, "results": res}))  # fmt: skip
-    return 1 if sum(flagged) or errors else 0
+    sha = head_sha()
+    artifact = {
+        "kind": "fp_regress",
+        "created_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "git_sha": sha,
+        "set": a.set,
+        "seed": a.seed,
+        "n": len(res),
+        "pool": len(pool),
+        "counts": dict(counts),
+        "false_positive_rate": {"value": round(fpr, 4), "ci95": [round(lo, 4), round(hi, 4)], "n_boot": 2000},
+        "target": a.target,
+        "degraded": degraded,
+        "errors": errors,
+        "degraded_reasons": dict(why),
+        "top_risk_signal_of_flagged": dict(top),
+        "by_tier": dict(Counter(str(r["tier"]) for r in res)),
+    }
+    out = (
+        Path(a.out)
+        if a.out
+        else ROOT
+        / "evals"
+        / "results"
+        / "published"
+        / (f"fp_regress_{sha[:12]}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}.json")
+    )
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n")
+    print(f"fp-regress: artifact {out}")
+    return 1 if errors or lo > a.target else 0
 
 
 if __name__ == "__main__":

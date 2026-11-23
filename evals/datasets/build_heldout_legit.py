@@ -35,10 +35,15 @@ def main() -> None:
     ap.add_argument("--top", type=int, default=5000)
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--seed", type=int, default=20261123)
+    ap.add_argument("--out", default="heldout_legit.csv")
+    ap.add_argument("--exclude-csv", action="append", default=[], help="earlier held-out csv(s) to stay disjoint from")
     a = ap.parse_args()
     with (HERE / "legit_urls.csv").open(newline="", encoding="utf-8") as f:
         used = {r["url"].split("//", 1)[-1].split("/", 1)[0] for r in csv.DictReader(f)}
     used = {registrable(h) for h in used} | EXCLUDE_EXTRA
+    for name in a.exclude_csv:
+        with (HERE / name).open(newline="", encoding="utf-8") as f:
+            used |= {registrable(r["domain"]) for r in csv.DictReader(f)}
     text = httpx.get(
         f"hxxps://tranco-list.eu/download/{a.list}/{a.top}".replace("hxxp", "http", 1),
         follow_redirects=True,
@@ -47,7 +52,7 @@ def main() -> None:
     rows = [ln.split(",", 1) for ln in text.splitlines() if "," in ln]
     pool = [(int(r), d.strip().lower()) for r, d in rows if registrable(d.strip().lower()) not in used]
     pick = sorted(random.Random(a.seed).sample(pool, a.n))
-    with (HERE / "heldout_legit.csv").open("w", newline="", encoding="utf-8") as f:
+    with (HERE / a.out).open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["domain", "rank", "tranco_list", "seed"])
         for rank, dom in pick:
