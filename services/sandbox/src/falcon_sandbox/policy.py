@@ -7,6 +7,7 @@ DNS is resolved by the egress proxy, not here (the sandbox network has no DNS to
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 
@@ -93,17 +94,33 @@ def classify_fetch_error(message: str) -> str:
     return "fetch_failed"
 
 
-_PROXY_STATUSES = {403: "egress_blocked", 405: "egress_blocked", 407: "egress_blocked", 502: "egress_error"}
+BLOCK_REASON_HEADER = "x-falcon-block-reason"
+_REASON_RE = re.compile(r"[a-z0-9_]{1,40}")
+_PROXY_STATUSES = {405: "egress_blocked", 407: "egress_blocked", 502: "egress_error"}
 
 
 def proxy_refusal(status: int, headers: Mapping[str, str], body_len: int, via_proxy: bool) -> str | None:
-    """The egress proxy's own refusal (e.g. 403, or 405 for plain http on a CONNECT-only proxy):
-    an empty body with no content type. Reported as an error, never as an empty page."""
-    if not via_proxy or body_len:
+    """Tell the egress proxy's own refusal apart from the target site's response.
+
+    * ``X-Falcon-Block-Reason`` present (any status, any body): the proxy denied the request by
+      policy (SSRF etc.) -> ``blocked_by_policy:<reason>`` (hard). If the value is not a clean
+      reason token it fails closed to plain ``blocked_by_policy``. A target can only forge this
+      header to make itself look blocked, never to look clean.
+    * empty 403 with no content type and no header: the target's own refusal (bot protection)
+      -> ``http_403_empty`` (a render failure the cascade may treat as soft).
+    * empty 405/407 (CONNECT-only proxy, plain http) -> ``egress_blocked``; 502 -> ``egress_error``.
+    Other target HTTP errors keep their normal path (the page is returned as-is)."""
+    if not via_proxy:
         return None
-    if status in _PROXY_STATUSES and "content-type" not in {k.lower() for k in headers}:
-        return _PROXY_STATUSES[status]
-    return None
+    lowered = {k.lower(): v for k, v in headers.items()}
+    if BLOCK_REASON_HEADER in lowered:
+        reason = lowered[BLOCK_REASON_HEADER].strip().lower()
+        return f"blocked_by_policy:{reason}" if _REASON_RE.fullmatch(reason) else "blocked_by_policy"
+    if body_len or "content-type" in lowered:
+        return None
+    if status == 403:
+        return "http_403_empty"
+    return _PROXY_STATUSES.get(status)
 
 
 def check_target(url: str, guard: GuardPolicy) -> str | None:

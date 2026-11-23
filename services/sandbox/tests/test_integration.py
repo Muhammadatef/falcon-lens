@@ -160,10 +160,23 @@ def test_redirect_cap_stops_at_ten() -> None:
     assert len(p.redirect_chain) - 1 <= 11
 
 
-@pytest.mark.parametrize("url", ["hxxps://nonexistent-falcon-lens-test-host-8431[.]com/", "hxxps://localtest[.]me/"])
+def test_proxy_ssrf_denial_is_blocked_by_policy_with_reason() -> None:
+    """localtest[.]me resolves to 127.0.0.1: it passes the sandbox's syntactic check and is denied by the
+    egress proxy (403 + X-Falcon-Block-Reason), which must surface as blocked_by_policy:<reason>."""
+    r = render("hxxp://localtest[.]me/".replace("hxxp", "http").replace("[.]", "."), profiles=["desktop_en"])
+    assert r.body["error"].startswith("blocked_by_policy:"), r.body["error"]
+    assert r.body["final_url"] is None
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["hxxps://localtest[.]me/", "hxxps://nonexistent-falcon-lens-test-host-8431[.]com/"],
+)
 def test_egress_refusal_or_dns_failure_is_an_error_not_an_empty_page(url: str) -> None:
     r = render(url.replace("hxxp", "http").replace("[.]", "."), profiles=["desktop_en"])
-    assert r.body["error"] in {"dns_failure", "egress_blocked", "egress_error", "fetch_failed"}
+    assert r.body["error"].startswith("blocked_by_policy:"), r.body["error"]
+    if "nonexistent" in url:
+        assert r.body["error"] == "blocked_by_policy:dns_failure"  # proxy DNS failure stays hard (fail closed)
     assert r.body["final_url"] is None
 
 
