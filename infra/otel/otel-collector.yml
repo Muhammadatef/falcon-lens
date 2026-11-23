@@ -8,12 +8,35 @@ receivers:
 
 processors:
   batch: {}
+  # Privacy: the Anthropic SDK's own spans carry model output; prompts and outputs of untrusted
+  # content must never reach the trace store. Only metadata (model, tokens, latency) is kept.
+  # Probe and scrape spans (FastAPI emits them natively) would bury the real traces.
+  filter/probes:
+    error_mode: ignore
+    traces:
+      span:
+        - 'IsMatch(name, "^(GET|HEAD) /(healthz|readyz|metrics).*")'
+  attributes/scrub:
+    actions:
+      - {key: input.value, action: delete}
+      - {key: input.mime_type, action: delete}
+      - {key: output.value, action: delete}
+      - {key: output.mime_type, action: delete}
+      - {key: llm.input_messages, action: delete}
+      - {key: llm.output_messages, action: delete}
+      - {key: llm.invocation_parameters, action: delete}
+      - {key: gen_ai.input.messages, action: delete}
+      - {key: gen_ai.output.messages, action: delete}
+      - {key: gen_ai.system_instructions, action: delete}
 
 exporters:
   prometheus:
     endpoint: 0.0.0.0:8889
   otlphttp/phoenix:
     endpoint: http://phoenix:6006
+    # Phoenix v22 has auth on: ingestion needs `authorization: Bearer <key>` (lowercase header).
+    headers:
+      authorization: "Bearer ${env:PHOENIX_INGEST_KEY}"
     tls:
       insecure: true
   debug:
@@ -37,7 +60,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [filter/probes, attributes/scrub, batch]
       exporters: [otlphttp/phoenix]
     metrics:
       receivers: [otlp]

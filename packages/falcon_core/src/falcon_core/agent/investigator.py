@@ -24,6 +24,7 @@ from falcon_core.contracts.verdict import TraceStep
 from falcon_core.llm import metrics as m
 from falcon_core.llm.router import JsonRequest, LLMRouter
 from falcon_core.prompts import INVESTIGATOR_TASK
+from falcon_core.telemetry.tracing import fl_span, set_span_attrs
 from falcon_core.tools.provenance import ProvenanceContext
 from falcon_core.tools.registry import SPECS, Action, ToolOutcome, ToolRegistry
 
@@ -136,6 +137,12 @@ class Investigator:
     # --- run ---------------------------------------------------------------------------------
 
     async def run(self, case: InvestigationCase) -> InvestigationResult:
+        with fl_span("investigator.run", "AGENT", **{"fl.input_type": case.input_type}) as sp:
+            res = await self._run(case)
+            set_span_attrs(sp, **{"fl.stop_reason": res.stop_reason, "fl.tool_calls": res.tool_calls})
+            return res
+
+    async def _run(self, case: InvestigationCase) -> InvestigationResult:
         start = self._clock()
         ctx = case.provenance
         known: list[Evidence] = list(case.evidence)
@@ -241,7 +248,10 @@ class Investigator:
                     outcome = ToolOutcome(tool=action.tool[:64], status="rejected", reason="duplicate")
                 else:
                     seen_calls.add(key)
-                    outcome = await self.registry.execute(action, ctx, timeout_s=max(0.0, remaining()))
+                    tool_label = action.tool if action.tool in SPECS else "unknown"
+                    with fl_span(f"tool.{tool_label}", "TOOL", **{"fl.tool": tool_label}) as tsp:
+                        outcome = await self.registry.execute(action, ctx, timeout_s=max(0.0, remaining()))
+                        set_span_attrs(tsp, **{"fl.tool.status": outcome.status, "fl.latency_ms": outcome.ms})
                 calls += 1
                 state = State.OBSERVE
 

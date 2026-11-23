@@ -85,6 +85,7 @@ volumes:
   loki_data: {}
   grafana_data: {}
   alloy_data: {}
+  phoenix_data: {}
 
 services:
   # ───────────────────────────── core ─────────────────────────────
@@ -302,6 +303,9 @@ services:
     build: { context: ./infra/otel, dockerfile: Dockerfile }
     image: falcon-lens/otel-collector:0.165.0
     <<: *hardened
+    environment:
+      # Bearer for Phoenix OTLP ingestion: a system API key if set, else the admin secret.
+      PHOENIX_INGEST_KEY: ${PHOENIX_API_KEY:-${PHOENIX_ADMIN_SECRET:-}}
     volumes:
       - ./infra/otel/otel-collector.yml:/etc/otelcol/config.yml:ro
     networks: [observability]
@@ -444,17 +448,50 @@ services:
     cpus: 1
     pids_limit: 256
 
+  # One-shot: the nonroot Phoenix image (uid 65532) cannot write a fresh root-owned named volume.
+  phoenix-init:
+    profiles: [obs]
+    image: alpine:3.22
+    user: "0:0"
+    command: ["sh", "-c", "chown 65532:65532 /mnt/data && chmod 0700 /mnt/data"]
+    volumes:
+      - phoenix_data:/mnt/data
+    restart: "no"
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 32m
+    pids_limit: 16
+
+  # Arize Phoenix: LLM / agent trace UI. Authentication stays ON (v22 default for the Docker image);
+  # the otel-collector ingests spans with a bearer key (see infra/otel/otel-collector.yml).
+  # The UI is published on loopback only. Data lives in the phoenix_data volume (SQLite).
   phoenix:
     profiles: [obs]
     image: arizephoenix/phoenix:version-22.0.1-nonroot
     restart: unless-stopped
+    depends_on:
+      phoenix-init:
+        condition: service_completed_successfully
     environment:
       PHOENIX_WORKING_DIR: /mnt/data
-    # Nonroot image (uid 65532) cannot write a root-owned named volume, so traces live in a
-    # uid-owned tmpfs: they are lost on restart (acceptable for the demo; use Postgres later).
-    tmpfs:
-      - /mnt/data:uid=65532,gid=65532,mode=0700
-    networks: [observability]
+      PHOENIX_ENABLE_AUTH: "true"
+      # Signs JWTs. Required when auth is on; the container exits at start if empty (fail loud).
+      PHOENIX_SECRET: ${PHOENIX_SECRET:-}
+      # Bearer token the collector uses to ingest spans (also usable for the REST API). >= 32 chars,
+      # a digit and a lowercase letter, and different from PHOENIX_SECRET.
+      PHOENIX_ADMIN_SECRET: ${PHOENIX_ADMIN_SECRET:-}
+      # Applies only while the admin account (admin@localhost) still has the default password.
+      PHOENIX_DEFAULT_ADMIN_INITIAL_PASSWORD: ${PHOENIX_ADMIN_INITIAL_PASSWORD:-}
+    ports:
+      - "127.0.0.1:${FL_PHOENIX_PORT:-6006}:6006"
+    volumes:
+      - phoenix_data:/mnt/data
+    # observability is internal (no internet); edge only carries the loopback port publish.
+    networks: [observability, edge]
     security_opt:
       - no-new-privileges:true
     cap_drop: [ALL]
