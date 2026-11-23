@@ -44,3 +44,19 @@ Recipe (two runs, the second embeds the first one's coverage in its caveat; exte
 make redteam-shipped BUDGET=production PUBLISH=1
 make redteam-shipped BUDGET=extended PAIRED=evals/results/published/redteam/<production artifact>.json PUBLISH=1
 ```
+
+**Gap-closing evals** (`python -m evals.gaps <area>`, raw runs from `python -m evals.gaps.jobs`). Each area writes one artifact under `evals/results/published/<area>/` (never at the top level, which belongs to the main eval artifact the README and the web page read). Every artifact states scope, n, the CI method, data provenance, model route and model ids, and the git SHA; anything it could not measure stays `not_evaluated` with the reason.
+
+| Area (folder) | What it measures | Data |
+|---|---|---|
+| `synthetic_split/` | real and synthetic items scored apart (the frozen manifest has zero synthetic items), provenance of every published metric family | real val/test, synthetic fixtures |
+| `faithfulness/` | template reasons cite evidence that is in the verdict and say what the evidence says (checker R1 to R4, mutation-tested); Sentinel LLM summaries: verifier accept rate and claim to evidence coverage, local and cloud | real val/test offline, synthetic fixtures and replay |
+| `stability/` | 3 repeat runs of the shipped cascade, AI layers on: label agreement and score variance per tier, with an AI-off control | synthetic fixtures |
+| `route_compare/` | cloud (Anthropic API) against local (sovereign) route on the same inputs: verdict agreement, extractor field accuracy, latency p50 and p95, tokens | synthetic fixtures |
+| `cost_per_check/` | cloud cost per check from tokens actually used times list prices (source and date inside); local route zero marginal API cost, energy not measured | synthetic fixtures |
+| `sandbox_t2/` | T2 render health on held-out legit domains (recorded live-stack runs), T2 contribution on fixtures; phishing-side recall not evaluated (no labelled snapshots) | real legit, synthetic fixtures |
+| `brand_new_pages/` | detection of new lookalike fixtures on hosts absent from every feed and from training | synthetic fixtures |
+| `t3_investigator/` | forbidden tool calls (must be 0), step budget, label change against the run without T3, only on runs that reach the uncertain band | synthetic fixtures |
+| `arabic_clarity/` | 30-item Arabic rating sheet (`rating_sheet.csv`) and automated phone-fit and reading-level checks; the human result stays `pending_human_rating` until `--ingest` of a filled sheet | shipped templates |
+
+Fixtures are the invented Falcon Demo Bank on `.test` hosts, labelled as test fixtures, served only by an offline fixture renderer; no live page is visited. The red-team shipped-cascade artifact (PR #84) covers prompt injection and is not repeated here.
