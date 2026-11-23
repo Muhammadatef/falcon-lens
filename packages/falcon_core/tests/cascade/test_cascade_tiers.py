@@ -146,7 +146,9 @@ async def test_t0_host_listing_hits_whole_host() -> None:
 
 async def test_t0_stale_feed_hit_is_not_h2() -> None:
     url = "https://synthetic-feed-entry.test/b"
-    cascade, _ = make_cascade(StubSandboxClient(default=benign_features(url)), mirror=loaded_mirror([url], 7 * 3600))
+    cascade, _ = make_cascade(
+        StubSandboxClient(default=benign_features(url)), mirror=loaded_mirror([url], 7 * 3600), t1_model=None
+    )  # draft p_clf: T1 evidence adds to it
     sink = await run(cascade, url)
     final = sink.docs[-1]
     assert "H2" not in rules(final)
@@ -316,7 +318,7 @@ async def test_t1_confident_high_exits_without_sandbox() -> None:
         "url.raw_ip_host": _const_signal("url.raw_ip_host", {"present": True}),
     }
     sandbox = StubSandboxClient(error="must_not_render")
-    cascade, _ = make_cascade(sandbox, signals=sigs)
+    cascade, _ = make_cascade(sandbox, signals=sigs, t1_model=None)  # draft p_clf: signal evidence drives p
     sink = await run(cascade, "https://plain-host.test/")
     _all_valid(sink.docs)
     final = sink.docs[-1]

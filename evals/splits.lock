@@ -1,11 +1,18 @@
 {
   "counts": {
-    "excluded": 0,
+    "excluded": 4,
     "test": 140,
-    "train": 426,
-    "val": 144
+    "train": 644,
+    "val": 246
   },
-  "dataset_hash": "382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1",
+  "dataset_hash": "3467e9f6b9f930c23a3a001f7126330bd0d129b32e01f40678e003b03bb07ac2",
+  "post_freeze": {
+    "excluded": 4,
+    "new": 324,
+    "test": 0,
+    "train": 218,
+    "val": 102
+  },
   "seed": 20261122,
   "temporal_cut": false,
   "test_sha256": "ca1296d61700cd4b86698bbfda8634fbfc8652c41a6a070a1391161dc52b4a57"

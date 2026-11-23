@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import time
+import types
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -10,6 +12,7 @@ import jsonschema
 import pytest
 from fastapi import Depends, FastAPI, Header, HTTPException
 
+import falcon_api.app as integ_app
 import falcon_api.integration as integ
 from falcon_api.app import build_app
 from falcon_api.auth import Authenticator, MemoryAuditLog, MemoryKeyStore, refuse_default_secrets
@@ -174,7 +177,12 @@ async def test_bearer_operator_approve_reject(api: httpx.AsyncClient, env: Env) 
     assert c.status_code == 409 and c.headers["content-type"].startswith("application/problem+json")
 
 
-async def test_per_key_rate_limit_and_audit(api: httpx.AsyncClient, env: Env) -> None:
+async def test_per_key_rate_limit_and_audit(api: httpx.AsyncClient, env: Env, monkeypatch: pytest.MonkeyPatch) -> None:
+    # The limiter is a fixed wall-clock-minute window; freeze it mid-minute so a minute rollover during the
+    # 32 requests (slow/parallel CI) cannot reset the counter. Audit appends are awaited inline, no polling needed.
+    monkeypatch.setattr(
+        integ_app, "time", types.SimpleNamespace(time=lambda: 1_700_000_030.0, monotonic=time.monotonic)
+    )
     codes = [(await api.get("/v1/meta", headers=key(SANDBOX_KEY))).status_code for _ in range(32)]
     assert codes[:30] == [200] * 30 and codes[30] == 429
     r = await api.get("/v1/meta", headers=key(SANDBOX_KEY))

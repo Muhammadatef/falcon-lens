@@ -201,8 +201,8 @@ def fit_bands(
     return Thresholds(tau_low, tau_high, eps_low, eps_high, notes)
 
 
-CAP_MARGINS = tuple(round(0.5 * k, 2) for k in range(0, 7))  # 0 .. 3.0 log-odds under tau_high
-CAP_STRONG = tuple(round(0.5 * k, 2) for k in range(0, 11))  # 0 .. 5.0 log-odds of corroboration
+CAP_MARGINS = tuple(round(0.1 * k, 2) for k in range(0, 31))  # 0 .. 3.0 log-odds under tau_high
+CAP_STRONG = tuple(round(0.1 * k, 2) for k in range(0, 51))  # 0 .. 5.0 log-odds of corroboration
 
 
 @dataclass
