@@ -26,6 +26,13 @@ def sentinel_summary(route: str) -> dict[str, Any]:
     kept = sum(r["kept_claims"] for r in llm_rows)
     out = {k: v for k, v in raw.items() if k not in ("rows", "router_calls")}
     out["summary_verifier_accept_rate"] = rate(len(llm_rows), n)
+    returned = [r for r in rows if r["raw_summary_returned"]]
+    out["summary_verifier_accept_rate_among_model_answers"] = rate(len(llm_rows), len(returned))
+    out["triage_budget_exhausted_runs"] = rate(sum(1 for r in rows if r["wall_s"] >= 119.9), n)
+    out["accept_rate_note"] = (
+        "the first rate counts every triage run, so a model that did not answer inside the 120 s triage budget "
+        "(common on the shared local GPU) lowers it; the 'among model answers' rate is the verifier's own accept rate"
+    )
     out["claims_retained_in_accepted_summaries"] = rate(kept, raw_in_llm)
     out["kept_claims_cite_valid_evidence"] = rate(sum(r["kept_claims_citing_valid_ids"] for r in llm_rows), kept)
     out["claim_to_evidence_coverage_raw_model_output"] = {

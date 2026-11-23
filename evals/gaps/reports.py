@@ -124,8 +124,13 @@ def stability() -> dict[str, Any]:
                 }
             )
         n_items = len(full)
+        completed = [r for r in rows if r["runs_failed"] == 0]
         return {
             "items": n_items,
+            "items_with_all_three_runs_completed": len(completed),
+            "label_agreement_among_items_with_three_completed_runs": rate(
+                sum(1 for r in completed if r["label_stable"]), len(completed)
+            ),
             "runs_total": len(runs),
             "runs_failed": sum(1 for r in runs if not r["ok"]),
             "label_agreement_all_three_identical": rate(agree_exact, n_items),
@@ -191,6 +196,20 @@ def _tok(calls: list[dict[str, Any]]) -> dict[str, Any]:
             "fell_back": sum(1 for c in cs if c["fell_back"]),
         }
     return by_role
+
+
+def cloud_usage() -> dict[str, Any]:
+    """Cloud provider calls spent per job, from each job's own router records (cap 300 across all)."""
+    parts: dict[str, int] = {}
+    for name in ("cloud_all", "cloud_t3extra"):
+        runs = load_runs(name)
+        parts[f"cascade:{name}"] = sum(c["cloud_provider_calls"] for r in runs for c in r["calls"])
+    ex = load_json("extractor_cloud")
+    parts["extractor_eval"] = int(ex["cloud_provider_calls"]) if ex else 0
+    sn = load_json("sentinel_cloud")
+    parts["sentinel_replay"] = sum(c["cloud_provider_calls"] for c in sn["router_calls"]) if sn else 0
+    total = sum(parts.values())
+    return {"by_job": parts, "total": total, "cap": 300, "within_cap": total <= 300}
 
 
 def routes() -> dict[str, Any]:
@@ -264,11 +283,7 @@ def routes() -> dict[str, Any]:
         },
         "extractor_field_accuracy": ext_art,
         "extractor_route_agreement": ext_agree or not_evaluated("needs both extractor runs"),
-        "cloud_calls_used": {
-            "cascade": max((r["cloud_calls_total"] for r in cl_all), default=0),
-            "extractor": (ext["cloud"] or {}).get("cloud_provider_calls"),
-            "cap": 300,
-        },
+        "cloud_calls_used": cloud_usage(),
     }
     return envelope(
         "route_compare",
@@ -383,10 +398,12 @@ def sealed_browser() -> dict[str, Any]:
             {
                 "artifact": f.name,
                 "t2_attempted_all_items": len(attempted),
-                "t2_render_clean_of_attempted": rate(sum(1 for i in attempted if not i["degraded_reasons"]), len(attempted)),
+                "t2_render_clean_of_attempted": rate(
+                    sum(1 for i in attempted if not i["degraded_reasons"]), len(attempted)
+                ),
                 "t2_degraded_of_attempted": rate(sum(1 for i in attempted if i["degraded_reasons"]), len(attempted)),
                 "t2_degraded_reasons_of_attempted": dict(att_reasons),
-                "tier_attempt_note": "T2 attempted = the verdict ended at T2 or T3; items that exited at T1 never opened a page",
+                "tier_attempt_note": "attempted = verdict ended at T2 or T3; T1 exits never opened a page",
                 "git_sha": d["git_sha"],
                 "n": d["n"],
                 "serves_web_pages": len(web),

@@ -136,6 +136,9 @@ def main() -> None:
     e = sub.add_parser("extractor")
     e.add_argument("--route", choices=["local", "cloud"], required=True)
     e.add_argument("--cloud-cap", type=int, default=60)
+    e.add_argument(
+        "--timeout", type=float, default=300.0, help="extractor deadline in s (eval budget, not the shipped 6 s)"
+    )
     sn = sub.add_parser("sentinel")
     sn.add_argument("--route", choices=["local", "cloud"], required=True)
     sn.add_argument("--runs", type=int, default=3)
@@ -147,7 +150,7 @@ def main() -> None:
         from evals.gaps.extractor_eval import run_route
 
         RAW.mkdir(parents=True, exist_ok=True)
-        res = asyncio.run(run_route(a.route, a.cloud_cap))
+        res = asyncio.run(run_route(a.route, a.cloud_cap, a.timeout))
         (RAW / f"extractor_{a.route}.json").write_text(json.dumps(res, ensure_ascii=False, default=str))
     else:
         from evals.gaps.sentinel_faith import run_route as sentinel_route
