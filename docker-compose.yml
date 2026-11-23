@@ -14,7 +14,7 @@ x-hardened: &hardened
   restart: unless-stopped
 
 x-app-env: &app-env
-  FL_ENV: ${FL_ENV:-local}
+  FL_ENV: ${FL_ENV:?FL_ENV must be set (local|demo|ci|production)}
   FL_SOVEREIGN_MODE: ${FL_SOVEREIGN_MODE:-false}
   FL_PUBLIC_BASE_URL: ${FL_PUBLIC_BASE_URL:-https://localhost:8443}
   ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -170,7 +170,7 @@ services:
     image: falcon-lens/sandbox:0.1.0
     <<: *hardened
     environment:
-      FL_ENV: ${FL_ENV:-local}
+      FL_ENV: ${FL_ENV:?FL_ENV must be set (local|demo|ci|production)}
       FL_SANDBOX_TOKEN: ${FL_SANDBOX_TOKEN:-change-me-sandbox}
       # All outbound traffic must go through the filtering proxy.
       HTTP_PROXY: http://egress-proxy:3128
@@ -200,7 +200,7 @@ services:
     image: falcon-lens/egress:0.1.0
     <<: *hardened
     environment:
-      FL_ENV: ${FL_ENV:-local}
+      FL_ENV: ${FL_ENV:?FL_ENV must be set (local|demo|ci|production)}
       FL_EGRESS_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test,falcon-demo-bank-cloak.test,falcon-demo-bank-injection.test,falcon-bot-relay.test}
     # `app` is the non-internal network that gives the proxy its route to the internet.
     networks: [sandbox, app, observability]
