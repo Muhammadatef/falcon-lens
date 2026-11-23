@@ -91,6 +91,8 @@ weights:
   email.link_text_mismatch: 2.0
   email.limit_exceeded: 2.0      # L1 2026-11-23 fail-closed rule: input larger than the analysers read
   message.limit_exceeded: 2.0
+  message.data_uri_active: 2.0   # inline data: address whose payload has a form/script (same as url.data_uri)
+  message.data_uri: 0.0          # informational
   injection.instruction_like_text: 1.5
   registry.verified_official: -4.0
   # informational (weight 0), listed so SCORING §2 and this file stay in sync

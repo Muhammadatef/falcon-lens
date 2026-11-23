@@ -8,7 +8,11 @@ typed by magic bytes and hashed with sha256, never opened, decompressed or execu
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
+import html
+import quopri
 import re
 from dataclasses import dataclass, field
 from email import message_from_bytes, policy
@@ -19,7 +23,8 @@ from typing import Any
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
 from falcon_core.signals.brands.registry import BrandRegistry, default_registry
 from falcon_core.signals.image.analyze import analyze_image, sniff
-from falcon_core.signals.message.analyze import limit_exceeded_evidence
+from falcon_core.signals.limits import HARD_MAX_EMAIL_BYTES, InputTooLarge
+from falcon_core.signals.message.analyze import _data_uri_evidence, limit_exceeded_evidence
 from falcon_core.signals.message.extract import ChildInput, extract_urls
 from falcon_core.signals.url.canonical import canonicalize, psl_split
 from falcon_core.signals.url.textutil import compact, defang
@@ -27,8 +32,7 @@ from falcon_core.signals.url.textutil import compact, defang
 MAX_EMAIL_BYTES = 2 * 1024 * 1024
 MAX_PARTS = 50
 MAX_DEPTH = 20  # multipart nesting read; deeper parts are skipped (and flagged)
-MAX_OVERFLOW_PARTS = 2000  # parts past the limits whose text is still scanned for links (never analysed further)
-RAW_TAIL_BYTES = 262_144  # of an oversized email, the tail is also scanned for links
+MAX_DECODED_BYTES = 16 * 1024 * 1024  # base64 blocks decoded from raw bytes, in total
 MAX_BODY_CHARS = 200_000
 MAX_LINKS = 50
 MAX_ATTACHMENT_EVIDENCE = 10
@@ -43,6 +47,8 @@ SPEC = SignalSpec(
     emits=(
         "email.invalid",
         "email.limit_exceeded",
+        "message.data_uri",
+        "message.data_uri_active",
         "email.auth_fail",
         "email.display_name_impersonation",
         "email.reply_to_mismatch",
@@ -215,31 +221,102 @@ def _invalid(reason: str) -> Evidence:
 
 
 def _walk(msg: EmailMessage, limits: list[str], overflow: list[EmailMessage]) -> list[EmailMessage]:
-    """Depth-first parts in document order: at most MAX_PARTS parts and MAX_DEPTH levels (iterative).
-    Parts past the limits go to ``overflow`` (bounded) so their text can still be scanned for links."""
+    """Depth-first parts in document order. The first MAX_PARTS parts within MAX_DEPTH levels are analysed;
+    every other part goes to ``overflow`` so its text can still be scanned for links (iterative, no recursion)."""
     out: list[EmailMessage] = []
     stack: list[tuple[EmailMessage, int]] = [(msg, 0)]
     while stack:
         part, depth = stack.pop()
+        subs = [p for p in part.get_payload() if isinstance(p, EmailMessage)] if part.is_multipart() else []
         if len(out) >= MAX_PARTS:
-            limits.append("too_many_parts")
-            if len(overflow) < MAX_OVERFLOW_PARTS:
-                overflow.append(part)
-                if part.is_multipart():
-                    stack.extend((p, depth + 1) for p in part.get_payload() if isinstance(p, EmailMessage))
-                continue
-            break
-        out.append(part)
-        if not part.is_multipart():
+            if "too_many_parts" not in limits:
+                limits.append("too_many_parts")
+            overflow.append(part)
+            stack.extend((p, depth + 1) for p in reversed(subs))
             continue
-        subs = [p for p in part.get_payload() if isinstance(p, EmailMessage)]
+        out.append(part)
         if depth >= MAX_DEPTH:
             if subs:
-                limits.append("too_deep")
-                overflow.extend(subs[: MAX_OVERFLOW_PARTS - len(overflow)])
+                if "too_deep" not in limits:
+                    limits.append("too_deep")
+                overflow.extend(subs)
+                stack.extend((p, depth + 1) for p in reversed(subs))
             continue
         stack.extend((p, depth + 1) for p in reversed(subs))
     return out
+
+
+def _full_text(part: EmailMessage) -> str:
+    """Whole decoded text of a part (transfer encoding and charset undone), for link extraction only."""
+    raw = part.get_payload(decode=True)
+    if not isinstance(raw, bytes):
+        return ""
+    try:
+        return raw.decode(part.get_content_charset() or "utf-8", "replace")
+    except LookupError:
+        return raw.decode("utf-8", "replace")
+
+
+def _text_links(text: str, is_html: bool, source: str) -> tuple[list[ChildInput], list[str]]:
+    """Links of a text part (HTML: hrefs and visible text) and any ``data:`` hrefs (judged as message text)."""
+    kids: list[ChildInput] = []
+    data_hrefs: list[str] = []
+    if is_html:
+        parser = _Html()
+        try:
+            parser.feed(text)
+            parser.close()
+        except Exception:  # noqa: BLE001, S110 - broken HTML: keep what was collected
+            pass
+        for href, _t in parser.links:
+            if href.lower().startswith(("http://", "https://")):
+                kids.append(ChildInput("url", href[:2048], None, source))
+            elif href.lower().startswith("data:"):
+                data_hrefs.append(href[:70_000])
+        text = "".join(parser.text)
+    kids += [ChildInput("url", c.value, None, source) for c in extract_urls(text)]
+    return kids, data_hrefs
+
+
+def _raw_texts(data: bytes) -> list[str]:
+    """Texts to scan when the structure cannot be trusted: the raw bytes, quoted-printable with soft breaks
+    re-joined, HTML entities undone, and every base64 block decoded (a link hidden in an encoded part anywhere)."""
+    raw = data.decode("utf-8", "replace")
+    out = [raw]
+    if b"=\n" in data or b"=\r\n" in data:
+        out.append(quopri.decodestring(data).decode("utf-8", "replace"))
+    if "&" in raw:
+        out.append(html.unescape(raw))
+    run: list[bytes] = []
+    budget = MAX_DECODED_BYTES
+
+    def flush() -> None:
+        nonlocal budget
+        if not run or budget <= 0:
+            run.clear()
+            return
+        joined = b"".join(run)
+        run.clear()
+        for chunk in (joined, *([] if len(joined) % 4 == 0 else [joined[: len(joined) // 4 * 4]])):
+            try:
+                dec = base64.b64decode(chunk, validate=False)
+            except (binascii.Error, ValueError):
+                continue
+            budget -= len(dec)
+            out.append(dec.decode("utf-8", "replace"))
+            return
+
+    for line in data.split(b"\n"):
+        ln = line.strip()
+        if 20 <= len(ln) <= 1000 and _B64_LINE.fullmatch(ln):
+            run.append(ln)
+        else:
+            flush()
+    flush()
+    return out
+
+
+_B64_LINE = re.compile(rb"[A-Za-z0-9+/]+={0,2}")
 
 
 def _headers_only(data: bytes) -> EmailMessage:
@@ -332,15 +409,15 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
     if not data.strip():
         res.evidence.append(_invalid("empty"))
         return res
-    # Fail closed (SCORING §2, email.limit_exceeded): read what fits, scan the rest of the bytes for links,
-    # and flag the excess as risk. Padding therefore never lowers the verdict of the unpadded email.
+    # Fail closed (SCORING §2, email.limit_exceeded): everything is parsed and every link of every part (and of
+    # the raw bytes) is extracted; only the per-part analysis is bounded. Excess is flagged as risk. Padding
+    # therefore never lowers the verdict of the unpadded email. Above the hard ceiling: refuse (413).
+    if len(data) > HARD_MAX_EMAIL_BYTES:
+        raise InputTooLarge(f"email larger than {HARD_MAX_EMAIL_BYTES} bytes")
     limits: list[str] = []
     original_size = len(data)
-    tail = b""
     if original_size > MAX_EMAIL_BYTES:
         limits.append("too_large")
-        tail = data[-RAW_TAIL_BYTES:]
-        data = data[:MAX_EMAIL_BYTES]
     parts: list[EmailMessage] = []
     overflow: list[EmailMessage] = []
     try:
@@ -352,17 +429,17 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
         limits.append(f"parse_error:{type(exc).__name__}")
         parts = []
         msg = _headers_only(data)
+    data_hrefs: list[str] = []
     if limits:
         res.evidence.append(limit_exceeded_evidence("email", ",".join(dict.fromkeys(limits))[:120], original_size))
-        # Links anywhere in the raw bytes (including parts that were not read) are still judged.
-        raw = (data + b"\n" + tail).decode("utf-8", "replace")
-        res.children += [ChildInput("url", c.value, None, "email.raw") for c in extract_urls(raw)]
+        for text in _raw_texts(data):
+            res.children += [ChildInput("url", c.value, None, "email.raw") for c in extract_urls(text)]
         res.raw_excerpt = _raw_body(data)
         for op in overflow:
             if not op.is_multipart() and op.get_content_maintype() == "text":
-                res.children += [
-                    ChildInput("url", c.value, None, "email.overflow") for c in extract_urls(_decode_text(op))
-                ]
+                kids, dh = _text_links(_full_text(op), op.get_content_subtype() == "html", "email.overflow")
+                res.children += kids
+                data_hrefs += dh
 
     if (ev := _auth_evidence(msg)) is not None:
         res.evidence.append(ev)
@@ -408,19 +485,28 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
         fname = p.get_filename()
         is_att = p.get_content_disposition() == "attachment" or fname is not None or not ctype.startswith("text/")
         if not is_att and ctype == "text/plain":
-            plain += _decode_text(p) + "\n"
+            txt = _full_text(p)
+            plain += txt[:MAX_BODY_CHARS] + "\n"
+            # The body fed to the message rules is capped (8 KiB), but every link of the whole body is judged.
+            res.children += [ChildInput("url", c.value, None, "email.body") for c in extract_urls(txt)]
         elif not is_att and ctype == "text/html":
             parser = _Html()
             try:
-                parser.feed(_decode_text(p))
+                parser.feed(_full_text(p))
                 parser.close()
             except Exception:  # noqa: BLE001, S110 - broken HTML: keep what was collected
                 pass
-            html_text += "".join(parser.text) + "\n"
+            vis = "".join(parser.text)
+            html_text += vis[:MAX_BODY_CHARS] + "\n"
             links += parser.links
+            res.children += [ChildInput("url", c.value, None, "email.body") for c in extract_urls(vis)]
         else:
             payload = p.get_payload(decode=True)
             blob = payload if isinstance(payload, bytes) else b""
+            if ctype.startswith("text/"):  # text or HTML attachment: its links are judged like body links
+                kids, dh = _text_links(_full_text(p), ctype == "text/html", "email.attachment_text")
+                res.children += kids
+                data_hrefs += dh
             kind = sniff_attachment(blob)
             name = _safe_name(fname)
             ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
@@ -453,6 +539,9 @@ def analyze_email(data: bytes, reg: BrandRegistry | None = None) -> EmailAnalysi
                 res.evidence += ia.evidence
                 res.children += [ChildInput(c.kind, c.value, None, "email.attachment_qr") for c in ia.children]
 
+    data_hrefs += [h[:70_000] for h, _t in links if h.lower().startswith("data:")]
+    if data_hrefs:
+        res.evidence += _data_uri_evidence("\n".join(data_hrefs))
     bad, kids = _link_mismatches(links)
     res.children += kids
     if bad:

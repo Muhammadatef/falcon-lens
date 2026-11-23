@@ -124,19 +124,37 @@ _OPEN_CLOSE = {")": "(", "]": "[", "}": "{"}
 _DOT_LIKE = str.maketrans({"。": ".", "｡": ".", "．": ".", "⒈": "."})
 
 
-def _is_invisible(ch: str) -> bool:
-    """Control (Cc), format (Cf: zero-width, bidi marks and overrides, soft hyphen) and line/paragraph separators."""
-    return unicodedata.category(ch) in ("Cc", "Cf", "Zl", "Zp") and ch not in "\n\r\t"
+_INVISIBLE_CATS = frozenset({"Cc", "Cf", "Zl", "Zp"})
+_TO_NOTHING: dict[int, None] | None = None
+_TO_SPACE: dict[int, str] | None = None
+
+
+def _tables() -> tuple[dict[int, None], dict[int, str]]:
+    """str.translate tables for control (Cc), format (Cf: zero-width, bidi marks and overrides, soft hyphen) and
+    line/paragraph separators, built once; C-speed so a multi-megabyte input stays cheap."""
+    global _TO_NOTHING, _TO_SPACE  # noqa: PLW0603
+    if _TO_NOTHING is None or _TO_SPACE is None:
+        cps = [c for c in range(0x110000) if unicodedata.category(chr(c)) in _INVISIBLE_CATS and chr(c) not in "\n\r\t"]
+        _TO_NOTHING = dict.fromkeys(cps)
+        _TO_SPACE = dict.fromkeys(cps, " ")
+    return _TO_NOTHING, _TO_SPACE
+
+
+_ANGLE_URL = re.compile(r"<\s*((?:https?|ftp)://[^<>]{3,2048}?)\s*>", re.I)
 
 
 def _clean_variants(text: str) -> list[str]:
     """NFKC text with invisible characters (a) removed, so ``exa<ZWSP>mple.com`` is one host, and (b) turned into
-    spaces, so ``login<NUL>ignore`` is two tokens. Both are scanned: a link must never be lost to either trick."""
+    spaces, so ``login<NUL>ignore`` is two tokens. Both are scanned: a link must never be lost to either trick.
+    A link wrapped in ``<...>`` and broken over lines (RFC 3986 appendix C) is re-joined: unambiguous."""
     base = unicodedata.normalize("NFKC", text).translate(_DOT_LIKE)
+    if "<" in base:
+        base = _ANGLE_URL.sub(lambda m: " " + "".join(m.group(1).split()) + " ", base)
     # Whitespace runs are collapsed first: the de-obfuscation patterns use ``\s*`` and are quadratic on long runs.
     base = _WS_RUN.sub(" ", base)
-    removed = "".join(c for c in base if not _is_invisible(c))
-    spaced = _WS_RUN.sub(" ", "".join(" " if _is_invisible(c) else c for c in base))
+    nothing, space = _tables()
+    removed = base.translate(nothing)
+    spaced = _WS_RUN.sub(" ", base.translate(space))
     return [removed] if removed == spaced else [removed, spaced]
 
 
