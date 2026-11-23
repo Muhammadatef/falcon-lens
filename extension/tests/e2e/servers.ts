@@ -7,7 +7,7 @@
  *    "TEST FIXTURE, not a real site", use only the invented brand "Falcon Demo Bank", and contain
  *    no form that posts anywhere.
  */
-import { createServer, type IncomingMessage, type Server } from "node:http";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 
 export const API_PORT = 8765;
 export const SITE_PORT = 8766;
@@ -118,10 +118,27 @@ ${body}
 
 const STRICT = "default-src 'none'; style-src 'none'; script-src 'none'";
 
+/**
+ * A real remote lookalike host answers after network latency. A loopback server answers in well
+ * under a millisecond, which lets the risky document commit before the extension's tabs.update
+ * lands: a test-bench artefact that made "the lookalike never rendered" flaky (~7%). The delay
+ * models the internet, not the guard, so the assertion stays exactly as strict.
+ */
+const REMOTE_LATENCY_MS = 400;
+const isRemoteLookalike = (host: string): boolean => host.endsWith(".secure-verify.test");
+
 export function startSite(hits: string[]): Promise<Server> {
   const server = createServer((req, res) => {
     const host = (req.headers.host ?? "").split(":")[0] ?? "";
     hits.push(host + (req.url ?? ""));
+    if (isRemoteLookalike(host)) setTimeout(() => respond(host, res), REMOTE_LATENCY_MS);
+    else respond(host, res);
+  });
+  return new Promise((resolve) => server.listen(SITE_PORT, "127.0.0.1", () => resolve(server)));
+}
+
+function respond(host: string, res: ServerResponse): void {
+  {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
     if (host === "webmail.test") {
       // Stands in for a webmail app. Strict CSP on purpose: the hover badge must not depend on
@@ -149,6 +166,5 @@ export function startSite(hits: string[]): Promise<Server> {
         STRICT,
       ),
     );
-  });
-  return new Promise((resolve) => server.listen(SITE_PORT, "127.0.0.1", () => resolve(server)));
+  }
 }

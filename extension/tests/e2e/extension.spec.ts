@@ -33,12 +33,14 @@ const test = base.extend<Fixtures>({
     const calls: ApiCall[] = [];
     const api: Server = await startApi(calls);
     await use(calls);
+    api.closeAllConnections();
     await new Promise((r) => api.close(r));
   },
   hits: async ({}, use) => {
     const hits: string[] = [];
     const srv: Server = await startSite(hits);
     await use(hits);
+    srv.closeAllConnections();
     await new Promise((r) => srv.close(r));
   },
   context: async ({ calls, hits }, use) => {
