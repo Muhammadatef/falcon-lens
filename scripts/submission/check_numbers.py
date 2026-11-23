@@ -5,7 +5,8 @@
 Truthfulness rule (CLAUDE.md): every metric shown anywhere comes from a generated eval
 artifact. This script reads the text of
 
-    submission/deck.pptx           (slide and notes XML, standard library zipfile)
+    submission/FalconLens_ScamShield.pptx  (slide and notes XML, standard library zipfile)
+    submission/DEMO_SCRIPT.md
     submission/description.pdf     (pypdf when installed; `make submission` installs it)
     submission/description.html    (the exact source the PDF was rendered from)
     docs/assets/architecture.svg   (its <text> nodes: the image is embedded in the deck and the PDF)
@@ -65,6 +66,7 @@ from submission import artifact as artifact_mod  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCHITECTURE_SVG = "docs/assets/architecture.svg"
+DECK_NAMES = ("FalconLens_ScamShield.pptx", "deck.pptx")  # the committed deck; the old name is kept for older checkouts
 
 _MONTH = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*"
 _DUR = r"\d+(?:\.\d+)? ?m?s"
@@ -251,10 +253,24 @@ def _decimal(text: str) -> Decimal | None:
 class Traceable:
     """What the newest published artifact can vouch for: its metric values and its whole strings."""
 
-    def __init__(self, data: dict[str, Any] | None, names: tuple[str, ...] = ()) -> None:
-        """`names`: the artifact's own file name and stem, which a "Source:" line may quote."""
+    def __init__(
+        self, data: dict[str, Any] | None, names: tuple[str, ...] = (), extra: dict[str, Any] | None = None
+    ) -> None:
+        """`names`: the artifact's own file name and stem, which a "Source:" line may quote.
+
+        `extra`: the newest `fp_regress` run (artifact.load_fp_regress). Its numeric leaves count as metrics too,
+        except the per-item rows.
+        """
         self.values: list[Decimal] = []
         self.strings: set[str] = {name.lower() for name in names if name}
+        if extra is not None:
+            for _key, leaf in artifact_mod.flatten({k: v for k, v in extra.items() if k != "items"}):
+                if isinstance(leaf, int | float) and not isinstance(leaf, bool):
+                    value = _decimal(json.dumps(leaf))
+                    if value is not None and value.is_finite():
+                        self.values.append(value)
+                elif isinstance(leaf, str) and leaf.strip():
+                    self.strings.add(leaf.strip().lower())
         if data is None:
             return
         for _key, leaf in artifact_mod.flatten(data.get("metrics") if isinstance(data.get("metrics"), dict) else {}):
@@ -301,10 +317,11 @@ class Traceable:
         return False
 
 
-def traceable_for(loaded: artifact_mod.Artifact | None) -> Traceable:
+def traceable_for(loaded: artifact_mod.Artifact | None, published: Path | None = None) -> Traceable:
+    extra = artifact_mod.load_fp_regress(published or artifact_mod.PUBLISHED)
     if loaded is None:
-        return Traceable(None)
-    return Traceable(loaded.data, names=(loaded.path.name, loaded.path.stem))
+        return Traceable(None, extra=extra)
+    return Traceable(loaded.data, names=(loaded.path.name, loaded.path.stem), extra=extra)
 
 
 def find_untraceable(text: str, traceable: Traceable, source: str) -> list[Finding]:
@@ -346,11 +363,15 @@ def collect_sources(root: Path, submission: Path, require_package: bool) -> tupl
     sources: list[tuple[str, str]] = []
     problems: list[str] = []
 
-    deck = submission / "deck.pptx"
+    deck = next((submission / n for n in DECK_NAMES if (submission / n).is_file()), submission / DECK_NAMES[0])
     if deck.is_file():
-        sources.append(("deck.pptx", pptx_text(deck)))
+        sources.append((deck.name, pptx_text(deck)))
     elif require_package:
         problems.append(f"missing {deck} (run `make submission`)")
+
+    script = submission / "DEMO_SCRIPT.md"
+    if script.is_file():
+        sources.append((script.name, strip_markdown(script.read_text(encoding="utf-8"))))
 
     html = submission / "description.html"
     if html.is_file():
@@ -399,7 +420,7 @@ def main(argv: list[str] | None = None) -> int:
     published = (args.published or root / "evals" / "results" / "published").resolve()
 
     loaded = artifact_mod.load(published)
-    traceable = traceable_for(loaded)
+    traceable = traceable_for(loaded, published)
     if loaded:
         print(f"artifact: {loaded.path}")
     else:
