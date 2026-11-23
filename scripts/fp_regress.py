@@ -77,9 +77,12 @@ def main() -> int:
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--delay", type=float, default=0.5)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--urls-file", default=None)
     a = ap.parse_args()
     seed = a.seed if a.seed is not None else random.SystemRandom().randrange(2**31)
     pool = heldout()
+    if a.urls_file:  # e.g. the private legit TEST split (never committed); one URL per line
+        pool = [u.strip() for u in Path(a.urls_file).read_text().splitlines() if u.strip()]
     urls = pool if a.n <= 0 else random.Random(seed).sample(pool, min(a.n, len(pool)))
     print(f"regress-legit: gateway={BASE} sample={len(urls)}/{len(pool)} seed={seed}", flush=True)
 
