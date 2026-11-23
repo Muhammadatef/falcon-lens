@@ -273,6 +273,7 @@ class LLMRouter:
             timeout = min(timeout, deadline - self._clock())
         if timeout <= 0:
             calls.append(CallRecord(route, model, Usage(), 0.0, 0, "budget exhausted"))
+            self.metrics.inc(m.LLM_CALLS, role=req.role, route=route, outcome="budget")
             return None
         preq = ProviderRequest(
             model=model,
@@ -289,6 +290,10 @@ class LLMRouter:
             kind = exc.kind if isinstance(exc, ProviderError) else "timeout"
             ms = int((self._clock() - t0) * 1000)
             calls.append(CallRecord(route, model, Usage(), 0.0, ms, kind))
+            self.metrics.inc(
+                m.LLM_CALLS, role=req.role, route=route, outcome="timeout" if kind == "timeout" else "error"
+            )
+            self.metrics.observe(m.LLM_CALL_SECONDS, ms / 1000, role=req.role, route=route)
             log.info(
                 "llm call failed",
                 extra={
@@ -303,6 +308,8 @@ class LLMRouter:
         ms = int((self._clock() - t0) * 1000)
         usd = cost_usd(route, model, resp.usage)
         calls.append(CallRecord(route, model, resp.usage, usd, ms))
+        self.metrics.inc(m.LLM_CALLS, role=req.role, route=route, outcome="ok")
+        self.metrics.observe(m.LLM_CALL_SECONDS, ms / 1000, role=req.role, route=route)
         self.metrics.inc(
             m.LLM_TOKENS,
             resp.usage.prompt_tokens + resp.usage.output_tokens,
@@ -351,6 +358,7 @@ class LLMRouter:
             status = "fallback"
         else:
             status = "failed"
+        self.metrics.inc(m.LLM_RESULTS, role=req.role, status=status)
         return LLMResult(
             value=value,
             status=status,

@@ -338,6 +338,19 @@ services:
     cpus: 1
     pids_limit: 128
 
+  # Reads evals/results/published/** read-only and serves fl_eval_* gauges (stdlib only, uid 10001).
+  evals-exporter:
+    profiles: [obs]
+    build: { context: ., dockerfile: services/evals-exporter/Dockerfile }
+    image: falcon-lens/evals-exporter:0.1.0
+    <<: *hardened
+    volumes:
+      - ./evals/results/published:/data/published:ro
+    networks: [observability]
+    mem_limit: 64m
+    cpus: 0.25
+    pids_limit: 64
+
   alertmanager:
     profiles: [obs]
     image: prom/alertmanager:v0.35.0

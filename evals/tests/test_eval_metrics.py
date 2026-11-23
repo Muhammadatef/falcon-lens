@@ -43,3 +43,17 @@ def test_bootstrap_deterministic_and_brackets():
 def test_undefined_stat_is_none():
     r = M.with_ci(lambda y, x: M.precision(y, x.astype(bool)), [0, 0], [False, False], 50, 1)
     assert r["value"] is None
+
+
+def test_roc_auc_and_accuracy_match_sklearn():
+    assert M.roc_auc(Y, S) == pytest.approx(skm.roc_auc_score(Y, S))
+    assert M.accuracy(Y, PRED) == pytest.approx(skm.accuracy_score(Y, PRED))
+
+
+def test_roc_auc_undefined_with_one_class_and_bootstrap_ci_brackets_value():
+    assert np.isnan(M.roc_auc([0, 0, 0], [0.1, 0.2, 0.3]))
+    assert np.isnan(M.roc_auc([1, 1], [0.1, 0.2]))
+    r = M.with_ci(M.roc_auc, Y, S, 200, 1)
+    assert r["ci_low"] <= r["value"] <= r["ci_high"]
+    a = M.with_ci(lambda yy, ww: M.accuracy(yy, ww.astype(bool)), Y, PRED, 200, 1)
+    assert a["ci_low"] <= a["value"] <= a["ci_high"]

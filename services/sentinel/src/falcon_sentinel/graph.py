@@ -48,7 +48,14 @@ from .llm import (
     SummaryOut,
     structured,
 )
-from .metrics import REQUEUE_FAILURES
+from .metrics import (
+    APPROVAL_TURNAROUND,
+    LLM_CALLS,
+    LLM_SECONDS,
+    NODE_SECONDS,
+    REQUEUE_FAILURES,
+    TEXT_SOURCE,
+)
 from .textsafe import vet
 
 log = logging.getLogger(__name__)
@@ -239,8 +246,11 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         extra: dict[str, Any] | None = None,
     ) -> Any:
         if _exhausted(budget):
+            LLM_CALLS.labels(task, "budget").inc()
             raise BudgetExceeded(task)
         used = 0
+        t_ask = time.monotonic()
+        outcome = "invalid"
 
         def add(n: int) -> None:
             nonlocal used
@@ -248,7 +258,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
 
         remaining = max(1.0, MAX_SECONDS - budget["elapsed_s"])
         try:
-            return await asyncio.wait_for(
+            res = await asyncio.wait_for(
                 structured(
                     deps.llm,
                     model,
@@ -258,8 +268,15 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                 ),
                 timeout=remaining,
             )
+            outcome = "ok"
+            return res
+        except TimeoutError:
+            outcome = "timeout"
+            raise
         finally:
             budget["tokens"] += used
+            LLM_CALLS.labels(task, outcome).inc()
+            LLM_SECONDS.labels(task).observe(time.monotonic() - t_ask)
 
     def timed(
         name: str,
@@ -270,6 +287,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             t0 = time.monotonic()
             b = _budget(state)
             out = await fn(state, b)
+            NODE_SECONDS.labels(name).observe(time.monotonic() - t0)
             if count_step:
                 b["steps"] += 1
             b["elapsed_s"] = round(b["elapsed_s"] + time.monotonic() - t0, 3)
@@ -332,6 +350,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                 degraded.append("assess_text_rejected")
         except (LLMOutputError, BudgetExceeded, TimeoutError):
             degraded.append("assess")
+        TEXT_SOURCE.labels("assess", "template" if reason is None else "llm").inc()
         if reason is None:
             reason = template_reason(view)
         await write(iid, {"severity_reason": reason}, reason["evidence_ids"])
@@ -362,6 +381,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                 }
         except (LLMOutputError, BudgetExceeded, TimeoutError):
             degraded.append("summarise")
+        TEXT_SOURCE.labels("summarise", "template" if summary is None else "llm").inc()
         if summary is None:
             summary = template_summary(view)
         await write(iid, {"summary": summary}, [e for c in summary["claims"] for e in c["evidence_ids"]])
@@ -541,6 +561,12 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             if tgt is not None and decision.get("decision") in ("approve", "reject"):
                 ok = decision["decision"] == "approve"
                 op = str(decision.get("operator") or "unknown")
+                try:
+                    proposed = datetime.fromisoformat(str(tgt["at"]).replace("Z", "+00:00"))
+                    wait = (deps.clock() - proposed).total_seconds()
+                    APPROVAL_TURNAROUND.labels(decision["decision"]).observe(max(0.0, wait))
+                except (KeyError, ValueError):
+                    pass  # an action without a valid proposal time is simply not measured
                 _set(
                     iid,
                     tgt["action_id"],

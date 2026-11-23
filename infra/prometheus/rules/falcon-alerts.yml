@@ -100,7 +100,7 @@ groups:
       # A service that is down or crash-looping exports nothing, so none of its own fl_ alerts can fire
       # (SentinelLag needs the Sentinel's own gauge). `up` is written by Prometheus for every scrape target.
       - alert: ServiceDown
-        expr: up{job=~"falcon-services|sandbox-via-worker|egress-proxy|gateway"} == 0
+        expr: up{job=~"falcon-services|sandbox-via-worker|egress-proxy|gateway|evals-exporter"} == 0
         for: 2m
         labels: { severity: critical }
         annotations:
@@ -149,6 +149,13 @@ groups:
         annotations:
           summary: "SSRF guard blocking many requests (expected under redteam replay)"
           runbook_url: docs/RUNBOOK.md#ssrf-spike
+      # A canary token in model output means the system prompt or a secret reached the model's reply. Must be 0.
+      - alert: CanaryLeak
+        expr: sum(increase(fl_canary_leak_total{data!="synthetic-replay"}[10m])) > 0
+        labels: { severity: critical }
+        annotations:
+          summary: "A canary token appeared in model output (prompt exfiltration attempt or leak)"
+          runbook_url: docs/RUNBOOK.md#canary-leak
       - alert: FalsePositiveSpike
         expr: sum(increase(fl_user_feedback_total{data!="synthetic-replay",type="false_positive"}[15m])) > 5
         labels: { severity: warning }

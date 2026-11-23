@@ -277,13 +277,13 @@ def test_urls_follow_remapped_ports() -> None:
     assert rows["Campaign board"] == "https://localhost:9443/campaigns"
     assert rows["Operator incident board"] == "https://localhost:9443/ops"
     assert not any(u.endswith(("/board", "/incidents")) for u in rows.values())
-    # Grafana names match the provisioned dashboard titles (infra/grafana/dashboards/[1-6]-*.json)
+    # Grafana names match the provisioned dashboard titles (infra/grafana/dashboards/[1-7]-*.json)
     titles = {
         json.loads(f.read_text())["title"].split(" | ")[0]
-        for f in (Path(__file__).resolve().parents[3] / "infra" / "grafana" / "dashboards").glob("[1-6]-*.json")
+        for f in (Path(__file__).resolve().parents[3] / "infra" / "grafana" / "dashboards").glob("[1-7]-*.json")
     }
     assert {k.split(": ", 1)[1] for k in rows if k.startswith("Grafana")} == titles
-    assert sum(k.startswith("Grafana") for k in rows) == 6
+    assert sum(k.startswith("Grafana") for k in rows) == 7
     assert rows["Prometheus"].endswith(":9090")
 
 

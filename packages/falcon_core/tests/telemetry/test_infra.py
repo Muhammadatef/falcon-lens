@@ -19,6 +19,7 @@ EXPECTED_UIDS = {
     "fl-ai-ops",
     "fl-security",
     "fl-sentinel",
+    "fl-model-quality",
 }
 
 
@@ -34,7 +35,14 @@ def _runbook_anchors() -> set[str]:
 def _documented_metrics() -> set[str]:
     text = (ROOT / "docs" / "OBSERVABILITY.md").read_text(encoding="utf-8")
     block = text.split("**Metrics (the contract", 1)[1].split("Helpers live in", 1)[0]
-    return {f"fl_{n}" for n in re.findall(r"`([a-z_]+)(?:\{[^}]*\})?`", block)}
+    names = {f"fl_{n}" for n in re.findall(r"`([a-z_]+)(?:\{[^}]*\})?`", block)}
+    # metrics served by other processes (API, egress proxy, evals-exporter) are documented right after the list
+    outside = text.split("**Outside the contract list above**", 1)[1].split("**Dashboards**", 1)[0]
+    return names | {
+        f"fl_{n}"
+        for n in re.findall(r"`([a-z_]+)(?:\{[^}]*\})?`", outside)
+        if n.startswith(("api_", "egress_", "eval_"))
+    }
 
 
 def _alert_rules() -> list[dict[str, Any]]:
@@ -74,7 +82,7 @@ def test_rules_only_use_documented_metrics() -> None:
             assert base in documented or name in documented, name
 
 
-def test_six_dashboards_provisioned_with_5s_refresh() -> None:
+def test_seven_dashboards_provisioned_with_5s_refresh() -> None:
     boards = [json.loads(p.read_text(encoding="utf-8")) for p in DASHBOARDS]
     assert {b["uid"] for b in boards} == EXPECTED_UIDS
     for b in boards:
