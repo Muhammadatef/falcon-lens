@@ -7,7 +7,7 @@ from typing import Any
 from cascade_helpers import assert_valid, make_cascade, rules
 
 from falcon_core.cascade import CallbackSink, StubSandboxClient, new_verdict_id
-from falcon_core.cascade.ai import AgentExtractorAdapter
+from falcon_core.cascade.ai import AgentExtractorAdapter, Extracted
 from falcon_core.cascade.testing import DEMO_BENIGN_URL, DEMO_LOOKALIKE_URL, benign_features, phish_features
 
 
@@ -85,12 +85,13 @@ async def test_extractor_adapter_is_used_for_message_text() -> None:
 
     class Ex(AgentExtractorAdapter):
         def __init__(self) -> None:
-            self.injection = None
-            self.last_route = "none"
+            pass
 
         async def extract_text(self, kind: str, text: str, verdict_id: str, registrable_domain: str | None = None):  # type: ignore[no-untyped-def]
             calls.append(kind)
-            return [], "local"
+            out = Extracted()
+            out.route = "local"
+            return out
 
     sink = await check("message", b"hello there", extractor=Ex())
     assert calls == ["message"]

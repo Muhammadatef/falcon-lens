@@ -157,6 +157,21 @@ def _contributions(evidence: Sequence[Evidence], params: ScoringParams, h3_holds
             w = 0.0
         contrib.append(w * confidence_of(ev))
 
+    # One brand mention counts once: several claims for the same brand (e.g. a deterministic one and an
+    # extractor one) take the max, never the sum.
+    best: dict[str, int] = {}
+    for i, ev in enumerate(evidence):
+        if ev.signal == "brand.claimed_not_owned" and contrib[i] > 0:
+            bid = str(observed_get(ev, "brand_id") or "")
+            j = best.get(bid)
+            if j is None:
+                best[bid] = i
+            elif contrib[i] > contrib[j]:
+                contrib[j] = 0.0
+                best[bid] = i
+            else:
+                contrib[i] = 0.0
+
     # message.rule.* : +0.6 each, family total capped at +3.0 (first come, first counted).
     budget = params.message_rule_cap
     for i, ev in enumerate(evidence):

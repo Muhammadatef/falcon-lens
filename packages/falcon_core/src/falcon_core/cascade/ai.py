@@ -78,17 +78,24 @@ def injection_evidence(detect_fn: InjectionDetect | None, *texts: str) -> list[E
     return out
 
 
+class Extracted(list[Evidence]):
+    """Extractor evidence plus the route of *this* call (no shared state between concurrent checks)."""
+
+    route: str = "none"
+
+
 class AgentExtractorAdapter:
-    """``cascade.ports.Extractor`` over the quarantined LLM extractor (page text)."""
+    """``cascade.ports.Extractor`` over the quarantined LLM extractor.
 
-    def __init__(self, extractor: AgentExtractor, injection: InjectionDetect | None = None) -> None:
+    The injection detector is deliberately NOT called here: the cascade runs it independently, before
+    this call, so a slow or failing provider can never discard detector findings.
+    """
+
+    def __init__(self, extractor: AgentExtractor) -> None:
         self.extractor = extractor
-        self.injection = injection
-        self.last_route = "none"
 
-    async def extract(self, features: SandboxFeatures, verdict_id: str) -> list[Evidence]:
+    async def extract(self, features: SandboxFeatures, verdict_id: str) -> Extracted:
         reg = canonicalize(features.final_url).registrable if features.final_url else None
-        out = injection_evidence(self.injection, features.visible_text, features.title)
         inp = ExtractorInput(
             kind="page",
             text=features.visible_text,
@@ -97,23 +104,22 @@ class AgentExtractorAdapter:
             extra_texts=(UntrustedText("page_title", features.title),) if features.title else (),
         )
         res = await self.extractor.extract(inp)
-        if res.route != "none":
-            self.last_route = res.route
-        out.extend(risk_only(to_scoring(e)) for e in res.evidence)
+        out = Extracted(risk_only(to_scoring(e)) for e in res.evidence)
+        out.route = res.route
         return out
 
     async def extract_text(
         self, kind: str, text: str, verdict_id: str, registrable_domain: str | None = None
-    ) -> tuple[list[Evidence], str]:
-        """Message / email body. Returns (evidence, route)."""
+    ) -> Extracted:
+        """Message / email body."""
         if kind not in ("message", "email"):
             raise ValueError(kind)
-        out = injection_evidence(self.injection, text)
         res = await self.extractor.extract(
             ExtractorInput(kind=kind, text=text, verdict_id=verdict_id, registrable_domain=registrable_domain)  # type: ignore[arg-type]
         )
-        out.extend(risk_only(to_scoring(e)) for e in res.evidence)
-        return out, res.route
+        out = Extracted(risk_only(to_scoring(e)) for e in res.evidence)
+        out.route = res.route
+        return out
 
 
 def assert_llm_cannot_lower(det: Sequence[Evidence], llm: Sequence[Evidence]) -> bool:

@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import math
 import time
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
@@ -37,13 +38,14 @@ from falcon_core.scoring.arbiter import (
     ArbiterContext,
     ArbiterResult,
     has_brand_conflict,
+    logit,
     score,
     t1_should_exit,
     t2_should_exit,
 )
 from falcon_core.scoring.evidence import Evidence
 from falcon_core.scoring.params import ScoringParams, load_params
-from falcon_core.scoring.reasons import ReportingChannels
+from falcon_core.scoring.reasons import CLASSIFIER_SIGNAL, ReportingChannels
 from falcon_core.security import (
     DEFAULT_POLICY,
     BlockReason,
@@ -62,6 +64,8 @@ from falcon_core.signals.url.textutil import defang
 log = logging.getLogger("falcon.cascade")
 
 Tier = Literal["T0", "T1", "T2", "T3"]
+STRONG_EVIDENCE_ADJ = 2.5  # log-odds of non-classifier risk evidence needed for dangerous without a hard rule
+MODEL_ONLY_MARGIN = 1.5  # log-odds of deterministic risk evidence needed to move from the model cap to dangerous
 
 
 class VerdictSink(Protocol):
@@ -219,7 +223,28 @@ class Cascade:
             extra_degraded_reasons=tuple(dict.fromkeys(run.degraded_reasons)),
             params=self.params,
         )
-        return score(dedupe(run.evidence), run.p_clf, ctx)
+        evidence = dedupe(run.evidence)
+        result = score(evidence, self._model_p(run.p_clf), ctx)
+        if (
+            run.p_clf is not None
+            and result.verdict == "dangerous"
+            and not any(r.effect == "floor_dangerous" for r in result.fired_rules)
+            and result.logit_adjustment < STRONG_EVIDENCE_ADJ
+        ):
+            # Fitted model plus weak corroboration (e.g. only a login form, which legitimate sites have) is
+            # not enough to convict: hold the total just under tau_high (suspicious).
+            p = 1.0 / (1.0 + math.exp(-(logit(self.params.tau_high) - result.logit_adjustment - 0.05)))
+            result = score(evidence, p, ctx)
+        return result
+
+    def _model_p(self, p: float | None) -> float | None:
+        """The fitted classifier alone never convicts: its probability is capped below ``tau_high`` by
+        ``MODEL_ONLY_MARGIN`` log-odds, so ``dangerous`` needs a hard rule or at least that much
+        deterministic risk evidence on top (page, brand, domain, reputation, message...)."""
+        if p is None:
+            return None
+        cap = 1.0 / (1.0 + math.exp(-(logit(self.params.tau_high) - MODEL_ONLY_MARGIN)))
+        return min(p, cap)
 
     async def _emit(
         self, sink: VerdictSink, run: _Run, result: ArbiterResult, tier: Tier, final: bool
@@ -499,6 +524,10 @@ class Cascade:
             return
         try:
             run.p_clf = float(await asyncio.to_thread(model.p_clf, run.canonical.url))
+            if run.p_clf >= self.params.tau_low:  # informational: lets reasons cite the classifier
+                run.evidence.append(
+                    make_evidence(CLASSIFIER_SIGNAL, "url", {"p_clf": round(run.p_clf, 2)}, tier="T1", source="model")
+                )
         except Exception as exc:  # noqa: BLE001 - missing/tampered artifact or bad features
             self.d.metrics.tool_errors.labels("t1_model", type(exc).__name__[:40]).inc()
             run.degraded_reasons.append("t1_model_unavailable")
@@ -576,22 +605,23 @@ class Cascade:
             if final_reg:
                 run.meta["final_registrable_domain"] = final_reg
             run.redirect_chain = tuple(features.redirect_chain)
-            if self.d.extractor is not None and self.llm_allowed():  # quarantined extractor + injection detector
+            # The deterministic injection detector runs first and on its own: an extractor timeout or
+            # failure below can never discard its findings.
+            added.extend(injection_evidence(self.d.injection, features.visible_text, features.title))
+            if self.d.extractor is not None and self.llm_allowed():  # quarantined LLM extractor
                 try:
                     extra = await asyncio.wait_for(
                         self.d.extractor.extract(features, run.verdict_id), self.d.extractor_timeout_s
                     )
                     # Agent output only ever adds risk-side evidence next to the deterministic evidence.
                     added.extend(risk_only(e) for e in extra)
-                    adapter_route = getattr(self.d.extractor, "last_route", "none")
-                    if adapter_route != "none":
-                        run.routes.add(adapter_route)
+                    route = getattr(extra, "route", "none")
+                    if route != "none":
+                        run.routes.add(route)
                 except Exception as exc:  # noqa: BLE001 - extractor is optional
                     self.d.metrics.tool_errors.labels("extractor", type(exc).__name__[:40]).inc()
                     if isinstance(exc, TimeoutError):
                         self.llm_trip()
-            elif self.d.injection is not None:
-                added.extend(injection_evidence(self.d.injection, features.visible_text, features.title))
         run.evidence.extend(added)
         run.page_tier = True
         result = self._score(run)

@@ -105,19 +105,43 @@ def test_risk_only_strips_trust_weight_and_rule() -> None:
     assert e.polarity == "neutral" and e.weight == 0.0 and e.hard_rule is None
 
 
-async def test_fitted_p_clf_decides_t1_exit_and_is_used() -> None:
-    class Model:
-        def p_clf(self, url: str) -> float:
-            return 0.9995
+class _Model:
+    def __init__(self, p: float) -> None:
+        self.p = p
 
+    def p_clf(self, url: str) -> float:
+        return self.p
+
+
+async def test_model_alone_never_produces_dangerous_and_always_has_a_reason() -> None:
     sandbox = StubSandboxClient(default=benign_features())
-    cascade, _ = make_cascade(sandbox, t1_model=Model())
-    sink = await run(cascade, DEMO_ZERO_DAY_URL)
-    final = sink.docs[-1]
-    assert final["tier_reached"] == "T1" and final["verdict"] == "dangerous"
-    assert final["calibrated_probability"] > 0.99
-    assert sandbox.calls == []
+    cascade, _ = make_cascade(sandbox, t1_model=_Model(0.9995))
+    final = (await run(cascade, DEMO_ZERO_DAY_URL)).docs[-1]
+    assert final["verdict"] == "suspicious" and not final["degraded"]  # capped, and rendered (T2) not convicted at T1
+    assert sandbox.calls != []
+    assert final["reasons"], "every warning carries a reason"
+    ids = {e["id"] for e in final["evidence"] if e["signal"] == "url.classifier"}
+    assert ids and any(set(r["evidence_ids"]) & ids for r in final["reasons"])
     assert_valid(final)
+
+
+async def test_model_plus_a_login_form_alone_is_not_dangerous() -> None:
+    cascade, _ = make_cascade(StubSandboxClient(default=zero_day_features()), t1_model=_Model(0.9995))
+    final = (await run(cascade, DEMO_ZERO_DAY_URL)).docs[-1]
+    assert final["verdict"] == "suspicious" and final["reasons"]  # legitimate sites have login forms
+
+
+async def test_model_plus_strong_deterministic_evidence_is_dangerous() -> None:
+    cascade, _ = make_cascade(StubSandboxClient(default=phish_features()), t1_model=_Model(0.9995))
+    final = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]
+    assert final["verdict"] == "dangerous" and "H1" in rules(final)
+
+
+async def test_confident_low_model_exits_at_t1() -> None:
+    sandbox = StubSandboxClient(default=benign_features())
+    cascade, _ = make_cascade(sandbox, t1_model=_Model(0.001))
+    final = (await run(cascade, DEMO_ZERO_DAY_URL)).docs[-1]
+    assert final["tier_reached"] == "T1" and final["verdict"] == "no_warning_signs" and sandbox.calls == []
 
 
 async def test_t1_model_failure_degrades_instead_of_silent_draft() -> None:

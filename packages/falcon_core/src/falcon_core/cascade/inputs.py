@@ -24,6 +24,7 @@ from falcon_core.signals.email.analyze import analyze_email
 from falcon_core.signals.image.analyze import analyze_image
 from falcon_core.signals.message.analyze import analyze_message
 from falcon_core.signals.message.extract import ChildInput
+from falcon_core.signals.url.canonical import canonicalize
 from falcon_core.signals.url.textutil import defang
 
 if TYPE_CHECKING:
@@ -31,8 +32,9 @@ if TYPE_CHECKING:
 
 log = logging.getLogger("falcon.cascade.inputs")
 
-MAX_CHILD_URLS = 3
-CHILD_TIMEOUT_S = 40.0
+MAX_CHILD_URLS = 10
+CHILD_CONCURRENCY = 5
+CHILD_TIMEOUT_S = 30.0
 TextKind = Literal["message", "email", "image"]
 
 
@@ -127,21 +129,37 @@ def _analyse(
     return body, children, dedupe(ev)
 
 
+def _canon_key(value: str) -> str:
+    c = canonicalize(value)
+    return c.url if c.ok else value
+
+
 async def _judge_children(
     cascade: Cascade, run: Any, input_type: TextKind, children: list[ChildInput]
 ) -> list[Evidence]:
-    urls = list(dict.fromkeys(c.value for c in children if c.kind == "url"))[:MAX_CHILD_URLS]
+    """Check every distinct link up to ``MAX_CHILD_URLS``; more than that degrades the check (never ignored
+    silently). Order independent: the first ``MAX_CHILD_URLS`` distinct links are all judged concurrently."""
+    urls = list(dict.fromkeys(_canon_key(c.value) for c in children if c.kind == "url"))
+    if len(urls) > MAX_CHILD_URLS:
+        run.degraded_reasons.append("links_over_limit")
+        urls = urls[:MAX_CHILD_URLS]
     if not urls:
         return []
     family: Literal["message", "email"] = "email" if input_type == "email" else "message"
+    gate = asyncio.Semaphore(CHILD_CONCURRENCY)
 
     async def one(url: str) -> Evidence:
         sink = _Collect()
         try:
-            await asyncio.wait_for(cascade.run_url(new_verdict_id(), url, sink, source=run.source), CHILD_TIMEOUT_S)
+            async with gate:
+                await asyncio.wait_for(cascade.run_url(new_verdict_id(), url, sink, source=run.source), CHILD_TIMEOUT_S)
             doc = sink.docs[-1]
-            if doc["degraded"]:
-                run.degraded_reasons.append("child_check_degraded")  # an unjudged link must not read as safe
+            if doc["model_route"] != "none":
+                run.routes.add(doc["model_route"])  # the parent verdict reports every agent call it relied on
+            if doc["degraded"] and any(e["weight"] > 0 or e.get("hard_rule") for e in doc["evidence"]):
+                # An unjudged link that already shows risk must not read as safe. A degraded link with no
+                # risk evidence (e.g. a flaky enrichment signal on a clean URL) does not taint the parent.
+                run.degraded_reasons.append("child_check_degraded")
             observed: dict[str, Any] = {
                 "verdict": doc["verdict"],
                 "url": defang(url)[:200],
@@ -164,10 +182,10 @@ async def _extract(cascade: Cascade, run: Any, input_type: TextKind, body: str) 
         return
     kind = "message" if input_type != "email" else "email"
     try:
-        ev, route = await asyncio.wait_for(ex.extract_text(kind, body, run.verdict_id), cascade.d.extractor_timeout_s)
+        ev = await asyncio.wait_for(ex.extract_text(kind, body, run.verdict_id), cascade.d.extractor_timeout_s)
         run.evidence.extend(risk_only(e) for e in ev)
-        if route != "none":
-            run.routes.add(route)
+        if ev.route != "none":
+            run.routes.add(ev.route)
     except Exception as exc:  # noqa: BLE001 - extractor is optional
         cascade.d.metrics.tool_errors.labels("extractor", type(exc).__name__[:40]).inc()
         if isinstance(exc, TimeoutError):

@@ -58,6 +58,7 @@ reasons:
   email.reply_to_mismatch: "Replies go to a different address than the sender."
   email.link_text_mismatch: "A link shows one address but goes to another."
   email.link_verdict: "This email contains a link we found dangerous."
+  url.classifier: "The address pattern looks like known scam links."
   url.data_uri: "The link holds a hidden page instead of a real site address."
   message.brand_mention: "The message names a known organisation."
   message.brand_url_mismatch: "The message names a known organisation, but its link goes to another site."

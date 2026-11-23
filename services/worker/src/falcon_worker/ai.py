@@ -72,9 +72,7 @@ def build_ai(
         # Brand ids and owned domains come from the same registry the cascade uses (one source of truth).
         brand_ids = frozenset(b.brand_id for b in registry.brands)
         owned = {b.brand_id: frozenset(b.verified_domains) for b in registry.brands}
-        out["extractor"] = AgentExtractorAdapter(
-            Extractor(router, brand_ids=brand_ids, verified_domains=owned), out["injection"]
-        )
+        out["extractor"] = AgentExtractorAdapter(Extractor(router, brand_ids=brand_ids, verified_domains=owned))
         out["responder"] = Responder(router)
         backends = tool_backends(http, cache, mirror, registry, sandbox)
         out["investigator"] = Investigator(router, ToolRegistry(backends, brand_ids=brand_ids))
