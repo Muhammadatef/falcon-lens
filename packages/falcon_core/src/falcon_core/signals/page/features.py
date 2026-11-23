@@ -131,6 +131,7 @@ class Cloaking(_M):
     reasons: list[str] = Field(default_factory=list)
     simhash_distance: int | None = None
     text_similarity: float | None = None
+    inconclusive: bool = Field(default=False, description="comparison skipped: a profile was read partially/cut")
 
 
 class RenderFeatures(_M):

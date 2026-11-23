@@ -71,6 +71,14 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             self._send(b"\x89PNG" + b"0" * 150_000, "image/png")
         elif path == "/hang-after-form":  # the form is parsed, then a script that never answers
             self._send(page("Slow script", FORM, '<script src="/hang.js"></script>'))
+        elif path == "/head-stall":  # two blocking scripts in <head>: the body (and its form) is never parsed in time
+            self._send(
+                (
+                    "<!doctype html><html><head><meta charset=utf-8><title>Stalled - Falcon Demo Bank</title>"
+                    '<script src="/hang.js"></script><script src="/hang.js?2"></script></head>'
+                    f"<body>{LABEL}{FORM}</body></html>"
+                ).encode()
+            )
         elif path in ("/hang.js", "/slow-doc"):  # /slow-doc: the main document is slower than the whole budget
             time.sleep(30)
         elif path == "/favicon.ico":
@@ -201,3 +209,23 @@ async def test_slow_main_document_is_still_a_timeout(
 async def test_visit_never_posts(base: str, sandbox: SandboxBrowser) -> None:
     f = (await sandbox.visit(f"{base}/big", "desktop_en")).features
     assert f.network.non_get_sent == 0
+
+
+async def test_head_stalling_page_is_a_partial_read_without_the_body(
+    base: str, sandbox: SandboxBrowser, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Two blocking scripts stall the head: what was read is marked partial and has NO form, so the cascade must not
+    treat the page as read (it degrades unless the domain is established)."""
+    monkeypatch.setattr(browser_mod, "SUBRESOURCE_TIMEOUT_S", 30.0)
+    monkeypatch.setattr(browser_mod, "NAV_BUDGET_S", 1.5)
+    monkeypatch.setattr(browser_mod, "TOTAL_TIMEOUT_S", 3.0)
+    f = (await sandbox.visit(f"{base}/head-stall", "desktop_en")).features
+    assert f.error is None and f.network.partial and not f.forms
+
+
+@pytest.mark.parametrize(
+    "url", ["about:blank", "data:text/html,<p>x</p>", "blob:http://127.0.0.1/x", "chrome-error://x"]
+)
+def test_local_documents_are_never_accepted_as_a_partial_read(url: str) -> None:
+    pol = policy.RequestPolicy(Settings(allow_hosts=frozenset({"127.0.0.1"})).guard)
+    assert not policy.partial_read_allowed(pol, url)

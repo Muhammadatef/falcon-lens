@@ -43,7 +43,7 @@ def compare_profiles(a: ProfileFeatures, b: ProfileFeatures) -> Cloaking:
     if a.network.partial or b.network.partial or a.network.truncated != b.network.truncated:
         # One side was read before it finished loading (or cut at the size cap) and the other was not: forms,
         # structure and text then differ only because of HOW MUCH was read, never because the site cloaks.
-        return Cloaking(diff="final_site_differs" in reasons, reasons=reasons)
+        return Cloaking(diff="final_site_differs" in reasons, reasons=reasons, inconclusive=True)
     a_cred = any(f.cred_form for f in a.forms)
     b_cred = any(f.cred_form for f in b.forms)
     if a_cred != b_cred:

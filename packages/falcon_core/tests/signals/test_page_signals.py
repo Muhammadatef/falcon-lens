@@ -87,7 +87,8 @@ def test_cloaking_skips_comparison_when_one_side_was_read_partially() -> None:
         network=NetworkSummary(partial=True),
     )
     assert not compare_profiles(half, full).diff
-    assert not compare_profiles(full, half).diff
+    assert compare_profiles(half, full).inconclusive and compare_profiles(full, half).inconclusive
+    assert not compare_profiles(full, full).inconclusive
     cut = _profile("mobile_ar", network=NetworkSummary(truncated=True))
     assert not compare_profiles(cut, full).diff
     elsewhere = _profile("mobile_ar", url="http://b.test/", network=NetworkSummary(partial=True))

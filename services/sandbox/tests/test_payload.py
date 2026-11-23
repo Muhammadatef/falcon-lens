@@ -38,6 +38,8 @@ def page(body: str, script: str) -> bytes:
     ).encode()
 
 
+XPOST = "fetch('http://localhost:'+location.port+'/g/collect',{method:'POST',body:'v=2&en=page_view'});"
+
 PAGES = {
     # a credential page whose script sends the form values off to a collector (never triggered by a user here)
     "/steal": page(
@@ -51,6 +53,9 @@ PAGES = {
         "fetch('/g/collect',{method:'POST',body:'v=2&tid=T-TEST&en=page_view&dl=home'});"
         "navigator.sendBeacon('/log',JSON.stringify({event:'view',ms:12}));",
     ),
+    # the same analytics call sent to ANOTHER site (localhost vs 127.0.0.1), with and without a password field
+    "/xlogin": page(FORM, XPOST),
+    "/xstats": page("<p>Falcon Demo Bank news</p>", XPOST),
     # a login page that ALSO has analytics: form fields exist, the beacon does not carry them
     "/login-stats": page(FORM, "fetch('/g/collect',{method:'POST',body:'v=2&en=page_view'});"),
 }
@@ -171,3 +176,15 @@ def test_form_data_post_is_cross_origin_post() -> None:
     assert sig["page.cross_origin_post"].observed["credentials"] is False
     assert "hxxps://collector[.]example[.]test" in sig["page.cross_origin_post"].observed["targets"]
     assert "page.telemetry_beacon" in sig
+
+
+async def test_cross_site_script_post_on_a_credential_page_always_counts(base: str, sandbox: SandboxBrowser) -> None:
+    """Fail closed: with a password field on the page, an innocent-looking cross-site POST still counts;
+    without one, the body analysis decides and an analytics-style beacon does not."""
+    login = (await sandbox.visit(f"{base}/xlogin", "desktop_en")).features
+    assert any(x.cred_form for x in login.forms)
+    cross = [t for t in login.script_post_targets if t.cross_origin]
+    assert cross and all(t.carries_form_data for t in cross)
+    stats = (await sandbox.visit(f"{base}/xstats", "desktop_en")).features
+    cross = [t for t in stats.script_post_targets if t.cross_origin]
+    assert cross and not any(t.carries_form_data for t in cross)

@@ -87,16 +87,62 @@ async def test_truncated_page_is_evidence_with_weight_zero_not_an_error() -> Non
     feats = SandboxFeatures.model_validate(
         {
             "final_url": DEMO_BENIGN_URL,
-            "title": "Falcon Demo Bank",
+            "title": "Garden club events",
             "visible_text": "TEST FIXTURE, not a real site.",
             "truncated": True,
             "partial": True,
             "error": None,
         }
     )
-    cascade, _ = make_cascade(force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals())
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
     assert_valid(final)
     ev = next(e for e in final["evidence"] if e["signal"] == "page.truncated")
     assert ev["weight"] == 0 and ev["observed"] == {"truncated": True, "partial": True} and ev["error"] is None
     assert not final.get("degraded")
+
+
+def _partial(**kw: object) -> SandboxFeatures:
+    return SandboxFeatures.model_validate(
+        {"final_url": DEMO_BENIGN_URL, "title": "Garden club events", "partial": True, "error": None, **kw}
+    )
+
+
+async def test_partial_read_on_unknown_domain_is_degraded_not_cleared() -> None:
+    """Fail closed: a half-read page is held to the same rule as an unopened one (no trust evidence -> degraded)."""
+    cascade, _ = make_cascade(force_t2=True, sandbox=StubSandboxClient(default=_partial()), signals=offline_signals())
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert_valid(final)
+    assert final["degraded"] and "partial_render" in final["degraded_reasons"]
+    assert final["verdict"] != "no_warning_signs"
+
+
+async def test_partial_read_on_established_domain_without_risk_may_clear() -> None:
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=_partial()), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert not final["degraded"], final["degraded_reasons"]
+    assert final["verdict"] == "no_warning_signs"
+    assert any(e["signal"] == "page.truncated" for e in final["evidence"])
+
+
+async def test_partial_read_with_page_risk_is_degraded_even_on_established_domain() -> None:
+    feats = _partial(forms=[{"fields": ["password"], "action_origin": None}])
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert final["degraded"] and "partial_render" in final["degraded_reasons"]
+
+
+async def test_inconclusive_cloaking_comparison_is_visible_evidence_weight_zero() -> None:
+    feats = _partial(cloaking={"detected": False, "diff": False, "inconclusive": True, "reasons": []})
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    ev = next(e for e in final["evidence"] if e["signal"] == "page.cloaking_inconclusive")
+    assert ev["weight"] == 0

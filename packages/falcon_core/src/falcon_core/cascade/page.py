@@ -349,6 +349,21 @@ def page_evidence(
             )
         )
 
+    # page.cloaking_inconclusive (informational, weight 0): the two profiles were not read equally, so no verdict
+    if features.cloaking.get("inconclusive") is True and features.cloaking.get("detected") is not True:
+        out.append(
+            make_evidence(
+                "page.cloaking_inconclusive",
+                "page",
+                {"inconclusive": True},
+                tier="T2",
+                source="sandbox",
+                confidence=0.5,
+                en="We could not compare how the page looks to different visitors",
+                ar="تعذّرت مقارنة شكل الصفحة بين زائر وآخر",
+            )
+        )
+
     # page.cloaking
     if features.cloaking.get("detected") is True:
         obs = {str(k)[:40]: v for k, v in list(features.cloaking.items())[:10] if isinstance(v, bool | int | float)}

@@ -97,6 +97,11 @@ def check(url: str, delay: float) -> dict[str, Any]:
                     "degraded_reasons": d.get("degraded_reasons") or [],
                     "risk_signals": [e["signal"] for e in risk[:3]],
                     "risk_score": d.get("risk_score"),
+                    # read before the page finished loading (page.truncated with partial=true)
+                    "partial": any(
+                        e.get("signal") == "page.truncated" and (e.get("observed") or {}).get("partial") is True
+                        for e in d.get("evidence", [])
+                    ),
                 }
             time.sleep(0.5)
     raise TimeoutError("no final verdict")
@@ -145,7 +150,10 @@ def main() -> int:
         f"fp-regress: n={len(res)} {dict(counts)} degraded={degraded} errors={errors} "
         f"fpr={fpr:.4f} ci95=[{lo:.4f},{hi:.4f}] target={a.target}"
     )
-    print(f"degraded_reasons={dict(why)} top_risk_signal_of_flagged={dict(top)}")
+    print(
+        f"partial_reads={sum(bool(r.get('partial')) for r in res)} degraded_reasons={dict(why)} "
+        f"top_risk_signal_of_flagged={dict(top)}"
+    )
     if web:
         for flag, label in (("1", "serves_web_page"), ("0", "no_web_host")):
             sub_res = rate([r for r in res if web.get(r["url"]) == flag])
@@ -165,6 +173,7 @@ def main() -> int:
         "degraded": degraded,
         "errors": errors,
         "degraded_reasons": dict(why),
+        "partial_reads": sum(bool(r.get("partial")) for r in res),
         "top_risk_signal_of_flagged": dict(top),
         "by_tier": dict(Counter(str(r["tier"]) for r in res)),
         "items": [
@@ -174,6 +183,7 @@ def main() -> int:
                 "verdict": r["verdict"],
                 "tier": r.get("tier"),
                 "degraded_reasons": r.get("degraded_reasons", []),
+                "partial": bool(r.get("partial", False)),
             }
             for r in res
         ],

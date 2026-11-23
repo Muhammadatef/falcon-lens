@@ -84,6 +84,7 @@ def to_flat(f: RenderFeatures, verdict_id: str | None = None) -> dict[str, Any]:
         "detected": c.diff,
         "diff": c.diff,
         "simhash_distance": c.simhash_distance,
+        "inconclusive": c.inconclusive,
         "reasons": c.reasons,
     }
     out["profiles"] = {k: v.model_dump(mode="json") for k, v in f.profiles.items()}

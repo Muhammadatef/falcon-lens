@@ -63,6 +63,12 @@ class RequestPolicy:
         return Decision(True)
 
 
+def partial_read_allowed(policy: RequestPolicy, url: str) -> bool:
+    """May features be read from a page that never reached DOMContentLoaded? Only a real http(s) page that passes
+    the same policy: about:, data: and blob: documents are never accepted as a partial read (fail closed)."""
+    return url.startswith(("http://", "https://")) and policy.decide(url, "GET", "document").allow
+
+
 class ByteBudget:
     """Running total of received bytes; ``add`` returns True once the cap is exceeded."""
 

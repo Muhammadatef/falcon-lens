@@ -60,6 +60,7 @@ from .policy import (
     RequestPolicy,
     classify_fetch_error,
     declared_length,
+    partial_read_allowed,
     proxy_refusal,
 )
 from .profiles import PROFILES
@@ -516,7 +517,7 @@ class SandboxBrowser:
             # The navigation budget ran out but a real document had already answered (a slow script or
             # frame is holding DOMContentLoaded): judge what has loaded instead of failing the visit.
             nr = st.nav_response
-            if nr is not None and policy.decide(page.url, "GET", "document").allow:
+            if nr is not None and partial_read_allowed(policy, page.url):
                 response, feats.timed_out, st.partial = nr, False, True
         if response is not None and not st.pending and not st.partial:
             settle = min(1.5, max(0.0, nav_deadline - loop.time()))
@@ -564,6 +565,12 @@ class SandboxBrowser:
                 *build_static_post_targets(raw.get("typed", []), raw.get("literals", []), final),
                 *st.posts,
             ][:40]
+            if any(f.cred_form for f in feats.forms):
+                # A page that asks for a password/OTP/card/ID: ANY script POST to another site is treated as
+                # carrying that data, whatever the body analysis says (fail closed).
+                for t in feats.script_post_targets:
+                    if t.cross_origin:
+                        t.carries_form_data = True
             feats.dom_simhash = dom_simhash(raw.get("struct", []))
             fh = host_of(final)
             feats.asset_origins = sorted(h for h in st.assets if not same_site(h, fh))[:30]
