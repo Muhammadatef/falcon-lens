@@ -28,7 +28,7 @@ if (existsSync(published)) {
 const assets = join(repo, "docs", "assets");
 if (existsSync(assets)) {
   mkdirSync(join(web, "public", "images"), { recursive: true });
-  for (const name of ["how-it-works.svg", "ai-agents.svg"]) {
+  for (const name of ["how-it-works.svg", "ai-agents.svg", "architecture.svg", "investigator.svg", "sentinel.svg", "agent-investigator-steps.svg", "agent-sentinel-steps.svg"]) {
     if (existsSync(join(assets, name))) copyFileSync(join(assets, name), join(web, "public", "images", name));
   }
 }

@@ -20,8 +20,9 @@ test.describe("check page: progressive verdict from the API stream", () => {
     await expect(page.getByTestId("pending")).toBeVisible();
     await expect(page.getByTestId("provisional-chip")).toContainText("علامات مريبة");
     await expect(page.getByTestId("verdict-plate")).toHaveCount(0);
-    await expect(page.getByTestId("tier-T1").getByTestId("evidence-row")).toHaveCount(3);
-    await expect(page.getByTestId("tier-T2")).toHaveAttribute("data-status", "running");
+    await expect(page.getByTestId("act-step-T1")).toHaveAttribute("data-status", "done");
+    await expect(page.getByTestId("act-step-T2")).toHaveAttribute("data-status", "running");
+    await expect(page.getByTestId("evidence-row")).toHaveCount(0); // evidence ids live in Technical details, after the final verdict
 
     // Final.
     await expect(page.getByTestId("verdict-word")).toHaveText("خطِر");
@@ -45,14 +46,17 @@ test.describe("check page: progressive verdict from the API stream", () => {
     await expect(page.getByTestId("act-report")).toContainText("غير تابع لشرطة أبوظبي");
     await expect(page.getByTestId("caution")).toHaveCount(0);
 
-    // Clicking an evidence id highlights its row in the investigation timeline.
+    // Technical details are closed by default; opening them reveals the ids, and a citation highlights its row.
+    await expect(page.getByTestId("tech-details")).not.toHaveAttribute("open", "");
+    await page.getByTestId("tech-summary").click();
     await page.getByTestId("cite").filter({ hasText: "ev_dom0age001" }).click();
     await expect(page.locator('[data-testid="evidence-row"][data-evidence="ev_dom0age001"]')).toHaveClass(/hit/);
     await expect(page.locator('[data-testid="evidence-row"][data-evidence="ev_dom0age001"]')).toBeInViewport();
 
-    // The URL is defanged text, never a link; the result holds no anchors at all.
+    // The URL is defanged text, never a link; the only anchor in the result is the internal Docs link.
     await expect(page.getByTestId("defanged-url")).toHaveText("hxxps://falcon-demo-bank-secure[.]test/login");
-    await expect(page.getByTestId("result").locator("a")).toHaveCount(0);
+    await expect(page.getByTestId("result").locator("a")).toHaveCount(1);
+    await expect(page.getByTestId("result").locator("a")).toHaveAttribute("href", "/docs/cascade");
     await expect(page.getByTestId("source-badge")).toHaveCount(0); // live data wears no demo badge
 
     // Real request went to the real endpoint, and the page is reload-proof.
@@ -73,7 +77,7 @@ test.describe("check page: progressive verdict from the API stream", () => {
     await page.goto("/");
     await submitText(page, `https://falcon-demo-bank.test/?c=${t}`);
 
-    await expect(page.getByTestId("tier-T0").getByTestId("evidence-row")).toHaveCount(1);
+    await expect(page.getByTestId("act-step-T0")).toHaveAttribute("data-status", "done");
     // Partial verdicts say no_warning_signs here; the UI must not say so before `final`.
     await expect(page.getByTestId("provisional-chip")).toHaveCount(0);
     await expect(page.getByTestId("verdict-word")).toHaveText("لم نجد علامات تحذير");
@@ -208,7 +212,7 @@ test.describe("check page: progressive verdict from the API stream", () => {
     await page.goto("/");
     await submitText(page, `https://evil.test/?c=${t}`);
     await expect(page.getByTestId("verdict-word")).toHaveText("خطِر");
-    await page.getByTestId("tech-toggle").check();
+    await page.getByTestId("tech-summary").click();
     // Long unbroken attacker strings must not break the layout either.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 
@@ -222,7 +226,7 @@ test.describe("check page: progressive verdict from the API stream", () => {
 
     // …and none of them became markup, a link, or code.
     const result = page.getByTestId("result");
-    await expect(result.locator("img, script, iframe, object, embed, a, [onerror], [onload], [onfocus]")).toHaveCount(0);
+    await expect(result.locator("img, script, iframe, object, embed, a:not([href=\"/docs/cascade\"]), [onerror], [onload], [onfocus]")).toHaveCount(0);
     await expect(result.locator("svg:not(.icon):not(.lens-svg)")).toHaveCount(0);
     expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
     expect(await page.evaluate(() => document.querySelectorAll('[href^="javascript:" i]').length)).toBe(0);

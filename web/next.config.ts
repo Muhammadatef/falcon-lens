@@ -8,6 +8,10 @@ const config: NextConfig = {
   reactStrictMode: true,
   turbopack: { root: dirname(fileURLToPath(import.meta.url)) },
   outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)),
+  async redirects() {
+    // v2: the agent-pattern page moved into the Docs area.
+    return [{ source: "/architecture/agents", destination: "/docs/agents", permanent: true }];
+  },
   async headers() {
     return [
       // The service worker must never be served stale, and may control the whole origin.

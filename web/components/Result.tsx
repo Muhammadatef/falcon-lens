@@ -3,22 +3,22 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, useReducedMotion, type Variants } from "motion/react";
 import * as m from "motion/react-m";
-import { TIERS, type Evidence, type Verdict } from "@/lib/contracts";
+import type { Verdict } from "@/lib/contracts";
 import { clip } from "@/lib/defang";
 import { pick } from "@/lib/i18n";
-import { evidenceRow, fadeRise, haptics, reduced, stagger, staggerGroup, verdictPlate } from "@/lib/motion";
+import { fadeRise, haptics, reduced, stagger, staggerGroup, verdictPlate } from "@/lib/motion";
 import { usePrefs } from "@/lib/prefs";
 import { lensStateFor, type CheckState } from "@/lib/verdict-stream";
+import { AgentActivity } from "./AgentActivity";
 import { DefangedUrl, SourceBadge, UntrustedText } from "./Chrome";
-import { Icon, PolarityMark } from "./Icon";
+import { Icon } from "./Icon";
 import { Lens } from "./Lens";
+import { TechnicalDetails } from "./TechnicalDetails";
 
-const HIT_MS = 1800;
 const asVariants = (v: unknown) => v as Variants;
 
-export function Result({ state, onReset }: { state: CheckState; onReset: () => void }) {
+export function Result({ state, onReset, investigatorLive = false, sentinelLive = false }: { state: CheckState; onReset: () => void; investigatorLive?: boolean; sentinelLive?: boolean }) {
   const { t } = usePrefs();
-  const [hit, setHit] = useState<{ id: string; n: number } | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const still = useReducedMotion() ?? false;
 
@@ -37,12 +37,6 @@ export function Result({ state, onReset }: { state: CheckState; onReset: () => v
     if (pattern.length > 0 && typeof navigator.vibrate === "function") navigator.vibrate([...pattern]);
   }, [finalVerdict, still, state.demo]);
 
-  useEffect(() => {
-    if (!hit) return;
-    const timer = setTimeout(() => setHit(null), HIT_MS);
-    return () => clearTimeout(timer);
-  }, [hit]);
-
   const v = state.verdict;
   return (
     <section ref={sectionRef} id="check" className="result" aria-labelledby="check-title" data-testid="result" data-phase={state.phase}>
@@ -58,11 +52,11 @@ export function Result({ state, onReset }: { state: CheckState; onReset: () => v
         <CaseHeader state={state} />
         <div className="check-grid">
           <article className="card verdict" data-verdict={finalVerdict?.verdict} aria-live="polite" aria-busy={state.phase === "waiting" || state.phase === "streaming" || state.phase === "submitting"} data-testid="verdict-card">
-            <VerdictBody state={state} still={still} onCite={(id) => setHit((h) => ({ id, n: (h?.n ?? 0) + 1 }))} />
+            <VerdictBody state={state} still={still} />
           </article>
           {state.phase !== "failed" || v ? (
-            <aside className="card trail-card">
-              <Timeline state={state} hit={hit} still={still} />
+            <aside className="card trail-card" aria-label={t("check.title")}>
+              <AgentActivity state={state} investigatorLive={investigatorLive} sentinelLive={sentinelLive} />
             </aside>
           ) : null}
         </div>
@@ -139,7 +133,7 @@ function SlowNote() {
   );
 }
 
-function VerdictBody({ state, still, onCite }: { state: CheckState; still: boolean; onCite: (id: string) => void }) {
+function VerdictBody({ state, still }: { state: CheckState; still: boolean }) {
   const { t, lang } = usePrefs();
   const v = state.verdict;
 
@@ -162,13 +156,16 @@ function VerdictBody({ state, still, onCite }: { state: CheckState; still: boole
 
   if (state.phase === "interrupted") {
     return (
-      <div className="notice notice--problem" role="alert" data-testid="interrupted">
-        <h3 className="h3">
-          <Icon name="unplug" size={28} />
-          {t("interrupted.title")}
-        </h3>
-        <p className="notice-lead">{t("interrupted.body")}</p>
-      </div>
+      <>
+        <div className="notice notice--problem" role="alert" data-testid="interrupted">
+          <h3 className="h3">
+            <Icon name="unplug" size={28} />
+            {t("interrupted.title")}
+          </h3>
+          <p className="notice-lead">{t("interrupted.body")}</p>
+        </div>
+        {v ? <TechnicalDetails state={state} verdict={v} /> : null}
+      </>
     );
   }
 
@@ -226,48 +223,13 @@ function VerdictBody({ state, still, onCite }: { state: CheckState; still: boole
           </m.p>
         ) : null}
 
-        <m.div className="risk" variants={item}>
-          <div className="risk-top">
-            <span>{t("risk")}</span>
-            <b data-testid="risk-score">{v.risk_score} / 100</b>
-          </div>
-          <div className="band" role="img" aria-label={`${t("risk")} ${v.risk_score} / 100`}>
-            <i />
-            <span className="band-fill" style={{ inlineSize: `${v.risk_score}%` }} />
-            <span className="band-mark" style={{ insetInlineStart: `${v.risk_score}%` }} />
-          </div>
-          <p className="small">{t("risk.note")}</p>
-        </m.div>
-
         {v.reasons.length > 0 ? (
           <m.div variants={item}>
             <h3 className="h3">{t("why")}</h3>
             <ol className="reasons" data-testid="reasons">
-              {v.reasons.map((r, i) => (
+              {v.reasons.slice(0, 3).map((r, i) => (
                 <li key={i}>
-                  <div>
-                    <p dir="auto">{pick(lang, r)}</p>
-                    {r.evidence_ids.length > 0 ? (
-                      <div className="cites">
-                        {t("cite")}
-                        {r.evidence_ids.map((id) => {
-                          const cited = v.evidence.find((e) => e.id === id);
-                          return (
-                            <span key={id} className="cite-wrap">
-                              <button className="cite" type="button" aria-label={`${t("cite.go")} ${id}`} data-testid="cite" data-evidence={id} onClick={() => onCite(id)}>
-                                {id}
-                              </button>
-                              {cited?.hard_rule ? (
-                                <span className="tag-rule" data-polarity={cited.polarity}>
-                                  {t("rule")} <bdi>{cited.hard_rule}</bdi>
-                                </span>
-                              ) : null}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </div>
+                  <p dir="auto">{pick(lang, r)}</p>
                 </li>
               ))}
             </ol>
@@ -318,13 +280,7 @@ function VerdictBody({ state, still, onCite }: { state: CheckState; still: boole
         </m.div>
       </m.div>
 
-      <div className="meta">
-        <span>{t("m.id")} <b className="mono" data-testid="verdict-id">{v.verdict_id}</b></span>
-        <span>{t("m.tier")} <b className="mono">{v.tier_reached}</b></span>
-        <span>{t("m.route")} <b>{t(`m.${v.model_route}`)}</b></span>
-        <span>{t("m.time")} <b className="mono">{(v.latency_ms / 1000).toFixed(1)} s</b></span>
-        <span>{t("m.source")} <b>{t(`src.${v.source ?? "live"}`)}</b></span>
-      </div>
+      <TechnicalDetails state={state} verdict={v} />
     </>
   );
 }
@@ -346,104 +302,6 @@ function TextList({ items }: { items: string[] }) {
       ))}
     </ul>
   );
-}
-
-function Timeline({ state, hit, still }: { state: CheckState; hit: { id: string; n: number } | null; still: boolean }) {
-  const { t, lang, dir } = usePrefs();
-  const [tech, setTech] = useState(false);
-  const rows = useRef(new Map<string, HTMLElement>());
-  const v = state.verdict;
-  const fresh = state.singleEvent ? [] : state.freshEvidenceIds;
-  const rowVariants = asVariants(still ? { hidden: reduced.fade.hidden, visible: () => reduced.fade.visible } : evidenceRow(dir));
-  const firstSkipped = TIERS.find((tier) => state.tiers[tier] === "skipped");
-  const hadRule = v?.evidence.some((e) => e.hard_rule) ?? false;
-
-  useEffect(() => {
-    if (!hit) return;
-    rows.current.get(hit.id)?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
-  }, [hit, still]);
-
-  const steps = v?.trace ?? [];
-  return (
-    <div className={tech ? "trail tech" : "trail"} data-testid="timeline">
-      <div className="trail-head">
-        <h3 className="h3"><Icon name="list" size={22} />{t("trail")}</h3>
-        <label className="switch">
-          <input type="checkbox" role="switch" checked={tech} onChange={(e) => setTech(e.target.checked)} data-testid="tech-toggle" />
-          {t("tech")}
-        </label>
-      </div>
-
-      {TIERS.map((tier) => {
-        const status = state.tiers[tier];
-        const evidence = v ? v.evidence.filter((e) => e.tier === tier) : [];
-        return (
-          <div className="tier" key={tier} data-status={status} data-testid={`tier-${tier}`}>
-            <span className="tier-dot" />
-            <div className="tier-head">
-              <h4>{t(`tier.${tier}`)}</h4>
-              <span className="tier-code">{tier}</span>
-              <span className="tier-state">{t(`st.${status}`)}</span>
-            </div>
-            <div className="tier-body">
-              {evidence.map((e) => (
-                <m.div
-                  key={e.id}
-                  ref={(node: HTMLDivElement | null) => { if (node) rows.current.set(e.id, node); else rows.current.delete(e.id); }}
-                  className={hit?.id === e.id ? "ev hit" : "ev"}
-                  data-polarity={e.polarity}
-                  data-evidence={e.id}
-                  data-testid="evidence-row"
-                  variants={rowVariants}
-                  custom={Math.max(0, fresh.indexOf(e.id))}
-                  initial={fresh.includes(e.id) ? "hidden" : false}
-                  animate="visible"
-                >
-                  <PolarityMark polarity={e.polarity ?? "neutral"} />
-                  <div>
-                    <p dir="auto">{evidenceText(e, lang, t("ev.nodisplay"), t("ev.failed"))}</p>
-                    <div className="ev-meta">
-                      <span>{e.id}</span>
-                      {e.hard_rule ? <span className="tag-rule" data-polarity={e.polarity}>{e.hard_rule}</span> : null}
-                      <span className="ev-tech">{e.signal}</span>
-                      <span className="ev-tech">{(e.weight > 0 ? "+" : "") + e.weight.toFixed(1)}</span>
-                      <span className="ev-tech">{e.source}</span>
-                    </div>
-                  </div>
-                </m.div>
-              ))}
-              {status === "running" ? <div className="sk" /> : null}
-              {status === "skipped" && tier === firstSkipped ? <p className="tier-note">{t(hadRule ? "skip.rule" : "skip.clear")}</p> : null}
-            </div>
-          </div>
-        );
-      })}
-
-      {steps.length > 0 ? (
-        <div className="steps" data-testid="trace">
-          <h4>{t("steps")}</h4>
-          <ol>
-            {steps.map((s) => (
-              <li key={s.step} data-kind={s.kind}>
-                <div className="step-top">
-                  <span className="step-kind">{t(`trace.${s.kind}`)}</span>
-                  {s.name ? <bdi className="mono step-name">{s.name}</bdi> : null}
-                  {typeof s.ms === "number" ? <span className="mono step-ms">{s.ms} ms</span> : null}
-                </div>
-                <p><UntrustedText value={s.summary} /></p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function evidenceText(e: Evidence, lang: "ar" | "en", noDisplay: string, failed: string): string {
-  const text = pick(lang, e.display);
-  if (e.error) return text ? `${text} · ${failed}` : failed;
-  return text || noDisplay;
 }
 
 export type { Verdict };

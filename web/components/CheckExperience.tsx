@@ -20,9 +20,11 @@ export interface CheckExperienceProps {
   shareFailed: boolean;
   pendingKinds: readonly InputType[];
   investigatorLive: boolean;
+  /** `sentinel_agent` flag (absent from the bundle counts as false). */
+  sentinelLive?: boolean;
 }
 
-export function CheckExperience({ demo, initialId, initialText, shareFailed, pendingKinds, investigatorLive }: CheckExperienceProps) {
+export function CheckExperience({ demo, initialId, initialText, shareFailed, pendingKinds, investigatorLive, sentinelLive = false }: CheckExperienceProps) {
   const { t } = usePrefs();
   const { state, start, playDemo, reset } = useCheck(initialId);
   const busy = state.phase === "submitting" || state.phase === "waiting" || state.phase === "streaming";
@@ -70,7 +72,7 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed, pen
           </div>
         </div>
 
-        {showResult ? <Result state={state} onReset={reset} /> : null}
+        {showResult ? <Result state={state} onReset={reset} investigatorLive={investigatorLive} sentinelLive={sentinelLive} /> : null}
 
         <section id="how" aria-labelledby="how-title">
           <div className="wrap">

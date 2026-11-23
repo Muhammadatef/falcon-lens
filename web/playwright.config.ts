@@ -7,6 +7,10 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const MOCK_PORT = Number(process.env.MOCK_PORT ?? 43110);
 const APP_PORT = Number(process.env.APP_PORT ?? 43111);
+/** Second stack whose /v1/meta reports every capability flag true (tests/e2e/helpers.ts: ALL_ON_URL). */
+const ON_MOCK_PORT = Number(process.env.ON_MOCK_PORT ?? 43112);
+const ON_APP_PORT = Number(process.env.ON_APP_PORT ?? 43113);
+const ALL_CAPS = JSON.stringify(Object.fromEntries(["message_check", "email_check", "image_check", "injection_defence", "investigator", "t1_measured_model", "sentinel_agent", "rest_api", "mcp", "stix"].map((id) => [id, true])));
 /** Set to a running stack's gateway (e.g. https://localhost:8443) to run tests/live through Caddy. */
 const LIVE = process.env.LIVE_BASE_URL;
 
@@ -43,6 +47,20 @@ export default defineConfig({
       command: "node tests/mock/gateway.mjs",
       url: `http://127.0.0.1:${MOCK_PORT}/api/health`,
       env: { MOCK_PORT: String(MOCK_PORT), APP_PORT: String(APP_PORT) },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: "node .next/standalone/server.js",
+      url: `http://127.0.0.1:${ON_APP_PORT}/api/health`,
+      env: { PORT: String(ON_APP_PORT), HOSTNAME: "127.0.0.1", NODE_ENV: "production", FL_API_INTERNAL_URL: `http://127.0.0.1:${ON_MOCK_PORT}` },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+    {
+      command: "node tests/mock/gateway.mjs",
+      url: `http://127.0.0.1:${ON_MOCK_PORT}/api/health`,
+      env: { MOCK_PORT: String(ON_MOCK_PORT), APP_PORT: String(ON_APP_PORT), MOCK_CAPS: ALL_CAPS },
       reuseExistingServer: false,
       timeout: 60_000,
     },

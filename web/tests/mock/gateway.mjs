@@ -148,6 +148,10 @@ async function check(req, res, kind) {
 }
 
 async function api(req, res, path) {
+  // GET /v1/meta: capability flags come from the MOCK_CAPS env (JSON), fixed for the life of this mock.
+  // Unset = no `capabilities` block, so the web app falls back to its bundled flags (the default stack).
+  if (path === "/v1/meta" && req.method === "GET") return json(res, 200, process.env.MOCK_CAPS ? { capabilities: JSON.parse(process.env.MOCK_CAPS) } : {});
+
   const checkRoute = /^\/v1\/check\/(url|message|email|image)$/.exec(path);
   if (checkRoute && req.method === "POST") return check(req, res, checkRoute[1]);
 

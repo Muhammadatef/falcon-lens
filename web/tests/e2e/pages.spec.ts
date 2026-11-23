@@ -10,7 +10,7 @@ import results from "../../lib/results.generated.json";
 import { formatMetric } from "../../lib/results";
 import { expect, setPrefs, test } from "./helpers";
 
-const PAGES = ["/", "/how-it-works", "/architecture/agents", "/results", "/authorities", "/privacy", "/campaigns", "/ops", "/this-page-does-not-exist"];
+const PAGES = ["/", "/how-it-works", "/docs", "/docs/architecture", "/docs/agents", "/docs/cascade", "/docs/arbiter", "/docs/security", "/docs/evals", "/docs/integration", "/docs/privacy", "/results", "/authorities", "/privacy", "/campaigns", "/ops", "/this-page-does-not-exist"];
 const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 async function axe(page: Page) {
@@ -107,10 +107,10 @@ test.describe("judge-facing content", () => {
     }
   });
 
-  test("architecture: both agents, patterns, layers, rejected alternatives; diagram under reduced motion", async ({ page, context, baseURL }) => {
+  test("docs/agents: both agents, patterns, layers, rejected alternatives; diagram under reduced motion", async ({ page, context, baseURL }) => {
     await setPrefs(context, baseURL!, { lang: "en" });
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/architecture/agents");
+    await page.goto("/docs/agents");
     await expect(page.getByTestId("investigator")).toContainText("state machine");
     await expect(page.getByTestId("sentinel")).toContainText("LangGraph StateGraph");
     await expect(page.getByTestId("investigator").locator(".flow-node")).toHaveCount(9);
@@ -157,11 +157,13 @@ test.describe("judge-facing content", () => {
     await expect(page.getByTestId("not-evaluated")).toBeVisible();
   });
 
-  test("authorities: says ready to connect, not connected, and lists REST, MCP, STIX and webhooks", async ({ page, context, baseURL }) => {
+  test("authorities: says ready to connect, not connected, shows three outcomes and the interface flags", async ({ page, context, baseURL }) => {
     await setPrefs(context, baseURL!, { lang: "en" });
     await page.goto("/authorities");
     await expect(page.getByTestId("not-connected")).toContainText("Ready to connect, not connected");
-    for (const name of ["REST v1", "MCP", "STIX 2.1", "Webhooks"]) await expect(page.getByRole("rowheader", { name })).toBeVisible();
+    for (const name of ["REST v1", "MCP", "STIX 2.1"]) await expect(page.getByTestId("ifaces")).toContainText(name);
+    await expect(page.getByTestId("outcomes").locator("li")).toHaveCount(3);
+    await expect(page.locator('main a[href="/docs/integration"]')).toBeVisible();
     await expect(page.locator("main")).toContainText("Sovereign mode");
     await expect(page.locator("main")).toContainText("Data boundary");
   });

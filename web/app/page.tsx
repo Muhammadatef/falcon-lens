@@ -1,4 +1,5 @@
 import { CheckExperience } from "@/components/CheckExperience";
+import { flag } from "@/lib/cap-flag";
 import { loadCapabilities } from "@/lib/capabilities";
 import { VERDICT_ID_RE } from "@/lib/contracts";
 
@@ -22,6 +23,7 @@ export default async function Home({ searchParams }: { searchParams: Search }) {
       initialText={one(params.text).slice(0, 8000)}
       pendingKinds={[...(caps.message_check ? [] : ["message" as const]), ...(caps.email_check ? [] : ["email" as const]), ...(caps.image_check ? [] : ["image" as const])]}
       investigatorLive={caps.investigator}
+      sentinelLive={flag(caps, "sentinel_agent")}
       shareFailed={one(params.share) === "failed"}
     />
   );

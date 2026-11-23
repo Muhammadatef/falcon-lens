@@ -100,7 +100,7 @@ export const ARCH: Record<Lang, ArchContent> = {
       whyTitle: "Why this pattern",
       why: [
         "Long-running: triage spans several steps and external lookups, so progress must be persisted between them.",
-        "Restart-safe: a Postgres checkpointer keyed by the incident resumes at the last completed node after a crash or redeploy.",
+        "Resumable after a restart: a Postgres checkpointer keyed by the incident resumes at the last completed node after a crash or redeploy.",
         "Auditable: the graph is explicit, every action is written to an append-only log with its evidence ids, and the interrupt makes the approval point a structural fact, not a prompt instruction.",
       ],
       flowTitle: "Layer by layer",
