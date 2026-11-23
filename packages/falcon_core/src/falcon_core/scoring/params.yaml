@@ -97,6 +97,7 @@ weights:
   visual.favicon_match_brand: 1.0
   brand.claimed_not_owned: 3.0
   message.script_match: 2.5
+  message.scam_intent: 4.0      # weight x p (p >= theta in intent_weights.json); proposed by builder-signals, L1 to confirm
   message.brand_mention: 0.5
   message.brand_url_mismatch: 1.0
   email.auth_fail: 1.5

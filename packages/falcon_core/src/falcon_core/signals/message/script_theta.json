@@ -1,0 +1,7 @@
+{
+ "theta": 0.5467,
+ "max_legit_similarity": 0.5267,
+ "n_corpus": 72,
+ "dataset_hash": "036de1048cd68797338115ca65a840508aebf4dfa193b2bac8fe17f304ddf7a7",
+ "fit": "legit train+val"
+}

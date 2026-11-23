@@ -42,6 +42,7 @@ reasons:
   brand.claimed_not_owned: "الصفحة تدّعي أنها جهة معروفة، لكن الموقع ليس موقعها."
   registry.verified_official: "هذا موقع رسمي مسجّل للجهة."
   message.script_match: "الرسالة تشبه رسائل احتيال معروفة."
+  message.scam_intent: "الرسالة تطلب رمزاً أو مالاً أو وصولاً بأسلوب رسائل الاحتيال."
   message.link_verdict: "الرسالة فيها رابط وجدنا أنه خطير."
   message.rule.urgency: "الرسالة تستعجلك لتتصرف فوراً."
   message.rule.secrecy: "الرسالة تطلب منك ألا تخبر أحداً."

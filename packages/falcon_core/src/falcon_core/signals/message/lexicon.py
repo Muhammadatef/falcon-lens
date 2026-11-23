@@ -71,11 +71,11 @@ RULES: dict[str, list[Group]] = {
             # an ASK: imperative verb + (up to a few words) + code noun. Delivery ("رمز التحقق هو ...") and
             # warnings ("لا تشارك الرمز") never match: the verb must start a word and must not be negated.
             "ar": [
-                "(?<!لا )(?<!لا)(ارسل|ارسلي|ارسلوا|ابعث|زودنا|زودني|شاركنا|شارك|اخبرنا|اخبرني|اعطنا|اعطني|عطنا|قولنا|قل لنا|اذكر) "
+                "(?<!لا )(?<!لا)(ارسل|ارسلي|ارسلوا|ابعث|زودنا|زودني|تزويدنا|تزويدي|شاركنا|شارك|اخبرنا|اخبرني|اعطنا|اعطني|عطنا|قولنا|قل لنا|قولي|قوله|اذكر|ابي|ابغى|احتاج|نحتاج) "
                 "[^.!?,]{0,30}?(الرمز|رمز|الكود|كود|رقم التحقق|كلمة المرور|كلمة السر|الرقم السري|cvv|otp)"
             ],
             "en": [
-                "(?<!not )(?<!never )(?<!t )(send|share|tell|give|provide|read out|forward|reply with) "
+                "(?<!not )(?<!never )(?<!t )(send|share|tell|give|provide|read out|read me|read us|forward|reply with|need|want|require) "
                 "[^.!?]{0,30}?(otp|code|pin|cvv|passcode|password)\\b"
             ],
             "arz": [
@@ -94,8 +94,12 @@ RULES: dict[str, list[Group]] = {
                 "كويك ?سابورت",
                 "التحكم عن بعد",
                 "الوصول عن بعد",
-                "(حمل|نزل|ثبت) (تطبيق|برنامج)",
+                "(حمل|نزل|ثبت|تحميل|تنزيل|تثبيت) (ال)?(تطبيق|برنامج|اداه)",
+                "(نزل|حمل|ثبت) (التطبيق|البرنامج|الاداه)",
                 "برنامج المساعدة",
+                "تطبيق المساعده",
+                "(شاركنا|مشاركه|نشوف|نشاهد|اظهر|شاركني) [^.!?,]{0,12}?شاشت",
+                "(نتحكم|نتحكم|تحكم|دخول) (ب|في|على)?(ال)?(جهاز|هاتف|تلفون|جوال)",
             ],
             "en": [
                 "any ?desk",
@@ -104,7 +108,9 @@ RULES: dict[str, list[Group]] = {
                 "ultra ?viewer",
                 "rust ?desk",
                 "remote (access|desktop|control|support)",
-                "(install|download) (the |this )?(app|application|software)",
+                "(install|download) (the |this |our |a )?(\\w+ )?(app|application|software|tool|program)",
+                "(share|show) (me |us )?(your )?screen",
+                "screen ?shar",
             ],
             "arz": [
                 "any ?desk",
@@ -113,6 +119,8 @@ RULES: dict[str, list[Group]] = {
                 "hamil barnamaj",
                 "nazzel barnamaj",
                 "nazel barnameg",
+                "nazzel (el )?(tatbiq|application|app)",
+                "(nazzel|7ammel|hamel|thabbet) (el )?(tatbiq|barnamaj)",
                 "tahmeel barnamaj",
             ],
         }

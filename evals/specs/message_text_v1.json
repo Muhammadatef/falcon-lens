@@ -1,0 +1,347 @@
+{
+ "kind": "synthetic_messages",
+ "description": "Fictional LINK-FREE messages for evaluating a scam-message text detector for UAE residents. 240 items, 60% scam, 40% legitimate, in four language varieties.",
+ "count": 240,
+ "batch_size": 3,
+ "temperature": 0.8,
+ "seed": 20261124,
+ "max_rounds_factor": 8,
+ "text_field": "text",
+ "language_mix": {
+  "gulf_arabic": 0.25,
+  "msa": 0.25,
+  "english": 0.25,
+  "arabizi": 0.25
+ },
+ "strata": [
+  {
+   "share": 0.15,
+   "constraints": {
+    "label": "scam",
+    "language": "gulf_arabic"
+   },
+   "variant_field": "subtype",
+   "variants": [
+    "otp_request",
+    "remote_access",
+    "bank_impersonation",
+    "police_gov_impersonation",
+    "utility_delivery_impersonation",
+    "urgency_penalty",
+    "advance_fee_offer",
+    "personal_payment",
+    "move_to_chat_app",
+    "callback_number"
+   ],
+   "hint": "Language/script: Gulf (Emirati/Khaleeji) Arabic dialect in Arabic script only (no English words except placeholders), colloquial wording such as وايد، شلون، هالحين، ابي، زين، يالله.\nThese are SCAM messages (label=scam). Scam type descriptions: {\"otp_request\": \"Pretends to be the bank's security team (Falcon Demo Bank or 'your bank') and asks the reader to reply with or read out the verification code (OTP) they just received. No link.\", \"remote_access\": \"Says there is a problem with the account/card/phone and tells the reader to install a generic remote-support app (a screen-sharing or remote-control app) so an agent can fix it. Do not name any real app. No link.\", \"bank_impersonation\": \"A caller or message claiming to be from the bank fraud department about a suspicious transaction, asking for card number, PIN or ID details to 'block' it. No link.\", \"police_gov_impersonation\": \"Claims to be the police, a public prosecutor, a court or a government service and says a case or warrant exists, asking for a payment or personal details. Use generic roles only. No link.\", \"utility_delivery_impersonation\": \"Claims to be the electricity/water company, the telecom provider or a courier and says service will be cut or a parcel returned unless the reader pays or confirms details. Generic names only. No link.\", \"urgency_penalty\": \"Threatens a penalty (fine, account closure, legal action, deportation or blocking) within hours unless the reader replies or pays. No link.\", \"advance_fee_offer\": \"A prize, lottery, visa or high-paid job offer where the reader must first pay a fee or send ID/card details. No link.\", \"personal_payment\": \"Asks the reader to send money to a personal account, to buy and send gift cards, or to pay in cryptocurrency (including a 'relative in trouble' story). No link.\", \"move_to_chat_app\": \"Asks the reader to continue on another chat app or a private group (for a job, investment or 'verification') and to keep it confidential. No link.\", \"callback_number\": \"Tells the reader to call back an urgent number (write exactly 0500000000) about a blocked account, parcel or fine. No link.\"} Write ONLY the type named in the subtype field. The message must contain NO link."
+  },
+  {
+   "share": 0.15,
+   "constraints": {
+    "label": "scam",
+    "language": "msa"
+   },
+   "variant_field": "subtype",
+   "variants": [
+    "otp_request",
+    "remote_access",
+    "bank_impersonation",
+    "police_gov_impersonation",
+    "utility_delivery_impersonation",
+    "urgency_penalty",
+    "advance_fee_offer",
+    "personal_payment",
+    "move_to_chat_app",
+    "callback_number"
+   ],
+   "hint": "Language/script: Modern Standard Arabic in Arabic script only (no English words except placeholders), formal register, no dialect words.\nThese are SCAM messages (label=scam). Scam type descriptions: {\"otp_request\": \"Pretends to be the bank's security team (Falcon Demo Bank or 'your bank') and asks the reader to reply with or read out the verification code (OTP) they just received. No link.\", \"remote_access\": \"Says there is a problem with the account/card/phone and tells the reader to install a generic remote-support app (a screen-sharing or remote-control app) so an agent can fix it. Do not name any real app. No link.\", \"bank_impersonation\": \"A caller or message claiming to be from the bank fraud department about a suspicious transaction, asking for card number, PIN or ID details to 'block' it. No link.\", \"police_gov_impersonation\": \"Claims to be the police, a public prosecutor, a court or a government service and says a case or warrant exists, asking for a payment or personal details. Use generic roles only. No link.\", \"utility_delivery_impersonation\": \"Claims to be the electricity/water company, the telecom provider or a courier and says service will be cut or a parcel returned unless the reader pays or confirms details. Generic names only. No link.\", \"urgency_penalty\": \"Threatens a penalty (fine, account closure, legal action, deportation or blocking) within hours unless the reader replies or pays. No link.\", \"advance_fee_offer\": \"A prize, lottery, visa or high-paid job offer where the reader must first pay a fee or send ID/card details. No link.\", \"personal_payment\": \"Asks the reader to send money to a personal account, to buy and send gift cards, or to pay in cryptocurrency (including a 'relative in trouble' story). No link.\", \"move_to_chat_app\": \"Asks the reader to continue on another chat app or a private group (for a job, investment or 'verification') and to keep it confidential. No link.\", \"callback_number\": \"Tells the reader to call back an urgent number (write exactly 0500000000) about a blocked account, parcel or fine. No link.\"} Write ONLY the type named in the subtype field. The message must contain NO link."
+  },
+  {
+   "share": 0.15,
+   "constraints": {
+    "label": "scam",
+    "language": "english"
+   },
+   "variant_field": "subtype",
+   "variants": [
+    "otp_request",
+    "remote_access",
+    "bank_impersonation",
+    "police_gov_impersonation",
+    "utility_delivery_impersonation",
+    "urgency_penalty",
+    "advance_fee_offer",
+    "personal_payment",
+    "move_to_chat_app",
+    "callback_number"
+   ],
+   "hint": "Language/script: English only, natural UAE-resident SMS/WhatsApp register.\nThese are SCAM messages (label=scam). Scam type descriptions: {\"otp_request\": \"Pretends to be the bank's security team (Falcon Demo Bank or 'your bank') and asks the reader to reply with or read out the verification code (OTP) they just received. No link.\", \"remote_access\": \"Says there is a problem with the account/card/phone and tells the reader to install a generic remote-support app (a screen-sharing or remote-control app) so an agent can fix it. Do not name any real app. No link.\", \"bank_impersonation\": \"A caller or message claiming to be from the bank fraud department about a suspicious transaction, asking for card number, PIN or ID details to 'block' it. No link.\", \"police_gov_impersonation\": \"Claims to be the police, a public prosecutor, a court or a government service and says a case or warrant exists, asking for a payment or personal details. Use generic roles only. No link.\", \"utility_delivery_impersonation\": \"Claims to be the electricity/water company, the telecom provider or a courier and says service will be cut or a parcel returned unless the reader pays or confirms details. Generic names only. No link.\", \"urgency_penalty\": \"Threatens a penalty (fine, account closure, legal action, deportation or blocking) within hours unless the reader replies or pays. No link.\", \"advance_fee_offer\": \"A prize, lottery, visa or high-paid job offer where the reader must first pay a fee or send ID/card details. No link.\", \"personal_payment\": \"Asks the reader to send money to a personal account, to buy and send gift cards, or to pay in cryptocurrency (including a 'relative in trouble' story). No link.\", \"move_to_chat_app\": \"Asks the reader to continue on another chat app or a private group (for a job, investment or 'verification') and to keep it confidential. No link.\", \"callback_number\": \"Tells the reader to call back an urgent number (write exactly 0500000000) about a blocked account, parcel or fine. No link.\"} Write ONLY the type named in the subtype field. The message must contain NO link."
+  },
+  {
+   "share": 0.15,
+   "constraints": {
+    "label": "scam",
+    "language": "arabizi"
+   },
+   "variant_field": "subtype",
+   "variants": [
+    "otp_request",
+    "remote_access",
+    "bank_impersonation",
+    "police_gov_impersonation",
+    "utility_delivery_impersonation",
+    "urgency_penalty",
+    "advance_fee_offer",
+    "personal_payment",
+    "move_to_chat_app",
+    "callback_number"
+   ],
+   "hint": "Language/script: Arabizi (Arabic written in Latin letters with digits such as 3 7 2 5 9), the way people text in the Gulf. Not English.\nThese are SCAM messages (label=scam). Scam type descriptions: {\"otp_request\": \"Pretends to be the bank's security team (Falcon Demo Bank or 'your bank') and asks the reader to reply with or read out the verification code (OTP) they just received. No link.\", \"remote_access\": \"Says there is a problem with the account/card/phone and tells the reader to install a generic remote-support app (a screen-sharing or remote-control app) so an agent can fix it. Do not name any real app. No link.\", \"bank_impersonation\": \"A caller or message claiming to be from the bank fraud department about a suspicious transaction, asking for card number, PIN or ID details to 'block' it. No link.\", \"police_gov_impersonation\": \"Claims to be the police, a public prosecutor, a court or a government service and says a case or warrant exists, asking for a payment or personal details. Use generic roles only. No link.\", \"utility_delivery_impersonation\": \"Claims to be the electricity/water company, the telecom provider or a courier and says service will be cut or a parcel returned unless the reader pays or confirms details. Generic names only. No link.\", \"urgency_penalty\": \"Threatens a penalty (fine, account closure, legal action, deportation or blocking) within hours unless the reader replies or pays. No link.\", \"advance_fee_offer\": \"A prize, lottery, visa or high-paid job offer where the reader must first pay a fee or send ID/card details. No link.\", \"personal_payment\": \"Asks the reader to send money to a personal account, to buy and send gift cards, or to pay in cryptocurrency (including a 'relative in trouble' story). No link.\", \"move_to_chat_app\": \"Asks the reader to continue on another chat app or a private group (for a job, investment or 'verification') and to keep it confidential. No link.\", \"callback_number\": \"Tells the reader to call back an urgent number (write exactly 0500000000) about a blocked account, parcel or fine. No link.\"} Write ONLY the type named in the subtype field. The message must contain NO link."
+  },
+  {
+   "share": 0.1,
+   "constraints": {
+    "label": "legitimate",
+    "language": "gulf_arabic"
+   },
+   "variant_field": "subtype",
+   "variants": [
+    "otp_notice_never_share",
+    "appointment_reminder",
+    "delivery_update_no_payment",
+    "family_friend_chat",
+    "spend_alert_no_ask",
+    "anti_scam_warning",
+    "bill_paid_receipt",
+    "service_notice"
+   ],
+   "hint": "Language/script: Gulf (Emirati/Khaleeji) Arabic dialect in Arabic script only (no English words except placeholders), colloquial wording such as وايد، شلون، هالحين، ابي، زين، يالله.\nThese are LEGITIMATE messages (label=legitimate). Type descriptions: {\"otp_notice_never_share\": \"Real-style notice delivering a one-time code (use XXXXXX) that says never to share it with anyone, including bank staff. The word code/OTP appears. No request to send it.\", \"appointment_reminder\": \"Reminder of a clinic, government-service or bank appointment with date and time. No payment ask.\", \"delivery_update_no_payment\": \"Courier says the parcel is out for delivery today; no payment, no link.\", \"family_friend_chat\": \"Ordinary chat between family or friends (plans, dinner, picking up kids, lending a charger). May mention money casually like splitting a bill but with no scam pattern.\", \"spend_alert_no_ask\": \"Bank card spend alert (amount in AED, merchant generic) that says if this was not you call the number on the back of your card; it never asks for a code or details.\", \"anti_scam_warning\": \"Bank or authority awareness message warning residents that staff will NEVER ask for the code, PIN or ask to install apps. Mentions those words only as a warning.\", \"bill_paid_receipt\": \"Receipt confirming a bill or fee was paid, with a reference placeholder. No ask.\", \"service_notice\": \"Planned maintenance or outage notice from the bank, telecom or utility. No ask.\"} Write ONLY the type named in the subtype field. No links."
+  },
+  {
+   "share": 0.1,
+   "constraints": {
+    "label": "legitimate",
+    "language": "msa"
+   },
+   "variant_field": "subtype",
+   "variants": [
+    "otp_notice_never_share",
+    "appointment_reminder",
+    "delivery_update_no_payment",
+    "family_friend_chat",
+    "spend_alert_no_ask",
+    "anti_scam_warning",
+    "bill_paid_receipt",
+    "service_notice"
+   ],
+   "hint": "Language/script: Modern Standard Arabic in Arabic script only (no English words except placeholders), formal register, no dialect words.\nThese are LEGITIMATE messages (label=legitimate). Type descriptions: {\"otp_notice_never_share\": \"Real-style notice delivering a one-time code (use XXXXXX) that says never to share it with anyone, including bank staff. The word code/OTP appears. No request to send it.\", \"appointment_reminder\": \"Reminder of a clinic, government-service or bank appointment with date and time. No payment ask.\", \"delivery_update_no_payment\": \"Courier says the parcel is out for delivery today; no payment, no link.\", \"family_friend_chat\": \"Ordinary chat between family or friends (plans, dinner, picking up kids, lending a charger). May mention money casually like splitting a bill but with no scam pattern.\", \"spend_alert_no_ask\": \"Bank card spend alert (amount in AED, merchant generic) that says if this was not you call the number on the back of your card; it never asks for a code or details.\", \"anti_scam_warning\": \"Bank or authority awareness message warning residents that staff will NEVER ask for the code, PIN or ask to install apps. Mentions those words only as a warning.\", \"bill_paid_receipt\": \"Receipt confirming a bill or fee was paid, with a reference placeholder. No ask.\", \"service_notice\": \"Planned maintenance or outage notice from the bank, telecom or utility. No ask.\"} Write ONLY the type named in the subtype field. No links."
+  },
+  {
+   "share": 0.1,
+   "constraints": {
+    "label": "legitimate",
+    "language": "english"
+   },
+   "variant_field": "subtype",
+   "variants": [
+    "otp_notice_never_share",
+    "appointment_reminder",
+    "delivery_update_no_payment",
+    "family_friend_chat",
+    "spend_alert_no_ask",
+    "anti_scam_warning",
+    "bill_paid_receipt",
+    "service_notice"
+   ],
+   "hint": "Language/script: English only, natural UAE-resident SMS/WhatsApp register.\nThese are LEGITIMATE messages (label=legitimate). Type descriptions: {\"otp_notice_never_share\": \"Real-style notice delivering a one-time code (use XXXXXX) that says never to share it with anyone, including bank staff. The word code/OTP appears. No request to send it.\", \"appointment_reminder\": \"Reminder of a clinic, government-service or bank appointment with date and time. No payment ask.\", \"delivery_update_no_payment\": \"Courier says the parcel is out for delivery today; no payment, no link.\", \"family_friend_chat\": \"Ordinary chat between family or friends (plans, dinner, picking up kids, lending a charger). May mention money casually like splitting a bill but with no scam pattern.\", \"spend_alert_no_ask\": \"Bank card spend alert (amount in AED, merchant generic) that says if this was not you call the number on the back of your card; it never asks for a code or details.\", \"anti_scam_warning\": \"Bank or authority awareness message warning residents that staff will NEVER ask for the code, PIN or ask to install apps. Mentions those words only as a warning.\", \"bill_paid_receipt\": \"Receipt confirming a bill or fee was paid, with a reference placeholder. No ask.\", \"service_notice\": \"Planned maintenance or outage notice from the bank, telecom or utility. No ask.\"} Write ONLY the type named in the subtype field. No links."
+  },
+  {
+   "share": 0.1,
+   "constraints": {
+    "label": "legitimate",
+    "language": "arabizi"
+   },
+   "variant_field": "subtype",
+   "variants": [
+    "otp_notice_never_share",
+    "appointment_reminder",
+    "delivery_update_no_payment",
+    "family_friend_chat",
+    "spend_alert_no_ask",
+    "anti_scam_warning",
+    "bill_paid_receipt",
+    "service_notice"
+   ],
+   "hint": "Language/script: Arabizi (Arabic written in Latin letters with digits such as 3 7 2 5 9), the way people text in the Gulf. Not English.\nThese are LEGITIMATE messages (label=legitimate). Type descriptions: {\"otp_notice_never_share\": \"Real-style notice delivering a one-time code (use XXXXXX) that says never to share it with anyone, including bank staff. The word code/OTP appears. No request to send it.\", \"appointment_reminder\": \"Reminder of a clinic, government-service or bank appointment with date and time. No payment ask.\", \"delivery_update_no_payment\": \"Courier says the parcel is out for delivery today; no payment, no link.\", \"family_friend_chat\": \"Ordinary chat between family or friends (plans, dinner, picking up kids, lending a charger). May mention money casually like splitting a bill but with no scam pattern.\", \"spend_alert_no_ask\": \"Bank card spend alert (amount in AED, merchant generic) that says if this was not you call the number on the back of your card; it never asks for a code or details.\", \"anti_scam_warning\": \"Bank or authority awareness message warning residents that staff will NEVER ask for the code, PIN or ask to install apps. Mentions those words only as a warning.\", \"bill_paid_receipt\": \"Receipt confirming a bill or fee was paid, with a reference placeholder. No ask.\", \"service_notice\": \"Planned maintenance or outage notice from the bank, telecom or utility. No ask.\"} Write ONLY the type named in the subtype field. No links."
+  }
+ ],
+ "item_schema": {
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+   "text",
+   "label",
+   "language",
+   "subtype",
+   "channel"
+  ],
+  "properties": {
+   "text": {
+    "type": "string",
+    "minLength": 15,
+    "maxLength": 600
+   },
+   "label": {
+    "enum": [
+     "scam",
+     "legitimate"
+    ]
+   },
+   "language": {
+    "enum": [
+     "gulf_arabic",
+     "msa",
+     "english",
+     "arabizi"
+    ]
+   },
+   "subtype": {
+    "enum": [
+     "otp_request",
+     "remote_access",
+     "bank_impersonation",
+     "police_gov_impersonation",
+     "utility_delivery_impersonation",
+     "urgency_penalty",
+     "advance_fee_offer",
+     "personal_payment",
+     "move_to_chat_app",
+     "callback_number",
+     "otp_notice_never_share",
+     "appointment_reminder",
+     "delivery_update_no_payment",
+     "family_friend_chat",
+     "spend_alert_no_ask",
+     "anti_scam_warning",
+     "bill_paid_receipt",
+     "service_notice"
+    ]
+   },
+   "channel": {
+    "enum": [
+     "sms",
+     "whatsapp",
+     "email"
+    ]
+   }
+  }
+ },
+ "allowed_phone": "0500000000",
+ "entity_rules": {
+  "uae\\s*pass|\\bicp\\b|الهوية الرقمية|للهوية والجنسية|الهيئة الاتحادية": [],
+  "اتصالات|ارامكس|أرامكس|بنك الإمارات|الإمارات دبي|سالك|هيئة الطرق|ديوا|(?<!\\w)دو(?!\\w)|لولو|امازون|أمازون|(?<!\\w)نون(?!\\w)|(?<!\\w)كريم(?!\\w)|جوجل|قوقل|ابل|أبل|واتساب": []
+ },
+ "language_rules": {
+  "gulf_arabic": {
+   "min_ratio": 0.7,
+   "require_any": [
+    "وايد",
+    "شلون",
+    "هالحين",
+    "ابي",
+    "ابغى",
+    "يبا",
+    "مب",
+    "عيل",
+    "زين",
+    "خلصان",
+    "يالله"
+   ]
+  },
+  "msa": {
+   "min_ratio": 0.7,
+   "forbid_any": [
+    "وايد",
+    "شلون",
+    "هالحين",
+    "ابي",
+    "ابغى",
+    "يبا",
+    "مب",
+    "عيل",
+    "زين",
+    "خلصان",
+    "يالله"
+   ]
+  },
+  "english": {
+   "max_ratio": 0.05,
+   "require_any": [
+    "the",
+    "your",
+    "to",
+    "you",
+    "is",
+    "has",
+    "will",
+    "we"
+   ]
+  },
+  "arabizi": {
+   "max_ratio": 0.05,
+   "require_digit_letter": true,
+   "require_any": [
+    "ana",
+    "enta",
+    "inta",
+    "3indak",
+    "3ndak",
+    "3andak",
+    "marhaba",
+    "shukran",
+    "habibi",
+    "mn",
+    "3ala",
+    "fi",
+    "la",
+    "ma",
+    "el",
+    "7ad",
+    "kif",
+    "wain",
+    "lazem",
+    "tfaddal",
+    "ya",
+    "7abibi"
+   ]
+  }
+ },
+ "rules": [
+  "Everything is fictional. The only brand allowed is the invented bank 'Falcon Demo Bank' (Arabic: «بنك الصقر التجريبي»); otherwise use generic roles such as 'your bank', 'the courier', 'the police', 'the traffic authority', 'the telecom provider', 'the electricity company'.",
+  "NEVER write any link, domain or URL, in any form.",
+  "Phone numbers, when present, must be exactly '0500000000'. Never write other digits for a phone number.",
+  "OTP codes, reference numbers: use 'XXXXXX'; amounts like 'AED 350'; never a run of 5 or more digits.",
+  "Legitimate OTP notices and warnings must say the code is never to be shared.",
+  "No real people, no real companies, no real organisations' phone numbers or addresses. Do not name real apps.",
+  "Write the message text entirely in the requested language/script. Keep each message under 400 characters, in the style of a real SMS/WhatsApp text."
+ ],
+ "forbidden_patterns": [
+  "emirates\\s?nbd|\\badcb\\b|\\bfab\\b|mashreq|\\bdib\\b|rakbank|etisalat|\\be&|\\bdu\\b|aramex|\\bdhl\\b|fedex|amazon|\\bnoon\\b|careem|salik|\\brta\\b|dewa|dubai police|abu dhabi police|emirates post|paypal|google|apple|binance"
+ ],
+ "examples": [
+  {
+   "text": "Falcon Demo Bank: your one-time code is XXXXXX. Never share it with anyone, including bank staff.",
+   "label": "legitimate",
+   "language": "english",
+   "subtype": "otp_notice_never_share",
+   "channel": "sms"
+  },
+  {
+   "text": "Your account shows a problem. Please install the support app we sent and read me the code on your screen.",
+   "label": "scam",
+   "language": "english",
+   "subtype": "remote_access",
+   "channel": "whatsapp"
+  }
+ ]
+}
