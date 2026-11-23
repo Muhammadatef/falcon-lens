@@ -16,7 +16,7 @@ import time
 from typing import TYPE_CHECKING, Any, Literal
 
 from falcon_core.cascade.ai import AgentExtractorAdapter, injection_evidence, risk_only
-from falcon_core.cascade.assemble import TraceStep
+from falcon_core.cascade.assemble import TraceStep, display_url
 from falcon_core.cascade.evidence import dedupe, from_signal, make_evidence
 from falcon_core.cascade.ids import new_verdict_id
 from falcon_core.scoring.evidence import Evidence
@@ -162,7 +162,7 @@ async def _judge_children(
                 run.degraded_reasons.append("child_check_degraded")
             observed: dict[str, Any] = {
                 "verdict": doc["verdict"],
-                "url": defang(url)[:200],
+                "url": defang(display_url(url))[:200],
                 "child_degraded": bool(doc["degraded"]),
             }
             return make_evidence(f"{family}.link_verdict", family, observed, tier="T2", source="computed")

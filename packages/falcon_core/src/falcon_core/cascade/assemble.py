@@ -35,12 +35,11 @@ def display_url(url: str) -> str:
     scheme, sep, rest = url.partition("://")
     if not sep:
         return url
-    host, slash, tail = rest.partition("/")
-    if not slash:
-        host, q, query = rest.partition("?")
-        tail = f"?{query}" if q else ""
-    else:
-        tail = "/" + tail
+    end = next((i for i, ch in enumerate(rest) if ch in "/?#\\"), len(rest))
+    host, tail = rest[:end], rest[end:]
+    # userinfo (user and password, however many '@' or encodings) is personal data: keep only the real host,
+    # which is what follows the LAST literal '@' of the authority (as browsers parse it).
+    host = host.rpartition("@")[2]
     tail = tail.split("#", 1)[0]
     if not tail:
         return f"{scheme}://{host}"

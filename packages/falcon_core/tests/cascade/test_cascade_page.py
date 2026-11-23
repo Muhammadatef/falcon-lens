@@ -235,3 +235,29 @@ def test_display_url_keeps_the_address_and_drops_personal_data(url: str, expecte
     from falcon_core.cascade.assemble import display_url
 
     assert display_url(url) == expected
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://test.user@example.invalid:pw@falcon-demo-bank.test/x",
+        "https://user:pw@falcon-demo-bank.test/x",
+        "https://a@b@c:d@falcon-demo-bank.test/x?q=1",
+        "https://test.user%40example.invalid:p%3Aw@falcon-demo-bank.test/x",
+        "https://%D8%B9%D8%B1%D8%A8%D9%8A:pw@falcon-demo-bank.test/x",
+        "https://عربي:pw@falcon-demo-bank.test/x",
+        "https://xn--mgbh0fb:pw@falcon-demo-bank.test",
+        "https://test.user@example.invalid@falcon-demo-bank.test?x=1",
+        "https://user@falcon-demo-bank.test#frag",
+        "https://u:p@falcon-demo-bank.test:8443/x",
+    ],
+)
+def test_display_url_strips_all_userinfo_keeping_the_real_host(url: str) -> None:
+    from falcon_core.cascade.assemble import display_url
+
+    out = display_url(url)
+    authority = out.partition("://")[2].split("/")[0].split("?")[0]
+    assert "@" not in authority
+    assert authority.startswith("falcon-demo-bank.test")
+    for leak in ("test.user", "example.invalid", "pw", "عربي", "xn--mgbh0fb", "%40", "%3A"):
+        assert leak not in out
