@@ -69,6 +69,7 @@ def faithfulness() -> dict[str, Any]:
             "decision": "L1 decision D3: reasons are catalog templates selected from evidence; no model writes them",
             "offline_val_test_real_items": off,
             "cascade_fixture_verdicts_synthetic": reports.faithfulness_cascade(),
+            "offline_note": "the offline val/test pipeline does not add the url.classifier evidence the cascade adds when the fitted T1 model fires, so some suspicious verdicts there carry no reason; in the cascade they do (see cascade_fixture_verdicts_synthetic.verdicts_without_reasons_by_verdict)",  # noqa: E501
             "checks": "R1 cited ids exist in the verdict; R2 text is exactly one catalog template in both languages; R3 the template's claim matches the cited evidence (signal, present, polarity vs verdict, hard-rule tag); R4 generated_by=template, at most 3 reasons",  # noqa: E501
         },
         "sentinel_llm_summaries": {

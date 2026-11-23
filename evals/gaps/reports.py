@@ -148,7 +148,26 @@ def stability() -> dict[str, Any]:
             "per_item": rows,
         }
 
+    # what the AI layers changed: every completed AI-on run against the AI-off verdict of the same item
+    off_by_item = {r["item_id"]: r for r in det if r["repeat"] == 0 and r["ok"] and r.get("doc")}
+    pairs = [(r, off_by_item[r["item_id"]]) for r in _ok_runs(local) if r["item_id"] in off_by_item]
+    contribution: dict[str, Any] = {
+        "completed_ai_on_runs_compared": len(pairs),
+        "label_differs_from_ai_off": rate(sum(1 for a, b in pairs if verdict_of(a) != verdict_of(b)), len(pairs)),
+        "score_differs_from_ai_off": rate(
+            sum(1 for a, b in pairs if a["doc"]["risk_score"] != b["doc"]["risk_score"]), len(pairs)
+        ),
+        "score_abs_diff": mean_ci(
+            [abs(float(a["doc"]["risk_score"]) - float(b["doc"]["risk_score"])) for a, b in pairs]
+        ),
+        "llm_calls_answered": rate(
+            sum(1 for a, _ in pairs if any(c["status"] in ("ok", "repaired") for c in a["calls"])), len(pairs)
+        ),
+        "reading": "the model only adds risk-side evidence next to the deterministic evidence; zero differences mean the "  # noqa: E501
+        "arbiter reached the same score with and without the AI layers on these fixtures",
+    }
     body: dict[str, Any] = {
+        "ai_layers_contribution_local": contribution,
         "ai_layers_on": block(local) if local else not_evaluated("local_s12 run missing"),
         "deterministic_control_ai_off": block(det) if det else not_evaluated("control run missing"),
         "definition": "3 repeats of the shipped cascade on the same 12 synthetic fixture inputs, extractor + investigator on; "  # noqa: E501
