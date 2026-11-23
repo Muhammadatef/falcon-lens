@@ -96,7 +96,7 @@ def test_link_in_a_base64_block_of_an_unparseable_email() -> None:
 
 
 def test_qp_soft_break_split_link_is_rejoined() -> None:
-    body = b"pay at https://falcon-demo-bank-verify.exa=\r\nmple/login now\r\n"
+    body = b"pay at hxxps://falcon-demo-bank-verify.exa=\r\nmple/login now\r\n"
     assert LINK in _links(_single(body, "quoted-printable"))
 
 
