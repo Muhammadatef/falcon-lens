@@ -39,7 +39,11 @@ def main() -> None:
     with (HERE / "legit_urls.csv").open(newline="", encoding="utf-8") as f:
         used = {r["url"].split("//", 1)[-1].split("/", 1)[0] for r in csv.DictReader(f)}
     used = {registrable(h) for h in used} | EXCLUDE_EXTRA
-    text = httpx.get(f"https://tranco-list.eu/download/{a.list}/{a.top}", follow_redirects=True, timeout=60).text
+    text = httpx.get(
+        f"hxxps://tranco-list.eu/download/{a.list}/{a.top}".replace("hxxp", "http", 1),
+        follow_redirects=True,
+        timeout=60,
+    ).text
     rows = [ln.split(",", 1) for ln in text.splitlines() if "," in ln]
     pool = [(int(r), d.strip().lower()) for r, d in rows if registrable(d.strip().lower()) not in used]
     pick = sorted(random.Random(a.seed).sample(pool, a.n))

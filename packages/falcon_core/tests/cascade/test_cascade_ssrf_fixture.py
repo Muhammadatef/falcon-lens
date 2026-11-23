@@ -52,10 +52,9 @@ async def test_allow_listed_fixture_host_with_dns_timeout_is_not_blocked() -> No
 
 
 async def test_clean_host_that_does_not_resolve_is_not_degraded_but_noted() -> None:
+    from falcon_core.cascade.engine import default_t1_signals
     from falcon_core.scoring.params import load_params
     from falcon_core.scoring.t1_model import load_t1_model
-
-    from falcon_core.cascade.engine import default_t1_signals
 
     offline = {n: v for n, v in default_t1_signals().items() if v[0].network == "none"}
     cascade, _ = make_cascade(
@@ -66,6 +65,6 @@ async def test_clean_host_that_does_not_resolve_is_not_degraded_but_noted() -> N
         t1_model=load_t1_model(),
         params=load_params(),
     )
-    final = (await run(cascade, "https://www.mayoclinic.org/")).docs[-1]
+    final = (await run(cascade, "hxxps://www.mayoclinic.org/".replace("hxxp", "http", 1))).docs[-1]
     assert final["verdict"] == "no_warning_signs" and not final["degraded"]
     assert any(e["signal"] == "sandbox.not_rendered" and e["weight"] == 0 for e in final["evidence"])

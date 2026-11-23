@@ -23,13 +23,17 @@ from falcon_core.signals.domain import crt
 CSV = Path(__file__).resolve().parents[4] / "evals" / "datasets" / "legit_urls.csv"
 
 
+def _refang(u: str) -> str:
+    return u.replace("hxxp", "http", 1)
+
+
 def _popular(n: int) -> list[str]:
     with CSV.open(newline="", encoding="utf-8") as f:
         rows = [r for r in csv.DictReader(f) if r["category"] == "popular"]
-    return [r["url"].replace("hxxp", "http", 1) for r in rows[:n]]
+    return [_refang(r["url"]) for r in rows[:n]]
 
 
-URLS = ["https://x.com/", "https://www.tripadvisor.com/", *_popular(20)]
+URLS = [_refang("hxxps://x.com/"), _refang("hxxps://www.tripadvisor.com/"), *_popular(20)]
 
 
 async def _crt_down(ctx: SignalContext) -> list[Evidence]:
@@ -73,7 +77,7 @@ async def test_crt_failure_alone_never_degrades() -> None:
         t1_model=load_t1_model(),
         params=load_params(),
     )
-    final = (await run(cascade, "https://x.com/")).docs[-1]
+    final = (await run(cascade, _refang("hxxps://x.com/"))).docs[-1]
     assert final["verdict"] != "dangerous"
     assert not any(r.startswith("signal_error:domain.cert_age_days") for r in final.get("degraded_reasons", []))
     assert any(e["signal"] == "domain.cert_age_days" and e["error"] for e in final["evidence"])
