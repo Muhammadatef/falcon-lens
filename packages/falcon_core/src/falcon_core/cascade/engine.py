@@ -181,6 +181,7 @@ class _Run:
     trace: list[TraceStep] = field(default_factory=list)
     degraded_reasons: list[str] = field(default_factory=list)
     blocked: str | None = None  # SSRF block reason: never render
+    unreachable: str | None = None  # blocked only because DNS did not answer (not an egress/SSRF policy block)
     meta: dict[str, Any] = field(default_factory=dict)  # for platform events, never published
     final_emitted: bool = False  # structural guard: at most one final per verdict_id
     p_clf: float | None = None  # fitted T1 model probability (None -> draft)
@@ -417,12 +418,15 @@ class Cascade:
             else:
                 self.d.metrics.on_ssrf_block(exc.reason)
                 run.blocked = exc.reason.value
-                run.degraded_reasons.append(f"not_rendered:{exc.reason.value}")
+                if exc.reason is BlockReason.DNS_FAILURE:
+                    run.unreachable = exc.reason.value  # host does not resolve: judged on the address checks
+                else:
+                    run.degraded_reasons.append(f"not_rendered:{exc.reason.value}")
         except TimeoutError:
             if c.host_ascii not in self.d.guard_policy.allow_hosts:  # see the DNS_FAILURE case above
                 self.d.metrics.on_ssrf_block("dns_failure")
                 run.blocked = "dns_timeout"
-                run.degraded_reasons.append("not_rendered:dns_timeout")
+                run.unreachable = "dns_timeout"
 
         added: list[Evidence] = []
         brand = self.d.registry.official_brand(c.registrable) if c.registrable else None
@@ -550,6 +554,12 @@ class Cascade:
         added = await self._run_signals(signals, self._ctx(run))
         run.evidence.extend(added)
         await self._fit_p_clf(run)
+        if run.unreachable is not None:
+            # Same rule as a sandbox render failure (SCORING §4): degrade only if the address checks show risk.
+            if self._t1_risky(run):
+                run.degraded_reasons.append(f"not_rendered:{run.unreachable}")
+            else:
+                run.evidence.append(self._not_rendered_evidence(run.unreachable, "T1"))
         result = self._score(run)
         ms = self._observe("T1", t0)
         fired = {r.rule_id for r in result.fired_rules}
@@ -583,6 +593,14 @@ class Cascade:
 
     # --- T2 --------------------------------------------------------------------------------
 
+    @staticmethod
+    def _not_rendered_evidence(reason: str, tier: Tier) -> Evidence:
+        return make_evidence(
+            "sandbox.not_rendered", "page", {"reason": reason[:40]}, tier=tier, source="computed",
+            en="We could not open the page itself; the address checks found no warning signs.",
+            ar="تعذّر علينا فتح الصفحة نفسها؛ فحوصات العنوان لم تُظهر أي علامات تحذير.",
+        )  # fmt: skip
+
     def _t1_risky(self, run: _Run) -> bool:
         """T1 result in/above the uncertain band, or any url./brand./rep. risk evidence present."""
         r = self._score(run)
@@ -615,13 +633,7 @@ class Cascade:
             # T1 is in or above the uncertain band or risk evidence exists. Egress/SSRF blocks and
             # internal errors always degrade.
             if reason in SOFT_RENDER_FAILURES and not self._t1_risky(run):
-                added.append(
-                    make_evidence(
-                        "sandbox.not_rendered", "page", {"reason": reason[:40]}, tier="T2", source="computed",
-                        en="We could not open the page itself; the address checks found no warning signs.",
-                        ar="تعذّر علينا فتح الصفحة نفسها؛ فحوصات العنوان لم تُظهر أي علامات تحذير.",
-                    )
-                )  # fmt: skip
+                added.append(self._not_rendered_evidence(reason, "T2"))
                 summary += "; address checks clean, not degraded"
             else:
                 run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])

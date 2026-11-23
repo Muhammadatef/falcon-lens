@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """False-positive regression against a RUNNING stack: `LIVE=1 make regress-legit`.
 
-Usage: FL_GATEWAY_URL=https://localhost:8443 python scripts/regress_legit.py [--n 30] [--seed S] [--workers 3]
+Usage: FL_GATEWAY_URL=https://localhost:8443 python scripts/fp_regress.py [--n 30] [--seed S] [--workers 3]
        [--delay 0.5] [--out result.json]
 
 Samples ``--n`` domains AT RANDOM from the held-out legitimate set (evals/datasets/heldout_legit.csv, built by
@@ -48,7 +48,15 @@ def check(url: str, delay: float) -> dict[str, Any]:
             g = c.get(f"/v1/verdicts/{vid}", timeout=10)
             if g.status_code == 200 and g.json().get("final"):
                 d = g.json()
-                return {"verdict": d["verdict"], "degraded": bool(d.get("degraded")), "tier": d.get("tier_reached")}
+                risk = sorted((e for e in d.get("evidence", []) if e.get("weight", 0) > 0), key=lambda e: -e["weight"])
+                return {
+                    "verdict": d["verdict"],
+                    "degraded": bool(d.get("degraded")),
+                    "tier": d.get("tier_reached"),
+                    "degraded_reasons": d.get("degraded_reasons") or [],
+                    "risk_signals": [e["signal"] for e in risk[:3]],
+                    "risk_score": d.get("risk_score"),
+                }
             time.sleep(0.5)
     raise TimeoutError("no final verdict")
 
@@ -93,6 +101,9 @@ def main() -> int:
         f"regress-legit: n={len(res)} {dict(counts)} degraded={degraded} errors={errors} "
         f"fpr={fpr:.4f} ci95=[{lo:.4f},{hi:.4f}] seed={seed}"
     )
+    why = Counter(r for x in res for r in x.get("degraded_reasons", []))
+    top = Counter(x["risk_signals"][0] for x in res if x["verdict"] != "no_warning_signs" and x.get("risk_signals"))
+    print(f"degraded_reasons={dict(why)} top_risk_signal_of_flagged={dict(top)}")
     if a.out:
         Path(a.out).write_text(json.dumps({"seed": seed, "counts": counts, "fpr": fpr, "ci95": [lo, hi],
                                            "degraded": degraded, "errors": errors, "results": res}))  # fmt: skip

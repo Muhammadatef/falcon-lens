@@ -70,7 +70,7 @@ smoke: ## T-015 assertions against the running stack (starts it if needed). FL_S
 
 regress-legit: ## false-positive gate: 30 legit URLs through the running stack (needs LIVE=1, FL_GATEWAY_URL)
 	@test "$(LIVE)" = 1 || { echo "regress-legit needs a running stack: LIVE=1 make regress-legit" >&2; exit 2; }
-	uv run python scripts/regress_legit.py
+	uv run python scripts/fp_regress.py
 
 openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on drift)
 	uv run python scripts/gen_openapi.py
