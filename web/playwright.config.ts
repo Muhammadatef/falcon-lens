@@ -1,12 +1,26 @@
+import { execFileSync } from "node:child_process";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
  * E2E runs the production build (strict CSP, no dev relaxations) behind a mock gateway
  * that serves /v1 with real SSE. Build first: `pnpm build && pnpm test:e2e`.
- * Odd ports so parallel stacks on the same host do not collide.
  */
-const MOCK_PORT = Number(process.env.MOCK_PORT ?? 43110);
-const APP_PORT = Number(process.env.APP_PORT ?? 43111);
+/**
+ * Free ports are reserved once per run in the main process and passed to workers via env
+ * (workers re-evaluate this file), so concurrent runs on one host cannot collide.
+ * MOCK_PORT / APP_PORT still override.
+ */
+function freePorts(n: number): number[] {
+  const code = `const s=[];let d=0;const out=[];for(let i=0;i<${n};i++){const x=require("net").createServer();x.listen(0,"127.0.0.1",()=>{out.push(x.address().port);s.push(x);if(++d===${n}){console.log(out.join(","));s.forEach(y=>y.close())}})}`;
+  return execFileSync(process.execPath, ["-e", code], { encoding: "utf8" }).trim().split(",").map(Number);
+}
+if (!process.env.MOCK_PORT || !process.env.APP_PORT) {
+  const [m, a] = freePorts(2);
+  process.env.MOCK_PORT ??= String(m);
+  process.env.APP_PORT ??= String(a);
+}
+const MOCK_PORT = Number(process.env.MOCK_PORT);
+const APP_PORT = Number(process.env.APP_PORT);
 /** Set to a running stack's gateway (e.g. https://localhost:8443) to run tests/live through Caddy. */
 const LIVE = process.env.LIVE_BASE_URL;
 

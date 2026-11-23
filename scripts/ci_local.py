@@ -22,6 +22,7 @@ Differences from GitHub (all visible in the logs, none weaken a check)
       shared falcon-lens/* tags never move. Only `docker compose build` runs: no container, network
       or volume is created, and nothing is pruned (the running `falcon` stack is untouched).
     - Playwright installs chromium without --with-deps (a Linux-only flag).
+    - uncommitted edits are not scanned by trivy (ci-local-pr scans the committed merge tree).
     - trivy scans a `git archive HEAD` snapshot (all tracked files), so parallel jobs' outputs can't race it.
     - Tool versions are the ones installed locally; CI pins gitleaks/trivy/uv versions.
 
