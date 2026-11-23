@@ -232,7 +232,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <circle class="glow on" style="animation-delay:15s" cx="863" cy="577" r="12"/>
 <text x="882" y="581.500" class="b">Verifier: every cited id exists in the evidence.</text>
 <text x="852" y="610" class="c">Anything else is rejected and replaced by a</text>
-<text x="852" y="627" class="c">native Arabic template. Never the word "safe".</text>
+<text x="852" y="627" class="c">native Arabic template. Lowest verdict: &#8220;No warning signs found&#8221;.</text>
 </g>
 
 <!-- guardrail strip -->

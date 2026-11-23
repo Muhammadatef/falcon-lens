@@ -81,6 +81,8 @@
   --fl-text-xl: 1.5rem;      /* 24: section titles */
   --fl-text-2xl: 2rem;       /* 32: verdict word (phone) */
   --fl-text-3xl: clamp(2.25rem, 1.4rem + 3.6vw, 4rem);  /* hero headline */
+  --fl-text-h2: clamp(1.6rem, 1.2rem + 1.6vw, 2.4rem);  /* v2 section titles */
+  --fl-text-stat: clamp(2.4rem, 1.8rem + 2.4vw, 3.5rem);  /* v2 proof numerals (mono 650, dir=ltr) */
   --fl-leading-ar: 1.75;     /* Arabic needs room for marks and descenders */
   --fl-leading-en: 1.55;
   --fl-leading-tight-ar: 1.35;
