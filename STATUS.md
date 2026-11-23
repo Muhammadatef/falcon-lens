@@ -6,13 +6,13 @@
 ## Gates
 | Gate | Target | State |
 |---|---|---|
-| G0 `make up` healthy | Sun 19:00 | ⏳ in progress |
-| G1 `make smoke` URL → verdict | Mon 06:00 | — |
-| G2 `make eval` baseline | Mon 14:00 | — |
-| G3 redteam 0%, scans clean, 5 dashboards | Mon 22:00 | — |
-| G4 MVP (organiser rule) | Tue 08:00 | — |
-| G5 Sentinel incident from replay | Tue 15:00 | — |
-| G6 `make demo` + `make submission` | Tue 20:00 | — |
+| G0 `make up` healthy | Sun 19:00 | ✅ passed (supervisor, fresh clone) |
+| G1 `make smoke` URL → verdict | Mon 06:00 | ✅ passed 2026-11-23: smoke 8/8 with the real worker on the main stack and on the supervisor's isolated stacks (reviews/PR-47.md, reviews/PR-52.md) |
+| G2 `make eval` baseline | Mon 14:00 | ✅ passed: published artifact in `evals/results/published/` (numbers only from there) |
+| G3 redteam 0%, scans clean, 5 dashboards | Mon 22:00 | 🟡 partial: `make redteam` 0/113 on the `harness_reference` pipeline, scans clean, dashboards provisioned. Open: no published injection eval on the shipped cascade |
+| G4 MVP (organiser rule) | Tue 08:00 | 🟡 working end to end (web, API, extension, MCP). Open: held-out false-alarm rate on real sites is 25.3% on web-serving domains (`evals/results/published/fp_regress/`); sandbox redirect-policy fix in progress |
+| G5 Sentinel incident from replay | Tue 15:00 | 🔴 blocked: incident is created but stays `triaging` when the LLM call fails (PR #60 S-1); fix on `fix/sentinel-llm-fallback` |
+| G6 `make demo` + `make submission` | Tue 20:00 | 🟡 dry run done (PR #60): scenarios 2–6 pass by API, `make demo` runner and strict `make submission` still open |
 
 ## In flight (local branches / PRs)
 | Area | Branch | State |
