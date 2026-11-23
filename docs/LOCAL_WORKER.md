@@ -57,3 +57,14 @@ make local-worker-run         # or run in the foreground, Ctrl-C to stop
 ```
 
 The agent starts at login, restarts if it dies, and runs at low priority (Nice 10). Launchd output goes to `work/queue/launchd.*.log`. To pause without uninstalling: `launchctl bootout gui/$(id -u)/ae.falconlens.localworker`, and start again with `make local-worker-install`.
+
+## llm-gate: one local model on the GPU at a time (machine infrastructure, outside this repo)
+
+The Mac runs Ollama and Mirai models that must not swap each other out. `~/Tools/llm-gate` (not part of this repo) puts a queue in front of both. Falcon needs no change:
+
+- `OLLAMA_BASE_URL` stays `http://localhost:11434` (containers: `http://host.docker.internal:11434`). That port is now the gate; the real Ollama listens on `127.0.0.1:11435`.
+- Mirai is reached on 8085 and 8086 (both go to one internal server on 18085).
+- Only one of Ollama and Mirai owns the GPU. A request for the other one waits until the owner is idle (15 s grace), then the gate unloads Ollama models or stops Mirai and switches. Expect extra latency (tens of seconds) on a switch; a model that is not loaded also needs free memory (12 GB margin) before it loads.
+- Status: `curl http://127.0.0.1:11434/gate/status`. Logs: `~/Tools/llm-gate/logs/`.
+- Ollama runs with `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_KEEP_ALIVE=2m`, so a Falcon job on a different model evicts the previous one.
+- Rollback to plain Ollama on 11434 and the two original Mirai servers: `~/Tools/llm-gate/llm-gate uninstall`. Full details: `~/Tools/llm-gate/README.md`.
