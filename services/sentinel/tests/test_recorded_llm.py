@@ -56,3 +56,56 @@ async def test_recorded_bad_response_stays_rejected() -> None:
     await env.runner(llm).run(iid)
     inc = env.cache.get(iid)
     assert inc is not None and inc["summary"]["generated_by"] == "template"
+
+
+# ---- the verifier stays narrow ------------------------------------------------------------------
+
+
+async def _view() -> dict:  # type: ignore[type-arg]
+    from falcon_sentinel.graph import evidence_view
+
+    env = await make_env()
+    inc = env.cache.get(env.campaign_id())
+    assert inc is not None
+    return evidence_view(inc)
+
+
+async def test_vet_event_types_come_from_the_contract_and_the_timeline() -> None:
+    import json
+
+    from sentinel_core.events import EVENT_SCHEMA_PATH
+
+    from falcon_sentinel.textsafe import contract_event_types, vet
+
+    view = await _view()
+    assert contract_event_types() == frozenset(json.loads(EVENT_SCHEMA_PATH.read_text())["properties"]["type"]["enum"])
+    assert vet("seen domain.observed then verdict.created", view) is not None
+    # host-like but not a contract event type, even though it is shaped like one
+    assert vet("seen domain.compromised", view) is None
+    assert vet("see login.example", view) is None
+    # a contract event type that this incident's timeline never shows is not vocabulary here
+    assert vet("then incident.opened", view) is None
+
+
+async def test_vet_arabic_clitic_only_passes_for_known_indicator_hosts() -> None:
+    from falcon_sentinel.textsafe import vet
+
+    view = await _view()
+    assert vet("تشترك وfalcon-demo-bank-verify[.]test", view) is not None
+    assert vet("تشترك وevil-bank-login[.]example", view) is None
+    assert vet("تشترك وfalcon-demo-bank-verify[.]example", view) is None  # known name, other TLD
+
+
+async def test_vet_rejects_urls_and_hosts_not_in_the_incident() -> None:
+    from falcon_sentinel.textsafe import vet
+
+    view = await _view()
+    for bad in (
+        "open hxxps://falcon-demo-bank-login[.]test/login",
+        "open https://falcon-demo-bank-login.test/",
+        "visit www.example.org",
+        "another host other-demo-bank[.]test",
+        "mail ops@falcon-demo-bank-login.test",
+        "ip 203.0.113.9",
+    ):
+        assert vet(bad, view) is None, bad

@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
 from typing import Any
+
+from sentinel_core.events import EVENT_SCHEMA_PATH
 
 URL_RE = re.compile(r"(?i)\b(?:https?|hxxps?|ftp)\s*:\s*//|\bwww\s*\.")
 DOMAIN_RE = re.compile(
@@ -42,9 +45,18 @@ def allowed_numbers(view: dict[str, Any]) -> set[str]:
 ARABIC_LETTERS = "".join(chr(c) for c in range(0x0600, 0x06FF + 1))
 
 
+@lru_cache(maxsize=1)
+def contract_event_types() -> frozenset[str]:
+    """Event type names from contracts/event.schema.json (the contract, not a hand list)."""
+    schema = json.loads(EVENT_SCHEMA_PATH.read_text())
+    return frozenset(str(t).lower() for t in schema["properties"]["type"]["enum"])
+
+
 def allowed_event_types(view: dict[str, Any]) -> set[str]:
-    """Event type names in the timeline ("domain.observed") look like hosts but are evidence vocabulary."""
-    return {str(t["what"]).split(" ", 1)[0].lower() for t in view["timeline"] if t.get("what")}
+    """Event type names ("domain.observed") look like hosts but are contract vocabulary. Only names that are in
+    the event contract AND appear in this incident's timeline pass."""
+    seen = {str(t["what"]).split(" ", 1)[0].lower() for t in view["timeline"] if t.get("what")}
+    return seen & contract_event_types()
 
 
 def allowed_hosts(view: dict[str, Any]) -> set[str]:
