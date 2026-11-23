@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { TIERS } from "@/lib/contracts";
+import { TIERS, type InputType } from "@/lib/contracts";
 import { usePrefs } from "@/lib/prefs";
 import { useCheck } from "@/lib/use-check";
 import { lensStateFor } from "@/lib/verdict-stream";
@@ -18,9 +18,11 @@ export interface CheckExperienceProps {
   initialId: string | null;
   initialText: string;
   shareFailed: boolean;
+  pendingKinds: readonly InputType[];
+  investigatorLive: boolean;
 }
 
-export function CheckExperience({ demo, initialId, initialText, shareFailed }: CheckExperienceProps) {
+export function CheckExperience({ demo, initialId, initialText, shareFailed, pendingKinds, investigatorLive }: CheckExperienceProps) {
   const { t } = usePrefs();
   const { state, start, playDemo, reset } = useCheck(initialId);
   const busy = state.phase === "submitting" || state.phase === "waiting" || state.phase === "streaming";
@@ -45,7 +47,7 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed }: C
                 </p>
               ) : null}
 
-              <CheckBox busy={busy} initialText={initialText} onSubmit={(input, preview) => void start(input, preview)} />
+              <CheckBox pending={pendingKinds} busy={busy} initialText={initialText} onSubmit={(input, preview) => void start(input, preview)} />
 
               {demo ? (
                 <div className="demos" data-testid="demo-examples">
@@ -85,6 +87,7 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed }: C
                     {t(`tier.${tier}`)}
                   </h3>
                   <p>{t(`how.${tier}`)}</p>
+                  {tier === "T3" ? <p><span className="cap" data-live={investigatorLive ? "true" : "false"}><i aria-hidden="true" />{t(investigatorLive ? "cap.live" : "cap.progress")}</span></p> : null}
                 </div>
               ))}
             </div>

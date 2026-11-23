@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { AppShell, Footer, Header } from "@/components/Chrome";
 import type { Lang } from "@/lib/contracts";
+import { loadCapabilities } from "@/lib/capabilities";
 import { metadataBase, pageMetadata } from "@/lib/meta";
 import { serverLang } from "@/lib/server-lang";
 import { PrefsProvider, type Theme } from "@/lib/prefs";
@@ -10,8 +11,9 @@ import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await serverLang();
+  const caps = await loadCapabilities();
   return {
-    ...pageMetadata(lang),
+    ...pageMetadata(lang, undefined, caps.message_check && caps.email_check && caps.image_check),
     metadataBase: metadataBase(),
     applicationName: "Falcon Lens",
     appleWebApp: { capable: true, title: "عدسة الصقر", statusBarStyle: "black-translucent" },

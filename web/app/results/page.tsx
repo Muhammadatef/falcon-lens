@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { loadCapabilities } from "@/lib/capabilities";
 import { Icon } from "@/components/Icon";
 import type { Lang } from "@/lib/contracts";
 import { pageMetadata } from "@/lib/meta";
@@ -23,6 +24,10 @@ type Copy = {
   artifact: string;
   date: string;
   dataset: string;
+  scopeRaw: string;
+  commit: string;
+  dirty: string;
+  draft: string;
   notEvalTitle: string;
   notEvalLead: string;
   metrics: Record<string, string>;
@@ -48,6 +53,10 @@ const COPY: Record<Lang, Copy> = {
     artifact: "ملف التقييم",
     date: "تاريخ الإنشاء (UTC)",
     dataset: "بصمة مجموعة البيانات",
+    scopeRaw: "النطاق كما ورد في الملف",
+    commit: "إصدار الشيفرة (git)",
+    dirty: "بُني من نسخة عمل غير مثبَّتة بالكامل (غير نظيفة).",
+    draft: "الخدمة الحية تستخدم حالياً المصنّف المبدئي؛ النموذج المقيس (T1) يُربط في PR #47. الأرقام أعلاه تخص النموذج المقيس.",
     notEvalTitle: "لم يُقَس بعد",
     notEvalLead: "هذه الجوانب لم تُقيَّم في الملف المنشور، ولذلك لا نذكر لها أي رقم.",
     metrics: { precision: "الدقة (Precision)", recall: "الاستدعاء (Recall)", f1: "مقياس F1", fpr: "معدل الإنذار الخاطئ", pr_auc: "المساحة تحت منحنى PR", ece: "خطأ المعايرة (ECE)" },
@@ -83,6 +92,10 @@ const COPY: Record<Lang, Copy> = {
     artifact: "Evaluation artifact",
     date: "Created (UTC)",
     dataset: "Dataset hash",
+    scopeRaw: "Scope as recorded in the artifact",
+    commit: "Code revision (git)",
+    dirty: "Built from a working tree with uncommitted changes.",
+    draft: "The live service currently uses the draft classifier; the measured T1 model is wired in PR #47. The figures above describe the measured model.",
     notEvalTitle: "Not yet evaluated",
     notEvalLead: "These aspects were not evaluated in the published artifact, so we state no figure for them.",
     metrics: { precision: "Precision", recall: "Recall", f1: "F1 score", fpr: "False-alarm rate", pr_auc: "Area under the PR curve", ece: "Calibration error (ECE)" },
@@ -139,6 +152,7 @@ export default async function ResultsPage() {
   const lang = await serverLang();
   const c = COPY[lang];
   const r = loadResults();
+  const caps = await loadCapabilities();
   const testN = r?.splits.find((s) => s.split === "test")?.n ?? null;
   return (
     <main id="main" className="page">
@@ -155,6 +169,13 @@ export default async function ResultsPage() {
         ) : (
           <>
             {r.splits.map((s) => <SplitBlock key={s.split} view={s} lang={lang} c={c} />)}
+
+            {!caps.t1_measured_model ? (
+              <p className="card callout" role="note" data-testid="draft-classifier">
+                <Icon name="clock" size={24} />
+                <span>{c.draft}</span>
+              </p>
+            ) : null}
 
             <section className="prose" aria-labelledby="scope-h">
               <h2 id="scope-h">{c.scopeTitle}</h2>
@@ -181,6 +202,8 @@ export default async function ResultsPage() {
                 <li>{c.artifact}: <code>{r.artifact}</code></li>
                 <li>{c.date}: <code>{r.createdAt}</code></li>
                 <li>{c.dataset}: <code>{r.datasetHash.slice(0, 16)}</code></li>
+                <li>{c.scopeRaw}: <code>{r.scope}</code></li>
+                <li>{c.commit}: <code>{r.gitSha}</code>{r.gitSha.endsWith("-dirty") ? <> {c.dirty}</> : null}</li>
               </ul>
             </section>
           </>

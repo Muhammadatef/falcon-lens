@@ -7,6 +7,8 @@
 import type { Lang } from "./contracts";
 
 export interface Layer {
+  /** Capability flag whose status badge this layer carries. */
+  cap?: "investigator" | "injection_defence";
   tag: string;
   title: string;
   body: string;
@@ -68,14 +70,14 @@ export const ARCH: Record<Lang, ArchContent> = {
       flowTitle: "Layer by layer",
       layers: [
         { tag: "T0 – T2", title: "Deterministic cascade", body: "Canonicalise the input, consult the cache and the verified-official registry, run URL, domain and reputation signals and the calibrated model, visit the page in the sandbox. Most checks finish here without any language model.", kind: "code" },
-        { tag: "T2", title: "Quarantined extractor", body: "The only model that ever reads untrusted text. It has no tools, receives redacted and spotlighted input, and must return a strict schema; invalid output is repaired once, then dropped. Its output can only add evidence.", kind: "llm" },
-        { tag: "T3 · in", title: "Structured evidence view", body: "The Investigator receives structured evidence records only, never raw page or message text. Targets are given as short references (u0, d1) that code resolves to the exact value.", kind: "code" },
-        { tag: "PLAN", title: "Propose one action", body: "The model emits a single JSON action: a tool name, typed arguments and the evidence ids that justify it, or stop.", kind: "llm" },
-        { tag: "ACT", title: "Validate, then run", body: "The action is validated against the tool registry: typed arguments, extra keys rejected, and a provenance rule that every URL or domain must come from the case itself. Only then does the tool run.", kind: "code" },
-        { tag: "OBSERVE", title: "Record the observation", body: "A tool returns evidence records only, never raw HTML. A sanitised step is added to the investigation trail shown to the user.", kind: "code" },
-        { tag: "DECIDE", title: "Loop or stop", body: "Stop when the model says stop, or when a budget is reached: 6 tool calls, 15 seconds or 8,000 output tokens. The stop reason is recorded.", kind: "code" },
-        { tag: "ARBITER", title: "Deterministic arbiter sets the score", body: "New T3 evidence enters with weight 0 and the arbiter re-scores everything by fixed, evaluated rules. The Investigator has no way to set or change a score, so an injection can at most add evidence.", kind: "code" },
-        { tag: "RESPONDER", title: "Explain with a verifier", body: "A model writes at most three bilingual reasons from structured evidence. A verifier rejects any reason that cites no valid evidence, contradicts the verdict or breaks product rules, and falls back to template reasons.", kind: "llm" },
+        { cap: "injection_defence", tag: "T2", title: "Quarantined extractor", body: "The only model that ever reads untrusted text. It has no tools, receives redacted and spotlighted input, and must return a strict schema; invalid output is repaired once, then dropped. Its output can only add evidence.", kind: "llm" },
+        { cap: "investigator", tag: "T3 · in", title: "Structured evidence view", body: "The Investigator receives structured evidence records only, never raw page or message text. Targets are given as short references (u0, d1) that code resolves to the exact value.", kind: "code" },
+        { cap: "investigator", tag: "PLAN", title: "Propose one action", body: "The model emits a single JSON action: a tool name, typed arguments and the evidence ids that justify it, or stop.", kind: "llm" },
+        { cap: "investigator", tag: "ACT", title: "Validate, then run", body: "The action is validated against the tool registry: typed arguments, extra keys rejected, and a provenance rule that every URL or domain must come from the case itself. Only then does the tool run.", kind: "code" },
+        { cap: "investigator", tag: "OBSERVE", title: "Record the observation", body: "A tool returns evidence records only, never raw HTML. A sanitised step is added to the investigation trail shown to the user.", kind: "code" },
+        { cap: "investigator", tag: "DECIDE", title: "Loop or stop", body: "Stop when the model says stop, or when a budget is reached: 6 tool calls, 15 seconds or 8,000 output tokens. The stop reason is recorded.", kind: "code" },
+        { tag: "ARBITER", title: "Deterministic arbiter sets the score", body: "New T3 evidence enters with weight 0 and the arbiter re-scores everything by fixed, evaluated rules. The Investigator has no way to set or change a score, so by design an injection can at most add evidence (evaluation status: see Results).", kind: "code" },
+        { cap: "investigator", tag: "RESPONDER", title: "Explain with a verifier", body: "A model writes at most three bilingual reasons from structured evidence. A verifier rejects any reason that cites no valid evidence, contradicts the verdict or breaks product rules, and falls back to template reasons.", kind: "llm" },
       ],
       guardTitle: "Guardrails",
       guards: [
@@ -110,7 +112,7 @@ export const ARCH: Record<Lang, ArchContent> = {
         { tag: "compare", title: "Compare", body: "Deterministic: what do the indicators share, and has this been seen before?", kind: "code" },
         { tag: "assess", title: "Assess severity", body: "A model writes the reason for the severity within its budget; past the budget a template is used.", kind: "llm" },
         { tag: "summarise", title: "Summarise", body: "A bilingual incident summary from structured evidence only.", kind: "llm" },
-        { tag: "propose", title: "Propose actions", body: "Typed actions validated against the same tool registry, with caps on blocks and on total actions per incident.", kind: "code" },
+        { tag: "propose", title: "Propose actions", body: "The model proposes typed actions; code then validates them against the same tool registry and enforces caps on blocks and on total actions per incident.", kind: "llm" },
         { tag: "act", title: "Act, then wait for a person", body: "Internal, reversible actions run (time-limited block, alert, board update, STIX export, re-check). External actions are built as drafts and the graph calls interrupt(): it resumes only when an operator approves or rejects. Nothing is sent outside automatically.", kind: "gate" },
       ],
       guardTitle: "Guardrails",
@@ -153,14 +155,14 @@ export const ARCH: Record<Lang, ArchContent> = {
       flowTitle: "طبقة بعد طبقة",
       layers: [
         { tag: "T0 – T2", title: "الشلال الحتمي", body: "توحيد صيغة المدخل، وفحص الذاكرة المؤقتة وسجل المواقع الرسمية الموثّقة، وإشارات العنوان والنطاق والسمعة والنموذج المعايَر، وزيارة الصفحة في البيئة المعزولة. تنتهي معظم الفحوص هنا دون أي نموذج لغوي.", kind: "code" },
-        { tag: "T2", title: "المستخرِج المعزول", body: "النموذج الوحيد الذي يقرأ نصاً غير موثوق. لا أدوات لديه، ويستلم مدخلاً محجوب الحقول الحساسة ومعلَّماً، ويجب أن يعيد مخططاً صارماً. المخرجات غير الصالحة تُصلَح مرة واحدة ثم تُهمَل. ولا يمكن لمخرجاته إلا إضافة أدلة.", kind: "llm" },
-        { tag: "T3 · دخل", title: "عرض الأدلة المهيكل", body: "يستلم المحقّق سجلات أدلة مهيكلة فقط، ولا يرى نص الصفحة أو الرسالة الخام. تُعطى الأهداف كمراجع قصيرة (u0، d1) تحوّلها الشيفرة إلى القيمة الدقيقة.", kind: "code" },
-        { tag: "PLAN", title: "اقتراح إجراء واحد", body: "يُخرج النموذج إجراءً واحداً بصيغة JSON: اسم الأداة ومعطيات مصنّفة ومعرّفات الأدلة التي تبرره، أو إيقاف.", kind: "llm" },
-        { tag: "ACT", title: "تحقّق ثم نفّذ", body: "يُتحقَّق من الإجراء بمقابلة سجل الأدوات: معطيات مصنّفة، ومفاتيح زائدة مرفوضة، وقاعدة منشأ تشترط أن يأتي كل رابط أو نطاق من الحالة نفسها. وعندها فقط تُشغَّل الأداة.", kind: "code" },
-        { tag: "OBSERVE", title: "تسجيل الملاحظة", body: "تعيد الأداة سجلات أدلة فقط، ولا تعيد HTML خاماً. وتُضاف خطوة منقّحة إلى مسار التحقيق المعروض للمستخدم.", kind: "code" },
-        { tag: "DECIDE", title: "كرّر أو توقّف", body: "يتوقف عندما يقرر النموذج الإيقاف أو عند بلوغ ميزانية: 6 استدعاءات أدوات أو 15 ثانية أو 8000 رمز ناتج. ويُسجَّل سبب التوقف.", kind: "code" },
-        { tag: "ARBITER", title: "المحكّم الحتمي يحدد الدرجة", body: "تدخل أدلة T3 الجديدة بوزن 0 ويعيد المحكّم تقدير كل شيء بقواعد ثابتة مقيَّمة. لا يستطيع المحقّق تحديد الدرجة أو تغييرها، فأقصى ما يفعله الحقن هو إضافة دليل.", kind: "code" },
-        { tag: "RESPONDER", title: "الشرح مع مدقّق", body: "يكتب نموذج ما لا يزيد على ثلاثة أسباب ثنائية اللغة من أدلة مهيكلة. ويرفض المدقّق أي سبب لا يستشهد بدليل صالح أو يناقض الحكم أو يخالف قواعد المنتج، ويعود إلى أسباب القوالب.", kind: "llm" },
+        { cap: "injection_defence", tag: "T2", title: "المستخرِج المعزول", body: "النموذج الوحيد الذي يقرأ نصاً غير موثوق. لا أدوات لديه، ويستلم مدخلاً محجوب الحقول الحساسة ومعلَّماً، ويجب أن يعيد مخططاً صارماً. المخرجات غير الصالحة تُصلَح مرة واحدة ثم تُهمَل. ولا يمكن لمخرجاته إلا إضافة أدلة.", kind: "llm" },
+        { cap: "investigator", tag: "T3 · دخل", title: "عرض الأدلة المهيكل", body: "يستلم المحقّق سجلات أدلة مهيكلة فقط، ولا يرى نص الصفحة أو الرسالة الخام. تُعطى الأهداف كمراجع قصيرة (u0، d1) تحوّلها الشيفرة إلى القيمة الدقيقة.", kind: "code" },
+        { cap: "investigator", tag: "PLAN", title: "اقتراح إجراء واحد", body: "يُخرج النموذج إجراءً واحداً بصيغة JSON: اسم الأداة ومعطيات مصنّفة ومعرّفات الأدلة التي تبرره، أو إيقاف.", kind: "llm" },
+        { cap: "investigator", tag: "ACT", title: "تحقّق ثم نفّذ", body: "يُتحقَّق من الإجراء بمقابلة سجل الأدوات: معطيات مصنّفة، ومفاتيح زائدة مرفوضة، وقاعدة منشأ تشترط أن يأتي كل رابط أو نطاق من الحالة نفسها. وعندها فقط تُشغَّل الأداة.", kind: "code" },
+        { cap: "investigator", tag: "OBSERVE", title: "تسجيل الملاحظة", body: "تعيد الأداة سجلات أدلة فقط، ولا تعيد HTML خاماً. وتُضاف خطوة منقّحة إلى مسار التحقيق المعروض للمستخدم.", kind: "code" },
+        { cap: "investigator", tag: "DECIDE", title: "كرّر أو توقّف", body: "يتوقف عندما يقرر النموذج الإيقاف أو عند بلوغ ميزانية: 6 استدعاءات أدوات أو 15 ثانية أو 8000 رمز ناتج. ويُسجَّل سبب التوقف.", kind: "code" },
+        { tag: "ARBITER", title: "المحكّم الحتمي يحدد الدرجة", body: "تدخل أدلة T3 الجديدة بوزن 0 ويعيد المحكّم تقدير كل شيء بقواعد ثابتة مقيَّمة. لا يستطيع المحقّق تحديد الدرجة أو تغييرها، فأقصى ما يفعله الحقن بحسب التصميم هو إضافة دليل (حالة التقييم: انظر صفحة النتائج).", kind: "code" },
+        { cap: "investigator", tag: "RESPONDER", title: "الشرح مع مدقّق", body: "يكتب نموذج ما لا يزيد على ثلاثة أسباب ثنائية اللغة من أدلة مهيكلة. ويرفض المدقّق أي سبب لا يستشهد بدليل صالح أو يناقض الحكم أو يخالف قواعد المنتج، ويعود إلى أسباب القوالب.", kind: "llm" },
       ],
       guardTitle: "ضوابط الحماية",
       guards: [
@@ -195,7 +197,7 @@ export const ARCH: Record<Lang, ArchContent> = {
         { tag: "compare", title: "المقارنة", body: "حتمية: ما الذي تشترك فيه المؤشرات، وهل سبق أن رأينا هذا؟", kind: "code" },
         { tag: "assess", title: "تقدير الشدة", body: "يكتب نموذج سبب الشدة ضمن ميزانيته، وبعد تجاوزها يُستخدم قالب.", kind: "llm" },
         { tag: "summarise", title: "التلخيص", body: "ملخص ثنائي اللغة للحادث من أدلة مهيكلة فقط.", kind: "llm" },
-        { tag: "propose", title: "اقتراح الإجراءات", body: "إجراءات مصنّفة يُتحقَّق منها بمقابلة سجل الأدوات نفسه، مع سقف لعدد الحظر ولمجموع الإجراءات في الحادث.", kind: "code" },
+        { tag: "propose", title: "اقتراح الإجراءات", body: "يقترح النموذج إجراءات مصنّفة، ثم تتحقق الشيفرة منها بمقابلة سجل الأدوات نفسه وتفرض سقفاً لعدد الحظر ولمجموع الإجراءات في الحادث.", kind: "llm" },
         { tag: "act", title: "نفّذ ثم انتظر إنساناً", body: "تُنفَّذ الإجراءات الداخلية القابلة للتراجع (حظر مؤقت، تنبيه، تحديث اللوحة، تصدير STIX، إعادة فحص). أما الإجراءات الخارجية فتُبنى كمسودات ويستدعي الرسم interrupt(): لا يستأنف إلا عندما يوافق مشغّل أو يرفض. ولا يُرسل شيء إلى الخارج تلقائياً.", kind: "gate" },
       ],
       guardTitle: "ضوابط الحماية",

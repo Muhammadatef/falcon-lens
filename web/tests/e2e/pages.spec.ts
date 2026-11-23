@@ -5,6 +5,7 @@
  */
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
+import capabilities from "../../lib/capabilities.generated.json";
 import results from "../../lib/results.generated.json";
 import { formatMetric } from "../../lib/results";
 import { expect, setPrefs, test } from "./helpers";
@@ -79,7 +80,7 @@ test.describe("chrome", () => {
     await setPrefs(context, baseURL!, { lang: "en" });
     await page.goto("/how-it-works");
     await expect(page).toHaveTitle("How Falcon Lens works · Falcon Lens | عدسة الصقر");
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /four steps/);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /in four steps|four steps/);
     await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute("content", "en_GB");
     const og = await page.locator('meta[property="og:image"]').getAttribute("content");
     expect(new URL(og!).pathname).toBe("/og/falcon-lens-og.png");
@@ -118,6 +119,27 @@ test.describe("judge-facing content", () => {
     await expect(page.getByTestId("loop-diagram")).toBeVisible();
     await expect(page.getByText("A pure classifier").first()).toBeVisible();
     expect(await page.locator(".loop-dot").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+  });
+
+  test("capability badges come from the single flag source, and copy does not overclaim", async ({ page, context, baseURL }) => {
+    await setPrefs(context, baseURL!, { lang: "en" });
+    const flags = capabilities as Record<string, boolean>;
+    await page.goto("/how-it-works");
+    const badges = page.getByTestId("input-kinds").getByTestId("cap-badge");
+    await expect(badges).toHaveCount(4);
+    await expect(badges.nth(0)).toContainText("Live");
+    for (const [i, id] of ["message_check", "email_check", "image_check"].entries()) {
+      await expect(badges.nth(i + 1)).toContainText(flags[id] ? "Live" : "In progress (PR #47)");
+    }
+    await expect(page.locator("main")).not.toContainText("cannot give it orders");
+    await page.goto("/privacy");
+    const body = await page.locator("main").innerText();
+    expect(body).not.toMatch(/30 days/);
+    expect(body).toContain("not yet automated");
+    await page.goto("/results");
+    await expect(page.getByTestId("draft-classifier")).toHaveCount(flags.t1_measured_model ? 0 : 1);
+    await expect(page.locator("main")).toContainText("Scope as recorded");
+    await expect(page.locator("main")).toContainText("Code revision");
   });
 
   test("results: every number on the page comes from the bundled published artifact", async ({ page }) => {

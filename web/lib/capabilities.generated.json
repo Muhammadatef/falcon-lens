@@ -1,0 +1,8 @@
+{
+  "message_check": false,
+  "email_check": false,
+  "image_check": false,
+  "injection_defence": false,
+  "investigator": false,
+  "t1_measured_model": false
+}

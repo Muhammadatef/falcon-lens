@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CapBadge } from "@/components/CapBadge";
+import type { Capabilities } from "@/lib/capabilities";
+import { loadCapabilities } from "@/lib/capabilities";
+import type { Lang } from "@/lib/contracts";
 import { ARCH, type AgentBlock, type ArchContent } from "@/lib/arch-content";
 import { pageMetadata } from "@/lib/meta";
 import { serverLang } from "@/lib/server-lang";
@@ -41,14 +45,14 @@ function LoopDiagram({ c }: { c: ArchContent }) {
   );
 }
 
-function Flow({ block, legend }: { block: AgentBlock; legend: ArchContent["legend"] }) {
+function Flow({ block, legend, caps, lang }: { block: AgentBlock; legend: ArchContent["legend"]; caps: Capabilities; lang: Lang }) {
   return (
     <ol className="flow" data-testid="flow">
       {block.layers.map((l) => (
         <li className="flow-node" data-kind={l.kind ?? "code"} key={l.tag + l.title}>
           <span className="flow-tag mono">{l.tag}</span>
           <div>
-            <h4>{l.title}</h4>
+            <h4>{l.title}{l.cap ? <> <CapBadge live={caps[l.cap]} lang={lang} /></> : null}</h4>
             <p>{l.body}</p>
             <span className="flow-kind">{legend[l.kind ?? "code"]}</span>
           </div>
@@ -58,12 +62,13 @@ function Flow({ block, legend }: { block: AgentBlock; legend: ArchContent["legen
   );
 }
 
-function Agent({ id, block, c, children }: { id: string; block: AgentBlock; c: ArchContent; children?: React.ReactNode }) {
+function Agent({ id, block, c, caps, lang, badge, children }: { id: string; block: AgentBlock; c: ArchContent; caps: Capabilities; lang: Lang; badge?: boolean; children?: React.ReactNode }) {
   return (
     <section className="agent-arch" aria-labelledby={`${id}-h`} data-testid={id}>
       <div className="sec-head">
         <h2 id={`${id}-h`}>{block.name}</h2>
         <span className="chip mono">{block.adr}</span>
+        {badge !== undefined ? <CapBadge live={badge} lang={lang} /> : null}
       </div>
       <p className="card pattern">
         <b>{block.pattern}</b>
@@ -75,7 +80,7 @@ function Agent({ id, block, c, children }: { id: string; block: AgentBlock; c: A
       </div>
       {children}
       <h3 className="h3">{block.flowTitle}</h3>
-      <Flow block={block} legend={c.legend} />
+      <Flow block={block} legend={c.legend} caps={caps} lang={lang} />
       <div className="prose">
         <h3>{block.guardTitle}</h3>
         <ul>{block.guards.map((g) => <li key={g}>{g}</li>)}</ul>
@@ -89,6 +94,7 @@ function Agent({ id, block, c, children }: { id: string; block: AgentBlock; c: A
 export default async function AgentsArchitecturePage() {
   const lang = await serverLang();
   const c = ARCH[lang];
+  const caps = await loadCapabilities();
   return (
     <main id="main" className="page">
       <div className="wrap">
@@ -100,7 +106,7 @@ export default async function AgentsArchitecturePage() {
           ))}
         </ul>
 
-        <Agent id="investigator" block={c.investigator} c={c}>
+        <Agent id="investigator" block={c.investigator} c={c} caps={caps} lang={lang} badge={caps.investigator}>
           <LoopDiagram c={c} />
           <div className="chips-wrap">
             <h3 className="h3">{c.toolsTitle}</h3>
@@ -108,7 +114,7 @@ export default async function AgentsArchitecturePage() {
           </div>
         </Agent>
 
-        <Agent id="sentinel" block={c.sentinel} c={c} />
+        <Agent id="sentinel" block={c.sentinel} c={c} caps={caps} lang={lang} />
 
         <p><Link className="btn" href="/how-it-works">{c.back}</Link></p>
       </div>

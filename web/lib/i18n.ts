@@ -211,9 +211,12 @@ const ar = {
   "reject": "ارفض",
 
   "foot.1": "عدسة الصقر | Falcon Lens",
-  "foot.2": "لا نحفظ ما تلصقه إلا إذا اخترت الإبلاغ عنه.",
+  "foot.2": "لا نحفظ ما تلصقه. نحتفظ بنسخة معطَّلة من الروابط التي تفحصها وبالأدلة.",
   "install": "ثبّت التطبيق",
   "install.hint": "بعد التثبيت على أندرويد يمكنك مشاركة أي رابط أو لقطة شاشة إلى عدسة الصقر مباشرة.",
+  "cap.live": "مفعّل",
+  "cap.progress": "قيد الإنجاز (PR #47)",
+  "kind.pending": "فحص هذا النوع قيد الإنجاز، وقد يُردّ عليك بنتيجة غير مكتملة. الرابط هو المسار المكتمل اليوم.",
   "nav.how": "آلية العمل",
   "nav.arch": "البنية التقنية",
   "nav.results": "النتائج",
@@ -230,13 +233,13 @@ const ar = {
   "p.retry_in_min": "حاول بعد نحو {n} دقيقة.",
   "p.retry_hint": "يمكنك إعادة المحاولة بعد انقضاء هذه المدة. لم يُحفظ شيء.",
   "err.title": "حدث خلل غير متوقع",
-  "err.body": "لم نتمكن من عرض هذه الصفحة. لم يُرسَل شيء ولم يتغيّر شيء. يمكنك إعادة المحاولة أو العودة إلى صفحة الفحص.",
+  "err.body": "لم نتمكن من عرض هذه الصفحة. يمكنك إعادة المحاولة أو العودة إلى صفحة الفحص.",
   "err.retry": "أعد المحاولة",
   "err.home": "العودة إلى الفحص",
   "nf.title": "الصفحة غير موجودة",
   "nf.body": "ربما تغيّر العنوان أو أُدخل بصورة غير صحيحة. يمكنك العودة إلى صفحة الفحص أو تصفّح أقسام الموقع.",
   "page.loading": "جارٍ التحميل…",
-  "offline": "أنت غير متصل بالإنترنت. يمكنك تصفّح الصفحات المحفوظة، لكن الفحص يتطلب اتصالاً. لا تفتح أي رابط مشبوه إلى أن يتم فحصه.",
+  "offline": "أنت غير متصل بالإنترنت. الفحص يتطلب اتصالاً ولم يُفحص شيء. لا تفتح أي رابط مشبوه إلى أن يتم فحصه.",
 } as const;
 
 export type MessageKey = keyof typeof ar;
@@ -448,9 +451,12 @@ const en: Record<MessageKey, string> = {
   "reject": "Reject",
 
   "foot.1": "Falcon Lens | عدسة الصقر",
-  "foot.2": "We do not keep what you paste unless you choose to report it.",
+  "foot.2": "We do not store what you paste. We keep a defanged copy of the links you check, and the evidence.",
   "install": "Install the app",
   "install.hint": "Once installed on Android you can share any link or screenshot straight to Falcon Lens.",
+  "cap.live": "Live",
+  "cap.progress": "In progress (PR #47)",
+  "kind.pending": "Checking this type is in progress and may return an incomplete result. Links are the complete path today.",
   "nav.how": "How it works",
   "nav.arch": "Technical architecture",
   "nav.results": "Results",
@@ -467,13 +473,13 @@ const en: Record<MessageKey, string> = {
   "p.retry_in_min": "Try again in about {n} minutes.",
   "p.retry_hint": "You can try again once that time has passed. Nothing was stored.",
   "err.title": "Something unexpected went wrong",
-  "err.body": "We could not show this page. Nothing was sent and nothing was changed. You can try again or go back to the check page.",
+  "err.body": "We could not show this page. You can try again or go back to the check page.",
   "err.retry": "Try again",
   "err.home": "Back to the check",
   "nf.title": "Page not found",
   "nf.body": "The address may have changed or been typed incorrectly. You can go back to the check page or browse the sections of the site.",
   "page.loading": "Loading…",
-  "offline": "You are offline. You can browse saved pages, but a check needs a connection. Do not open a suspicious link until it has been checked.",
+  "offline": "You are offline. A check needs a connection and nothing was checked. Do not open a suspicious link until it has been checked.",
 };
 
 export const MESSAGES: Record<Lang, Record<MessageKey, string>> = { ar, en };

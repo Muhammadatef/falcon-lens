@@ -25,6 +25,7 @@ export interface ResultsView {
   createdAt: string;
   datasetHash: string;
   scope: string;
+  gitSha: string;
   temporalCut: boolean;
   nBootstrap: number | null;
   splits: SplitView[];
@@ -64,6 +65,7 @@ export function parseResults(file: unknown): ResultsView | null {
     createdAt: String(d.created_at ?? ""),
     datasetHash: String(d.dataset_hash ?? ""),
     scope: String(d.scope ?? ""),
+    gitSha: String(d.git_sha ?? ""),
     temporalCut: d.temporal_cut === true,
     nBootstrap: num(seeds.n_bootstrap),
     splits,

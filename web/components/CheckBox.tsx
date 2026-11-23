@@ -14,6 +14,8 @@ const KINDS: readonly InputType[] = ["url", "message", "email", "image"];
 export interface CheckBoxProps {
   busy: boolean;
   initialText?: string;
+  /** Input types whose capability flag is not live yet: a plain note is shown on that tab. */
+  pending?: readonly InputType[];
   onSubmit: (input: CheckInput, preview: CheckInputPreview) => void;
 }
 
@@ -54,7 +56,7 @@ export function buildInput(kind: InputType, text: string, file: File | null): { 
   return { input: { kind: "message", text: trimmed }, preview: { kind: "message", text: trimmed } };
 }
 
-export function CheckBox({ busy, initialText = "", onSubmit }: CheckBoxProps) {
+export function CheckBox({ busy, initialText = "", pending = [], onSubmit }: CheckBoxProps) {
   const { t } = usePrefs();
   const [kind, setKind] = useState<InputType>(initialText && !looksLikeSingleUrl(initialText) ? "message" : "url");
   const [text, setText] = useState(initialText);
@@ -151,6 +153,7 @@ export function CheckBox({ busy, initialText = "", onSubmit }: CheckBoxProps) {
       ) : null}
 
       <p className="paste-hint" id={hintId}>{t(`input.hint.${kind}`)}</p>
+      {pending.includes(kind) ? <p className="paste-hint paste-pending" data-testid="kind-pending">{t("kind.pending")}</p> : null}
       {error ? (
         <p className="paste-error" id={errorId} role="alert" data-testid="input-error">
           <Icon name="suspicious" size={20} />

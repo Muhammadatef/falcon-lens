@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CapBadge } from "@/components/CapBadge";
+import { loadCapabilities } from "@/lib/capabilities";
 import { Icon, type IconName } from "@/components/Icon";
 import { TIERS } from "@/lib/contracts";
 import { translate, type MessageKey } from "@/lib/i18n";
@@ -17,6 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HowItWorksPage() {
   const lang = await serverLang();
   const c = HOW[lang];
+  const caps = await loadCapabilities();
   const t = (key: MessageKey) => translate(lang, key);
   return (
     <main id="main" className="page">
@@ -36,6 +39,12 @@ export default async function HowItWorksPage() {
               </li>
             ))}
           </ol>
+          <ul className="kinds" data-testid="input-kinds" aria-label={t("kind.label")}>
+            <li>{t("kind.url")} <CapBadge live lang={lang} /></li>
+            <li>{t("kind.message")} <CapBadge live={caps.message_check} lang={lang} /></li>
+            <li>{t("kind.email")} <CapBadge live={caps.email_check} lang={lang} /></li>
+            <li>{t("kind.image")} <CapBadge live={caps.image_check} lang={lang} /></li>
+          </ul>
           <div className="figure figure--tall">
             <img src="/images/how-it-works.svg" alt={c.figureAlt} width={720} height={1880} loading="lazy" decoding="async" />
           </div>
@@ -52,6 +61,7 @@ export default async function HowItWorksPage() {
                   <Icon name={TIER_ICONS[tier]} size={22} />
                   {t(`tier.${tier}`)}
                 </h3>
+                {tier === "T3" ? <p><CapBadge live={caps.investigator} lang={lang} /></p> : null}
                 <p>{t(`how.${tier}`)}</p>
               </div>
             ))}
@@ -67,6 +77,7 @@ export default async function HowItWorksPage() {
                 <h3>
                   <Icon name={i === 0 ? "eye" : "flag"} size={24} />
                   {a.title}
+                  {i === 0 ? <CapBadge live={caps.investigator} lang={lang} /> : null}
                 </h3>
                 <p className="muted">{a.role}</p>
                 <ul className="prose">
