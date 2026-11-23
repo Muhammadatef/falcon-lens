@@ -251,7 +251,7 @@ class Cascade:
             final=final,
             latency_ms=run.ms(),
             registry=self.d.registry,
-            canonical_url_defanged=defang(display_url(run.canonical.url)) if run.canonical else None,
+            canonical_url_defanged=defang(display_url(run.canonical)) if run.canonical else None,
             input_fingerprint=run.fingerprint,
             trace=run.trace,
             source=run.source,
