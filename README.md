@@ -27,8 +27,10 @@
 
 ## On this page
 
+- [What Falcon Lens offers Abu Dhabi Police](#what-falcon-lens-offers-abu-dhabi-police--ما-تقدمه-عدسة-الصقر-لشرطة-أبوظبي)
 - [How it works in four steps](#how-it-works-in-four-steps)
 - [The two AI helpers](#the-two-ai-helpers)
+- [How the two AI agents work](#how-the-two-ai-agents-work--كيف-يعمل-الوكيلان)
 - [What makes it different](#what-makes-it-different)
 - [Words you may meet](#words-you-may-meet)
 - [Where people use it](#where-people-use-it)
@@ -39,6 +41,24 @@
 - [For engineers](#for-engineers)
 - [Licence](#licence)
 - [Independence and defensive use](#independence-and-defensive-use)
+
+## What Falcon Lens offers Abu Dhabi Police | ما تقدمه عدسة الصقر لشرطة أبوظبي
+
+These are capabilities a police or security team could use. They are listed as an independent prototype's offer, not as a service already in use. "Built" means the code and its tests are in the main code line (pull request numbers in brackets). It does not mean a connection to any police system exists.
+
+| Capability | What it gives the police | State |
+|---|---|---|
+| **Public protection<br>حماية الجمهور** | Residents check a link, a text or WhatsApp message, an email or a QR code in Arabic, in seconds. It works as a web app that can sit on the phone's home screen with a share button, and as a Chrome extension that checks a page before it opens. | **Built** for links (#34, #35). **In progress** for messages, emails and pictures: the individual checks are merged, and joining them into one flow is open (#47). |
+| **Campaign detection<br>كشف الحملات** | The Sentinel watches every check around the clock and links similar ones into one campaign. It flags new look-alike addresses among the checks it sees, and prepares takedown and police-report drafts that wait for a human officer. | **Built** (#2, #6). It reads the checks people send. It does not yet scan the internet for new domains by itself. |
+| **Brand-new fake pages<br>الصفحات المزيفة الجديدة** | A page that claims to be a bank or a service but does not sit on that organisation's real address is flagged, even if no warning list knows it yet. No blocklist is needed. | **Built** (rule and sealed browser, #28). **Not measured yet**: no catch-rate figure exists. |
+| **Operator board<br>لوحة المشغّل** | A screen of campaigns and incidents, with approve and reject for every draft. Every action goes to an append-only audit log. | **Built** (#35). |
+| **Intelligence sharing<br>تبادل المعلومات** | Incidents can be exported in the standard STIX 2.1 format or pushed to signed webhooks. | **Built** (#30). Ready to connect, not connected. |
+| **Integration<br>الربط مع الأنظمة** | A REST API (v1) for apps and an MCP server for AI assistants, with API keys. | **Built** (#30). Ready to connect, not connected. |
+| **Data sovereignty<br>السيادة على البيانات** | The AI can run fully on local models on machines inside the UAE, with no message or page content sent out. Personal details are masked before anything goes to a cloud AI service. | **Built** (model routing, #19; local worker, #46). End-to-end wiring of the AI steps is **in progress** (#47). Accuracy in local mode is not measured yet. |
+| **Observability<br>المراقبة** | Live dashboards and alerts show how the system is running, with a runbook entry for each alert. | **Built** (#14). |
+| **Measured quality<br>جودة مقاسة** | Every figure comes from a saved test result, copied by a script. Nobody types a number by hand. | **Built**, and honest about scope: only the link-address stage is measured so far. See [Results](#results). |
+
+Falcon Lens is independent. It uses no police logos and does not imply endorsement.
 
 ## How it works in four steps
 
@@ -79,6 +99,22 @@
 - It drafts takedown requests and police reports in Arabic and English.
 - It sends nothing itself. A person must read the draft and approve it first. Every action is written to an append-only record (it cannot be changed by the application).
 
+## How the two AI agents work | كيف يعمل الوكيلان
+
+Each picture follows one agent from start to finish. The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a **human gate** (amber). The steps light up in turn. If your device is set to reduce motion, the picture stays still.
+
+<p align="center">
+  <img src="docs/assets/agent-investigator-steps.svg" width="390" alt="The Investigator, step by step. One: something to check arrives. Two: fixed rules go first. Three: a reader with no tools reads the page text in a sealed room. Four: it looks closer only when unsure, with at most six checked lookups. Five: code, not AI, decides the score. Six: the AI writes the reasons and every reason must point to evidence. Seven: you get a clear answer in Arabic and English.">
+</p>
+
+**The Investigator | المحقّق.** When the fixed rules cannot settle a case, the Investigator takes a closer look. The part that reads the page has no tools, so text on a scam page cannot give it orders. It may then run a small, fixed number of approved lookups. Fixed code, never the AI, sets the score, and the AI's written reasons are thrown out unless each one points to evidence.
+
+<p align="center">
+  <img src="docs/assets/agent-sentinel-steps.svg" width="390" alt="The Sentinel, step by step. One: it listens to every check. Two: it groups similar ones into a campaign. Three: rules decide it is an incident. Four: AI writes a bilingual summary. Five: it blocks internally, and every block can be undone. Six: it prepares a takedown and waits for a human. Seven: an officer approves or rejects, and the action is recorded in an append-only log.">
+</p>
+
+**The Sentinel | الحارس.** The Sentinel listens to every finished check and groups similar ones, so many fake pages copying one bank are seen as a single campaign. Written rules decide when that is an incident. It may block a known-bad link inside our own system, and that block can be undone. Anything that would leave the system, such as a takedown request or a police report, is only a draft until an officer approves it.
+
 ## What makes it different
 
 | | In plain words | Honest note |
@@ -115,9 +151,9 @@ The project is developed in the open, one reviewed piece at a time. This is the 
 
 | State | Parts |
 |---|---|
-| **Built and merged** | Checks on the address of a link. The fixed rules that decide the result. The service that receives a check and streams back the answer. Both AI helpers. The Chrome extension. The sealed browser. The web app, including the operator's board. The doorways for other systems (API, MCP, standard sharing format). The submission package. Monitoring dashboards. The testing tools that produce the results below. Demo tools. |
+| **Built and merged** | Checks on the address of a link. The fixed rules that decide the result. The service that receives a check and streams back the answer. Both AI helpers. The Chrome extension. The sealed browser. The web app, including the operator's board. The doorways for other systems (API, MCP, standard sharing format). The submission package. Monitoring dashboards. The testing tools that produce the results below. Demo tools. The attack-simulation test suite (PR #41). Joining the checks into one flow (PR #44). A local task worker (PR #46). |
 | **Built in part** | Checks for text messages, emails and pictures: the individual checks are merged, and they are not yet joined into the full flow. |
-| **Built, waiting for review** | The attack-simulation test suite (PR #41). Joining the checks into one flow (PR #44). Automatic improvement of the AI helper's instructions, done offline (PR #45). |
+| **Built, waiting for review** | Automatic improvement of the AI helper's instructions, done offline (PR #45). Wiring the AI steps and the message and email checks into the full flow (PR #47). |
 
 Two cautions. First, "built and merged" means the code and its tests are in the main code line. It does not mean a resident can use the whole product from start to finish today. The project's own checkpoint list, [`STATUS.md`](STATUS.md), does not yet record a passed end-to-end checkpoint, so this page does not claim one. Second, the list above goes out of date quickly. The exact, piece-by-piece status is in the [technical reference](docs/TECHNICAL.md#status).
 
