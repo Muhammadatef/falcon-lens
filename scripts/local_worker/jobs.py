@@ -209,7 +209,7 @@ def eval_sovereign(c: Ctx) -> dict[str, Any]:
 
 
 def dspy_local(c: Ctx) -> dict[str, Any]:
-    _make(c, ["dspy-optimize", "LM=local"], "dspy.log")
+    _make(c, ["dspy-optimize", "DSPY_ROUTE=local"], "dspy.log")
     return {"lm": "local"}
 
 

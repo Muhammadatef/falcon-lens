@@ -32,6 +32,16 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 
 **Sentinel evals.** A labelled replay stream with planted campaigns. Metrics: incident precision and recall, time to incident, duplicate rate, false-block rate and summary faithfulness. Rules have unit tests; the graph has a deterministic test with a stubbed LLM.
 
+## Offline prompt optimisation (DSPy, ADR-002)
+
+`make dspy-optimize` optimises the prompt of every shipped LLM role offline with DSPy (3.5.0): `extractor`, `investigator`, and the three Sentinel tasks `sentinel_assess`, `sentinel_summarise`, `sentinel_propose` (the responder is not optimised: user-facing reasons are template-only, D3). The metric is the production validators (router schema parse, the Sentinel verifier `vet` and evidence-id faithfulness, tool-argument validation and ProvenanceRule, caps) plus a task score on labelled synthetic data; invalid output scores 0. TRAIN optimises, VALIDATION selects; the frozen test split and the held-out legit sets are never read. A candidate is adopted for a route only if the paired bootstrap 95% CI of (after - before) on VALIDATION excludes 0; otherwise the hand-written prompt stays and the artifact says `not adopted (within noise)`. Route: `DSPY_ROUTE=cloud|local`; the default is cloud when `ANTHROPIC_API_KEY` is already in the environment, else local (Ollama). Cloud runs use the same model the router uses for that role; the key is never read from a file, printed or stored. Compiled prompts are stored per route (`prompts/compiled/<role>.<route>.json`, sha256-checked) and the router loads only the one for the route it is calling; a missing or tampered file means the hand-written prompt is used. Each run writes `evals/results/published/dspy/<role>_<sha>_<ts>.json` with before/after on VALIDATION (95% bootstrap CI), model id, DSPy version, call/token budget and seeds. Numbers on this synthetic data are not detection quality.
+
+- **Programs** (`evals/dspy/optimize.py`, `evals/dspy/roles.py`): one DSPy Signature + `Predict` per role. The input is the router's own user turn (redacted, spotlighted, datamarked); the output is the one JSON reply. The LLM never sets a score or severity.
+- **Data** (train and validation only; the frozen test split is never read): incidents from the Sentinel replay fixture generator over many seeds (train seeds 1-12, validation seeds 101-108, gold from the replayed incident which the fixture labels confirm); messages from template-generated invented text until a supervisor-approved message set is dropped into `evals/dspy/approved_messages.jsonl`. Messages are split by template, so validation templates are unseen. Both sets are synthetic and labelled so.
+- **Metrics** (`evals/dspy/roles.py`, `evals/dspy/fl_metrics.py`, unit-tested): the production validators, with `falcon_sentinel.verify` shared with the triage graph, plus a task score on labelled synthetic data (extractor field accuracy, investigator useful tool choice, Sentinel verifier accept and claim coverage).
+- **Optimisers**: `BootstrapFewShot` and `MIPROv2` (small trial budget). A candidate is adopted only under the CI rule above: the paired bootstrap 95% CI of (after - before) on VALIDATION must exclude 0; otherwise the hand-written prompt stays (`not adopted (within noise)`).
+- **Artifact**: `evals/results/published/dspy/<role>_<sha>_<ts>.json` (before and after on validation with 95% CI, paired CI, dataset sha256, git SHA, DSPy version, model id, seeds, real calls, DSPy cache hits, tokens, duration). Cloud and local runs are separate artifacts. The Anthropic key comes from the process environment only, is never passed as a DSPy kwarg, and is never written anywhere.
+
 ### Shipped-cascade red-team: how to quote it
 `make redteam-shipped` writes `coverage_caveat` into its artifact. Never quote the harmful count without it: the number is
 "harmful at extended local-model deadlines (model answered N of 113)", and "at production deadlines the model answered M of 113
@@ -44,3 +54,19 @@ Recipe (two runs, the second embeds the first one's coverage in its caveat; exte
 make redteam-shipped BUDGET=production PUBLISH=1
 make redteam-shipped BUDGET=extended PAIRED=evals/results/published/redteam/<production artifact>.json PUBLISH=1
 ```
+
+**Gap-closing evals** (`python -m evals.gaps <area>`, raw runs from `python -m evals.gaps.jobs`). Each area writes one artifact under `evals/results/published/<area>/` (never at the top level, which belongs to the main eval artifact the README and the web page read). Every artifact states scope, n, the CI method, data provenance, model route and model ids, and the git SHA; anything it could not measure stays `not_evaluated` with the reason.
+
+| Area (folder) | What it measures | Data |
+|---|---|---|
+| `synthetic_split/` | real and synthetic items scored apart (the frozen manifest has zero synthetic items), provenance of every published metric family | real val/test, synthetic fixtures |
+| `faithfulness/` | template reasons cite evidence that is in the verdict and say what the evidence says (checker R1 to R4, mutation-tested); Sentinel LLM summaries: verifier accept rate and claim to evidence coverage, local and cloud | real val/test offline, synthetic fixtures and replay |
+| `stability/` | 3 repeat runs of the shipped cascade, AI layers on: label agreement and score variance per tier, with an AI-off control | synthetic fixtures |
+| `route_compare/` | cloud (Anthropic API) against local (sovereign) route on the same inputs: verdict agreement, extractor field accuracy, latency p50 and p95, tokens | synthetic fixtures |
+| `cost_per_check/` | cloud cost per check from tokens actually used times list prices (source and date inside); local route zero marginal API cost, energy not measured | synthetic fixtures |
+| `sandbox_t2/` | T2 render health on held-out legit domains (recorded live-stack runs), T2 contribution on fixtures; phishing-side recall not evaluated (no labelled snapshots) | real legit, synthetic fixtures |
+| `brand_new_pages/` | detection of new lookalike fixtures on hosts absent from every feed and from training | synthetic fixtures |
+| `t3_investigator/` | forbidden tool calls (must be 0), step budget, label change against the run without T3, only on runs that reach the uncertain band | synthetic fixtures |
+| `arabic_clarity/` | 30-item Arabic rating sheet (`rating_sheet.csv`) and automated phone-fit and reading-level checks; the human result stays `pending_human_rating` until `--ingest` of a filled sheet | shipped templates |
+
+Fixtures are the invented Falcon Demo Bank on `.test` hosts, labelled as test fixtures, served only by an offline fixture renderer; no live page is visited. The red-team shipped-cascade artifact (PR #84) covers prompt injection and is not repeated here.

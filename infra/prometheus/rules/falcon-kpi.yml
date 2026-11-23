@@ -1,0 +1,42 @@
+# Recording rules behind the dashboards (infra/grafana/gen_dashboards.py). No alerts here: alerts live in
+# falcon-alerts.yml. Every rule is a plain aggregation of a live fl_ metric; nothing is typed in. Ratios use
+# clamp_min on the denominator so an idle system gives no data instead of a division by zero.
+
+groups:
+  - name: falcon-kpi
+    interval: 30s
+    rules:
+      - record: fl:checks_by_source:rate5m
+        expr: sum by (source) (rate(fl_checks_total[5m]))
+      - record: fl:degraded_ratio:increase1h
+        expr: |
+          sum(increase(fl_degraded_total[1h]))
+            / clamp_min(sum(increase(fl_checks_total[1h])), 1)
+      - record: fl:check_latency_seconds:p50_5m
+        expr: histogram_quantile(0.5, sum by (le) (rate(fl_stage_latency_seconds_bucket{stage="total"}[5m])))
+      - record: fl:check_latency_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (le) (rate(fl_stage_latency_seconds_bucket{stage="total"}[5m])))
+      # Burn rate of the p95 < 8 s objective: 1 means the 5% error budget is used exactly as fast as it accrues.
+      - record: fl:slo_burn:rate1h
+        expr: fl:check_slow_ratio:rate1h / 0.05
+      - record: fl:slo_burn:rate6h
+        expr: fl:check_slow_ratio:rate6h / 0.05
+      - record: fl:llm_failure_ratio:increase15m
+        expr: |
+          sum by (role) (increase(fl_llm_calls_total{outcome!="ok"}[15m]))
+            / clamp_min(sum by (role) (increase(fl_llm_calls_total[15m])), 1)
+      # Share of finished LLM requests where the caller had to use its template (or failed): "fallback-to-template".
+      - record: fl:llm_template_ratio:increase1h
+        expr: |
+          sum by (role) (increase(fl_llm_results_total{status=~"fallback|failed"}[1h]))
+            / clamp_min(sum by (role) (increase(fl_llm_results_total[1h])), 1)
+      - record: fl:hard_rule_rate:increase1h
+        expr: sum by (rule) (increase(fl_hard_rule_fired_total[1h]))
+      - record: fl:sentinel_llm_text_share:increase1h
+        expr: |
+          sum by (task) (increase(fl_sentinel_text_total{generated_by="llm"}[1h]))
+            / clamp_min(sum by (task) (increase(fl_sentinel_text_total[1h])), 1)
+      - record: fl:t1_early_exit_ratio:increase1h
+        expr: |
+          sum(increase(fl_checks_total{tier=~"T0|T1"}[1h]))
+            / clamp_min(sum(increase(fl_checks_total[1h])), 1)

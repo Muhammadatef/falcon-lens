@@ -6,21 +6,29 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from prometheus_client import Counter, Gauge, Histogram
+from falcon_core.telemetry import metrics as tm
 
-INCIDENTS_TOTAL = Counter("fl_incidents_total", "Incidents created", ["type", "severity", "source"])
-INCIDENT_OPEN = Gauge("fl_incident_open", "Open incidents", ["severity"])
-RULE_FIRED = Counter("fl_rule_fired_total", "Rule matches that created or changed an incident", ["rule"])
-TIME_TO_INCIDENT = Histogram(
-    "fl_time_to_incident_seconds",
-    "Seconds from the triggering event to the incident (live source only)",
-    buckets=(1, 5, 15, 30, 60, 120, 300, 900, 3600),
-)
-ACTIONS_TOTAL = Counter("fl_sentinel_actions_total", "Sentinel tool executions", ["action", "mode"])
-APPROVALS_PENDING = Gauge("fl_approvals_pending", "External drafts awaiting operator approval")
-BLOCKS_REVERTED = Counter("fl_blocks_reverted_total", "Blocks reverted by an operator")
-EVENT_LAG = Gauge("fl_event_lag_seconds", "Age of the newest consumed stream entry")
-DEAD_LETTER = Counter("fl_sentinel_dead_letter_total", "Events moved to fl:events:dlq")
+# The contract metrics are the shared objects of falcon_core.telemetry.metrics: that registry (and not the
+# prometheus_client default one) is what falcon_core.service renders on /metrics, so the Sentinel's incident,
+# rule, action and lag series reach Prometheus. (They were declared on the default registry before and never
+# exported.)
+INCIDENTS_TOTAL = tm.INCIDENTS
+INCIDENT_OPEN = tm.INCIDENT_OPEN
+RULE_FIRED = tm.RULE_FIRED
+TIME_TO_INCIDENT = tm.TIME_TO_INCIDENT
+ACTIONS_TOTAL = tm.SENTINEL_ACTIONS
+APPROVALS_PENDING = tm.APPROVALS_PENDING
+BLOCKS_REVERTED = tm.BLOCKS_REVERTED
+EVENT_LAG = tm.EVENT_LAG
+DEAD_LETTER = tm.SENTINEL_DLQ
+
+NODE_SECONDS = tm.SENTINEL_NODE_SECONDS
+LLM_CALLS = tm.SENTINEL_LLM_CALLS
+LLM_SECONDS = tm.SENTINEL_LLM_SECONDS
+TEXT_SOURCE = tm.SENTINEL_TEXT
+APPROVAL_TURNAROUND = tm.APPROVAL_TURNAROUND
+INCIDENT_STATUS = tm.INCIDENT_STATUS
+STATUSES = ("open", "triaging", "awaiting_approval", "mitigated", "closed")
 
 SEVERITIES = ("low", "medium", "high", "critical")
 
@@ -42,7 +50,9 @@ class SentinelMetrics:
                     1 for i in incs if i["severity"] == sev and i["status"] in ("open", "triaging", "awaiting_approval")
                 )
             )
+        for st in STATUSES:
+            INCIDENT_STATUS.labels(st).set(sum(1 for i in incs if i["status"] == st))
         APPROVALS_PENDING.set(sum(1 for i in incs for a in i["actions"] if a["status"] == "awaiting_approval"))
 
 
-REQUEUE_FAILURES = Counter("fl_sentinel_requeue_failures_total", "Stuck-incident requeue failures")
+REQUEUE_FAILURES = tm.SENTINEL_REQUEUE_FAILURES

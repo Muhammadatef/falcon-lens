@@ -261,7 +261,10 @@ class Cascade:
         )
         await self._publish(sink, run, doc)
         if final:
-            self.d.metrics.record_final(run.input_type, doc["verdict"], tier, run.route(), run.source)
+            self.d.metrics.record_final(
+                run.input_type, doc["verdict"], tier, run.route(), run.source, latency_s=run.ms() / 1000
+            )
+            self.d.metrics.record_result(result)
             if doc["degraded"]:
                 self.d.metrics.degraded.inc()
         return doc
@@ -443,7 +446,9 @@ class Cascade:
         )
         run.meta["reissued_from"] = str(cached.get("verdict_id"))
         await self._publish(sink, run, doc)
-        self.d.metrics.record_final("url", doc["verdict"], doc["tier_reached"], doc["model_route"], run.source)
+        self.d.metrics.record_final(
+            "url", doc["verdict"], doc["tier_reached"], doc["model_route"], run.source, latency_s=run.ms() / 1000
+        )
         return doc
 
     # --- T1 --------------------------------------------------------------------------------
@@ -631,6 +636,7 @@ class Cascade:
             reason = "timeout" if isinstance(exc, TimeoutError) else exc.reason
             if reason == "timeout":
                 self.d.metrics.sandbox_timeouts.inc()
+            self.d.metrics.sandbox_renders.labels("timeout" if reason == "timeout" else "failed").inc()
             self.d.metrics.tool_errors.labels("sandbox", reason[:40]).inc()
             summary = "Sandbox could not render the page"
             # SCORING §4: a page that cannot be opened (bot blocking, timeout, DNS) may end in
@@ -644,6 +650,7 @@ class Cascade:
                 run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
         else:
             features_partial = bool(features.partial)
+            self.d.metrics.sandbox_renders.labels("partial" if features_partial or features.error else "ok").inc()
             added.extend(page_evidence(features, run.canonical.registrable, self.d.registry, self.d.favicons))
             final_reg = canonicalize(features.final_url).registrable if features.final_url else ""
             run.meta["fingerprints"] = {

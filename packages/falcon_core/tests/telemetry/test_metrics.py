@@ -38,7 +38,7 @@ def _registered() -> dict[str, tuple[str, ...]]:
 
 
 def test_doc_parses_all_sections() -> None:
-    assert len(_doc_metrics()) == 33
+    assert len(_doc_metrics()) == 49
 
 
 def test_every_documented_metric_exists_exactly() -> None:
@@ -75,6 +75,21 @@ def test_labels_match_doc() -> None:
     m.INCIDENT_OPEN.labels("high").set(1)
     m.RULE_FIRED.labels("R1").inc()
     m.SENTINEL_ACTIONS.labels("draft", "dry_run").inc()
+    m.LLM_CALLS.labels("extractor", "local", "ok").inc()
+    m.LLM_CALL_SECONDS.labels("extractor", "local").observe(0.1)
+    m.LLM_RESULTS.labels("extractor", "ok").inc()
+    m.HARD_RULE_FIRED.labels("H1", "floor_dangerous").inc()
+    m.EVIDENCE_SEEN.labels("url.entropy").inc()
+    m.SANDBOX_RENDERS.labels("ok").inc()
+    m.AGENT_TOOL_CALLS.labels("rdap_lookup", "ok").inc()
+    m.DEGRADED_REASONS.labels("sandbox_unavailable:timeout").inc()
+    m.QUEUE_DEPTH.labels("jobs", "lag").set(1)
+    m.SENTINEL_NODE_SECONDS.labels("enrich").observe(0.1)
+    m.SENTINEL_LLM_CALLS.labels("assess", "ok").inc()
+    m.SENTINEL_LLM_SECONDS.labels("assess").observe(0.1)
+    m.SENTINEL_TEXT.labels("assess", "llm").inc()
+    m.APPROVAL_TURNAROUND.labels("approve").observe(60)
+    m.INCIDENT_STATUS.labels("open").set(1)
     with m.timed_stage("t0"):
         pass
     registered = _registered()

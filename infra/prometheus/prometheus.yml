@@ -55,6 +55,12 @@ scrape_configs:
       - targets: ["loki:3100"]
         labels: { service: loki }
 
+  # Eval artifacts (evals/results/published/**) as fl_eval_* gauges; read-only, no live traffic involved.
+  - job_name: evals-exporter
+    static_configs:
+      - targets: ["evals-exporter:9109"]
+        labels: { service: evals-exporter }
+
   - job_name: alertmanager
     static_configs:
       - targets: ["alertmanager:9093"]

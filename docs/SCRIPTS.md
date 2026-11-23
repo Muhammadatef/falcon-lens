@@ -101,7 +101,7 @@ You do not run these by hand; the containers start them (`make up`).
 | `services/sentinel/src/falcon_sentinel/unblock.py` | The code behind `make unblock` | sentinel |
 | `services/egress/src/falcon_egress/main.py` | Filtering proxy that keeps the sandbox away from internal addresses | security |
 | `infra/alertmanager/entrypoint.sh` | Picks the alert receiver (Telegram, webhook or none) when the container starts | observability |
-| `infra/grafana/gen_dashboards.py` | Regenerates the six Grafana dashboard JSON files | observability |
+| `infra/grafana/gen_dashboards.py` | Regenerates the seven Grafana dashboard JSON files | observability |
 | `services/sandbox/src/falcon_sandbox/main.py` | Headless-browser service: `/render` (page features) and `/capture` (snapshots) | sandbox |
 
 The submission scripts (`scripts/submission/`, `scripts/scan.sh`) are documented in their own files by their owners.

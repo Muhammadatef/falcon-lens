@@ -32,3 +32,5 @@ See [injection-spike](#injection-spike): same procedure; use this alert's own da
 Compare the latest `evals/results/` artifact with the baseline. Block merges until the cause is found.
 ## score-drift
 See [eval-regression](#eval-regression): same procedure; use this alert's own dashboard panel for the specifics.
+## canary-leak
+`fl_canary_leak_total` grew: a canary token planted in a prompt came back in model output, so the reply was discarded and the template used. This must stay at 0. Find the `verdict_id` in the worker logs (the `canary leak` line), open its LLM span in Phoenix, and check which untrusted text (page, message) carried the extraction attempt. Under `make redteam` the canary cases trip this on purpose (check `source`). On live traffic treat it as an incident: keep the verdict as degraded, review the spotlighting of that input type, and do not widen any allowlist to silence the alert.

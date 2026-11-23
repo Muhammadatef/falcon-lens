@@ -37,8 +37,6 @@ from falcon_core.tools.sentinel import (
     ToolContext,
     ToolError,
     action_id_for,
-    find_indicator,
-    validate_args,
 )
 
 from .llm import (
@@ -51,8 +49,14 @@ from .llm import (
     SummaryOut,
     structured,
 )
-from .metrics import REQUEUE_FAILURES
-from .textsafe import vet
+from .metrics import (
+    APPROVAL_TURNAROUND,
+    LLM_CALLS,
+    LLM_SECONDS,
+    NODE_SECONDS,
+    REQUEUE_FAILURES,
+    TEXT_SOURCE,
+)
 from .trace import (
     CUR_RUN,
     CUR_STEP,
@@ -62,15 +66,13 @@ from .trace import (
     traced_action,
     traced_read,
 )
+from .verify import LLM_PROPOSABLE, verify_proposals, verify_reason, verify_summary
 
 log = logging.getLogger(__name__)
 
 MAX_STEPS = 8
 MAX_TOKENS = 20_000
 MAX_SECONDS = 120.0  # local model answers take 15-25 s per call; three calls must fit
-MAX_BLOCKS = 5
-MAX_ACTIONS = 6
-LLM_PROPOSABLE = ("requeue_check", "block_indicator", "draft_takedown", "draft_police_report")
 EXEC_ORDER = (
     "requeue_check",
     "block_indicator",
@@ -173,11 +175,6 @@ def evidence_view(inc: dict[str, Any]) -> dict[str, Any]:
     return view
 
 
-def _valid_ids(ids: list[str], view: dict[str, Any]) -> list[str]:
-    ok = set(view["evidence_ids"])
-    return [i for i in dict.fromkeys(ids) if i in ok]
-
-
 # ------------------------------------------------------------------ deterministic fallbacks
 
 
@@ -261,10 +258,13 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
     ) -> Any:
         rec = CUR_STEP.get()
         if _exhausted(budget):
+            LLM_CALLS.labels(task, "budget").inc()
             if rec is not None:
                 rec.fallback = True
             raise BudgetExceeded(task)
         used = 0
+        t_ask = time.monotonic()
+        outcome = "invalid"
         llm_rec = rec.use_llm(str(getattr(deps.llm, "route", "local")), llm_model) if rec is not None else None
 
         def on_usage(t_in: int, t_out: int, repaired: bool) -> None:
@@ -279,7 +279,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
 
         remaining = max(1.0, MAX_SECONDS - budget["elapsed_s"])
         try:
-            out = await asyncio.wait_for(
+            res = await asyncio.wait_for(
                 structured(
                     deps.llm,
                     model,
@@ -292,13 +292,20 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             )
             if llm_rec is not None:
                 llm_rec["route"] = str(getattr(deps.llm, "route", llm_rec["route"]))
-            return out
+            outcome = "ok"
+            return res
         except LLMUnavailable:
+            outcome = "unavailable"
             if llm_rec is not None:
                 llm_rec["route"] = "none"
             raise
+        except TimeoutError:
+            outcome = "timeout"
+            raise
         finally:
             budget["tokens"] += used
+            LLM_CALLS.labels(task, outcome).inc()
+            LLM_SECONDS.labels(task).observe(time.monotonic() - t_ask)
 
     def timed(
         name: str,
@@ -369,6 +376,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                 raise
             finally:
                 CUR_STEP.reset(tok)
+            NODE_SECONDS.labels(name).observe(time.monotonic() - t0)
             return {**out, "budget": b}
 
         node.__name__ = name
@@ -422,14 +430,12 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         reason = None
         try:
             out = await ask(state, AssessOut, "assess", view, b)
-            ids = _valid_ids(out.severity_reason.evidence_ids, view)
-            en, ar = vet(out.severity_reason.en, view), vet(out.severity_reason.ar, view)
-            if ids and en is not None and ar is not None:  # URL/domain/number not in evidence -> template
-                reason = {"en": en, "ar": ar, "evidence_ids": ids}
-            elif ids:
+            reason, text_rejected = verify_reason(out, view)  # URL/domain/number not in evidence -> template
+            if text_rejected:
                 degraded.append("assess_text_rejected")
         except (LLMOutputError, BudgetExceeded, TimeoutError):
             degraded.append("assess")
+        TEXT_SOURCE.labels("assess", "template" if reason is None else "llm").inc()
         if reason is None:
             reason = template_reason(view)
             if (r := CUR_STEP.get()) is not None:
@@ -443,25 +449,14 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         summary = None
         try:
             out = await ask(state, SummaryOut, "summarise", view, b)
-            claims = []
-            for c in out.claims:  # verifier: drop every claim that cites no real evidence id
-                ids = _valid_ids(c.evidence_ids, view)
-                text = vet(c.text_en, view)  # foreign URL/domain/number -> claim dropped; others defanged
-                if ids and text is not None:
-                    claims.append({"text_en": text, "evidence_ids": ids})
-            en, ar = vet(out.en, view), vet(out.ar, view)
-            if en is None or ar is None:
+            checked, text_rejected, _offered = verify_summary(out, view)
+            if text_rejected:
                 degraded.append("summarise_text_rejected")
-            elif claims:
-                summary = {
-                    "en": en,
-                    "ar": ar,
-                    "claims": claims,
-                    "generated_by": "llm",
-                    "model_route": getattr(deps.llm, "route", "local"),
-                }
+            elif checked is not None:
+                summary = {**checked, "generated_by": "llm", "model_route": getattr(deps.llm, "route", "local")}
         except (LLMOutputError, BudgetExceeded, TimeoutError):
             degraded.append("summarise")
+        TEXT_SOURCE.labels("summarise", "template" if summary is None else "llm").inc()
         if summary is None:
             summary = template_summary(view)
             if (r := CUR_STEP.get()) is not None:
@@ -487,7 +482,6 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         inc = cache.get(iid) or {}
         degraded = list(state.get("degraded", []))
         proposals: list[dict[str, Any]] = []
-        rejected: list[dict[str, Any]] = []
         raw: list[Any] = []
         try:
             raw = (await ask(state, ProposeOut, "propose", view, b, propose_hint())).actions
@@ -495,29 +489,8 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             degraded.append("propose")
             if (r := CUR_STEP.get()) is not None:
                 r.fallback = True
-        blocks = 0
-        for a in raw:
-            ev_ids = _valid_ids(a.why_evidence_ids, view)
-            try:
-                if a.tool not in LLM_PROPOSABLE:
-                    raise ToolError("not_allowed", a.tool)
-                if not ev_ids:
-                    raise ToolError("uncited", a.tool)
-                args = dict(a.args)
-                if a.tool in DRAFT_TOOLS:
-                    args.setdefault("incident_id", iid)
-                if "incident_id" in args and args["incident_id"] != iid:
-                    raise ToolError("provenance", "foreign incident_id")
-                validate_args(a.tool, args)
-                if a.tool in ("block_indicator", "requeue_check"):
-                    key = "indicator" if a.tool == "block_indicator" else "url"
-                    find_indicator(inc, str(args.get(key, "")))
-                    blocks += a.tool == "block_indicator"
-                if blocks > MAX_BLOCKS or len(proposals) >= MAX_ACTIONS:
-                    raise ToolError("cap", a.tool)
-                proposals.append(mk_action(iid, a.tool, args, ev_ids))
-            except ToolError as exc:
-                rejected.append({"tool": a.tool, "reason": exc.reason})
+        accepted, rejected = verify_proposals(ProposeOut(actions=raw), view, {**inc, "incident_id": iid})
+        proposals.extend(mk_action(iid, tool, args, ev_ids) for tool, args, ev_ids in accepted)
         rule_ev = [f"rule:{r}" for r in inc["rule_ids"]]
         det: list[tuple[str, dict[str, Any]]] = [
             ("update_campaign_board", {"incident_id": iid}),
@@ -657,6 +630,12 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             if tgt is not None and decision.get("decision") in ("approve", "reject"):
                 ok = decision["decision"] == "approve"
                 op = str(decision.get("operator") or "unknown")
+                try:
+                    proposed = datetime.fromisoformat(str(tgt["at"]).replace("Z", "+00:00"))
+                    wait = (deps.clock() - proposed).total_seconds()
+                    APPROVAL_TURNAROUND.labels(decision["decision"]).observe(max(0.0, wait))
+                except (KeyError, ValueError):
+                    pass  # an action without a valid proposal time is simply not measured
                 _set(
                     iid,
                     tgt["action_id"],

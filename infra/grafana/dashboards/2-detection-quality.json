@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "editable": false,
   "graphTooltip": 1,
   "refresh": "5s",
@@ -66,6 +66,13 @@
       "url": "/d/fl-sentinel",
       "icon": "dashboard",
       "targetBlank": false
+    },
+    {
+      "title": "Model quality | جودة النموذج",
+      "type": "link",
+      "url": "/d/fl-model-quality",
+      "icon": "dashboard",
+      "targetBlank": false
     }
   ],
   "annotations": {
@@ -78,7 +85,8 @@
     {
       "type": "stat",
       "title": "Data source | مصدر البيانات",
-      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live.",
+      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live. Counters without a source label (LLM, sandbox, security) include replayed traffic while the banner says REPLAY. Thresholds: green = LIVE only, orange = replayed data present (a label, not a fault). No data: no check was recorded at all; the panel then reads LIVE.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -113,6 +121,7 @@
               }
             ]
           },
+          "noValue": "No data",
           "mappings": [
             {
               "type": "value",
@@ -155,10 +164,10 @@
     },
     {
       "type": "text",
-      "title": "Where these numbers come from",
+      "title": "Where these numbers come from | مصدر الأرقام",
       "options": {
         "mode": "markdown",
-        "content": "Eval panels show `fl_eval_metric`, written from the latest **generated eval artifact** (`evals/results/`). Nothing here is typed in by hand. Panels fed by replayed traffic are marked REPLAY."
+        "content": "Live panels count what the cascade did (hard rules, evidence, tiers). Offline model scores with confidence intervals are on **Model quality** and come from published eval artifacts only. Nothing is typed in by hand; REPLAY traffic is marked."
       },
       "transparent": true,
       "id": 2,
@@ -172,7 +181,7 @@
     {
       "id": 3,
       "type": "row",
-      "title": "Eval artifact | نتائج التقييم",
+      "title": "Hard rules H1-H6 | القواعد الصارمة",
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -183,9 +192,10 @@
       "panels": []
     },
     {
-      "type": "table",
-      "title": "Latest eval metrics | آخر مقاييس التقييم",
-      "description": "From the latest eval artifact. Labels: name, split, route.",
+      "type": "stat",
+      "title": "H1 hit rate, 1 h | brand mismatch | انتحال علامة",
+      "description": "Share of final verdicts where hard rule H1 fired (docs/SCORING.md section 3). Thresholds: none: a hit is a detection, not a fault; watch for sudden changes. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -193,45 +203,59 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "fl_eval_metric",
+          "expr": "sum(increase(fl_hard_rule_fired_total{rule=\"H1\"}[1h])) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "",
-          "format": "table",
-          "instant": true
+          "legendFormat": ""
         }
       ],
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true
-            }
-          }
-        }
-      ],
-      "options": {
-        "showHeader": true
-      },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
         "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
       },
       "id": 4,
       "gridPos": {
-        "h": 9,
-        "w": 12,
+        "h": 3,
+        "w": 6,
         "x": 0,
         "y": 4
       }
     },
     {
-      "type": "timeseries",
-      "title": "Eval metrics over time | المقاييس عبر الزمن",
-      "description": "",
+      "type": "stat",
+      "title": "H2 hit rate, 1 h | known-bad feed | قائمة سيئة معروفة",
+      "description": "Share of final verdicts where hard rule H2 fired (docs/SCORING.md section 3). Thresholds: none: a hit is a detection, not a fault; watch for sudden changes. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -239,12 +263,312 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "fl_eval_metric",
+          "expr": "sum(increase(fl_hard_rule_fired_total{rule=\"H2\"}[1h])) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{name}} · {{split}} · {{route}}"
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 5,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "H3 hit rate, 1 h | verified official cap | سقف الرسمي",
+      "description": "Share of final verdicts where hard rule H3 fired (docs/SCORING.md section 3). Thresholds: none: a hit is a detection, not a fault; watch for sudden changes. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_hard_rule_fired_total{rule=\"H3\"}[1h])) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 6,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "H4 hit rate, 1 h | exfil to bot | تسريب إلى بوت",
+      "description": "Share of final verdicts where hard rule H4 fired (docs/SCORING.md section 3). Thresholds: none: a hit is a detection, not a fault; watch for sudden changes. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_hard_rule_fired_total{rule=\"H4\"}[1h])) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 7,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "H5 hit rate, 1 h | dangerous link in message | رابط خطر",
+      "description": "Share of final verdicts where hard rule H5 fired (docs/SCORING.md section 3). Thresholds: none: a hit is a detection, not a fault; watch for sudden changes. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_hard_rule_fired_total{rule=\"H5\"}[1h])) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 8,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 0,
+        "y": 7
+      }
+    },
+    {
+      "type": "stat",
+      "title": "H6 hit rate, 1 h | OTP / remote-access ask | طلب رمز",
+      "description": "Share of final verdicts where hard rule H6 fired (docs/SCORING.md section 3). Thresholds: none: a hit is a detection, not a fault; watch for sudden changes. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_hard_rule_fired_total{rule=\"H6\"}[1h])) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 9,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 7
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Hard-rule firings by rule | إطلاق القواعد",
+      "description": "Firings per minute for each hard rule. Thresholds: none: composition view. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (rule) (rate(fl_hard_rule_fired_total[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{rule}}"
         }
       ],
       "fieldConfig": {
@@ -256,7 +580,7 @@
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
-              "mode": "none",
+              "mode": "normal",
               "group": "A"
             }
           }
@@ -273,16 +597,332 @@
           "sort": "desc"
         }
       },
-      "id": 5,
+      "id": 10,
       "gridPos": {
-        "h": 9,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 4
+        "y": 7
       }
     },
     {
-      "id": 6,
+      "type": "timeseries",
+      "title": "Floor and cap firings | الرفع والسقف",
+      "description": "floor_dangerous / floor_suspicious raise a verdict; cap_no_warning_signs (H3) lowers one for verified official domains. Thresholds: none: composition view. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (effect) (rate(fl_hard_rule_fired_total[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{effect}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 11,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      }
+    },
+    {
+      "id": 12,
+      "type": "row",
+      "title": "Evidence and tiers | الأدلة والمستويات",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "panels": []
+    },
+    {
+      "type": "bargauge",
+      "title": "Evidence-type frequency, 1 h | تكرار أنواع الأدلة",
+      "description": "How many final verdicts carried each evidence signal (each counted once per verdict). Thresholds: none: counts. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(15, sum by (signal) (increase(fl_evidence_total[1h])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{signal}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "noValue": "the service has not emitted this metric yet: it appears after the first event of its kind",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#D4AF37"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 13,
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      }
+    },
+    {
+      "type": "stat",
+      "title": "T1 early-exit rate, 1 h | الخروج المبكر",
+      "description": "Share of checks that ended at T0 or T1 without opening a page. Higher is faster and cheaper. Thresholds: none: a design target, not a limit; a drop means more page renders. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl:t1_early_exit_ratio:increase1h",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 14,
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 22
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Partial-render rate, 1 h | العرض الجزئي",
+      "description": "Share of sandbox visits that returned a page with an error note (partial evidence). Thresholds: green < 10%, amber 10-25%, red >= 25%: heuristic; many partial pages weaken T2. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [
+        {
+          "title": "Runbook: sandbox-failure",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#sandbox-failure",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_sandbox_renders_total{outcome=\"partial\"}[1h])) / clamp_min(sum(increase(fl_sandbox_renders_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 0.1
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.25
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 15,
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 22
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Escalated to T3, 1 h | تصعيد إلى T3",
+      "description": "Share of checks escalated to the investigator (budget 15% in docs/EVALS.md). Thresholds: green <= 15%, red above: the T3 budget. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_escalations_total{to=\"T3\"}[1h])) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.15
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 16,
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 32
+      }
+    },
+    {
+      "id": 17,
       "type": "row",
       "title": "Live signals | مؤشرات التشغيل",
       "collapsed": false,
@@ -290,173 +930,15 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 37
       },
       "panels": []
     },
     {
       "type": "timeseries",
-      "title": "Route agreement | اتفاق المسارات",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "fl_route_agreement_ratio",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": "agreement"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percentunit",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 18,
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "id": 7,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 14
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Score drift index | انحراف الدرجات",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "fl_score_drift_index",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": "drift"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 18,
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "id": 8,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 14
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "User feedback | ملاحظات المستخدمين",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (type) (increase(fl_user_feedback_total[15m]))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": "{{type}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 18,
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "id": 9,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 14
-      }
-    },
-    {
-      "type": "timeseries",
       "title": "Verdicts by tier | الأحكام حسب المستوى | REPLAY-aware",
-      "description": " Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "description": "Checks per minute by tier reached. Thresholds: none: composition view. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check. Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -464,7 +946,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "label_replace(label_replace(sum by (tier, source) (rate(fl_checks_total[1m])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
+          "expr": "label_replace(label_replace(sum by (tier, source) (rate(fl_checks_total[$__rate_interval])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -539,18 +1021,19 @@
           "sort": "desc"
         }
       },
-      "id": 10,
+      "id": 18,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 38
       }
     },
     {
       "type": "timeseries",
       "title": "Escalations | التصعيدات",
-      "description": "",
+      "description": "Tier escalations per minute. Thresholds: none: composition view. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -558,7 +1041,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (from, to) (rate(fl_escalations_total[5m])) * 60",
+          "expr": "sum by (from, to) (rate(fl_escalations_total[$__rate_interval])) * 60",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -592,17 +1075,233 @@
           "sort": "desc"
         }
       },
-      "id": 11,
+      "id": 19,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 21
+        "y": 38
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Route agreement | اتفاق المسارات",
+      "description": "Share of shadow-sampled checks where cloud and local routes agree. Thresholds: dashed line at 80%: below it RouteAgreementDrop fires. No data: shadow sampling is off (FL_SHADOW_RATE=0) so there is no measurement.",
+      "links": [
+        {
+          "title": "Runbook: route-agreement-drop",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#route-agreement-drop",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_route_agreement_ratio",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "agreement"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E5484D",
+                "value": null
+              },
+              {
+                "color": "#3FB68B",
+                "value": 0.8
+              }
+            ]
+          },
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 20,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 45
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Score drift index | انحراف الدرجات",
+      "description": "Score distribution drift against the baseline. Thresholds: dashed line at 0.2: above it ScoreDrift fires. No data: the drift job has not reported yet.",
+      "links": [
+        {
+          "title": "Runbook: score-drift",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#score-drift",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_score_drift_index",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "drift"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 21,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 45
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "User feedback | ملاحظات المستخدمين",
+      "description": "Feedback submitted by users in 15 min windows. Thresholds: none: counts; false_positive above 5 in 15 min fires FalsePositiveSpike. No data: no feedback was submitted.",
+      "links": [
+        {
+          "title": "Runbook: fp-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#fp-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (type) (increase(fl_user_feedback_total[15m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 22,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 45
       }
     },
     {
       "type": "bargauge",
       "title": "Top impersonated brands, 1 h | أكثر العلامات انتحالاً",
+      "description": "Brands named most often in detections (only the registered brands; fixtures use Falcon Demo Bank). Thresholds: none: counts. No data: no brand impersonation was detected.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -622,11 +1321,12 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "min": 0,
+          "noValue": "No brand impersonation detected",
           "color": {
             "mode": "fixed",
             "fixedColor": "#D4AF37"
-          },
-          "min": 0
+          }
         },
         "overrides": []
       },
@@ -640,17 +1340,19 @@
           "values": false
         }
       },
-      "id": 12,
+      "id": 23,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 29
+        "y": 52
       }
     },
     {
       "type": "bargauge",
       "title": "New campaign domains by brand | نطاقات جديدة",
+      "description": "New domains the Sentinel attributed to a brand campaign. REPLAY rows are replayed events. Thresholds: none: counts. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -670,11 +1372,12 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "min": 0,
+          "noValue": "the Sentinel has not processed events in this range (no incidents yet, or the service is down)",
           "color": {
             "mode": "fixed",
             "fixedColor": "#D4AF37"
-          },
-          "min": 0
+          }
         },
         "overrides": []
       },
@@ -688,12 +1391,12 @@
           "values": false
         }
       },
-      "id": 13,
+      "id": 24,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 29
+        "y": 52
       }
     }
   ]

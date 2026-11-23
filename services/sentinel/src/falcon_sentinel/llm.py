@@ -17,6 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from falcon_core.llm import JsonRequest, LLMRouter
 
+# Sentinel task -> compiled prompt name (falcon_core.prompts.compiled); hand-written SYSTEM is the fallback.
+_COMPILED = {"assess": "sentinel_assess", "summarise": "sentinel_summarise", "propose": "sentinel_propose"}
 END_TOKENS = ("<|end_message|>", "<|im_end|>", "<|endoftext|>")
 
 
@@ -166,6 +168,7 @@ class RouterLLM:
         res = await self.router.complete_json(
             JsonRequest(
                 role="sentinel",
+                compiled=_COMPILED.get(str(user_json.get("task"))),
                 task=system,
                 schema=model,
                 context=json.dumps(user_json, ensure_ascii=False, default=str),

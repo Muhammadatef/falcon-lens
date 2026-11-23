@@ -57,6 +57,7 @@ class ImageAnalysis:
     children: list[ChildInput] = field(default_factory=list)
     kind: str | None = None
     needs_ocr: bool = False  # True when the image is valid: caller may run its OcrHook
+    extra_content: bool = False  # True when substantial non-QR content (likely printed text) surrounds the QR
 
 
 def _invalid(reason: str) -> Evidence:
@@ -104,7 +105,9 @@ def analyze_image(data: bytes) -> ImageAnalysis:
         res.evidence.append(_invalid("decode_error"))
         return res
     res.needs_ocr = True
-    payloads = _decode_qr(rgb)
+    payloads, boxes = _decode_qr(rgb)
+    if payloads:
+        res.extra_content = _substantial_outside(rgb, boxes)
     urls: list[ChildInput] = []
     for p in payloads:
         urls += [ChildInput("url", u.value, None, "image.qr") for u in extract_urls(p)]
@@ -125,16 +128,44 @@ def analyze_image(data: bytes) -> ImageAnalysis:
     return res
 
 
-def _decode_qr(rgb: object) -> list[str]:
+MAX_OUTSIDE_INK = 0.01  # fraction of pixels that are ink outside the QR boxes
+MAX_OUTSIDE_LINES = 0  # text-like row bands allowed outside the QR boxes: none (pure QR only)
+
+
+def _decode_qr(rgb: object) -> tuple[list[str], list[tuple[int, int, int, int]]]:
     import zxingcpp
 
     out: list[str] = []
+    boxes: list[tuple[int, int, int, int]] = []
     for r in zxingcpp.read_barcodes(rgb, formats=zxingcpp.BarcodeFormat.QRCode):  # type: ignore[arg-type]
         if r.text and r.text not in out:
             out.append(r.text[:2048])
+            q = r.position
+            xs = [q.top_left.x, q.top_right.x, q.bottom_left.x, q.bottom_right.x]
+            ys = [q.top_left.y, q.top_right.y, q.bottom_left.y, q.bottom_right.y]
+            boxes.append((min(xs), min(ys), max(xs), max(ys)))
         if len(out) >= MAX_QR:
             break
-    return out
+    return out, boxes
+
+
+def _substantial_outside(rgb: object, boxes: list[tuple[int, int, int, int]]) -> bool:
+    """Heuristic: is there any non-QR content (title, caption, text)? Ink = pixels far from the dominant
+    background colour, outside the QR boxes (plus a quiet-zone pad). Residual limit: THREAT_MODEL.md."""
+    import numpy as np
+    from PIL import Image
+
+    a = np.asarray(rgb.convert("L") if isinstance(rgb, Image.Image) else rgb).astype(int)
+    vals, counts = np.unique(a, return_counts=True)
+    ink = np.abs(a - vals[counts.argmax()]) > 40
+    for x0, y0, x1, y1 in boxes:
+        pad = int(0.1 * max(x1 - x0, y1 - y0))
+        ink[max(y0 - pad, 0) : y1 + pad, max(x0 - pad, 0) : x1 + pad] = False
+    if ink.sum() / ink.size > MAX_OUTSIDE_INK:
+        return True
+    rows = ink.sum(axis=1) > 0
+    bands = int(np.sum(rows[1:] & ~rows[:-1])) + int(rows[0])
+    return bands > MAX_OUTSIDE_LINES
 
 
 async def analyze_image_with_ocr(data: bytes, ocr: OcrHook | None = None) -> tuple[ImageAnalysis, str | None]:
