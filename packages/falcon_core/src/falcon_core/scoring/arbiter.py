@@ -214,13 +214,23 @@ def _clip(x: float, bound: float) -> float:
 
 #: Evidence that corroborates a credential-page-rule post (SCORING §3.1): any of these lifts the cap.
 _CORROBORATING_SIGNALS = frozenset(
-    ["brand.claimed_not_owned", "url.free_host_or_tunnel", "page.cloaking", "rep.openphish", "rep.gsb", "rep.urlhaus"]
-)
+    [
+        "brand.claimed_not_owned", "url.free_host_or_tunnel", "page.cloaking",
+        "rep.openphish", "rep.gsb", "rep.urlhaus",
+        # impersonation signals H1 does not cover
+        "url.homograph", "url.typosquat", "url.combosquat", "url.userinfo_trick", "url.bidi_or_zero_width",
+        "url.brand_in_subdomain_or_path", "page.hotlinked_brand_assets", "visual.favicon_match_brand",
+    ]
+)  # fmt: skip
 YOUNG_DOMAIN_DAYS = 30
 
 
 def credential_rule_cap_applies(
-    evidence: Sequence[Evidence], contrib: Sequence[float], fired: Sequence[object]
+    evidence: Sequence[Evidence],
+    contrib: Sequence[float],
+    fired: Sequence[object],
+    p_clf: float | None = None,
+    tau_high: float = 1.0,
 ) -> bool:
     """True when a would-be `dangerous` rests on the credential-page rule alone.
 
@@ -240,6 +250,8 @@ def credential_rule_cap_applies(
             break
     if not rule_only or fired:
         return False
+    if p_clf is not None and p_clf >= tau_high:
+        return False  # the fitted T1 model alone is already at `dangerous`: strong independent risk
     for ev, c in zip(evidence, contrib, strict=True):
         if ev.error is not None:
             continue
@@ -299,7 +311,7 @@ def score(
         elif rule.effect == "cap_no_warning_signs":
             p = min(p, params.h3_p_cap)
     p = min(1.0, max(0.0, p))
-    if p >= params.tau_high and credential_rule_cap_applies(evidence, contrib, outcome.fired):
+    if p >= params.tau_high and credential_rule_cap_applies(evidence, contrib, outcome.fired, p_clf, params.tau_high):
         p = math.nextafter(params.tau_high, 0.0)  # capped at suspicious: see credential_rule_cap_applies
     verdict = band(p, params)
 

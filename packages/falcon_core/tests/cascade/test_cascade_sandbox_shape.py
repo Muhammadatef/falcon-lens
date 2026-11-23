@@ -184,3 +184,22 @@ async def test_credential_page_rule_alone_is_capped_at_suspicious_but_payload_po
 
 async def test_credential_page_rule_with_a_young_domain_is_dangerous() -> None:
     assert (await _final_for(_sso(True), 10))["verdict"] == "dangerous"
+
+
+async def test_credential_page_on_an_old_typosquat_domain_is_dangerous() -> None:
+    other = "https://sso.identity-provider.test"
+    feats = SandboxFeatures.model_validate(
+        {
+            "final_url": DEMO_LOOKALIKE_URL,
+            "title": "Sign in",
+            "forms": [{"fields": ["password"], "action_origin": None}],
+            "post_targets": [other],
+            "credential_rule_origins": [other],
+        }
+    )
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]
+    assert any(e["signal"].startswith("url.") and e["weight"] > 0 for e in final["evidence"])
+    assert final["verdict"] == "dangerous"

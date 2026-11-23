@@ -113,6 +113,7 @@ async def test_script_post_with_form_values_carries_form_data(base: str, sandbox
     f = (await sandbox.visit(f"{base}/steal", "desktop_en")).features
     assert f.network.non_get_blocked >= 1 and f.network.non_get_sent == 0  # refused, never sent
     assert f.script_post_targets and all(t.carries_form_data for t in f.script_post_targets)
+    assert all(t.basis == "payload" for t in f.script_post_targets)  # the body carried field names: not the rule
 
 
 async def test_analytics_style_beacons_do_not_carry_form_data(base: str, sandbox: SandboxBrowser) -> None:
@@ -184,7 +185,27 @@ async def test_cross_site_script_post_on_a_credential_page_always_counts(base: s
     login = (await sandbox.visit(f"{base}/xlogin", "desktop_en")).features
     assert any(x.cred_form for x in login.forms)
     cross = [t for t in login.script_post_targets if t.cross_origin]
-    assert cross and all(t.carries_form_data for t in cross)
+    assert cross and all(t.carries_form_data and t.basis == "credential_page_rule" for t in cross)
     stats = (await sandbox.visit(f"{base}/xstats", "desktop_en")).features
     cross = [t for t in stats.script_post_targets if t.cross_origin]
     assert cross and not any(t.carries_form_data for t in cross)
+
+
+def test_flat_view_lists_only_rule_only_origins_as_credential_rule_origins() -> None:
+    from falcon_core.signals.page.features import PostTarget
+
+    def tgt(origin: str, basis: str | None) -> Any:
+        return PostTarget(
+            origin=origin, kind="fetch", source="dynamic", cross_origin=True, carries_form_data=True, basis=basis
+        )
+
+    flat = _flat(
+        [
+            tgt("https://rule-only.example.test", "credential_page_rule"),
+            tgt("https://both.example.test", "credential_page_rule"),
+            tgt("https://both.example.test", "payload"),
+            tgt("https://relay.example.test", "relay"),
+        ]
+    )
+    assert flat["credential_rule_origins"] == ["https://rule-only.example.test"]
+    assert set(flat["post_targets"]) >= {"https://both.example.test", "https://relay.example.test"}

@@ -55,3 +55,16 @@ def test_old_domain_does_not_lift_the_cap() -> None:
 def test_relay_post_and_h4_stay_dangerous() -> None:
     bot = {**POST_RULE, "bot": True, "target_kind": "messaging_bot", "basis": "payload"}
     assert _verdict([], bot, p=0.2) == "dangerous"
+
+
+def test_impersonation_signals_lift_the_cap() -> None:
+    for sig in (
+        "url.homograph", "url.typosquat", "url.combosquat", "url.userinfo_trick", "url.bidi_or_zero_width",
+        "url.brand_in_subdomain_or_path", "page.hotlinked_brand_assets", "visual.favicon_match_brand",
+    ):  # fmt: skip
+        assert _verdict([mk(sig, {"x": 1})], p=0.3) == "dangerous", sig
+
+
+def test_strong_fitted_t1_probability_lifts_the_cap() -> None:
+    assert _verdict([], p=0.85) == "dangerous"  # p_clf >= tau_high on its own
+    assert _verdict([], p=0.6) == "suspicious"
