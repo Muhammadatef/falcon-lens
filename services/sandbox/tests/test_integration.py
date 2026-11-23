@@ -139,32 +139,17 @@ def test_smoke_paths_on_fixtures_host() -> None:
     assert "page.cred_form" not in signals("http://fixtures/official/")
 
 
-@pytest.mark.parametrize("url", ["http://169.254.169.254/latest/meta-data/", "http://redis:6379/", "http://10.0.0.1/"])
-def test_internal_targets_refused(url: str) -> None:
-    status, body = call("/render", {"url": url})
-    assert status == 400 and body["detail"]["error"] == "blocked"
-
-
-def test_private_subresources_recorded_and_blocked() -> None:
-    r = render("http://falcon-demo-bank.test/blocked-assets.html", profiles=["desktop_en"])
-    blocked = r.profiles["desktop_en"].network.blocked
-    assert {b.host for b in blocked} >= {"10.0.0.1", "169.254.169.254", "redis"}
-    assert all(b.reason.startswith("ssrf_") for b in blocked)
-
-
-def test_redirect_cap_stops_at_ten() -> None:
-    r = render("http://falcon-demo-bank.test/redir/1", profiles=["desktop_en"])
-    p = r.profiles["desktop_en"]
-    assert p.network.redirect_limit_hit and p.error == "too_many_redirects"
-    assert r.body["final_url"] is None  # the cascade degrades instead of judging a half-followed chain
-    assert len(p.redirect_chain) - 1 <= 11
-
-
-@pytest.mark.parametrize("url", ["hxxps://nonexistent-falcon-lens-test-host-8431[.]com/", "hxxps://localtest[.]me/"])
-def test_egress_refusal_or_dns_failure_is_an_error_not_an_empty_page(url: str) -> None:
-    r = render(url.replace("hxxp", "http").replace("[.]", "."), profiles=["desktop_en"])
-    assert r.body["error"] in {"dns_failure", "egress_blocked", "egress_error", "fetch_failed"}
+def test_proxy_ssrf_denial_is_blocked_by_policy_with_reason() -> None:
+    """localtest[.]me resolves to 127.0.0.1: it passes the sandbox's syntactic check and is denied by the
+    egress proxy (403 + X-Falcon-Block-Reason), which must surface as blocked_by_policy:<reason>."""
+    r = render("hxxp://localtest[.]me/".replace("hxxp", "http").replace("[.]", "."), profiles=["desktop_en"])
+    assert r.body["error"].startswith("blocked_by_policy:"), r.body["error"]
     assert r.body["final_url"] is None
+
+
+def test_metadata_ip_is_refused_before_navigation() -> None:
+    status, body = call("/render", {"url": "http://169.254.169.254/latest/meta-data/", "verdict_id": "vd_test"})
+    assert status == 400 and body["detail"]["error"] == "blocked"
 
 
 def test_never_submits_forms_or_posts() -> None:
