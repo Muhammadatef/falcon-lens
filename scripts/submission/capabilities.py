@@ -68,7 +68,9 @@ EXTRACTOR_WIRED = f"test:{WORKER_AI}"
 EXTRACTOR_RUNS = f"test:{CASCADE_AI}::test_t2_calls_the_extractor"
 # Behavioural: with the LLM endpoint unreachable the Sentinel falls back to the template summary and still reaches the
 # human-approval interrupt (PR #64). A stub-LLM happy-path test is not enough: the live agent stalled in `triaging`.
-SENTINEL_RUNS = "test:services/sentinel/tests/test_llm_fallback.py::test_llm_failure_falls_back_to_template_and_reaches_interrupt"
+SENTINEL_RUNS = (
+    "test:services/sentinel/tests/test_llm_fallback.py::test_llm_failure_falls_back_to_template_and_reaches_interrupt"
+)
 ROUTER_WIRED = r"grep:services/worker/src/**/*.py::falcon_core\.llm"
 
 CAPABILITIES: tuple[Capability, ...] = (
