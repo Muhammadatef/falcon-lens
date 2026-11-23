@@ -71,11 +71,25 @@ def test_http_error_is_a_fail_not_a_crash(monkeypatch: pytest.MonkeyPatch, tmp_p
     assert scenarios.exit_code(rows) == 1
 
 
-def test_sentinel_scene_skipped_when_unhealthy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_sentinel_scene_fails_when_unhealthy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """A dead Sentinel is a failed demo, not a skipped scene: `make demo` must exit non-zero."""
     monkeypatch.setattr(scenarios, "FEED_DIR", tmp_path / "absent")
     rows = scenarios.run_all(_runner(GOOD), healthy=lambda: False)
-    assert rows[-1].name == "S Sentinel scene" and rows[-1].status == scenarios.SKIPPED
-    assert scenarios.exit_code(rows) == 0
+    assert rows[-1].name == "S Sentinel scene" and rows[-1].status == scenarios.FAIL
+    assert "not healthy" in rows[-1].note and "--build sentinel" in rows[-1].note
+    assert scenarios.exit_code(rows) == 1
+
+
+def test_fixture_refused_as_internal_name_tells_the_operator_what_to_fix(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(scenarios, "FEED_DIR", tmp_path / "absent")
+    stale = _verdict("suspicious", degraded=True, degraded_reasons=["not_rendered:internal_name"])
+    rows = scenarios.run_all(_runner({**GOOD, "injection.test": stale}), sentinel=False)
+    s6 = next(r for r in rows if r.name.startswith("6"))
+    assert s6.status == scenarios.FAIL
+    assert "FL_SSRF_ALLOW_HOSTS" in s6.note and ".env.example" in s6.note
+    assert scenarios.allowlist_hint({"degraded_reasons": ["sandbox_unavailable:timeout"]}) == ""
 
 
 def test_scenario_inputs_are_fixture_only() -> None:

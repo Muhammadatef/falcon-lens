@@ -62,6 +62,21 @@ def refang(url: str) -> str:
         ({"type": "tel"}, K.PHONE),
         ({"type": "hidden", "name": "password"}, K.OTHER),
         ({"type": "text", "name": "q", "placeholder": "Search"}, K.OTHER),
+        # Controls nobody can type a secret into: label words alone must not make them sensitive.
+        ({"type": "radio", "name": "frequency", "label": "One time"}, K.OTHER),
+        ({"type": "radio", "name": "amount", "label": "One-time"}, K.OTHER),
+        ({"type": "checkbox", "name": "remember", "label": "Remember my password"}, K.OTHER),
+        ({"type": "submit", "name": "pin", "label": "Pin"}, K.OTHER),
+        ({"type": "button", "aria": "Show password"}, K.OTHER),
+        ({"type": "select", "name": "card_type", "label": "Card type"}, K.OTHER),
+        ({"type": "select", "name": "frequency", "label": "One time Monthly"}, K.OTHER),
+        ({"type": "range", "name": "otp"}, K.OTHER),
+        ({"type": "file", "label": "Upload Emirates ID"}, K.OTHER),
+        ({"type": "radio", "autocomplete": "one-time-code"}, K.OTHER),
+        # Typeable controls keep working.
+        ({"type": "search", "label": "One time code"}, K.OTP),
+        ({"type": "textarea", "label": "كلمة المرور"}, K.PASSWORD),
+        ({"type": "number", "name": "otp"}, K.OTP),
     ],
 )
 def test_classify_field(desc: dict[str, object], kind: FieldKind) -> None:
@@ -107,6 +122,21 @@ def test_build_forms_flags_cross_origin_and_exfil() -> None:
     f = build_forms([_form(RELAY, [USER, PW])], "http://falcon-demo-bank-secure.test/login")[0]
     assert f.cred_form and f.action_cross_origin and f.action_exfil
     assert f.sensitive_kinds == ["password"]
+
+
+def test_build_forms_donation_frequency_radio_is_not_cred() -> None:
+    """A donation form's "One time / Monthly" radios and a search box are not a credential form
+    (audit 2026-11-23: wikipedia.org's portal was reported as an OTP form)."""
+    fields = [
+        {"type": "radio", "name": "frequency", "label": "One time"},
+        {"type": "radio", "name": "frequency", "label": "Monthly"},
+        {"type": "radio", "name": "amount", "label": "AED 20"},
+        {"type": "select", "name": "language", "label": "One time code language"},
+        {"type": "search", "name": "search", "id": "searchInput"},
+    ]
+    f = build_forms([_form("http://x.test/donate", fields)], "http://x.test/")[0]
+    assert f.cred_form is False
+    assert f.sensitive_kinds == []
 
 
 def test_build_forms_same_origin_search_is_not_cred() -> None:

@@ -40,6 +40,30 @@ SENSITIVE_KINDS: frozenset[FieldKind] = frozenset(
     }
 )
 
+#: Controls a visitor cannot type a secret into. Their label text ("One time" / "Monthly" on a donation
+#: frequency radio, "PIN this" on a button) must never make a form look like a credential harvester.
+NON_TYPEABLE_TYPES: frozenset[str] = frozenset(
+    {
+        "radio",
+        "checkbox",
+        "submit",
+        "button",
+        "reset",
+        "image",
+        "file",
+        "range",
+        "color",
+        "select",
+        "select-one",
+        "select-multiple",
+        "date",
+        "datetime-local",
+        "month",
+        "week",
+        "time",
+    }
+)
+
 _AUTOCOMPLETE: dict[str, FieldKind] = {
     "cc-number": FieldKind.CARD,
     "cc-exp": FieldKind.CARD,
@@ -196,7 +220,7 @@ def _text_blob(desc: Mapping[str, Any]) -> str:
 def classify_field(desc: Mapping[str, Any]) -> FieldKind:
     """Classify one form control from its attributes."""
     ftype = str(desc.get("type") or "").lower()
-    if ftype == "hidden":
+    if ftype == "hidden" or ftype in NON_TYPEABLE_TYPES:
         return FieldKind.OTHER
     for token in str(desc.get("autocomplete") or "").lower().split():
         if token in _AUTOCOMPLETE:
