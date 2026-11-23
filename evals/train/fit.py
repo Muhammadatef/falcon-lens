@@ -48,7 +48,7 @@ from datetime import UTC, datetime
 
 import numpy as np
 
-from evals.common import ITEMS_MANIFEST, MODEL_DIR, PARAMS_YAML, SEED, git_sha, read_jsonl, sha256_hex
+from evals.common import ITEMS_MANIFEST, MODEL_DIR, PARAMS_YAML, RESULTS_DIR, SEED, git_sha, read_jsonl, sha256_hex
 from evals.datasets.build import CacheMismatch, Item, load_private_items, verify_private_items
 from evals.splits import check_rows, load_lock
 from evals.splits import dataset_hash as manifest_dataset_hash
@@ -201,6 +201,80 @@ def fit_bands(
     return Thresholds(tau_low, tau_high, eps_low, eps_high, notes)
 
 
+CAP_MARGINS = tuple(round(0.5 * k, 2) for k in range(0, 7))  # 0 .. 3.0 log-odds under tau_high
+CAP_STRONG = tuple(round(0.5 * k, 2) for k in range(0, 11))  # 0 .. 5.0 log-odds of corroboration
+
+
+@dataclass
+class ModelCapFit:
+    """Fitted ``model_cap`` values with the validation numbers they were chosen on."""
+
+    margin: float
+    strong_adj: float
+    recall_form: float  # dangerous-band recall on validation phishing with a credential form
+    fpr_form: float  # dangerous rate on validation legit with a credential form (worst case: every legit has one)
+    recall_url_only: float
+    fpr_url_only: float
+    n_phishing: int
+    n_legit: int
+    notes: list[str]
+
+
+def fit_model_cap(val: Sequence[Item], p_clf: np.ndarray, params: object) -> ModelCapFit:
+    """Choose (margin, strong_adj) on VALIDATION only: maximise `dangerous`-band recall on phishing pages that show a
+    credential form, subject to the legit `dangerous` rate staying within DANGEROUS_FPR_TARGET for URL-only checks and
+    within FPR_TARGET when every legit page is assumed to show a credential form (the worst case).
+    Ties: URL-only recall, then the smaller constants (least intervention)."""
+    import dataclasses
+
+    from evals.common import registrable_domain
+    from evals.train.pipeline import registry_evidence, t1_evidence, verified_domains
+    from falcon_core.cascade.evidence import make_evidence
+    from falcon_core.scoring.arbiter import ArbiterContext
+    from falcon_core.scoring.model_cap import score_with_model
+
+    form = make_evidence(
+        "page.cred_form", "page", {"present": True, "field_kinds": ["password"]}, tier="T2", source="computed"
+    )
+    base = []
+    for i in val:
+        dom = registrable_domain(i.url)
+        base.append(([*t1_evidence(i.url), *registry_evidence(dom)], dom))
+    y = np.array([i.label for i in val])
+    vd = verified_domains()
+
+    def rates(margin: float, adj: float, with_form: bool) -> tuple[float, float]:
+        prm = dataclasses.replace(params, model_only_margin=margin, strong_evidence_adj=adj)  # type: ignore[type-var]
+        dang = []
+        for (ev, dom), pc in zip(base, p_clf, strict=True):
+            ctx = ArbiterContext(input_type="url", registrable_domain=dom, verified_domains=vd, params=prm)
+            res = score_with_model([*ev, form] if with_form else ev, float(pc), ctx)
+            dang.append(res.verdict == "dangerous")
+        d = np.array(dang)
+        rec = float(d[y == 1].mean()) if (y == 1).any() else 0.0
+        fp = float(d[y == 0].mean()) if (y == 0).any() else 0.0
+        return rec, fp
+
+    best: tuple[tuple[float, float, float, float], ModelCapFit] | None = None
+    notes: list[str] = []
+    for m in CAP_MARGINS:
+        for a in CAP_STRONG:
+            rf, ff = rates(m, a, True)
+            ru, fu = rates(m, a, False)
+            if ff > FPR_TARGET or fu > DANGEROUS_FPR_TARGET:
+                continue
+            key = (rf, ru, -m, -a)
+            cand = ModelCapFit(m, a, rf, ff, ru, fu, int(y.sum()), int((1 - y).sum()), notes)
+            if best is None or key > best[0]:
+                best = (key, cand)
+    if best is None:
+        notes.append("no (margin, strong_adj) met the dangerous-FPR target; most conservative values used")
+        rf, ff = rates(CAP_MARGINS[-1], CAP_STRONG[-1], True)
+        ru, fu = rates(CAP_MARGINS[-1], CAP_STRONG[-1], False)
+        return ModelCapFit(CAP_MARGINS[-1], CAP_STRONG[-1], rf, ff, ru, fu, int(y.sum()), int((1 - y).sum()), notes)
+    return best[1]
+
+
 def t3_share(p: np.ndarray, p_clf: np.ndarray, brand_conflict: np.ndarray, th: Thresholds, fired: np.ndarray) -> float:
     """Share that would reach T3: not exited at T1, not exited at T2 (SCORING §1.6)."""
     t1_exit = ((p_clf < th.eps_low) | (p_clf > th.eps_high)) & ~brand_conflict
@@ -208,7 +282,7 @@ def t3_share(p: np.ndarray, p_clf: np.ndarray, brand_conflict: np.ndarray, th: T
     return float((~t1_exit & ~t2_exit).sum()) / max(len(p), 1)
 
 
-def render_params(text: str, th: Thresholds, meta: dict[str, object]) -> str:
+def render_params(text: str, th: Thresholds, meta: dict[str, object], cap: ModelCapFit | None = None) -> str:
     """Rewrite only the fitted lines of params.yaml; everything else (weights, rules) is preserved verbatim."""
     header = (
         "# FITTED by `make fit-thresholds` (builder-evals) on the validation split only; do not hand-tune.\n"
@@ -244,7 +318,18 @@ def render_params(text: str, th: Thresholds, meta: dict[str, object]) -> str:
             ln = re.sub(r"^(  eps_high:)\s*[\d.]+\s*(#.*)?$", rf"\g<1> {th.eps_high}", ln)
             out.append(ln)
         i += 1
-    return header + "\n".join(out) + "\n"
+    body = "\n".join(out) + "\n"
+    if cap is not None:
+        body = re.sub(r"(?m)^(?:#.*\n)*model_cap:\n(?:  .*\n)+\n?", "", body)
+        block = (
+            "# Fitted on VALIDATION only by `make fit-thresholds` (evals/results/published/fits/model_cap_fit.json):\n"
+            "# the fitted T1 classifier alone never produces `dangerous`. margin = log-odds the model probability is\n"
+            "# capped under tau_high; strong_adj = non-url risk evidence (log-odds) needed for `dangerous`\n"
+            "# without a hard rule.\n"
+            f"model_cap:\n  margin: {cap.margin}\n  strong_adj: {cap.strong_adj}\n\n"
+        )
+        body = body.replace("logit_clip:", block + "logit_clip:", 1)
+    return header + body
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -268,7 +353,7 @@ def main(argv: list[str] | None = None) -> int:
     p_clf = apply_platt(platt, raw)
 
     draft = load_params(PARAMS_YAML)
-    scored = [score_url(i.url, float(pc), draft) for i, pc in zip(val, p_clf, strict=True)]
+    scored = [score_url(i.url, float(pc), draft, model_cap=False) for i, pc in zip(val, p_clf, strict=True)]
     p = np.array([s.result.calibrated_probability for s in scored])
     official = np.array([i.official for i in val])
     conflict = np.array([s.brand_conflict for s in scored])
@@ -294,7 +379,15 @@ def main(argv: list[str] | None = None) -> int:
         "t3_share_val": round(share, 4),
         "notes": th.notes,
     }
-    new_yaml = render_params(PARAMS_YAML.read_text(encoding="utf-8"), th, meta)
+    import dataclasses as _dc
+
+    cap = fit_model_cap(
+        val,
+        p_clf,
+        _dc.replace(draft, tau_low=th.tau_low, tau_high=th.tau_high, eps_low=th.eps_low, eps_high=th.eps_high),
+    )
+    meta["model_cap_notes"] = cap.notes
+    new_yaml = render_params(PARAMS_YAML.read_text(encoding="utf-8"), th, meta, cap)
     import yaml
 
     params_from_mapping(yaml.safe_load(new_yaml))  # validates the result before anything is written
@@ -302,8 +395,31 @@ def main(argv: list[str] | None = None) -> int:
         f"tau_low={th.tau_low} tau_high={th.tau_high} eps_low={th.eps_low} eps_high={th.eps_high} "
         f"t3_share_val={share:.3f} notes={th.notes}"
     )
+    print(
+        f"model_cap margin={cap.margin} strong_adj={cap.strong_adj} val dangerous recall (credential-form pages)="
+        f"{cap.recall_form:.4f} legit dangerous rate={cap.fpr_form:.4f}; url-only recall={cap.recall_url_only:.4f}"
+    )
     if args.dry_run:
         return 0
+    import dataclasses
+
+    (RESULTS_DIR / "published" / "fits").mkdir(parents=True, exist_ok=True)
+    artifact = {
+        "split": "val",
+        "fitted_on": "validation only",
+        "dataset_hash": dataset_hash,
+        "git_sha": sha,
+        "seed": args.seed,
+        "grid": {"margin": list(CAP_MARGINS), "strong_adj": list(CAP_STRONG)},
+        "constraints": {
+            "url_only_dangerous_fpr_max": DANGEROUS_FPR_TARGET,
+            "credential_form_dangerous_fpr_max": FPR_TARGET,
+        },
+        "chosen": dataclasses.asdict(cap),
+    }
+    (RESULTS_DIR / "published" / "fits" / "model_cap_fit.json").write_text(
+        json.dumps(artifact, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump({"hgb": model, "platt": platt}, MODEL_DIR / MODEL_FILE)

@@ -24,6 +24,7 @@ from falcon_core.scoring.arbiter import ArbiterResult, Verdict
 from falcon_core.scoring.evidence import Evidence, to_contract
 
 MAX_REASONS = 3
+CLASSIFIER_SIGNAL = "url.classifier"  # informational evidence the cascade adds when the fitted T1 model fired
 REPORTING_CHANNELS_ENV = "FL_REPORTING_CHANNELS"
 
 
@@ -83,7 +84,8 @@ def select_reasons(result: ArbiterResult) -> list[ReasonSlot]:
     for rule in result.fired_rules:
         ids = tuple(i for i in rule.evidence_ids if i in by_id)
         mag = sum(abs(by_id[i].weight) for i in ids)
-        push(1, mag, ReasonSlot("hard_rules", rule.rule_id, ids))
+        key: str = "H5s" if rule.rule_id == "H5" and rule.effect == "floor_suspicious" else rule.rule_id
+        push(1, mag, ReasonSlot("hard_rules", key, ids))
         consumed.update(ids)
 
     groups: dict[str, list[Evidence]] = {}
@@ -97,6 +99,11 @@ def select_reasons(result: ArbiterResult) -> list[ReasonSlot]:
         groups.setdefault(template_key(ev), []).append(ev)
     for key, evs in groups.items():
         push(2, max(abs(e.weight) for e in evs), ReasonSlot("reasons", key, tuple(e.id for e in evs)))
+
+    if risk_verdict and not ranked:
+        # A warning decided by the fitted T1 classifier alone still needs a reason that cites evidence.
+        clf = tuple(e.id for e in result.weighted_evidence if e.signal == CLASSIFIER_SIGNAL and e.error is None)
+        push(2, 0.0, ReasonSlot("reasons", CLASSIFIER_SIGNAL, clf))
 
     if result.degraded and not result.degraded_override:
         push(3, 0.0, ReasonSlot("degraded", "degraded", errored))

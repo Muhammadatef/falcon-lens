@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -24,6 +25,7 @@ import numpy as np
 from evals.common import registrable_domain
 from falcon_core.scoring.arbiter import ArbiterContext, ArbiterResult, has_brand_conflict, score
 from falcon_core.scoring.evidence import Evidence, from_contract
+from falcon_core.scoring.model_cap import score_with_model
 from falcon_core.scoring.params import ScoringParams
 from falcon_core.signals import REGISTRY
 from falcon_core.signals.brands.registry import default_registry
@@ -142,10 +144,22 @@ class Scored:
     stage_ms: dict[str, float] = field(default_factory=dict)
 
 
-def score_url(url: str, p_clf: float, params: ScoringParams, with_registry: bool = True) -> Scored:
-    """Arbiter result for one URL given its (calibrated) classifier probability."""
+def score_url(
+    url: str,
+    p_clf: float,
+    params: ScoringParams,
+    with_registry: bool = True,
+    extra_evidence: Sequence[Evidence] = (),
+    model_cap: bool = True,
+) -> Scored:
+    """Arbiter result for one URL given its (calibrated) classifier probability.
+
+    ``extra_evidence`` stands in for later tiers (e.g. a credential form seen at T2). The model-cap rule
+    (``scoring.model_cap``) is applied exactly as in the cascade unless ``model_cap=False`` (the band fit, which
+    must not depend on the cap it precedes).
+    """
     t0 = time.perf_counter()
-    ev = t1_evidence(url)
+    ev = [*t1_evidence(url), *extra_evidence]
     t1 = time.perf_counter()
     dom = registrable_domain(url)
     if with_registry:
@@ -156,7 +170,8 @@ def score_url(url: str, p_clf: float, params: ScoringParams, with_registry: bool
         verified_domains=verified_domains() if with_registry else None,
         params=params,
     )
-    res = score(ev, p_clf=min(max(p_clf, 0.0), 1.0), ctx=ctx)
+    p = min(max(p_clf, 0.0), 1.0)
+    res = score_with_model(ev, p, ctx) if model_cap else score(ev, p_clf=p, ctx=ctx)
     t2 = time.perf_counter()
     return Scored(
         result=res,

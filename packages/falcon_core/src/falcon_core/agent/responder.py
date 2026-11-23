@@ -59,6 +59,36 @@ def normalise_reason_text(text: str) -> str:
     return t.translate(_AR_ALEF)
 
 
+# Spelled-out or disguised links: "example dot com", "(dot)", "[dot]", middle-dot / one-dot-leader / katakana
+# middle dot, Arabic "نقطة" (point), "at" forms are covered by the host-token rule below.
+_DOT_WORD_RE = re.compile(r"(?i)(?<![a-z])(?:dot|d0t|dotcom|punkt)(?![a-z])|[(\[{<]\s*(?:dot|\.)\s*[)\]}>]|نقطه|نقطة")
+_DOT_CHARS = set("\u2e33\u00b7\u2024\u2027\u30fb\u22c5\u2219\u06d4\uff0e\u3002\ufe52")
+# A host-like token: a hyphenated name (two or more hyphens) or a name followed by a TLD word.
+_HOST_TOKEN_RE = re.compile(
+    r"(?i)\b[a-z0-9]+(?:-[a-z0-9]+){2,}\b|\b[a-z0-9-]{3,}\s+(?:com|net|org|xyz|example|test|ae|io|cc|ru|cn)\b"
+)
+# Reassurance, instructions and links-to-act: a warning reason explains the risk, it never tells the user
+# what is fine to do or vouches for the sender. Matched on the normalised text (and its skeleton).
+_REASSURE_EN = (
+    "go ahead", "goahead", "sign in", "signin", "log in", "login", "legitimate", "legit", "genuine", "authentic",
+    "itself", "official", "approved", "certified", "verified", "no need", "nothing to worry", "dont worry",
+    "do not worry", "can trust", "you can", "proceed", "continue", "click", "tap ", "open the", "visit",
+    "confirm", "reply", "call ", "ignore", "fine to", "ok to", "okay",
+)  # fmt: skip
+_REASSURE_AR = (
+    "تسجيل الدخول", "سجل الدخول", "يمكنك", "نفسه", "نفسها", "رسمي", "اصلي", "معتمد", "موثق", "لا داعي",
+    "لا تقلق", "تابع", "المتابعه", "المتابعة", "اضغط", "افتح", "زر ", "اتصل", "تاكيد", "اكد",
+)  # fmt: skip
+
+
+def _reassures(norm: str) -> bool:
+    low = norm.lower()
+    sk = skeleton_ci(norm)
+    if any(p in low or skeleton_ci(p) in sk for p in _REASSURE_EN):
+        return True
+    return any(p in norm for p in _REASSURE_AR)
+
+
 def _says_safe(norm: str) -> bool:
     sk = skeleton_ci(norm)
     if any(k in sk for k in _SAFE_EN_KEYS) or _SAFE_EN_RE.search(norm) or _SAFE_EN_RE.search(sk):
@@ -76,8 +106,12 @@ def _text_errors(i: int, d: ReasonDraft) -> list[str]:
     for lang, raw, norm in (("ar", d.ar, ar_n), ("en", d.en, en_n)):
         if _says_safe(norm):
             errs.append(f"reason[{i}].{lang} says safe")
-        if _LINK_RE.search(norm):
+        if _LINK_RE.search(norm) or _DOT_WORD_RE.search(norm) or _HOST_TOKEN_RE.search(norm):
             errs.append(f"reason[{i}].{lang} contains a link or domain")
+        if _DOT_CHARS & (set(raw) | set(norm)):
+            errs.append(f"reason[{i}].{lang} contains a disguised dot")
+        if _reassures(norm):
+            errs.append(f"reason[{i}].{lang} reassures or instructs")
         if _FORBIDDEN_CHARS & (set(raw) | set(norm)):
             errs.append(f"reason[{i}].{lang} contains forbidden characters")
         if _DIGIT_RE.search(norm):
@@ -124,6 +158,8 @@ def verify_reasons(drafts: Sequence[ReasonDraft], evidence: Sequence[Evidence], 
             if verdict == "no_warning_signs":
                 if any(e.weight > 0 for e in cited):
                     errs.append(f"reason[{i}] cites risk evidence for a no-warning verdict")
+            elif any(e.weight < 0 for e in cited):
+                errs.append(f"reason[{i}] cites trust evidence for a warning verdict")
             elif not any(e.weight > 0 or e.hard_rule for e in cited):
                 errs.append(f"reason[{i}] cites no risk evidence for a warning verdict")
         errs.extend(_text_errors(i, d))
@@ -197,6 +233,9 @@ class Responder:
         if not res.ok or res.value is None:
             return self._template(inp, res.status, res.route, [res.error or res.status], res.cost_usd)
         errs = verify_reasons(res.value.reasons, inp.evidence, inp.verdict)
+        grounded = {i for r in inp.template_reasons for i in r.evidence_ids}
+        if any(i not in grounded for d in res.value.reasons for i in d.evidence_ids):
+            errs.append("reason cites evidence outside the arbiter's selected reasons")
         if errs:
             return self._template(inp, "rejected", res.route, errs, res.cost_usd)
         reasons = tuple(

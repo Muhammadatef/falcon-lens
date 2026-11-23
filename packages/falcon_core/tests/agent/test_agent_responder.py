@@ -209,6 +209,68 @@ def test_extractor_with_empty_registry_is_counted() -> None:
     assert mx.get(m.TOOL_ERRORS, tool="extractor", reason="empty_brand_registry") == 1
 
 
+# --- PR #47 review: disguised links, reassurance, polarity, grounding -----------------------------
+
+
+def _warning_errors(en: str, ar: str) -> list[str]:
+    from falcon_core.agent.responder import ReasonDraft, verify_reasons
+
+    return verify_reasons([ReasonDraft(en=en, ar=ar, evidence_ids=[_RISK.id])], [_RISK, _TRUST], "dangerous")
+
+
+_WARN_AR = "اسم الموقع يقلّد اسماً معروفاً."
+
+
+@pytest.mark.parametrize(
+    "en",
+    [
+        "Confirm this notice at falcon-demo-bank-help dot example before you continue",
+        "Go to falcon demo bank help (dot) example",
+        "Go to falcon demo bank help [dot] example",
+        "Go to falcon⸳demo⸳example",
+        "Visit falcon-demo-bank-help",
+        "The bank itself sent this notice, you can go ahead and sign in",
+        "This is a legitimate message from the bank",
+        "Official notice, nothing to worry about",
+        "Just log in to continue",
+    ],
+)
+def test_warning_reasons_reject_disguised_links_and_reassurance(en: str) -> None:
+    assert _warning_errors(en, _WARN_AR), en
+
+
+@pytest.mark.parametrize(
+    "ar",
+    [
+        "أكد الإشعار عبر falcon نقطة example",
+        "هذا الإشعار من البنك نفسه ويمكنك تسجيل الدخول",
+        "الموقع رسمي ولا داعي للقلق",
+    ],
+)
+def test_warning_reasons_reject_arabic_attacks(ar: str) -> None:
+    assert _warning_errors("The site name copies a known name.", ar), ar
+
+
+def test_clean_warning_reason_is_accepted_and_trust_citation_is_not() -> None:
+    from falcon_core.agent.responder import ReasonDraft, verify_reasons
+
+    en = "The site name copies a known name using look-alike letters."
+    assert _warning_errors(en, _WARN_AR) == []
+    d = ReasonDraft(en=en, ar=_WARN_AR, evidence_ids=[_RISK.id, _TRUST.id])
+    assert verify_reasons([d], [_RISK, _TRUST], "dangerous")  # cites trust evidence for a warning
+
+
+async def test_reason_citing_evidence_outside_the_template_selection_falls_back() -> None:
+    # Four risk items; the templates select at most three reasons, so cite one the arbiter did not select.
+    many = [ev(f"url.sig{i}", "url", True, id=f"ev_sig0000{i}") for i in range(1, 5)]
+    out, templates, _ = await _run(
+        j({"reasons": [{**GOOD_REASON, "evidence_ids": ["ev_sig00004"]}]}), evidence=[*RISKY, *many]
+    )
+    cited = {i for r in templates for i in r.evidence_ids}
+    if "ev_sig00004" not in cited:
+        assert out.generated_by == "template"
+
+
 def test_link_regex_catches_spelled_out_dots() -> None:
     from falcon_core.agent.responder import _LINK_RE
 
