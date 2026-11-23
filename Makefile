@@ -4,7 +4,7 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
+.PHONY: regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
 
 help: ## List every make target with a one-line description (this list)
 	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
@@ -39,6 +39,7 @@ unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL
 
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py
+	python3 scripts/check_env_example.py
 
 # Merge gate for detection quality. Becomes real when builder-evals lands evals/baseline.json:
 # until then it says so loudly and does NOT claim a pass.
@@ -57,6 +58,10 @@ scan: ## gitleaks, pip-audit, pnpm audit, trivy, semgrep, compose/image hardenin
 
 smoke: ## T-015 assertions against the running stack (starts it if needed). FL_SMOKE_FAKE_WORKER=1 uses a test double (NOT a G1 pass)
 	@scripts/smoke.sh
+
+regress-legit: ## false-positive gate: 30 random held-out legit URLs through the running stack (LIVE=1, FL_GATEWAY_URL); writes evals/results/published artifact
+	@test "$(LIVE)" = 1 || { echo "regress-legit needs a running stack: LIVE=1 make regress-legit" >&2; exit 2; }
+	uv run python scripts/fp_regress.py
 
 openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on drift)
 	uv run python scripts/gen_openapi.py

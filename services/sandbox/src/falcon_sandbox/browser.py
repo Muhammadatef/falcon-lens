@@ -92,6 +92,9 @@ class VisitResult:
     redirects: list[dict[str, Any]] = field(default_factory=list)
 
 
+INTERRUPTED_NAV = "is interrupted by another navigation"
+
+
 @dataclass
 class _State:
     blocked: list[BlockedRequest] = field(default_factory=list)
@@ -106,6 +109,8 @@ class _State:
     redirect_limit_hit: bool = False
     pending: str | None = None
     nav_fail: str | None = None
+    doc_blocked: bool = False  # a top-level document navigation was refused by policy
+    nav_response: Any = None  # last top-level document response seen (client-side redirects)
     hops: list[Hop] = field(default_factory=list)
     nav: list[str] = field(default_factory=list)
     images: dict[str, Any] = field(default_factory=dict)
@@ -248,6 +253,8 @@ class SandboxBrowser:
             d = policy.decide(req.url, req.method, req.resource_type, 0)
             if not d.allow:
                 record_block(req.url, d.reason, req.resource_type)
+                if req.is_navigation_request() and req.frame.parent_frame is None:
+                    st.doc_blocked = True
                 if d.reason == "method_not_get":
                     st.non_get_blocked += 1
                     tgt = build_dynamic_post_target(req.url, req.resource_type, url)
@@ -343,10 +350,36 @@ class SandboxBrowser:
             ),
         )
         page.on("response", lambda r: st.images.__setitem__(r.url, r) if len(st.images) < 60 else None)
+        page.on(
+            "response",
+            lambda r: (
+                setattr(st, "nav_response", r)
+                if r.request.is_navigation_request() and r.frame == page.main_frame and not 300 <= r.status < 400
+                else None
+            ),
+        )
 
         feats = ProfileFeatures(profile=profile, requested_url=url[:512])  # type: ignore[arg-type]
         response = None
         nav_error: str | None = None
+
+        async def settle_interrupted() -> None:
+            nonlocal response, nav_error
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=remaining_ms())
+            except PlaywrightTimeout:
+                feats.timed_out = True
+                return
+            except PlaywrightError as exc:
+                nav_error = f"navigation_failed:{str(exc).splitlines()[0][:80]}"
+                return
+            if st.doc_blocked or not policy.decide(page.url, "GET", "document").allow:
+                # fail closed: wherever the page ended up must pass the same policy
+                if not st.doc_blocked:
+                    record_block(page.url, "blocked_final_url", "document")
+                nav_error = "blocked_by_policy"
+                return
+            response = st.nav_response  # None when no document actually loaded
 
         async def go(target: str) -> None:
             nonlocal response, nav_error
@@ -357,6 +390,11 @@ class SandboxBrowser:
                 feats.timed_out = True
             except PlaywrightError as exc:
                 msg = str(exc)
+                if INTERRUPTED_NAV in msg:
+                    # A client-side redirect (JS / meta refresh) started a second navigation while
+                    # the first was loading. Not a failure: wait for the document it lands on.
+                    await settle_interrupted()
+                    return
                 nav_error = (
                     "blocked_by_policy"
                     if "BLOCKED_BY_CLIENT" in msg
@@ -393,6 +431,8 @@ class SandboxBrowser:
                 await page.wait_for_load_state("load", timeout=min(2000, remaining_ms()))
             await asyncio.sleep(min(0.3, max(0.0, deadline - loop.time())))
             await follow_redirects()  # redirects triggered by scripts/meta refresh
+        if st.doc_blocked and response is not None and not feats.error and not st.pending:
+            nav_error = nav_error or "blocked_by_policy"  # a client-side redirect was refused
         if (st.nav_fail or nav_error) and not feats.error and not st.pending:
             feats.error = st.nav_fail or nav_error
         if response is None and not feats.error and not st.pending:

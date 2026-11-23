@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, Literal
 
-from falcon_core.agent.evidence_view import evidence_item
+from falcon_core.agent.evidence_view import evidence_item, host_only
 from falcon_core.contracts.evidence import Evidence
 from falcon_core.contracts.verdict import TraceStep
 from falcon_core.llm import metrics as m
@@ -26,7 +26,6 @@ from falcon_core.llm.router import JsonRequest, LLMRouter
 from falcon_core.prompts import INVESTIGATOR_TASK
 from falcon_core.tools.provenance import ProvenanceContext
 from falcon_core.tools.registry import SPECS, Action, ToolOutcome, ToolRegistry
-from falcon_core.tools.util import defang
 
 MAX_TOOL_CALLS = 6
 TIME_BUDGET_S = 15.0
@@ -121,7 +120,7 @@ class Investigator:
         history: list[dict[str, Any]],
         calls_left: int,
     ) -> str:
-        shown_targets = {k: (defang(v)[:120] if k.startswith(("u", "d")) else v) for k, v in targets.items()}
+        shown_targets = {k: (host_only(v) if k.startswith(("u", "d")) else v) for k, v in targets.items()}
         payload = {
             "input_type": case.input_type,
             "evidence": [evidence_item(e) for e in evidence[:60]],

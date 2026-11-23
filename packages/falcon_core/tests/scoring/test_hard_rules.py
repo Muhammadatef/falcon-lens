@@ -147,7 +147,7 @@ CASES: list[tuple[str, str, list[Spec], str, bool]] = [
         "H5",
         [("message.link_verdict", {"verdict": "suspicious"}, {})],
         "message",
-        False,
+        True,  # L1 D1: a message is at least as severe as its worst link (suspicious floor)
     ),
     # H6 OTP / remote access + impersonation
     ("h6_otp_plus_authority", "H6", [OTP, AUTHORITY], "message", True),
@@ -190,7 +190,9 @@ def test_hard_rule_table(case: str, rule: str, specs: list[Spec], input_type: st
         rule_obj = next(r for r in res.fired_rules if r.rule_id == rule)
         assert set(rule_obj.evidence_ids) <= {e.id for e in evidence}
         assert tagged, "triggering evidence must carry hard_rule"
-        if rule in EFFECT_FLOOR:
+        if rule_obj.effect == "floor_suspicious":
+            assert RANK[res.verdict] >= RANK["suspicious"]
+        elif rule in EFFECT_FLOOR:
             assert RANK[res.verdict] >= RANK[EFFECT_FLOOR[rule]]
         else:
             assert res.verdict == "no_warning_signs"
@@ -233,3 +235,14 @@ def test_h3_overrides_and_reports_suppressed_rules() -> None:
     assert [r.rule_id for r in res.fired_rules] == ["H3"]
     assert [r.rule_id for r in res.suppressed_rules] == ["H1"]
     assert res.verdict == "no_warning_signs"
+
+
+def test_h1_ignores_llm_sourced_brand_claims() -> None:
+    """L1 security architecture: H1 never depends on the LLM extractor. The claim still adds weight."""
+    llm = mk(*CLAIM[:2], source="llm:extractor")
+    only_llm = score([llm, mk(*CRED[:2])], p_clf=0.01)
+    assert "H1" not in {r.rule_id for r in only_llm.fired_rules}
+    det = score([mk(*CRED[:2])], p_clf=0.01)
+    assert only_llm.calibrated_probability >= det.calibrated_probability  # risk-only
+    both = score([mk(*CLAIM[:2]), llm, mk(*CRED[:2])], p_clf=0.01)
+    assert "H1" in {r.rule_id for r in both.fired_rules}

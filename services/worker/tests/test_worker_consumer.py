@@ -237,18 +237,50 @@ async def test_cache_hit_on_second_check() -> None:
     assert rig.metrics.registry.get_sample_value("fl_cache_hits_total", {"layer": "verdict"}) == 1
 
 
-@pytest.mark.parametrize("input_type", ["message", "email", "image"])
-async def test_unsupported_input_types_get_degraded_final(input_type: str) -> None:
+async def test_message_job_runs_the_message_pipeline_with_h5() -> None:
+    rig = Rig(StubSandboxClient(default=phish_features()))
+    await rig.worker.ensure_group()
+    vid = await rig.submit(
+        "", input_type="message", text=f"Verify your account: {DEMO_LOOKALIKE_URL}", sha256="ab" * 32
+    )
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    doc = rig.store.verdicts[vid]
+    VERDICT.validate(doc)
+    assert doc["final"] and doc["input_type"] == "message" and doc["verdict"] == "dangerous"
+    assert any(e.get("hard_rule") == "H5" for e in doc["evidence"])
+    assert not doc["degraded"]
+
+
+async def test_email_job_reads_the_blob_and_clears_it() -> None:
+    import base64
+
+    eml = (
+        b"From: Falcon Demo Bank <alerts@falcon-demo-bank-login.test>\r\nTo: u@example.test\r\n"
+        b"Subject: Verify\r\nContent-Type: text/plain\r\n\r\nSign in: " + DEMO_LOOKALIKE_URL.encode() + b"\r\n"
+    )
+    rig = Rig(StubSandboxClient(default=phish_features()))
+    await rig.worker.ensure_group()
+    vid = await rig.submit("", input_type="email", sha256="cd" * 32)
+    await rig.r.set(keys.blob_key(vid), base64.b64encode(eml).decode(), ex=600)
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    doc = rig.store.verdicts[vid]
+    VERDICT.validate(doc)
+    assert doc["input_type"] == "email" and doc["verdict"] == "dangerous"
+    assert await rig.r.get(keys.blob_key(vid)) is None
+
+
+@pytest.mark.parametrize("input_type", ["message", "image"])  # the API rejects non-.eml uploads
+async def test_missing_or_garbage_input_is_degraded_never_safe(input_type: str) -> None:
     rig = Rig(StubSandboxClient(error="unused"))
     await rig.worker.ensure_group()
     vid = await rig.submit("", input_type=input_type, sha256="ab" * 32)
-    await rig.r.set(keys.blob_key(vid), "aGVsbG8=", ex=600)
+    if input_type != "message":
+        await rig.r.set(keys.blob_key(vid), "aGVsbG8=", ex=600)  # "hello": not an image
     await rig.worker.read_batch(pending=False, block_ms=100)
     doc = rig.store.verdicts[vid]
     VERDICT.validate(doc)
     assert doc["final"] and doc["degraded"] and doc["verdict"] == "suspicious"
     assert doc["input_type"] == input_type
-    assert await rig.r.get(keys.blob_key(vid)) is None
 
 
 async def test_malformed_job_goes_to_dead_letter_and_is_acked() -> None:

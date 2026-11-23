@@ -27,8 +27,10 @@
 
 ## On this page
 
+- [What Falcon Lens offers Abu Dhabi Police](#what-falcon-lens-offers-abu-dhabi-police--ما-تقدمه-عدسة-الصقر-لشرطة-أبوظبي)
 - [How it works in four steps](#how-it-works-in-four-steps)
 - [The two AI helpers](#the-two-ai-helpers)
+- [How the two AI agents work](#how-the-two-ai-agents-work--كيف-يعمل-الوكيلان)
 - [What makes it different](#what-makes-it-different)
 - [Words you may meet](#words-you-may-meet)
 - [Where people use it](#where-people-use-it)
@@ -39,6 +41,24 @@
 - [For engineers](#for-engineers)
 - [Licence](#licence)
 - [Independence and defensive use](#independence-and-defensive-use)
+
+## What Falcon Lens offers Abu Dhabi Police | ما تقدمه عدسة الصقر لشرطة أبوظبي
+
+These are capabilities a police or security team could use. They are listed as an independent prototype's offer, not as a service already in use. "Built" means the code and its tests are in the main code line (pull request numbers in brackets). It does not mean a connection to any police system exists.
+
+| Capability | What it gives the police | State |
+|---|---|---|
+| **Public protection<br>حماية الجمهور** | Residents check a link, a text or WhatsApp message, an email or a QR code in Arabic, in seconds. It works as a web app that can sit on the phone's home screen with a share button, and as a Chrome extension that checks a page before it opens. | **Built** for links (#34, #35). **In progress** for messages, emails and pictures: the individual checks are merged, and joining them into one flow is open (#47). |
+| **Campaign detection<br>كشف الحملات** | The Sentinel watches every check around the clock and links similar ones into one campaign. It flags new look-alike addresses among the checks it sees, and prepares takedown and police-report drafts that wait for a human officer. | **Built** (#2, #6). It reads the checks people send. It does not yet scan the internet for new domains by itself. |
+| **Brand-new fake pages<br>الصفحات المزيفة الجديدة** | A page that claims to be a bank or a service but does not sit on that organisation's real address is flagged, even if no warning list knows it yet. No blocklist is needed. | **Built** (rule and sealed browser, #28). **Not measured yet**: no catch-rate figure exists. |
+| **Operator board<br>لوحة المشغّل** | A screen of campaigns and incidents, with approve and reject for every draft. Every action goes to an append-only audit log. | **Built** (#35). |
+| **Intelligence sharing<br>تبادل المعلومات** | Incidents can be exported in the standard STIX 2.1 format or pushed to signed webhooks. | **Built** (#30). Ready to connect, not connected. |
+| **Integration<br>الربط مع الأنظمة** | A REST API (v1) for apps and an MCP server for AI assistants, with API keys. | **Built** (#30). Ready to connect, not connected. |
+| **Data sovereignty<br>السيادة على البيانات** | The AI can run fully on local models on machines inside the UAE, with no message or page content sent out. Personal details are masked before anything goes to a cloud AI service. | **Built** (model routing, #19; local worker, #46). End-to-end wiring of the AI steps is **in progress** (#47). Accuracy in local mode is not measured yet. |
+| **Observability<br>المراقبة** | Live dashboards and alerts show how the system is running, with a runbook entry for each alert. | **Built** (#14). |
+| **Measured quality<br>جودة مقاسة** | Every figure comes from a saved test result, copied by a script. Nobody types a number by hand. | **Built**, and honest about scope: only the link-address stage is measured so far. See [Results](#results). |
+
+Falcon Lens is independent. It uses no police logos and does not imply endorsement.
 
 ## How it works in four steps
 
@@ -79,6 +99,22 @@
 - It drafts takedown requests and police reports in Arabic and English.
 - It sends nothing itself. A person must read the draft and approve it first. Every action is written to an append-only record (it cannot be changed by the application).
 
+## How the two AI agents work | كيف يعمل الوكيلان
+
+Each picture follows one agent from start to finish. The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a **human gate** (amber). The steps light up in turn. If your device is set to reduce motion, the picture stays still.
+
+<p align="center">
+  <img src="docs/assets/agent-investigator-steps.svg" width="390" alt="The Investigator, step by step. One: something to check arrives. Two: fixed rules go first. Three: a reader with no tools reads the page text in a sealed room. Four: it looks closer only when unsure, with at most six checked lookups. Five: code, not AI, decides the score. Six: the AI writes the reasons and every reason must point to evidence. Seven: you get a clear answer in Arabic and English.">
+</p>
+
+**The Investigator | المحقّق.** When the fixed rules cannot settle a case, the Investigator takes a closer look. The part that reads the page has no tools, so text on a scam page cannot give it orders. It may then run a small, fixed number of approved lookups. Fixed code, never the AI, sets the score, and the AI's written reasons are thrown out unless each one points to evidence.
+
+<p align="center">
+  <img src="docs/assets/agent-sentinel-steps.svg" width="390" alt="The Sentinel, step by step. One: it listens to every check. Two: it groups similar ones into a campaign. Three: rules decide it is an incident. Four: AI writes a bilingual summary. Five: it blocks internally, and every block can be undone. Six: it prepares a takedown and waits for a human. Seven: an officer approves or rejects, and the action is recorded in an append-only log.">
+</p>
+
+**The Sentinel | الحارس.** The Sentinel listens to every finished check and groups similar ones, so many fake pages copying one bank are seen as a single campaign. Written rules decide when that is an incident. It may block a known-bad link inside our own system, and that block can be undone. Anything that would leave the system, such as a takedown request or a police report, is only a draft until an officer approves it.
+
 ## What makes it different
 
 | | In plain words | Honest note |
@@ -115,9 +151,9 @@ The project is developed in the open, one reviewed piece at a time. This is the 
 
 | State | Parts |
 |---|---|
-| **Built and merged** | Checks on the address of a link. The fixed rules that decide the result. The service that receives a check and streams back the answer. Both AI helpers. The Chrome extension. The sealed browser. The web app, including the operator's board. The doorways for other systems (API, MCP, standard sharing format). The submission package. Monitoring dashboards. The testing tools that produce the results below. Demo tools. |
+| **Built and merged** | Checks on the address of a link. The fixed rules that decide the result. The service that receives a check and streams back the answer. Both AI helpers. The Chrome extension. The sealed browser. The web app, including the operator's board. The doorways for other systems (API, MCP, standard sharing format). The submission package. Monitoring dashboards. The testing tools that produce the results below. Demo tools. The attack-simulation test suite (PR #41). Joining the checks into one flow (PR #44). A local task worker (PR #46). |
 | **Built in part** | Checks for text messages, emails and pictures: the individual checks are merged, and they are not yet joined into the full flow. |
-| **Built, waiting for review** | The attack-simulation test suite (PR #41). Joining the checks into one flow (PR #44). Automatic improvement of the AI helper's instructions, done offline (PR #45). |
+| **Built, waiting for review** | Automatic improvement of the AI helper's instructions, done offline (PR #45). Wiring the AI steps and the message and email checks into the full flow (PR #47). |
 
 Two cautions. First, "built and merged" means the code and its tests are in the main code line. It does not mean a resident can use the whole product from start to finish today. The project's own checkpoint list, [`STATUS.md`](STATUS.md), does not yet record a passed end-to-end checkpoint, so this page does not claim one. Second, the list above goes out of date quickly. The exact, piece-by-piece status is in the [technical reference](docs/TECHNICAL.md#status).
 
@@ -134,46 +170,60 @@ Every figure below is copied by a script from a saved test result. No number on 
 - **The sets are small.** The lines ending in `ci95` give the likely range, and a wide range means the figure could move as more links are tested.
 
 <!-- metrics:start -->
-Source artifact: [`evals/results/published/20261122T182533Z.json`](evals/results/published/20261122T182533Z.json). Values are copied verbatim.
+Source artifact: [`evals/results/published/20261123T020433Z.json`](evals/results/published/20261123T020433Z.json). Values are copied verbatim.
 
 | Provenance | Value |
 |---|---|
 | `scope` | `offline T1 + arbiter on URLs; real data only; temporal_cut false (single poll)` |
-| `created_at` | `2026-11-22T18:25:33Z` |
-| `git_sha` | `ac36c6a4ece9f814cebbc337eef685c0369deb01-dirty` |
+| `created_at` | `2026-11-23T02:04:33Z` |
+| `git_sha` | `d977f04791a60a69b21d41b59f0648ea8e45dc4f-dirty` |
 | `dataset_hash` | `382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1` |
 | `temporal_cut` | `false` |
 | `seeds` | `{"bootstrap": 20261122, "model": 20261122, "n_bootstrap": 1000, "split": 20261122}` |
 | `model_ids.llm_cloud` | `not_evaluated` |
 | `model_ids.llm_sovereign` | `not_evaluated` |
-| `model_ids.t1.fit_date` | `2026-11-22` |
-| `model_ids.t1.git_sha` | `4415c0fa498b6b95155b09fdd43c26cff4d623d5` |
+| `model_ids.t1.fit_date` | `2026-11-23` |
+| `model_ids.t1.git_sha` | `d977f04791a60a69b21d41b59f0648ea8e45dc4f` |
 | `model_ids.t1.model_id` | `t1_hgb` |
 | `model_ids.t1.model_sha256` | `41db3ba644d5084d45c3ff0fa0a11ca258caa145d7d81856a0c4fe8b9b179ed3` |
 | `model_ids.t1.sklearn_version` | `1.9.1` |
 
 | Metric | Value | In plain words |
 |---|---|---|
-| `test.ece` | 0.014249 | How far our stated confidence is from what really happened. Closer to zero is better. |
-| `test.ece_ci95` | [0.013481, 0.048042] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.ece` | 0.069463 | How far our stated confidence is from what really happened. Closer to zero is better. |
+| `test.ece_ci95` | [0.05421, 0.104291] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.f1` | 0.967213 | A single figure that balances recall and precision. Closer to one is better. |
 | `test.f1_ci95` | [0.93202, 0.992593] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.fpr` | 0.0375 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
 | `test.fpr_ci95` | [0.0, 0.082377] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.message_path.dangerous_recall` | 0.0 |  |
+| `test.message_path.dangerous_recall_ci95` | [0.0, 0.0] |  |
+| `test.message_path.fpr` | 0.0375 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
+| `test.message_path.fpr_ci95` | [0.018576, 0.059748] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.message_path.n` | 560 | How many checks are in this set. |
+| `test.message_path.recall` | 0.983333 | Of the real scam checks in the set, the share we flagged. Closer to one is better. |
+| `test.message_path.recall_ci95` | [0.965116, 0.996078] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.n` | 140 | How many checks are in this set. |
 | `test.official_false_dangerous` | 0 | Verified official sites wrongly marked dangerous. The target is zero. |
-| `test.pr_auc` | 0.986588 | How well scams are ranked above genuine checks overall. Closer to one is better. |
-| `test.pr_auc_ci95` | [0.96648, 0.999321] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.pr_auc` | 0.956071 | How well scams are ranked above genuine checks overall. Closer to one is better. |
+| `test.pr_auc_ci95` | [0.899433, 0.999225] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.precision` | 0.951613 | Of the checks we flagged, the share that really were scams. Closer to one is better. |
 | `test.precision_ci95` | [0.888889, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.recall` | 0.983333 | Of the real scam checks in the set, the share we flagged. Closer to one is better. |
 | `test.recall_ci95` | [0.948253, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.ece` | 0.031541 | How far our stated confidence is from what really happened. Closer to zero is better. |
-| `val.ece_ci95` | [0.019403, 0.060841] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.ece` | 0.087331 | How far our stated confidence is from what really happened. Closer to zero is better. |
+| `val.ece_ci95` | [0.066558, 0.115172] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `val.f1` | 0.97479 | A single figure that balances recall and precision. Closer to one is better. |
 | `val.f1_ci95` | [0.938768, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `val.fpr` | 0.011905 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
 | `val.fpr_ci95` | [0.0, 0.0375] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.message_path.dangerous_recall` | 0.0 |  |
+| `val.message_path.dangerous_recall_ci95` | [0.0, 0.0] |  |
+| `val.message_path.fpr` | 0.011905 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
+| `val.message_path.fpr_ci95` | [0.002833, 0.025072] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.message_path.n` | 576 | How many checks are in this set. |
+| `val.message_path.recall` | 0.966667 | Of the real scam checks in the set, the share we flagged. Closer to one is better. |
+| `val.message_path.recall_ci95` | [0.941171, 0.987805] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `val.n` | 144 | How many checks are in this set. |
 | `val.official_false_dangerous` | 0 | Verified official sites wrongly marked dangerous. The target is zero. |
 | `val.pr_auc` | 0.986559 | How well scams are ranked above genuine checks overall. Closer to one is better. |

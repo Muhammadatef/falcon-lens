@@ -2,35 +2,59 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DataSource } from "@/lib/contracts";
 import { defang, splitDefanged } from "@/lib/defang";
+import { translate, type MessageKey } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
 import { BrandMark, Icon } from "./Icon";
+
+export const NAV_LINKS = [
+  { href: "/", key: "nav.check" },
+  { href: "/how-it-works", key: "nav.how" },
+  { href: "/architecture/agents", key: "nav.arch" },
+  { href: "/results", key: "nav.results" },
+  { href: "/authorities", key: "nav.authorities" },
+  { href: "/privacy", key: "nav.privacy" },
+  { href: "/campaigns", key: "nav.board" },
+  { href: "/ops", key: "nav.ops" },
+] as const;
 
 export function Header() {
   const { t, lang, theme, setLang, setTheme } = usePrefs();
   const pathname = usePathname();
-  const links = [
-    { href: "/", label: t("nav.check") },
-    { href: "/campaigns", label: t("nav.board") },
-    { href: "/ops", label: t("nav.ops") },
-  ];
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the menu after navigating, and with Escape (focus returns to the button).
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        menuRef.current?.querySelector<HTMLButtonElement>("button.menu-btn")?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <header className="top">
       <a className="skip" href="#main">{t("skip")}</a>
-      <div className="wrap top-in">
-        <Link className="brand" href="/" aria-label="Falcon Lens | عدسة الصقر">
+      <div className="wrap top-in" ref={menuRef}>
+        <Link className="brand" href="/">
           <BrandMark />
           <span>
             {t("brand")}
             <small>FALCON LENS</small>
           </span>
         </Link>
-        <nav className="nav" aria-label={t("nav.label")}>
-          {links.map((l) => (
+        <nav className="nav" id="site-nav" data-open={open ? "true" : undefined} aria-label={t("nav.label")}>
+          {NAV_LINKS.map((l) => (
             <Link key={l.href} href={l.href} aria-current={pathname === l.href ? "page" : undefined}>
-              {l.label}
+              {t(l.key)}
             </Link>
           ))}
         </nav>
@@ -41,6 +65,10 @@ export function Header() {
           </button>
           <button className="tool" type="button" data-testid="theme-toggle" aria-label={t(theme === "dark" ? "theme.light" : "theme.dark")} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
             <Icon name={theme === "dark" ? "sun" : "moon"} size={20} />
+          </button>
+          <button className="tool menu-btn" type="button" data-testid="menu-toggle" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen((v) => !v)}>
+            <Icon name={open ? "x" : "menu"} size={20} />
+            <span>{t(open ? "nav.menu.close" : "nav.menu")}</span>
           </button>
         </div>
       </div>
@@ -53,7 +81,14 @@ export function Footer() {
   return (
     <footer>
       <div className="wrap">
-        <p>{t("foot.1")}</p>
+        <nav className="foot-nav" aria-label={t("foot.nav")}>
+          {NAV_LINKS.map((l) => (
+            <Link key={l.href} href={l.href}>{t(l.key)}</Link>
+          ))}
+        </nav>
+        <p className="foot-brand">{t("foot.1")}</p>
+        <p lang="ar" dir="rtl">{translate("ar", "foot.indep")}</p>
+        <p lang="en" dir="ltr">{translate("en", "foot.indep")}</p>
         <p>{t("foot.2")}</p>
       </div>
     </footer>
@@ -72,10 +107,11 @@ export function DemoRibbon() {
 
 /** Dashed badge on anything whose `source` is not "live" (DESIGN.md §2.7). */
 export function SourceBadge({ source }: { source: DataSource | undefined }) {
+  const { t } = usePrefs();
   if (!source || source === "live") return null;
   return (
     <span className="badge-demo" data-testid="source-badge">
-      DEMO DATA · {source}
+      {t("badge.sample")} · {t(`src.${source}` as MessageKey)}
     </span>
   );
 }

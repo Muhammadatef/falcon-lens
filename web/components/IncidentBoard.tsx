@@ -209,7 +209,7 @@ function IncidentCard({ incident, notice, onDecide }: { incident: Incident; noti
         <div>
           {pick(lang, incident.severity_reason) ? <p dir="auto">{pick(lang, incident.severity_reason)}</p> : null}
           <div className="kv">
-            <span>{incident.incident_id}</span>
+            <span title={incident.incident_id}>{t("i.ref")} {incident.incident_id.slice(-8)}</span>
             {incident.rule_ids.map((r) => <span key={r}>rule:{r}</span>)}
             {Object.entries(incident.correlation_keys ?? {}).map(([k, v]) => <span key={k}>{k}={v}</span>)}
           </div>

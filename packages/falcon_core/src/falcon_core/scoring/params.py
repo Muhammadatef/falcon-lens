@@ -32,6 +32,8 @@ class ScoringParams:
     h1_p_floor: float
     h2_max_feed_age_s: float
     h3_p_cap: float
+    model_only_margin: float | None  # None: no fitted model-cap (fallback rule, see scoring.model_cap)
+    strong_evidence_adj: float | None
     domain_age_lt7: float
     domain_age_lt30: float
     domain_age_gt3650: float
@@ -99,6 +101,8 @@ def params_from_mapping(raw: dict[str, object]) -> ScoringParams:
     clip = raw.get("logit_clip")
     if isinstance(clip, bool) or not isinstance(clip, int | float):
         raise ParamsError("params.yaml: 'logit_clip' must be a number")
+    cap_raw = raw.get("model_cap")
+    cap = _section(raw, "model_cap") if cap_raw is not None else None
     return ScoringParams(
         draft=bool(raw.get("draft", True)),
         tau_high=_num(bands, "tau_high"),
@@ -114,6 +118,8 @@ def params_from_mapping(raw: dict[str, object]) -> ScoringParams:
         h1_p_floor=_num(hard, "h1_p_floor"),
         h2_max_feed_age_s=_num(hard, "h2_max_feed_age_s"),
         h3_p_cap=_num(hard, "h3_p_cap"),
+        model_only_margin=_num(cap, "margin") if cap is not None else None,
+        strong_evidence_adj=_num(cap, "strong_adj") if cap is not None else None,
         domain_age_lt7=_num(dage, "lt7_days"),
         domain_age_lt30=_num(dage, "lt30_days"),
         domain_age_gt3650=_num(dage, "gt3650_days"),

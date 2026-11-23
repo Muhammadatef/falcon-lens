@@ -147,6 +147,10 @@ services:
       # only when FL_ENV is local, demo or ci, same rule as the sandbox).
       FL_EGRESS_PROXY: ${FL_EGRESS_PROXY:-http://egress-proxy:3128}
       FL_OPENPHISH_FEED_DIR: /app/data/private/feeds/openphish
+      # AI parts: quarantined extractor (T2), investigator (T3), responder; fitted T1 classifier for p_clf.
+      # Each fails soft to the deterministic cascade; set false to run offline / for evals.
+      FL_AI_ENABLED: ${FL_AI_ENABLED:-true}
+      FL_T1_MODEL_ENABLED: ${FL_T1_MODEL_ENABLED:-true}
     volumes:
       # Private OpenPhish rows (gitignored). The worker's refresh job loads them into the hash-only
       # Redis mirror every FL_OPENPHISH_REFRESH_S. Missing dir = mirror unavailable (degraded checks).
