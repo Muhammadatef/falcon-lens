@@ -6,7 +6,7 @@ const NODE = readonly(["process", "console", "Buffer", "URL", "setTimeout", "cle
 const WORKER = readonly(["self", "caches", "fetch", "URL", "Response", "Request"]);
 
 export default tseslint.config(
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "test-results/**", "playwright-report/**", "design/prototype/**"] },
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "test-results/**", "playwright-report/**", "design/prototype/**", "design/v2/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
