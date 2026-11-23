@@ -424,6 +424,8 @@ services:
       GF_USERS_DEFAULT_THEME: dark
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
       GF_SERVER_ROOT_URL: http://localhost:${FL_GRAFANA_PORT:-3001}
     ports:
       - "127.0.0.1:${FL_GRAFANA_PORT:-3001}:3000"
@@ -479,6 +481,11 @@ services:
     environment:
       PHOENIX_WORKING_DIR: /mnt/data
       PHOENIX_ENABLE_AUTH: "true"
+      # No outbound calls: usage analytics, Google Fonts / WASM downloads and the model-price fetch
+      # from GitHub are all off (phoenix sits on `edge`, which has internet access).
+      PHOENIX_TELEMETRY_ENABLED: "false"
+      PHOENIX_ALLOW_EXTERNAL_RESOURCES: "false"
+      PHOENIX_DISABLE_MODEL_COST_AUTO_UPDATE: "true"
       # Signs JWTs. Required when auth is on; the container exits at start if empty (fail loud).
       PHOENIX_SECRET: ${PHOENIX_SECRET:-}
       # Bearer token the collector uses to ingest spans (also usable for the REST API). >= 32 chars,

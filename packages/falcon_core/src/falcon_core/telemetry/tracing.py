@@ -164,6 +164,9 @@ SPAN_ATTRIBUTES = frozenset(
         "fl.tool_calls",
         "fl.latency_ms",
         "fl.interrupted",
+        "http.request.method",
+        "http.route",
+        "http.response.status_code",
         "error.type",
     }
 )
@@ -220,3 +223,23 @@ def fl_span(name: str, kind: str = "CHAIN", **attrs: str | int | float | bool | 
         span.set_attribute("openinference.span.kind", kind)
         set_span_attrs(span, **attrs)
         yield span
+
+
+# Everything the collector lets through (infra/otel/otel-collector.yml keep_keys, pinned by a test):
+# our own allow-lists plus the structural keys of the SDK-native spans (Anthropic, FastAPI).
+# Deliberately absent: url.*, http.url, prompts, completions, tool arguments/results, exceptions.
+COLLECTOR_ALLOWED_ATTRIBUTES = (
+    LLM_SPAN_ATTRIBUTES
+    | SPAN_ATTRIBUTES
+    | frozenset(
+        {
+            "llm.system",
+            "llm.token_count.prompt_details.cache_read",
+            "llm.token_count.prompt_details.cache_write",
+            "gen_ai.provider.name",
+            "gen_ai.response.model",
+            "gen_ai.request.max_tokens",
+        }
+    )
+)
+COLLECTOR_ALLOWED_RESOURCE = frozenset({"service.name", "service.version", "deployment.environment"})

@@ -7,27 +7,35 @@ receivers:
         endpoint: 0.0.0.0:4318
 
 processors:
-  batch: {}
-  # Privacy: the Anthropic SDK's own spans carry model output; prompts and outputs of untrusted
-  # content must never reach the trace store. Only metadata (model, tokens, latency) is kept.
   # Probe and scrape spans (FastAPI emits them natively) would bury the real traces.
   filter/probes:
     error_mode: ignore
     traces:
       span:
         - 'IsMatch(name, "^(GET|HEAD) /(healthz|readyz|metrics).*")'
-  attributes/scrub:
-    actions:
-      - {key: input.value, action: delete}
-      - {key: input.mime_type, action: delete}
-      - {key: output.value, action: delete}
-      - {key: output.mime_type, action: delete}
-      - {key: llm.input_messages, action: delete}
-      - {key: llm.output_messages, action: delete}
-      - {key: llm.invocation_parameters, action: delete}
-      - {key: gen_ai.input.messages, action: delete}
-      - {key: gen_ai.output.messages, action: delete}
-      - {key: gen_ai.system_instructions, action: delete}
+  # Privacy: drop EVERY span event (exception events carry messages/stack traces).
+  filter/events:
+    error_mode: ignore
+    traces:
+      spanevent:
+        - 'true'
+  # Privacy: ALLOW-list. Prompts, model output, tool arguments/results, url.* and anything an SDK
+  # adds later never reach the trace store. The key list is pinned to
+  # falcon_core.telemetry.tracing.COLLECTOR_ALLOWED_ATTRIBUTES by a test.
+  transform/allowlist:
+    error_mode: ignore
+    trace_statements:
+      - context: resource
+        statements:
+          - keep_keys(attributes, ["deployment.environment", "service.name", "service.version"])
+      - context: scope
+        statements:
+          - keep_keys(attributes, [])
+      - context: span
+        statements:
+          - keep_keys(attributes, ["error.type", "fl.input_type", "fl.interrupted", "fl.latency_ms", "fl.llm.cost_usd", "fl.llm.role", "fl.llm.route", "fl.model_route", "fl.node", "fl.source", "fl.stop_reason", "fl.tier", "fl.tier_reached", "fl.tool", "fl.tool.status", "fl.tool_calls", "fl.verdict", "gen_ai.operation.name", "gen_ai.provider.name", "gen_ai.request.max_tokens", "gen_ai.request.model", "gen_ai.response.model", "gen_ai.system", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens", "http.request.method", "http.response.status_code", "http.route", "incident_id", "llm.model_name", "llm.provider", "llm.system", "llm.token_count.completion", "llm.token_count.prompt", "llm.token_count.prompt_details.cache_read", "llm.token_count.prompt_details.cache_write", "llm.token_count.total", "openinference.span.kind", "verdict_id"])
+          - set(status.message, "")
+  batch: {}
 
 exporters:
   prometheus:
@@ -60,7 +68,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [filter/probes, attributes/scrub, batch]
+      processors: [filter/probes, filter/events, transform/allowlist, batch]
       exporters: [otlphttp/phoenix]
     metrics:
       receivers: [otlp]
