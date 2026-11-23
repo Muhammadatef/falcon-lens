@@ -40,9 +40,27 @@ DEFAULT_SET = "heldout_legit_2.csv"
 DEFAULT_SEED = 20261124
 
 
-def load_set(name: str) -> list[str]:
+def load_set(name: str) -> tuple[list[str], dict[str, str]]:
+    """URLs plus, when the set has the column, ``serves_web`` ("1" web page / "0" no web host) per URL."""
     with (ROOT / "evals" / "datasets" / name).open(newline="", encoding="utf-8") as f:
-        return [f"https://{r['domain']}/" for r in csv.DictReader(f)]
+        rows = list(csv.DictReader(f))
+    urls = [f"https://{r['domain']}/" for r in rows]
+    web = {u: r["serves_web"] for u, r in zip(urls, rows, strict=True) if r.get("serves_web") in ("0", "1")}
+    return urls, web
+
+
+def rate(res: list[dict[str, Any]]) -> dict[str, Any]:
+    flagged = [int(r["verdict"] in ("suspicious", "dangerous")) for r in res]
+    lo, hi = bootstrap_ci(flagged)
+    return {
+        "n": len(res),
+        "counts": dict(Counter(r["verdict"] for r in res)),
+        "degraded": sum(r["degraded"] for r in res),
+        "false_positive_rate": {
+            "value": round(sum(flagged) / max(1, len(flagged)), 4),
+            "ci95": [round(lo, 4), round(hi, 4)],
+        },
+    }
 
 
 def head_sha() -> str:
@@ -103,15 +121,15 @@ def main() -> int:
     ap.add_argument("--target", type=float, default=0.02)
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
-    pool = load_set(a.set)
+    pool, web = load_set(a.set)
     urls = pool if a.n <= 0 else random.Random(a.seed).sample(pool, min(a.n, len(pool)))  # noqa: S311
     print(f"fp-regress: gateway={BASE} set={a.set} sample={len(urls)}/{len(pool)} seed={a.seed}", flush=True)
 
     def one(u: str) -> dict[str, Any]:
         try:
-            return check(u, a.delay)
+            return {**check(u, a.delay), "url": u}
         except Exception as exc:  # noqa: BLE001
-            return {"verdict": f"error:{type(exc).__name__}", "degraded": False, "tier": None}
+            return {"verdict": f"error:{type(exc).__name__}", "degraded": False, "tier": None, "url": u}
 
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
         res = list(ex.map(one, urls))
@@ -128,6 +146,10 @@ def main() -> int:
         f"fpr={fpr:.4f} ci95=[{lo:.4f},{hi:.4f}] target={a.target}"
     )
     print(f"degraded_reasons={dict(why)} top_risk_signal_of_flagged={dict(top)}")
+    if web:
+        for flag, label in (("1", "serves_web_page"), ("0", "no_web_host")):
+            sub_res = rate([r for r in res if web.get(r["url"]) == flag])
+            print(f"fp-regress[{label}]: {sub_res}")
     sha = head_sha()
     artifact = {
         "kind": "fp_regress",
@@ -145,6 +167,12 @@ def main() -> int:
         "degraded_reasons": dict(why),
         "top_risk_signal_of_flagged": dict(top),
         "by_tier": dict(Counter(str(r["tier"]) for r in res)),
+        "by_serves_web": {
+            label: rate([r for r in res if web.get(r["url"]) == flag])
+            for flag, label in (("1", "serves_web_page"), ("0", "no_web_host"))
+        }
+        if web
+        else None,
     }
     out = (
         Path(a.out)
