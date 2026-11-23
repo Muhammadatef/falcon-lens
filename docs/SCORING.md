@@ -51,6 +51,10 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | email.display_name_impersonation | email | +2.0 | |
 | email.reply_to_mismatch | email | +1.0 | |
 | email.link_text_mismatch | email | +2.0 | |
+| email.limit_exceeded | email | +2.0 | email over 2 MB, 50 parts or 20 MIME levels, or unparseable: what fits is analysed, and links are extracted from ALL of the input (every part, base64 / quoted-printable / HTML-entity decoded, raw bytes) up to the hard ceiling of 10 MiB; above it the analyser refuses (HTTP 413, never a label). The public API is stricter (email 2 MB, message 8 KB, `services/api`). The excess is risk and sets degraded, so the label is never below `suspicious`. Weight equals `email.display_name_impersonation`: moderate, because padding is common in bulk mail yet is the standard way to push a payload past a scanner; a larger weight would flag legitimate newsletters as dangerous. Red-team: `email-oversized`, `email-deep-mime`, `email-many-parts` |
+| message.limit_exceeded | message | +2.0 | message over 8192 characters: message rules and the brand check read the first and last 32 KiB in 8 KiB windows; links and phones come from the whole text up to the hard ceiling of 256 KiB (above it: 413, never a label); same degraded floor |
+| message.data_uri | message | 0 (informational) | inline `data:` address (also `<a href="data:...">` in email); not fetched |
+| message.data_uri_active | message | +2.0 | the `data:` payload (inline or base64, first 64 KiB) holds a form, script, iframe or `javascript:`; same weight as `url.data_uri`
 | message.link_verdict / email.link_verdict | message/email | 0 (informational) | child URL verdict; drives H5 |
 | injection.instruction_like_text | injection | +1.5 | evidence of manipulation, **never obeyed** |
 | registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |
