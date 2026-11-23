@@ -35,6 +35,18 @@ T1_MS = 100
 # Rules and the brand check read the first and last MAX_LINK_SCAN_CHARS // 2 characters in 8 KiB windows (expensive,
 # so bounded for CPU). Link extraction is NOT windowed: it reads the whole input (<= HARD_MAX_MESSAGE_CHARS).
 MAX_LINK_SCAN_CHARS = 65_536
+_JUNK_CHARS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]")
+_SAME_RUN = re.compile(r"(\S)\1{7,}")
+_WS_RUN = re.compile(r"\s{2,}")
+
+
+def depad(text: str) -> str:
+    """Remove padding before intent scoring: control and zero-width characters go, runs of eight or more of one
+    character vanish (so filler inside a word cannot split it), whitespace runs shrink to one space. Linear time. Padding can then never move the message or split its wording,
+    and the unpadded text keeps its own score."""
+    return _WS_RUN.sub(" ", _SAME_RUN.sub("", _JUNK_CHARS.sub("", text)))
+
+
 _INTENT_OVERLAP = 512  # chars shared by neighbouring intent windows so a message is not cut in two
 _DATA_URI = re.compile(
     r"(?<![a-z0-9+.-])data:([a-z0-9.+/-]{0,80})((?:;[a-z0-9=.+-]{1,40}){0,4}),([^\s\"'<>]{0,65536})", re.I
@@ -312,8 +324,9 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
     intent_ev: dict[str, Evidence] = {}
     # Padding must not hide the ask: the WHOLE input (<= HARD_MAX_MESSAGE_CHARS, linear time) is scored in overlapping
     # windows, not only the head/tail text the rules read. The strongest item per signal/pair stays.
+    dense = depad(full)
     step = MAX_MESSAGE_CHARS - _INTENT_OVERLAP
-    intent_windows = [full[i : i + MAX_MESSAGE_CHARS] for i in range(0, max(1, len(full) - _INTENT_OVERLAP), step)]
+    intent_windows = [dense[i : i + MAX_MESSAGE_CHARS] for i in range(0, max(1, len(dense) - _INTENT_OVERLAP), step)]
     for w in intent_windows:
         for e_ in [*scam_intent(w), *floor_evidence(w)]:
             key = e_.signal + str(e_.observed.get("pair", "")) if isinstance(e_.observed, dict) else e_.signal
