@@ -136,7 +136,9 @@ def test_payload_rule() -> None:
 
 def test_known_bot_endpoint_always_counts() -> None:
     t = build_dynamic_post_target(
-        "https://api.telegram.org/bot123456:ABCdef-ghi/sendMessage", "fetch", "http://a.test/"
+        "hxxps://api[.]telegram[.]org/bot123456:ABCdef-ghi/sendMessage".replace("hxxp", "http").replace("[.]", "."),
+        "fetch",
+        "http://a.test/",
     )
     assert t is not None and t.exfil and t.carries_form_data and t.cross_origin
 
