@@ -42,6 +42,6 @@
   "dataset_hash": "7cb0f6585fe53be4b5a943a9f331b3ae0c2c76c03e576e8fa41a28e5fa8ce14e",
   "git_sha": "d80de23eb52fa6e788a332da391a6ac78e181d6c",
   "class_weight": "balanced",
-  "note": "test split never read"
+  "note": "the fit itself never read test; test was read three times for reporting only, disclosed in test_read of the published artifacts"
  }
 }
