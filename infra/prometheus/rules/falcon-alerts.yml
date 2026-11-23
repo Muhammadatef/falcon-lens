@@ -165,17 +165,25 @@ groups:
 
   - name: falcon-quality
     rules:
-      # Fires when a newer eval artifact is worse than the previous one by more than 0.02.
+      # Fires when the newest published main artifact is worse than the one it replaced (seen 1 h ago) by more
+      # than 0.02 on any headline metric. The evals-exporter serves every artifact all the time; the
+      # fl_eval_artifact_latest join picks the newest per source, `on (source, split, metric)` ignores the
+      # artifact label so the old and the new artifact are compared. Quiet while the newest artifact is unchanged.
       - alert: EvalRegression
         expr: |
           (
-            fl_eval_metric{data!="synthetic-replay",name=~"f1|precision|recall|auc|pr_auc"}
-            - (fl_eval_metric{data!="synthetic-replay",name=~"f1|precision|recall|auc|pr_auc"} offset 1h)
+            fl_eval_metric{source="main",metric=~"f1|precision|recall|roc_auc|pr_auc"}
+              * on (source, artifact) group_left () fl_eval_artifact_latest
+            - on (source, split, metric)
+            (
+              fl_eval_metric{source="main",metric=~"f1|precision|recall|roc_auc|pr_auc"} offset 1h
+                * on (source, artifact) group_left () fl_eval_artifact_latest offset 1h
+            )
           ) < -0.02
         for: 5m
         labels: { severity: critical }
         annotations:
-          summary: "Eval metric {{ $labels.name }} ({{ $labels.split }}/{{ $labels.route }}) regressed"
+          summary: "Eval metric {{ $labels.metric }} ({{ $labels.split }}, {{ $labels.source }}) changed by {{ $value | printf \"%.2f\" }} against the previous artifact"
           runbook_url: docs/RUNBOOK.md#eval-regression
       - alert: ScoreDrift
         expr: max(fl_score_drift_index{data!="synthetic-replay"}) > 0.2
