@@ -53,7 +53,7 @@ test("a real check streams through the gateway to a final verdict with zero CSP 
   await expect(page.getByTestId("verdict-word")).toBeVisible();
   await expect(page.getByTestId("verdict-id")).toHaveText(/^vd_[0-9A-HJKMNP-TV-Z]{26}$/);
   await expect(page).toHaveURL(/\?id=vd_/);
-  await expect(page.getByTestId("result").locator("a")).toHaveCount(0);
+  await expect(page.getByTestId("result").locator("a:not([href=\"/docs/cascade\"])")).toHaveCount(0);
   // No demo ribbon and no demo examples: this is the real path.
   await expect(page.getByTestId("demo-ribbon")).toHaveCount(0);
 

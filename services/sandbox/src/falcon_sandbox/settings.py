@@ -23,7 +23,7 @@ class Settings:
     allow_hosts: frozenset[str] = field(default_factory=frozenset)
     snapshot_dir: Path = Path("/data/snapshots")
     api_key: str = ""
-    max_concurrent: int = 3
+    max_concurrent: int = 6
     recycle_after: int = 150
 
     @property
@@ -41,6 +41,6 @@ class Settings:
             allow_hosts=_csv(allow),
             snapshot_dir=Path(e.get("FL_SNAPSHOT_DIR", "/data/snapshots")),
             api_key=e.get("FL_SANDBOX_TOKEN", "").strip(),
-            max_concurrent=int(e.get("FL_SANDBOX_CONCURRENCY", "3")),
+            max_concurrent=int(e.get("FL_SANDBOX_CONCURRENCY", "6")),
             recycle_after=int(e.get("FL_SANDBOX_RECYCLE_AFTER", "150")),
         )

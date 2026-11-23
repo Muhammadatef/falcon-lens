@@ -4,7 +4,7 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr
+.PHONY: redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr
 
 help: ## List every make target with a one-line description (this list)
 	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
@@ -72,6 +72,9 @@ eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/result
 	uv run python -m evals.message_text.run  # message-text eval, val only, report-only (--publish adds the frozen test split)
 redteam: ## prompt-injection / obfuscation red-team suite; exits non-zero if attack success > 0 (FL_LIVE_LLM=1: live model)
 	uv run python -m evals.redteam
+
+redteam-shipped: ## same cases through the shipped cascade, real local model (BUDGET=production|extended, PAIRED=<other artifact>, ROUTE=cloud needs ANTHROPIC_API_KEY; PUBLISH=1 writes evals/results/published/redteam/)
+	uv run python -m evals.redteam --pipeline shipped --route $(or $(ROUTE),local) --budget $(or $(BUDGET),production) $(if $(PAIRED),--paired-with $(PAIRED),) $(if $(PUBLISH),--publish,)
 
 redteam-fixtures: ## regenerate services/fixtures/redteam/*.html from evals/redteam/cases.yaml
 	uv run python -m evals.redteam build-fixtures

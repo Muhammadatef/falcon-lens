@@ -26,6 +26,8 @@ from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from opentelemetry.trace import Status as SpanStatus
+from opentelemetry.trace import StatusCode
 from pydantic import BaseModel
 
 from falcon_core.llm import metrics as m
@@ -46,6 +48,7 @@ from falcon_core.llm.providers import (
 from falcon_core.llm.redaction import redact
 from falcon_core.llm.spotlight import UntrustedText, new_nonce, spotlight, spotlight_notice
 from falcon_core.prompts import BASE_SYSTEM, CANARY_LINE, REPAIR_PROMPT, SCHEMA_LINE
+from falcon_core.telemetry.tracing import llm_span, set_llm_usage
 
 log = logging.getLogger("falcon_core.llm")
 
@@ -112,6 +115,11 @@ ShadowHook = Callable[[ShadowSample], Awaitable[None]]
 
 def _schema_json(schema: type[BaseModel]) -> str:
     return json.dumps(schema.model_json_schema(), ensure_ascii=False, separators=(",", ":"))
+
+
+def _provider_name(route: str, model: str) -> str:
+    """Coarse provider label for traces (``anthropic`` for the cloud route, ``ollama`` locally)."""
+    return "anthropic" if route == "cloud" else "ollama"
 
 
 class LLMRouter:
@@ -258,6 +266,40 @@ class LLMRouter:
             return self._finish(req, route, model, value, calls, fell_back, False, None, redactions, repaired=True)
 
     async def _call(
+        self,
+        req: JsonRequest[Any],
+        route: Route,
+        model: str,
+        provider: Provider,
+        system: str,
+        turns: Sequence[ChatTurn],
+        deadline: float | None,
+        calls: list[CallRecord],
+    ) -> ProviderResponse | None:
+        """One provider call inside an OpenInference LLM span: role, route, model, latency and
+        token counts only. Prompts and outputs are never recorded (untrusted text)."""
+        n = len(calls)
+        with llm_span(
+            model=model, role=req.role, verdict_id=req.verdict_id, provider=_provider_name(route, model)
+        ) as sp:
+            sp.set_attribute("fl.llm.route", route)
+            resp = await self._call_inner(req, route, model, provider, system, turns, deadline, calls)
+            if len(calls) > n:
+                rec = calls[-1]
+                sp.set_attribute("fl.latency_ms", rec.ms)
+                if rec.error is None:
+                    set_llm_usage(
+                        sp,
+                        input_tokens=rec.usage.prompt_tokens,
+                        output_tokens=rec.usage.output_tokens,
+                        cost_usd=rec.cost_usd or None,
+                    )
+                else:
+                    sp.set_attribute("error.type", rec.error[:40])
+                    sp.set_status(SpanStatus(StatusCode.ERROR))
+            return resp
+
+    async def _call_inner(
         self,
         req: JsonRequest[Any],
         route: Route,

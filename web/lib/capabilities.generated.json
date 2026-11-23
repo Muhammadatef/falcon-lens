@@ -1,8 +1,22 @@
 {
+  "url_check": true,
+  "brand_check": true,
   "message_check": true,
   "email_check": true,
   "image_check": true,
-  "injection_defence": false,
-  "investigator": false,
-  "t1_measured_model": true
+  "injection_defence": true,
+  "investigator": true,
+  "sovereign": true,
+  "pipeline": true,
+  "audit_log": true,
+  "sentinel_rules": true,
+  "sentinel_agent": true,
+  "pwa": true,
+  "rest_api": true,
+  "mcp": true,
+  "stix": true,
+  "observability": true,
+  "t1_measured_model": true,
+  "dspy_compiled_prompts": false,
+  "llm_tracing": false
 }

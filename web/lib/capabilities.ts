@@ -7,15 +7,35 @@ import bundled from "./capabilities.generated.json";
  *      repo's own probes (scripts/submission/capabilities.py).
  * A missing flag counts as "in progress", never as live.
  */
-export type CapId = "message_check" | "email_check" | "image_check" | "injection_defence" | "investigator" | "t1_measured_model";
+export type CapId =
+  | "message_check"
+  | "email_check"
+  | "image_check"
+  | "injection_defence"
+  | "investigator"
+  | "sentinel_agent"
+  | "rest_api"
+  | "mcp"
+  | "stix"
+  | "t1_measured_model"
+  | "url_check"
+  | "brand_check"
+  | "pipeline"
+  | "audit_log"
+  | "sentinel_rules"
+  | "observability"
+  | "sovereign"
+  | "pwa"
+  | "dspy_compiled_prompts"
+  | "llm_tracing";
 export type Capabilities = Record<CapId, boolean>;
 
-const IDS: readonly CapId[] = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "t1_measured_model"];
+export const CAP_IDS: readonly CapId[] = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "t1_measured_model", "url_check", "brand_check", "pipeline", "audit_log", "sentinel_rules", "observability", "sovereign", "pwa", "dspy_compiled_prompts", "llm_tracing"];
 const API_BASE = (process.env.FL_API_INTERNAL_URL ?? "http://api:8000").replace(/\/+$/, "");
 
 export function mergeCapabilities(base: unknown, runtime: unknown): Capabilities {
   const out = {} as Capabilities;
-  for (const id of IDS) {
+  for (const id of CAP_IDS) {
     const r = (runtime as Record<string, unknown> | null)?.[id];
     const b = (base as Record<string, unknown> | null)?.[id];
     out[id] = typeof r === "boolean" ? r : b === true;

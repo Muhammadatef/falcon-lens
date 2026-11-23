@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol, TypeGuard
 
 from falcon_core.cascade.ai import InjectionDetect, injection_evidence, risk_only, to_contract_model, to_scoring
-from falcon_core.cascade.assemble import TraceStep, build_verdict, reissue
+from falcon_core.cascade.assemble import TraceStep, build_verdict, display_url, reissue
 from falcon_core.cascade.evidence import dedupe, from_signal, make_evidence
 from falcon_core.cascade.metrics import CascadeMetrics
 from falcon_core.cascade.page import page_evidence
@@ -62,6 +62,7 @@ from falcon_core.signals.base import SignalFn, SignalSpec
 from falcon_core.signals.brands.registry import BrandRegistry
 from falcon_core.signals.url.canonical import CanonicalURL, canonicalize
 from falcon_core.signals.url.textutil import defang
+from falcon_core.telemetry.tracing import fl_span, set_span_attrs, verdict_span
 
 log = logging.getLogger("falcon.cascade")
 
@@ -251,7 +252,7 @@ class Cascade:
             final=final,
             latency_ms=run.ms(),
             registry=self.d.registry,
-            canonical_url_defanged=defang(run.canonical.url) if run.canonical else None,
+            canonical_url_defanged=defang(display_url(run.canonical)) if run.canonical else None,
             input_fingerprint=run.fingerprint,
             trace=run.trace,
             source=run.source,
@@ -293,17 +294,36 @@ class Cascade:
     ) -> dict[str, Any]:
         """Run the cascade and return the final verdict doc (also emitted to ``sink``)."""
         run = _Run(verdict_id=verdict_id, source=source, t_start=time.perf_counter())
+        with verdict_span("cascade.url", verdict_id) as root:
+            set_span_attrs(root, **{"openinference.span.kind": "CHAIN", "fl.input_type": "url", "fl.source": source})
+            doc = await self._run_url_tiers(run, url, sink, cache_key)
+            set_span_attrs(
+                root,
+                **{
+                    "fl.verdict": str(doc.get("verdict", ""))[:40] or None,
+                    "fl.tier_reached": str(doc.get("tier_reached", ""))[:8] or None,
+                    "fl.model_route": str(doc.get("model_route", ""))[:16] or None,
+                    "fl.latency_ms": run.ms(),
+                },
+            )
+            return doc
+
+    async def _run_url_tiers(self, run: _Run, url: str, sink: VerdictSink, cache_key: str | None) -> dict[str, Any]:
+        verdict_id = run.verdict_id
         tier: Tier = "T0"
         try:
-            done = await self._t0(run, url, sink, cache_key)
+            with fl_span("cascade.T0", "CHAIN", **{"fl.tier": "T0"}):
+                done = await self._t0(run, url, sink, cache_key)
             if done is not None:
                 return done
             tier = "T1"
-            done = await self._t1(run, sink)
+            with fl_span("cascade.T1", "CHAIN", **{"fl.tier": "T1"}):
+                done = await self._t1(run, sink)
             if done is not None:
                 return done
             tier = "T2"
-            return await self._t2(run, sink)
+            with fl_span("cascade.T2", "CHAIN", **{"fl.tier": "T2"}):
+                return await self._t2(run, sink)
         except SinkError:
             raise  # transport failure: the worker leaves the job pending and retries
         except Exception as exc:  # noqa: BLE001 - a cascade bug still ends with one final verdict
@@ -583,17 +603,27 @@ class Cascade:
     def _may_clear_unrendered(self, run: _Run) -> bool:
         return not self._t1_risky(run) and self._has_trust(run)
 
+    def _may_clear_partial(self, run: _Run, added: list[Evidence]) -> bool:
+        """Like `_may_clear_unrendered`, and the part that WAS read must show no risk either."""
+        informational = {
+            "page.truncated", "page.telemetry_beacon", "page.cloaking_inconclusive", "sandbox.not_rendered",
+        }  # fmt: skip
+        page_risk = any(e.family == "page" and e.signal not in informational and e.error is None for e in added)
+        return not page_risk and self._may_clear_unrendered(run)
+
     async def _t2(self, run: _Run, sink: VerdictSink) -> dict[str, Any]:
         if run.canonical is None:
             raise RuntimeError("T0 did not canonicalise")
         t0 = time.perf_counter()
         added: list[Evidence] = []
+        features_partial = False
         summary = "Page rendered in the sandbox"
         try:
-            features = await asyncio.wait_for(
-                self.d.sandbox.render(run.canonical.url, run.verdict_id),
-                self.d.sandbox_timeout_s,
-            )
+            with fl_span("tool.sandbox_render", "TOOL", **{"fl.tool": "sandbox_render"}):
+                features = await asyncio.wait_for(
+                    self.d.sandbox.render(run.canonical.url, run.verdict_id),
+                    self.d.sandbox_timeout_s,
+                )
             if features.error and not features.final_url:
                 err = features.error.lower()
                 raise SandboxError(err if re.fullmatch(r"[a-z0-9_:]{1,40}", err) else "render_failed")
@@ -613,6 +643,7 @@ class Cascade:
             else:
                 run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
         else:
+            features_partial = bool(features.partial)
             added.extend(page_evidence(features, run.canonical.registrable, self.d.registry, self.d.favicons))
             final_reg = canonicalize(features.final_url).registrable if features.final_url else ""
             run.meta["fingerprints"] = {
@@ -641,6 +672,10 @@ class Cascade:
                         self.llm_trip()
         run.evidence.extend(added)
         run.page_tier = True
+        if features_partial and not self._may_clear_partial(run, added):
+            # A half-read page is held to the same rule as an unopened one (SCORING section 4): it may end
+            # `no_warning_signs` only with page-independent trust and no risk evidence, else degraded.
+            run.degraded_reasons.append("partial_render")
         result = self._score(run)
         ms = self._observe("T2", t0)
         hard = ",".join(r.rule_id for r in result.fired_rules)
@@ -658,7 +693,8 @@ class Cascade:
         if not (uncertain and self.d.investigator is not None and self.llm_allowed()):
             return await self._emit(sink, run, result, "T2", final=True)
         await self._emit(sink, run, result, "T2", final=False)
-        return await self._t3(run, sink, result)
+        with fl_span("cascade.T3", "AGENT", **{"fl.tier": "T3"}):
+            return await self._t3(run, sink, result)
 
     # --- T3 --------------------------------------------------------------------------------
 

@@ -49,7 +49,7 @@ const TOOLS = ["rdap_lookup", "cert_lookup", "render_page", "compare_brand", "se
 export const ARCH: Record<Lang, ArchContent> = {
   en: {
     title: "Technical architecture of the two agents",
-    lead: "Each agent uses the smallest pattern that does its job. The Investigator is a bounded state machine because a check must finish in seconds and survive hostile input. The Sentinel is a LangGraph workflow because incident triage is long-running, must survive restarts, and must stop for a human before anything leaves the system. In both, code decides and the model only assists.",
+    lead: "Each agent uses the smallest pattern that does its job. The Investigator is a bounded state machine because a check is a short, bounded task that must survive hostile input. The Sentinel is a LangGraph workflow because incident triage is long-running, must survive restarts, and must stop for a human before anything leaves the system. In both, code decides and the model only assists.",
     legend: { llm: "Model step", code: "Deterministic code", gate: "Human gate" },
     loopLabel: "Investigator loop",
     loopDone: "stop: hand evidence to the arbiter",
@@ -63,7 +63,7 @@ export const ARCH: Record<Lang, ArchContent> = {
       patternNote: "ReAct-style tool use, but not a free-running ReAct agent.",
       whyTitle: "Why this pattern",
       why: [
-        "Speed: it runs only for the uncertain band, with a fixed ceiling on calls and time, so a check still ends in seconds.",
+        "Bounded cost: it runs only for the uncertain band, with a fixed ceiling on calls and time, so a check cannot run open-ended.",
         "Injection resistance: the model emits one typed JSON action per step, never free text that something acts on, and an attacker-controlled page cannot talk it into other tools or arguments.",
         "Reproducibility: the arbiter, not the model, sets the score, so results can be re-run and evaluated. The same loop works on cloud and local models because native tool calling is not required.",
       ],
@@ -88,7 +88,7 @@ export const ARCH: Record<Lang, ArchContent> = {
       rejectedTitle: "Alternatives rejected (ADR-001)",
       rejected: [
         { name: "A single free-running agent", reason: "slow, costly, nondeterministic and injectable: a page could talk it out of the evidence." },
-        { name: "A multi-agent chat framework", reason: "adds latency and unpredictability for no benefit inside a seconds-long budget." },
+        { name: "A multi-agent chat framework", reason: "adds latency and unpredictability for no benefit inside the tight time budget of a check." },
         { name: "A pure classifier", reason: "gives no grounded explanation and is weak on new attack styles and brands." },
       ],
       adr: "ADR-001",
@@ -100,7 +100,7 @@ export const ARCH: Record<Lang, ArchContent> = {
       whyTitle: "Why this pattern",
       why: [
         "Long-running: triage spans several steps and external lookups, so progress must be persisted between them.",
-        "Restart-safe: a Postgres checkpointer keyed by the incident resumes at the last completed node after a crash or redeploy.",
+        "Resumable after a restart: a Postgres checkpointer keyed by the incident resumes at the last completed node after a crash or redeploy.",
         "Auditable: the graph is explicit, every action is written to an append-only log with its evidence ids, and the interrupt makes the approval point a structural fact, not a prompt instruction.",
       ],
       flowTitle: "Layer by layer",
@@ -134,7 +134,7 @@ export const ARCH: Record<Lang, ArchContent> = {
   },
   ar: {
     title: "البنية التقنية للوكيلين",
-    lead: "يستخدم كل وكيل أبسط نمط يؤدي مهمته. المحقّق آلة حالات محدودة، لأن الفحص يجب أن ينتهي خلال ثوانٍ وأن يصمد أمام مدخلات معادية. والحارس مسار عمل بإطار LangGraph، لأن فرز الحوادث طويل الأمد ويجب أن يتحمل إعادة التشغيل وأن يتوقف عند إنسان قبل أن يخرج أي شيء من النظام. وفي الحالتين، الشيفرة هي التي تقرر، والنموذج يساعد فقط.",
+    lead: "يستخدم كل وكيل أبسط نمط يؤدي مهمته. المحقّق آلة حالات محدودة، لأن الفحص مهمة قصيرة محدودة يجب أن تصمد أمام مدخلات معادية. والحارس مسار عمل بإطار LangGraph، لأن فرز الحوادث طويل الأمد ويجب أن يتحمل إعادة التشغيل وأن يتوقف عند إنسان قبل أن يخرج أي شيء من النظام. وفي الحالتين، الشيفرة هي التي تقرر، والنموذج يساعد فقط.",
     legend: { llm: "خطوة نموذج", code: "شيفرة حتمية", gate: "بوابة بشرية" },
     loopLabel: "حلقة المحقّق",
     loopDone: "إيقاف: تسليم الأدلة إلى المحكّم",
@@ -148,7 +148,7 @@ export const ARCH: Record<Lang, ArchContent> = {
       patternNote: "استخدام أدوات على نمط ReAct، لكنه ليس وكيل ReAct حرّ التشغيل.",
       whyTitle: "لماذا هذا النمط",
       why: [
-        "السرعة: لا يعمل إلا في النطاق الغامض، وبسقف ثابت للاستدعاءات والوقت، فينتهي الفحص خلال ثوانٍ.",
+        "كلفة محدودة: لا يعمل إلا في النطاق الغامض، وبسقف ثابت للاستدعاءات والوقت، فلا يبقى الفحص مفتوحاً بلا نهاية.",
         "مقاومة الحقن: يُخرج النموذج إجراءً واحداً بصيغة JSON مصنّفة في كل خطوة، لا نصاً حراً يُنفَّذ، ولا تستطيع صفحة يتحكم بها مهاجم أن تدفعه إلى أدوات أو معطيات أخرى.",
         "إمكانية الإعادة: المحكّم، لا النموذج، يحدد الدرجة، فيمكن إعادة التشغيل والتقييم. وتعمل الحلقة نفسها مع النماذج السحابية والمحلية لأن الاستدعاء الأصلي للأدوات غير مطلوب.",
       ],
@@ -173,7 +173,7 @@ export const ARCH: Record<Lang, ArchContent> = {
       rejectedTitle: "بدائل مرفوضة (ADR-001)",
       rejected: [
         { name: "وكيل واحد حرّ التشغيل", reason: "بطيء ومكلف وغير حتمي وقابل للحقن: قد تقنعه صفحة بتجاهل الأدلة." },
-        { name: "إطار محادثة متعدد الوكلاء", reason: "يضيف زمن استجابة وعدم قابلية للتنبؤ دون فائدة ضمن ميزانية بالثواني." },
+        { name: "إطار محادثة متعدد الوكلاء", reason: "يضيف زمن استجابة وعدم قابلية للتنبؤ دون فائدة ضمن الميزانية الزمنية الضيقة للفحص." },
         { name: "مصنّف فقط", reason: "لا يقدّم تفسيراً مستنداً إلى الأدلة، وضعيف أمام أساليب الهجوم والعلامات الجديدة." },
       ],
       adr: "ADR-001",

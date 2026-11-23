@@ -26,3 +26,5 @@ Helpers live in `packages/falcon_core/telemetry/metrics.py` (owned by builder-ob
 Panels fed by replay data show a "REPLAY" text badge driven by `source`.
 
 **Alerts** (`infra/prometheus/rules/*.yml`). Each rule has a `runbook_url` annotation pointing to `docs/RUNBOOK.md#<id>`.
+
+**Agent traces (Arize Phoenix).** Every service installs an OTLP exporter at start (`create_app`) when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Spans go to the otel-collector, which drops probe spans, deletes prompt/output attributes, adds the Phoenix bearer key and forwards to Phoenix (login required, UI on `127.0.0.1:${FL_PHOENIX_PORT:-6006}`, data in the `phoenix_data` volume). Span tree: `http <METHOD>` (API) and `cascade.url` > `cascade.T0..T3` > `tool.sandbox_render`, `llm.<role>`, `investigator.run` > `llm.investigator` / `tool.<name>`; Sentinel: `sentinel.triage` > `sentinel.<node>` > `llm.sentinel`. LLM spans carry OpenInference (`llm.*`) and GenAI (`gen_ai.*`) names plus `fl.llm.role`, `fl.llm.route`, `fl.latency_ms`, token counts and `verdict_id` / `incident_id`. Never recorded: prompts, model output, page text, URLs, exception messages. Setup and reset steps: `.env.example`.

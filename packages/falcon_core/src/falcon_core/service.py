@@ -23,6 +23,7 @@ from prometheus_client import (
 from falcon_core import __version__
 from falcon_core.logging import configure_logging
 from falcon_core.telemetry.metrics import REGISTRY as FL_REGISTRY
+from falcon_core.telemetry.tracing import fl_span, setup_tracing
 
 Lifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
 DepCheck = Callable[[], Awaitable[bool]]
@@ -67,6 +68,8 @@ def create_app(
     ``Authorization: Bearer <token>`` (fail-closed: 503 if no token is configured).
     """
     configure_logging(service)
+    # Spans go to the otel-collector (-> Phoenix) only when OTEL_EXPORTER_OTLP_ENDPOINT is set.
+    setup_tracing(service)
     registry = CollectorRegistry()
     requests_total = Counter(
         "fl_http_requests_total",
@@ -100,9 +103,16 @@ def create_app(
 
     @app.middleware("http")
     async def count_requests(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
-        response = await call_next(request)
-        if request.url.path not in ("/healthz", "/readyz", "/metrics"):
-            requests_total.labels(service, request.method, str(response.status_code)).inc()
+        if request.url.path in ("/healthz", "/readyz", "/metrics"):
+            return await call_next(request)
+        # Route template only (never the raw path or query: they can carry ids or URLs).
+        with fl_span(f"http {request.method}", "CHAIN", **{"fl.source": service}) as sp:
+            response = await call_next(request)
+            route = request.scope.get("route")
+            sp.set_attribute("http.request.method", request.method)
+            sp.set_attribute("http.route", str(getattr(route, "path", "unmatched"))[:80])
+            sp.set_attribute("http.response.status_code", response.status_code)
+        requests_total.labels(service, request.method, str(response.status_code)).inc()
         return response
 
     @app.get("/healthz", include_in_schema=False)
