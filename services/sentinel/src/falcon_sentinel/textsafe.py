@@ -42,7 +42,7 @@ def allowed_numbers(view: dict[str, Any]) -> set[str]:
     return nums
 
 
-ARABIC_LETTERS = "".join(chr(c) for c in range(0x0600, 0x06FF + 1))
+ARABIC_AND = "\u0648"  # the conjunction «و» ("and"); the only prefix the model has been seen to glue onto a host
 
 
 @lru_cache(maxsize=1)
@@ -79,8 +79,8 @@ def vet(text: str, view: dict[str, Any]) -> str | None:
     kinds = allowed_event_types(view)
     for m in DOMAIN_RE.finditer(text):
         cand = m.group(1).replace("[.]", ".").lower()
-        # Arabic clitics (و "and", ب, ل ...) glue onto a Latin host with no space: judge the host itself.
-        if cand not in hosts and cand.lstrip(ARABIC_LETTERS) not in hosts and cand not in kinds:
+        # The conjunction «و» glues onto a Latin host with no space: judge the host itself (one «و» only).
+        if cand not in hosts and cand.removeprefix(ARABIC_AND) not in hosts and cand not in kinds:
             return None
     ok_nums = allowed_numbers(view)
     for n in NUM_RE.findall(text):

@@ -275,6 +275,10 @@ L1 also needs to paste the build-prompt §11 `fl_` metric list into docs/OBSERVA
 - eval impact: must land before synthetic batch `qwen-msg-003`; accepted batches report subtype × language counts.
 
 ---
+### P2 note: router circuit breaker (owner: builder-agent-core / L1)
+`falcon_core.llm.router` has no circuit breaker. With the cloud route down, every Sentinel call waits the cloud timeout (12 s) before falling back to local, so three calls cost about 36 s of the 120 s triage budget. Add a breaker (open after N failures, half-open probe) so the router skips a dead cloud route. Not part of PR #64.
+
+---
 ## Backlog — Phases 3–6 (cards written when the phase opens)
 - P3 (G3 Mon 22:00): message pipeline (normalise AR/Arabizi, rule features, embeddings + pgvector kNN, H5/H6) ·
   email `.eml` pipeline · image QR/OCR · `make redteam` 0% + `make scan` (pip-audit, pnpm audit, trivy, semgrep, syft,
