@@ -17,13 +17,20 @@ Probe kinds:
                           or "done" in its State cell). Code being present is not a gate pass.
     nogrep:<glob>::<regex>  at least one file matches the glob and none contains the regex
                           (used to detect that a "not supported yet" stub is gone)
+    test:<node id>        the pytest node id (path::test_name) exists in the tree AND passes when run.
+                          Behavioural probe: use it where a grep could go stale in either direction.
+                          With FL_PROBE_EXISTS_ONLY=1 (set by tests already running inside pytest) it only
+                          checks that the test exists.
 
 Standard library only.
 """
 
 from __future__ import annotations
 
+import os
 import re
+import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -51,10 +58,14 @@ E2E = (
 )
 # The worker answers non-URL inputs with a degraded "not supported yet" verdict until it handles them.
 WORKER_KIND_STUB = r"nogrep:services/worker/src/**/*.py::input_type_not_supported_yet"
-# The cascade records a T3 escalation but runs no investigator until this marker is gone.
-T3_WIRED = rf"nogrep:{CORE}/cascade/engine.py::investigator not (?:enabled|built)"
-# The worker builds its cascade with an extractor and a model router (the hook defaults to None).
-EXTRACTOR_WIRED = r"grep:services/worker/src/**/*.py::extractor\s*="
+# Behavioural probes: the worker's build_ai wires the agents (FL_AI_ENABLED=true, stub router) and the cascade
+# calls them (extractor at T2, investigator in the T3 band). Greps for these went stale; tests cannot.
+WORKER_AI = "services/worker/tests/test_ai_wiring.py::test_build_ai_wires_extractor_and_investigator"
+CASCADE_AI = "packages/falcon_core/tests/cascade/test_cascade_ai.py"
+T3_WIRED = f"test:{WORKER_AI}"
+T3_RUNS = f"test:{CASCADE_AI}::test_t3_investigator_runs_in_uncertain_band"
+EXTRACTOR_WIRED = f"test:{WORKER_AI}"
+EXTRACTOR_RUNS = f"test:{CASCADE_AI}::test_t2_calls_the_extractor"
 ROUTER_WIRED = r"grep:services/worker/src/**/*.py::falcon_core\.llm"
 
 CAPABILITIES: tuple[Capability, ...] = (
@@ -105,13 +116,13 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "injection_defence",
         "Injection defence (spotlighting, quarantined extractor, code-only scoring)",
-        (*E2E, f"path:{CORE}/llm/spotlight.py", f"path:{CORE}/agent/extractor.py", EXTRACTOR_WIRED),
+        (*E2E, f"path:{CORE}/llm/spotlight.py", f"path:{CORE}/agent/extractor.py", EXTRACTOR_WIRED, EXTRACTOR_RUNS),
         "Scenario 6",
     ),
     Capability(
         "investigator",
         "Bounded AI investigator for the uncertain band (T3)",
-        (*E2E, f"path:{CORE}/agent/investigator.py", T3_WIRED),
+        (*E2E, f"path:{CORE}/agent/investigator.py", T3_WIRED, T3_RUNS),
     ),
     Capability(
         "sovereign",
@@ -246,6 +257,27 @@ def gate_passed(root: Path, gate: str) -> bool:
     return False
 
 
+def run_test_probe(root: Path, node_id: str) -> bool:
+    """True when the pytest node exists and passes (existence only when FL_PROBE_EXISTS_ONLY=1)."""
+    file_part, _, name = node_id.partition("::")
+    path = root / file_part
+    if not path.is_file():
+        return False
+    if not re.search(rf"^(?:async\s+)?def {re.escape(name)}\b", path.read_text(encoding="utf-8"), re.M):
+        return False
+    if os.environ.get("FL_PROBE_EXISTS_ONLY") == "1":
+        return True
+    run = subprocess.run(  # noqa: S603 - fixed argv, no shell
+        [sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", node_id],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        timeout=300,
+        check=False,
+    )
+    return run.returncode == 0
+
+
 def probe(root: Path, spec: str) -> bool:
     kind, _, arg = spec.partition(":")
     if kind == "path":
@@ -254,6 +286,8 @@ def probe(root: Path, spec: str) -> bool:
         return make_target_implemented(root, arg)
     if kind == "gate":
         return gate_passed(root, arg)
+    if kind == "test":
+        return run_test_probe(root, arg)
     if kind == "nogrep":
         pattern, _, regex = arg.partition("::")
         compiled = re.compile(regex)
