@@ -31,6 +31,7 @@ from falcon_api.intel import (
 )
 from falcon_api.problem import PROBLEM_RESPONSES, Problem
 from falcon_core.config import Settings
+from falcon_core.contracts.agent_trace import AgentTrace
 
 EVENTS_STREAM = "fl:events"
 BOARD_STREAM = "fl:board"
@@ -433,8 +434,14 @@ def register(app: FastAPI, c: Ctx) -> None:
         """One incident (contracts/incident.schema.json). Action drafts/args/approver only for operator scope."""
         return view_incident(await c.sentinel().incident(incident_id), operator="operator" in p.scopes)
 
-    @app.get("/v1/incidents/{incident_id}/trace", tags=["incidents"], responses=PROBLEM_RESPONSES)
-    async def get_incident_trace(incident_id: IncidentId, p: Annotated[Principal, Read]) -> dict[str, Any]:
+    @app.get(
+        "/v1/incidents/{incident_id}/trace",
+        tags=["incidents"],
+        response_model=AgentTrace,
+        response_model_exclude_unset=True,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def get_incident_trace(incident_id: IncidentId, p: Annotated[Principal, Read]) -> Any:
         """Sentinel agent run trace (agent_trace.schema.json). Approver and decision only for operator scope."""
         return view_trace(await c.sentinel().trace(incident_id), operator="operator" in p.scopes)
 

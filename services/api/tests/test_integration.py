@@ -11,6 +11,7 @@ import httpx
 import jsonschema
 import pytest
 from fastapi import Depends, FastAPI, Header, HTTPException
+from jsonschema import Draft202012Validator
 
 import falcon_api.app as integ_app
 import falcon_api.integration as integ
@@ -92,7 +93,31 @@ def fake_sentinel(incidents: list[dict[str, Any]], calls: list[tuple[str, str, s
                     "started_at": "2026-11-22T01:00:00Z",
                     "finished_at": "2026-11-22T01:00:02Z",
                     "status": "interrupted",
-                    "steps": [],
+                    "steps": [
+                        {
+                            "seq": 1,
+                            "node": "act",
+                            "started_at": "2026-11-22T01:00:00Z",
+                            "duration_ms": 12,
+                            "status": "interrupted",
+                            "summary_en": "Waiting for a human.",
+                            "summary_ar": "بانتظار قرار بشري.",
+                            "tools": [
+                                {
+                                    "name": "draft_takedown",
+                                    "mode": "external_draft",
+                                    "status": "ok",
+                                    "evidence_ids": [],
+                                    "duration_ms": 1,
+                                    "origin": "rule_fallback",
+                                }
+                            ],
+                            "llm": None,
+                            "generated_by": None,
+                            "budget": {"steps_used": 1, "tokens_used": 0, "elapsed_ms": 12},
+                            "error_code": None,
+                        }
+                    ],
                     "interrupt": {
                         "action_id": "act_1",
                         "tool": "draft_takedown",
@@ -418,6 +443,9 @@ async def test_trace_redacts_approver_for_non_operator_and_is_problem_json(api: 
     for headers, full in ((key(env.read_key), False), (key(OPERATOR_KEY), True)):
         r = await api.get(f"/v1/incidents/{iid}/trace", headers=headers)
         assert r.status_code == 200
+        Draft202012Validator(json.loads((ROOT / "contracts" / "agent_trace.schema.json").read_text())).validate(
+            r.json()
+        )  # both scopes validate against the contract
         it = r.json()["runs"][0]["interrupt"]
         assert it["action_id"] == "act_1" and it["tool"] == "draft_takedown"
         assert all((k in it) is full for k in ("decision", "decided_by"))

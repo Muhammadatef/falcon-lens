@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { DEMO_INCIDENT } from "../../lib/demo";
 import { DEMO_TRACE } from "../../lib/demo-trace";
 import { XSS } from "../fixtures";
@@ -92,6 +93,21 @@ test.describe("incident agent trace page", () => {
     const by = await page.getByTestId("step-generated").evaluateAll((els) => els.map((e) => e.getAttribute("data-by")));
     expect(by).toEqual(["llm", "template", "rule"]);
   });
+
+  for (const lang of ["ar", "en"] as const) {
+    test(`axe: no serious or critical violations (${lang})`, async ({ page, context, request, baseURL }) => {
+      const id = newIncidentId();
+      await useBoards(context, request, baseURL!, { incidents: [incident(id)], traces: { [id]: [traceOf(id)] } });
+      await setPrefs(context, baseURL!, { lang });
+      await page.emulateMedia({ reducedMotion: "reduce" }); // no mid-fade frames while axe measures contrast
+      await page.goto(`/incidents/${id}`);
+      await expect(page.getByTestId("trace-step")).toHaveCount(6);
+      await page.evaluate(() => document.fonts.ready);
+      const found = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+      const bad = found.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`);
+      expect(bad).toEqual([]);
+    });
+  }
 
   test("reduced motion switches the entrance animation off", async ({ page, context, request, baseURL }) => {
     const id = newIncidentId();
