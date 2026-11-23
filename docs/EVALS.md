@@ -13,6 +13,8 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 
 **Splits.** Temporal cut (every test first_seen is later than every train first_seen) and grouping by registrable domain, so no domain appears in two splits. The test split is frozen and its sha256 is in `evals/splits.lock`. All tuning happens on validation.
 
+**Post-freeze items.** The test split never grows. An item or domain that first appears after the freeze is assigned only to train or validation (deterministically, whole domains together); a new item on a domain already in test is excluded and counted. The build report and `evals/splits.lock` carry a `post_freeze` count, and `test_sha256` stays byte-identical.
+
 **Metrics.** Bootstrap 95% confidence intervals (1000 resamples) for precision, recall, F1, FPR and PR-AUC; reliability curve and ECE; false `dangerous` on verified-official sites; zero-day recall vs the blocklist-only baseline; ablation by signal family; latency p50/p95 per tier; cost per check; share of checks reaching an LLM; faithfulness; injection attack success rate; flip rate over 3 runs; Arabic clarity (judged by a model other than the generator, calibrated on 20 items the owner rated). Cloud and sovereign routes are reported separately, and real and synthetic data are reported separately.
 
 **Targets** (report the real numbers; never tune on test): recall ≥ 90%, FPR ≤ 2%, zero false-dangerous on official sites, 0% injection success, 100% faithfulness.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
@@ -240,6 +241,13 @@ def test_client_sends_replay_source_and_key() -> None:
     )
     c.check_url("https://falcon-demo-bank.test/", idem="i")
     assert seen["x-falcon-source"] == "replay" and seen["x-api-key"] == "k" and seen["idempotency-key"] == "i"
+
+
+def test_idempotency_key_matches_api_charset() -> None:
+    """Regression (G6 dry run): prewarm sent 'prewarm-https://...' and the API answered 422."""
+    c = ApiClient("https://localhost:1", "k", client=httpx.Client(base_url="https://localhost:1"))
+    key = c._headers("prewarm-https://falcon-demo-bank.test/?a=1#x " + "z" * 200)["Idempotency-Key"]
+    assert re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", key)
 
 
 def test_429_retry_after_is_honoured() -> None:

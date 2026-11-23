@@ -17,7 +17,7 @@ Being proactive (استباقية) means linking single checks into campaigns an
 ## Guardrails
 - Rules and correlation decide what an incident is. Incident counts are reproducible with the LLM stubbed.
 - The agent cannot edit rules, thresholds or scoring, and sees structured evidence only.
-- Budget per incident: 8 steps, 20k tokens, 60 s. Every action goes to the append-only `audit_log`, with the evidence ids behind it.
+- Budget per incident: 8 steps, 20k tokens, 120 s (three local-model calls take 15-25 s each). Every action goes to the append-only `audit_log`, with the evidence ids behind it.
 - Each block expires (TTL) and `make unblock ID=` reverts it; reverts are counted in `fl_blocks_reverted_total`.
 
 ## Minimum version (if time is short)

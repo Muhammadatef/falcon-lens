@@ -174,7 +174,11 @@ def build(seed: int = SEED, refreeze: bool = False) -> tuple[list[Item], dict[st
     items = [Item(**{**asdict(i), "split": assigned[i.item_id]}) for i in items]
     pub = [{k: v for k, v in asdict(i).items() if k in PUBLIC_FIELDS} for i in items]
     pub.sort(key=lambda r: str(r["item_id"]))
-    lock = make_lock(pub, seed, temporal)
+    new_rows = [i for i in items if i.item_id not in existing] if existing else []
+    post_freeze = {"new": len(new_rows)} | {
+        s: sum(1 for i in new_rows if i.split == s) for s in ("train", "val", "test", "excluded")
+    }
+    lock = make_lock(pub, seed, temporal, post_freeze)
     if lock_old is not None and not refreeze and lock_old["test_sha256"] != lock["test_sha256"]:
         raise SystemExit("refusing: the frozen test split would change (use --refreeze-test and explain it in the PR)")
     errs = check_rows(pub, lock)
@@ -184,6 +188,7 @@ def build(seed: int = SEED, refreeze: bool = False) -> tuple[list[Item], dict[st
     SPLITS_LOCK.write_text(json.dumps(lock, indent=2, sort_keys=True) + "\n")
     priv = items_path()
     write_jsonl(priv, [asdict(i) for i in sorted(items, key=lambda i: i.item_id)])
+    print(f"post_freeze: {post_freeze}")
     return items, lock
 
 
