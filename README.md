@@ -189,68 +189,68 @@ Every figure below is copied by a script from a saved test result. No number on 
 - **The sets are small.** The lines ending in `ci95` give the likely range, and a wide range means the figure could move as more links are tested.
 
 <!-- metrics:start -->
-Source artifact: [`evals/results/published/20261123T020433Z.json`](evals/results/published/20261123T020433Z.json). Values are copied verbatim.
+Source artifact: [`evals/results/published/20261123T111023Z.json`](evals/results/published/20261123T111023Z.json). Values are copied verbatim.
 
 | Provenance | Value |
 |---|---|
 | `scope` | `offline T1 + arbiter on URLs; real data only; temporal_cut false (single poll)` |
-| `created_at` | `2026-11-23T02:04:33Z` |
-| `git_sha` | `d977f04791a60a69b21d41b59f0648ea8e45dc4f-dirty` |
-| `dataset_hash` | `382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1` |
+| `created_at` | `2026-11-23T11:10:23Z` |
+| `git_sha` | `e9854b561d3c454b5322a5d44b0788fad339468d-dirty` |
+| `dataset_hash` | `3467e9f6b9f930c23a3a001f7126330bd0d129b32e01f40678e003b03bb07ac2` |
 | `temporal_cut` | `false` |
 | `seeds` | `{"bootstrap": 20261122, "model": 20261122, "n_bootstrap": 1000, "split": 20261122}` |
 | `model_ids.llm_cloud` | `not_evaluated` |
 | `model_ids.llm_sovereign` | `not_evaluated` |
 | `model_ids.t1.fit_date` | `2026-11-23` |
-| `model_ids.t1.git_sha` | `d977f04791a60a69b21d41b59f0648ea8e45dc4f` |
+| `model_ids.t1.git_sha` | `d7f8d9ae627d6eb1594d3ce3eeb54c80a4fd5c81` |
 | `model_ids.t1.model_id` | `t1_hgb` |
-| `model_ids.t1.model_sha256` | `41db3ba644d5084d45c3ff0fa0a11ca258caa145d7d81856a0c4fe8b9b179ed3` |
+| `model_ids.t1.model_sha256` | `138b39f5fb22e6cfa291c5d6b2d36a5ec901fb2a06f32802c35c7bec61b34631` |
 | `model_ids.t1.sklearn_version` | `1.9.1` |
 
 | Metric | Value | In plain words |
 |---|---|---|
-| `test.ece` | 0.069463 | How far our stated confidence is from what really happened. Closer to zero is better. |
-| `test.ece_ci95` | [0.05421, 0.104291] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.f1` | 0.967213 | A single figure that balances recall and precision. Higher is better. |
-| `test.f1_ci95` | [0.93202, 0.992593] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.fpr` | 0.0375 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
-| `test.fpr_ci95` | [0.0, 0.082377] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.ece` | 0.101203 | How far our stated confidence is from what really happened. Closer to zero is better. |
+| `test.ece_ci95` | [0.086972, 0.127847] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.f1` | 0.974359 | A single figure that balances recall and precision. Higher is better. |
+| `test.f1_ci95` | [0.941176, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.fpr` | 0.0 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
+| `test.fpr_ci95` | [0.0, 0.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.message_path.dangerous_recall` | 0.0 |  |
 | `test.message_path.dangerous_recall_ci95` | [0.0, 0.0] |  |
-| `test.message_path.fpr` | 0.0375 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
-| `test.message_path.fpr_ci95` | [0.018576, 0.059748] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.message_path.fpr` | 0.0 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
+| `test.message_path.fpr_ci95` | [0.0, 0.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.message_path.n` | 560 | How many checks are in this set. |
-| `test.message_path.recall` | 0.983333 | Of the real scam checks in the set, the share we flagged. Higher is better. |
-| `test.message_path.recall_ci95` | [0.965116, 0.996078] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.message_path.recall` | 0.95 | Of the real scam checks in the set, the share we flagged. Higher is better. |
+| `test.message_path.recall_ci95` | [0.922128, 0.974901] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.n` | 140 | How many checks are in this set. |
 | `test.official_false_dangerous` | 0 | Verified official sites wrongly marked dangerous. The target is zero. |
-| `test.pr_auc` | 0.956071 | How well scams are ranked above genuine checks overall. Higher is better. |
-| `test.pr_auc_ci95` | [0.899433, 0.999225] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.precision` | 0.951613 | Of the checks we flagged, the share that really were scams. Higher is better. |
-| `test.precision_ci95` | [0.888889, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.recall` | 0.983333 | Of the real scam checks in the set, the share we flagged. Higher is better. |
-| `test.recall_ci95` | [0.948253, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.ece` | 0.087331 | How far our stated confidence is from what really happened. Closer to zero is better. |
-| `val.ece_ci95` | [0.066558, 0.115172] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.f1` | 0.97479 | A single figure that balances recall and precision. Higher is better. |
-| `val.f1_ci95` | [0.938768, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.fpr` | 0.011905 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
-| `val.fpr_ci95` | [0.0, 0.0375] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.pr_auc` | 0.995528 | How well scams are ranked above genuine checks overall. Higher is better. |
+| `test.pr_auc_ci95` | [0.983989, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.precision` | 1.0 | Of the checks we flagged, the share that really were scams. Higher is better. |
+| `test.precision_ci95` | [1.0, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.recall` | 0.95 | Of the real scam checks in the set, the share we flagged. Higher is better. |
+| `test.recall_ci95` | [0.888889, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.ece` | 0.130744 | How far our stated confidence is from what really happened. Closer to zero is better. |
+| `val.ece_ci95` | [0.11339, 0.153559] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.f1` | 0.978723 | A single figure that balances recall and precision. Higher is better. |
+| `val.f1_ci95` | [0.961832, 0.993245] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.fpr` | 0.019231 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
+| `val.fpr_ci95` | [0.0, 0.05] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `val.message_path.dangerous_recall` | 0.0 |  |
 | `val.message_path.dangerous_recall_ci95` | [0.0, 0.0] |  |
-| `val.message_path.fpr` | 0.011905 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
-| `val.message_path.fpr_ci95` | [0.002833, 0.025072] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.message_path.n` | 576 | How many checks are in this set. |
-| `val.message_path.recall` | 0.966667 | Of the real scam checks in the set, the share we flagged. Higher is better. |
-| `val.message_path.recall_ci95` | [0.941171, 0.987805] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.n` | 144 | How many checks are in this set. |
+| `val.message_path.fpr` | 0.019231 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
+| `val.message_path.fpr_ci95` | [0.007426, 0.031544] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.message_path.n` | 984 | How many checks are in this set. |
+| `val.message_path.recall` | 0.971831 | Of the real scam checks in the set, the share we flagged. Higher is better. |
+| `val.message_path.recall_ci95` | [0.958619, 0.983814] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.n` | 246 | How many checks are in this set. |
 | `val.official_false_dangerous` | 0 | Verified official sites wrongly marked dangerous. The target is zero. |
-| `val.pr_auc` | 0.986559 | How well scams are ranked above genuine checks overall. Higher is better. |
-| `val.pr_auc_ci95` | [0.966758, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.precision` | 0.983051 | Of the checks we flagged, the share that really were scams. Higher is better. |
-| `val.precision_ci95` | [0.943396, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.recall` | 0.966667 | Of the real scam checks in the set, the share we flagged. Higher is better. |
-| `val.recall_ci95` | [0.912251, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.pr_auc` | 0.985673 | How well scams are ranked above genuine checks overall. Higher is better. |
+| `val.pr_auc_ci95` | [0.966129, 0.997895] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.precision` | 0.985714 | Of the checks we flagged, the share that really were scams. Higher is better. |
+| `val.precision_ci95` | [0.963501, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.recall` | 0.971831 | Of the real scam checks in the set, the share we flagged. Higher is better. |
+| `val.recall_ci95` | [0.940732, 0.993197] | Likely range for the line above if the test were repeated (lower and upper bound). |
 
 Not evaluated in this artifact, so no figure is shown for them: `arabic_clarity`, `cost_per_check_llm`, `faithfulness`, `flip_rate_3_runs`, `injection_attack_success_rate`, `llm_tier_T3`, `sandbox_tier_T2`, `zero_day`, `synthetic`, `cloud_route`, `sovereign_route`.
 <!-- metrics:end -->
