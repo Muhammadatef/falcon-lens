@@ -51,6 +51,22 @@ if (existsSync(assets)) {
   }
 }
 
+// DSPy before/after rows (local route only) from evals/results/published/dspy/*.json, kept to the fields the docs table shows.
+// Empty when the folder is absent on this tree: the page then shows no table. Outside the monorepo the committed copy stays.
+if (existsSync(published)) {
+  const dir = join(published, "dspy");
+  const rows = [];
+  if (existsSync(dir)) {
+    for (const f of readdirSync(dir).filter((x) => x.endsWith(".json")).sort()) {
+      const d = JSON.parse(readFileSync(join(dir, f), "utf8"));
+      if (d.route !== "local" || !d.before_val || !d.after_val) continue;
+      rows.push({ artifact: f, role: d.role, model: d.model, synthetic: d.synthetic_data === true, adopted: d.adopted === true, before: d.before_val, after: d.after_val, paired: d.paired_diff ?? null });
+    }
+  }
+  writeFileSync(join(web, "lib", "dspy.generated.json"), JSON.stringify(rows, null, 2) + "\n");
+  console.log("sync-results: dspy rows", rows.length);
+}
+
 // Capability flags: one source for every "Live / In progress" badge on the judge pages.
 // Reuses scripts/submission/capabilities.py probes (the submission's own truthfulness source), minus
 // the `gate:` probes (those record L1 sign-off, not whether the code is in the tree). Falls back to the
@@ -59,12 +75,14 @@ const PY = `
 import json, sys
 sys.path.insert(0, "scripts/submission")
 import capabilities as c
-want = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix"]
+want = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "url_check", "brand_check", "pipeline", "audit_log", "sentinel_rules", "observability", "sovereign", "pwa"]
 out = {}
 for cap in c.CAPABILITIES:
     if cap.id in want:
         out[cap.id] = all(c.probe(c.ROOT, s) for s in cap.probes if not s.startswith("gate:"))
 out["t1_measured_model"] = any(c.probe(c.ROOT, s) for s in ("grep:services/worker/src/**/*.py::t1_model", "grep:packages/falcon_core/src/falcon_core/cascade/*.py::t1_model"))
+# DSPy compiled prompts: live only when the frozen-prompt loader AND at least one adopted compiled file are in the tree.
+out["dspy_compiled_prompts"] = c.probe(c.ROOT, "path:packages/falcon_core/src/falcon_core/prompts/compiled/__init__.py") and c.probe(c.ROOT, "path:packages/falcon_core/src/falcon_core/prompts/compiled/*.json")
 print(json.dumps(out))
 `;
 if (existsSync(join(repo, "scripts", "submission", "capabilities.py"))) {

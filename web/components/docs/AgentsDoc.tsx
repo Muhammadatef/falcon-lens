@@ -5,6 +5,9 @@ import type { Lang } from "@/lib/contracts";
 import { ARCH, type AgentBlock, type ArchContent } from "@/lib/arch-content";
 import { dt } from "@/lib/i18n-docs";
 import { flag } from "@/lib/cap-flag";
+import { ArchDiagram } from "@/components/arch/ArchDiagram";
+import { WhyDspyLanggraph } from "@/components/arch/WhyDspyLanggraph";
+import { at } from "@/lib/i18n-arch";
 
 /** The investigator loop. Labels are code identifiers, so the figure is always left-to-right. */
 function LoopDiagram({ c }: { c: ArchContent }) {
@@ -103,6 +106,12 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
   const c = ARCH[lang];
   return (
     <>
+      <section aria-labelledby="arch-h" className="arch-section">
+        <div className="sec-head"><h2 id="arch-h">{at(lang, "arch.diagram.title")}</h2></div>
+        <p className="page-lead">{at(lang, "arch.diagram.lead")}</p>
+        <ArchDiagram lang={lang} caps={caps as unknown as Record<string, boolean>} view="full" />
+      </section>
+
       <ul className="legend" aria-label="legend">
         {(["llm", "code", "gate"] as const).map((k) => (
           <li key={k} data-kind={k}><i aria-hidden="true" />{c.legend[k]}</li>
@@ -121,6 +130,8 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
       <Agent id="sentinel" block={c.sentinel} c={c} caps={caps} lang={lang} badge={flag(caps, "sentinel_agent")}>
         <Fig id="sentinel" lang={lang} />
       </Agent>
+
+      <WhyDspyLanggraph lang={lang} dspyLive={flag(caps, "dspy_compiled_prompts")} />
 
       <p><Link className="btn" href="/agents">{dt(lang, "docs.agents.back")}</Link></p>
     </>
