@@ -29,6 +29,8 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 8_000 },
   fullyParallel: true,
+  // Local runs cap workers (browser memory); GitHub CI keeps Playwright's default.
+  ...(process.env.CI ? {} : { workers: Number(process.env.FL_PW_WORKERS ?? 2) }),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
