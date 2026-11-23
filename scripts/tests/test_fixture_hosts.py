@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from falcon_egress.guard import policy_from_env as egress_policy
 from falcon_sandbox.settings import Settings as SandboxSettings
 from falcon_worker.main import guard_policy
 
@@ -55,6 +56,8 @@ def test_hosts_honoured_in_non_production_envs(monkeypatch: pytest.MonkeyPatch, 
     monkeypatch.setenv("FL_SSRF_ALLOW_HOSTS", _env_example())
     assert "falcon-demo-bank-injection.test" in guard_policy().allow_hosts
     assert "falcon-demo-bank-injection.test" in SandboxSettings.from_env().allow_hosts
+    monkeypatch.setenv("FL_EGRESS_ALLOW_HOSTS", _env_example())
+    assert "falcon-demo-bank-injection.test" in egress_policy().allow_hosts
 
 
 @pytest.mark.parametrize("env", ["production", "prod", "staging", "", "Local"])
@@ -63,6 +66,8 @@ def test_hosts_ignored_outside_local_demo_ci(monkeypatch: pytest.MonkeyPatch, en
     monkeypatch.setenv("FL_SSRF_ALLOW_HOSTS", _env_example())
     assert not guard_policy().allow_hosts
     assert not SandboxSettings.from_env().allow_hosts
+    monkeypatch.setenv("FL_EGRESS_ALLOW_HOSTS", _env_example())
+    assert not egress_policy().allow_hosts
 
 
 def test_hosts_ignored_when_fl_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -70,3 +75,5 @@ def test_hosts_ignored_when_fl_env_unset(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("FL_SSRF_ALLOW_HOSTS", _env_example())
     assert not guard_policy().allow_hosts
     assert not SandboxSettings.from_env().allow_hosts
+    monkeypatch.setenv("FL_EGRESS_ALLOW_HOSTS", _env_example())
+    assert not egress_policy().allow_hosts
