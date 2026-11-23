@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import re
 import time
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
@@ -34,13 +35,15 @@ from falcon_core.cascade.ports import (
     SandboxError,
 )
 from falcon_core.scoring.arbiter import (
+    OLD_DOMAIN_DAYS,
+    YOUNG_DOMAIN_DAYS,
     ArbiterContext,
     ArbiterResult,
     has_brand_conflict,
     t1_should_exit,
     t2_should_exit,
 )
-from falcon_core.scoring.evidence import Evidence
+from falcon_core.scoring.evidence import Evidence, observed_number
 from falcon_core.scoring.model_cap import score_with_model
 from falcon_core.scoring.params import ScoringParams, load_params
 from falcon_core.scoring.reasons import CLASSIFIER_SIGNAL, ReportingChannels
@@ -62,6 +65,15 @@ from falcon_core.signals.url.textutil import defang
 log = logging.getLogger("falcon.cascade")
 
 Tier = Literal["T0", "T1", "T2", "T3"]
+
+# Sandbox failures meaning "could not open the page" (bot blocking, slow site), not a platform fault.
+# Fail closed: ONLY codes that the browser-to-TARGET leg alone can produce are soft (the page refused or
+# did not answer us). Everything else degrades: the sandbox service's own errors (http_5xx, unreachable,
+# bad_json), egress/SSRF policy blocks (``blocked_by_policy[:reason]``, the egress proxy's
+# ``X-Falcon-Block-Reason``), redirect/size limits and any code not listed here.
+SOFT_RENDER_FAILURES: frozenset[str] = frozenset(
+    ["timeout", "dns_failure", "tls_error", "http_403_empty", "empty_response"]
+)
 
 
 class VerdictSink(Protocol):
@@ -172,6 +184,7 @@ class _Run:
     trace: list[TraceStep] = field(default_factory=list)
     degraded_reasons: list[str] = field(default_factory=list)
     blocked: str | None = None  # SSRF block reason: never render
+    unreachable: str | None = None  # blocked only because DNS did not answer (not an egress/SSRF policy block)
     meta: dict[str, Any] = field(default_factory=dict)  # for platform events, never published
     final_emitted: bool = False  # structural guard: at most one final per verdict_id
     p_clf: float | None = None  # fitted T1 model probability (None -> draft)
@@ -192,6 +205,12 @@ class Cascade:
     def __init__(self, deps: CascadeDeps) -> None:
         self.d = deps
         self.params = deps.params or load_params()
+        # Signals whose errors are informational only (SignalSpec.criticality == "enrichment").
+        specs = [
+            *(deps.t1_signals if deps.t1_signals is not None else default_t1_signals()).values(),
+            *(deps.t0_signals if deps.t0_signals is not None else default_signals("T0")).values(),
+        ]
+        self._enrichment: frozenset[str] = frozenset(sp.name for sp, _ in specs if sp.criticality == "enrichment")
         self._llm_open_until = 0.0
         self.verified: dict[str, frozenset[str]] = {
             b.brand_id: frozenset(b.verified_domains) for b in deps.registry.brands
@@ -215,6 +234,7 @@ class Cascade:
             registrable_domain=run.canonical.registrable if run.canonical else None,
             verified_domains=self.verified,
             extra_degraded_reasons=tuple(dict.fromkeys(run.degraded_reasons)),
+            enrichment_signals=self._enrichment,
             params=self.params,
         )
         return score_with_model(dedupe(run.evidence), run.p_clf, ctx)
@@ -348,12 +368,15 @@ class Cascade:
             else:
                 self.d.metrics.on_ssrf_block(exc.reason)
                 run.blocked = exc.reason.value
-                run.degraded_reasons.append(f"not_rendered:{exc.reason.value}")
+                if exc.reason is BlockReason.DNS_FAILURE:
+                    run.unreachable = exc.reason.value  # host does not resolve: judged on the address checks
+                else:
+                    run.degraded_reasons.append(f"not_rendered:{exc.reason.value}")
         except TimeoutError:
             if c.host_ascii not in self.d.guard_policy.allow_hosts:  # see the DNS_FAILURE case above
                 self.d.metrics.on_ssrf_block("dns_failure")
                 run.blocked = "dns_timeout"
-                run.degraded_reasons.append("not_rendered:dns_timeout")
+                run.unreachable = "dns_timeout"
 
         added: list[Evidence] = []
         brand = self.d.registry.official_brand(c.registrable) if c.registrable else None
@@ -481,6 +504,12 @@ class Cascade:
         added = await self._run_signals(signals, self._ctx(run))
         run.evidence.extend(added)
         await self._fit_p_clf(run)
+        if run.unreachable is not None:
+            # Same rule as a sandbox render failure (SCORING §4): degrade only if the address checks show risk.
+            if not self._may_clear_unrendered(run):
+                run.degraded_reasons.append(f"not_rendered:{run.unreachable}")
+            else:
+                run.evidence.append(self._not_rendered_evidence(run.unreachable, "T1"))
         result = self._score(run)
         ms = self._observe("T1", t0)
         fired = {r.rule_id for r in result.fired_rules}
@@ -514,6 +543,43 @@ class Cascade:
 
     # --- T2 --------------------------------------------------------------------------------
 
+    @staticmethod
+    def _not_rendered_evidence(reason: str, tier: Tier) -> Evidence:
+        return make_evidence(
+            "sandbox.not_rendered", "page", {"reason": reason[:40]}, tier=tier, source="computed",
+            en="We could not open the page itself; the address checks found no warning signs.",
+            ar="تعذّر علينا فتح الصفحة نفسها؛ فحوصات العنوان لم تُظهر أي علامات تحذير.",
+        )  # fmt: skip
+
+    def _t1_risky(self, run: _Run) -> bool:
+        """T1 in or above the uncertain band, a hard rule fired, or url./brand./rep./domain. risk evidence."""
+        r = self._score(run)
+        if r.calibrated_probability >= self.params.tau_low or r.fired_rules:
+            return True
+        risk_families = ("url", "brand", "rep", "domain")
+        if any(e.weight > 0 and e.signal.split(".", 1)[0] in risk_families for e in r.weighted_evidence):
+            return True
+        return any((age := self._domain_age(e)) is not None and age < YOUNG_DOMAIN_DAYS for e in run.evidence)
+
+    @staticmethod
+    def _domain_age(e: Evidence) -> float | None:
+        if e.signal not in ("domain.age_days", "domain.age") or e.error is not None:
+            return None
+        return observed_number(e, "age_days")
+
+    def _has_trust(self, run: _Run) -> bool:
+        """Page-independent trust that did not error: an established domain or a verified official one."""
+        for e in run.evidence:
+            if e.signal == "registry.verified_official" and e.error is None:
+                return True
+            age = self._domain_age(e)
+            if age is not None and age > OLD_DOMAIN_DAYS:
+                return True
+        return False
+
+    def _may_clear_unrendered(self, run: _Run) -> bool:
+        return not self._t1_risky(run) and self._has_trust(run)
+
     async def _t2(self, run: _Run, sink: VerdictSink) -> dict[str, Any]:
         if run.canonical is None:
             raise RuntimeError("T0 did not canonicalise")
@@ -526,16 +592,23 @@ class Cascade:
                 self.d.sandbox_timeout_s,
             )
             if features.error and not features.final_url:
-                raise SandboxError("render_failed")
+                err = features.error.lower()
+                raise SandboxError(err if re.fullmatch(r"[a-z0-9_:]{1,40}", err) else "render_failed")
         except (TimeoutError, SandboxError) as exc:
             reason = "timeout" if isinstance(exc, TimeoutError) else exc.reason
             if reason == "timeout":
                 self.d.metrics.sandbox_timeouts.inc()
             self.d.metrics.tool_errors.labels("sandbox", reason[:40]).inc()
-            # The input was escalated because T1 was unsure: without the page we must not
-            # fall back to no_warning_signs (DECISIONS: sandbox failure degrades).
-            run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
             summary = "Sandbox could not render the page"
+            # SCORING §4: a page that cannot be opened (bot blocking, timeout, DNS) may end in
+            # no_warning_signs only when T1 shows no risk AND page-independent trust evidence exists
+            # (established domain or verified official). Egress/SSRF blocks, unknown codes and the
+            # sandbox's own errors always degrade.
+            if reason in SOFT_RENDER_FAILURES and self._may_clear_unrendered(run):
+                added.append(self._not_rendered_evidence(reason, "T2"))
+                summary += "; address checks clean and domain established, not degraded"
+            else:
+                run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
         else:
             added.extend(page_evidence(features, run.canonical.registrable, self.d.registry, self.d.favicons))
             final_reg = canonicalize(features.final_url).registrable if features.final_url else ""

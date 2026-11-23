@@ -326,3 +326,16 @@ def test_params_injection_via_context() -> None:
     strict = replace(P, tau_high=0.6)
     assert score([], 0.65, ArbiterContext(params=strict)).verdict == "dangerous"
     assert score([], 0.65).verdict == "suspicious"
+
+
+def test_enrichment_signal_error_never_degrades() -> None:
+    from falcon_core.scoring.arbiter import ArbiterContext, score
+    from falcon_core.scoring.evidence import Evidence
+
+    ev = Evidence(
+        id="ev_crt00001", signal="domain.cert_age_days", family="domain", observed=None, source="computed",
+        tier="T1", confidence=0.0, error="HTTPStatusError: 502",
+    )  # fmt: skip
+    assert score([ev], None, ArbiterContext()).degraded  # critical by default
+    r = score([ev], None, ArbiterContext(enrichment_signals=frozenset({"domain.cert_age_days"})))
+    assert not r.degraded and r.verdict == "no_warning_signs"
