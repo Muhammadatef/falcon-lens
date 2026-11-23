@@ -402,8 +402,8 @@ def _h1(r: dict[str, Any]) -> bool:
 def sealed_browser() -> dict[str, Any]:
     arts = []
     skipped: list[str] = []
-    for f in sorted((PUBLISHED / "fp_regress").glob("*.json")):
-        d = json.loads(f.read_text())
+    loaded = [(f, json.loads(f.read_text())) for f in (PUBLISHED / "fp_regress").glob("*.json")]
+    for f, d in sorted(loaded, key=lambda fd: str(fd[1].get("created_at"))):
         if "items" not in d:
             skipped.append(f.name)
             continue
@@ -422,6 +422,26 @@ def sealed_browser() -> dict[str, Any]:
                 ),
                 "t2_degraded_of_attempted": rate(sum(1 for i in attempted if i["degraded_reasons"]), len(attempted)),
                 "t2_degraded_reasons_of_attempted": dict(att_reasons),
+                "t2_outcome_of_attempted": {
+                    "clean": rate(sum(1 for i in attempted if not i["degraded_reasons"]), len(attempted)),
+                    "partial_render": rate(
+                        sum(1 for i in attempted if any(r.startswith("partial_render") for r in i["degraded_reasons"])),
+                        len(attempted),
+                    ),
+                    "sandbox_unavailable": rate(
+                        sum(
+                            1
+                            for i in attempted
+                            if any(r.startswith("sandbox_unavailable") for r in i["degraded_reasons"])
+                        ),
+                        len(attempted),
+                    ),
+                    "not_rendered": rate(
+                        sum(1 for i in attempted if any(r.startswith("not_rendered") for r in i["degraded_reasons"])),
+                        len(attempted),
+                    ),
+                    "note": "an item can carry several reasons; the rows are not exclusive",
+                },
                 "tier_attempt_note": "attempted = verdict ended at T2 or T3; T1 exits never opened a page",
                 "git_sha": d["git_sha"],
                 "n": d["n"],

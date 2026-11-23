@@ -125,7 +125,9 @@ def synthetic_split() -> dict[str, Any]:
     main_files = sorted(PUBLISHED.glob("*.json"))
     main_metrics = json.loads(main_files[-1].read_text())["metrics"] if main_files else {}
     cap = json.loads((PUBLISHED / "fits" / "model_cap_fit.json").read_text()).get("chosen", {})
-    fp_files = sorted((PUBLISHED / "fp_regress").glob("*.json"))
+    fp_files = sorted(
+        (PUBLISHED / "fp_regress").glob("*.json"), key=lambda f: str(json.loads(f.read_text()).get("created_at"))
+    )
     latest_fp = json.loads(fp_files[-1].read_text()) if fp_files else {}
     table = [
         {
