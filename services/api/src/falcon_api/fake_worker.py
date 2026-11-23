@@ -184,6 +184,7 @@ async def main() -> None:  # pragma: no cover - process entrypoint
                 except Exception:
                     log.exception("fake worker job failed")
                 await r.xack(STREAM, GROUP, entry_id)
+                await r.xdel(STREAM, entry_id)  # the raw submitted URL must not persist
 
 
 if __name__ == "__main__":  # pragma: no cover

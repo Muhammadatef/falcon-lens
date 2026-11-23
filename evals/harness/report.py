@@ -11,7 +11,7 @@ import html
 import json
 from typing import Any
 
-HEADLINE = ("precision", "recall", "f1", "fpr", "pr_auc", "ece")
+HEADLINE = ("precision", "recall", "f1", "fpr", "accuracy", "roc_auc", "pr_auc", "ece")
 
 
 def _n(v: float | None) -> str:

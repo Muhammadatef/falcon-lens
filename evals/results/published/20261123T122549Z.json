@@ -1,0 +1,163 @@
+{
+  "created_at": "2026-11-23T12:25:49Z",
+  "dataset_hash": "3467e9f6b9f930c23a3a001f7126330bd0d129b32e01f40678e003b03bb07ac2",
+  "git_sha": "fc577d7a5d2f59366f35da287a9be106fe6bb03c-dirty",
+  "metrics": {
+    "test.accuracy": 0.978571,
+    "test.accuracy_ci95": [
+      0.95,
+      1.0
+    ],
+    "test.ece": 0.101203,
+    "test.ece_ci95": [
+      0.086972,
+      0.127847
+    ],
+    "test.f1": 0.974359,
+    "test.f1_ci95": [
+      0.941176,
+      1.0
+    ],
+    "test.fpr": 0.0,
+    "test.fpr_ci95": [
+      0.0,
+      0.0
+    ],
+    "test.message_path.dangerous_recall": 0.0,
+    "test.message_path.dangerous_recall_ci95": [
+      0.0,
+      0.0
+    ],
+    "test.message_path.fpr": 0.0,
+    "test.message_path.fpr_ci95": [
+      0.0,
+      0.0
+    ],
+    "test.message_path.n": 560,
+    "test.message_path.recall": 0.95,
+    "test.message_path.recall_ci95": [
+      0.922128,
+      0.974901
+    ],
+    "test.n": 140,
+    "test.official_false_dangerous": 0,
+    "test.pr_auc": 0.995528,
+    "test.pr_auc_ci95": [
+      0.983989,
+      1.0
+    ],
+    "test.precision": 1.0,
+    "test.precision_ci95": [
+      1.0,
+      1.0
+    ],
+    "test.recall": 0.95,
+    "test.recall_ci95": [
+      0.888889,
+      1.0
+    ],
+    "test.roc_auc": 0.995417,
+    "test.roc_auc_ci95": [
+      0.983348,
+      1.0
+    ],
+    "val.accuracy": 0.97561,
+    "val.accuracy_ci95": [
+      0.955285,
+      0.99187
+    ],
+    "val.ece": 0.130744,
+    "val.ece_ci95": [
+      0.11339,
+      0.153559
+    ],
+    "val.f1": 0.978723,
+    "val.f1_ci95": [
+      0.961832,
+      0.993245
+    ],
+    "val.fpr": 0.019231,
+    "val.fpr_ci95": [
+      0.0,
+      0.05
+    ],
+    "val.message_path.dangerous_recall": 0.0,
+    "val.message_path.dangerous_recall_ci95": [
+      0.0,
+      0.0
+    ],
+    "val.message_path.fpr": 0.019231,
+    "val.message_path.fpr_ci95": [
+      0.007426,
+      0.031544
+    ],
+    "val.message_path.n": 984,
+    "val.message_path.recall": 0.971831,
+    "val.message_path.recall_ci95": [
+      0.958619,
+      0.983814
+    ],
+    "val.n": 246,
+    "val.official_false_dangerous": 0,
+    "val.pr_auc": 0.985673,
+    "val.pr_auc_ci95": [
+      0.966129,
+      0.997895
+    ],
+    "val.precision": 0.985714,
+    "val.precision_ci95": [
+      0.963501,
+      1.0
+    ],
+    "val.recall": 0.971831,
+    "val.recall_ci95": [
+      0.940732,
+      0.993197
+    ],
+    "val.roc_auc": 0.981751,
+    "val.roc_auc_ci95": [
+      0.962073,
+      0.995888
+    ]
+  },
+  "model_ids": {
+    "llm_cloud": "not_evaluated",
+    "llm_sovereign": "not_evaluated",
+    "t1": {
+      "fit_date": "2026-11-23",
+      "git_sha": "d7f8d9ae627d6eb1594d3ce3eeb54c80a4fd5c81",
+      "model_id": "t1_hgb",
+      "model_sha256": "138b39f5fb22e6cfa291c5d6b2d36a5ec901fb2a06f32802c35c7bec61b34631",
+      "sklearn_version": "1.9.1"
+    }
+  },
+  "not_evaluated": [
+    "arabic_clarity",
+    "cost_per_check_llm",
+    "faithfulness",
+    "flip_rate_3_runs",
+    "injection_attack_success_rate",
+    "llm_tier_T3",
+    "sandbox_tier_T2",
+    "zero_day",
+    "synthetic",
+    "cloud_route",
+    "sovereign_route"
+  ],
+  "schema_version": 1,
+  "scope": "offline T1 + arbiter on URLs; real data only; temporal_cut false (single poll)",
+  "seeds": {
+    "bootstrap": 20261122,
+    "model": 20261122,
+    "n_bootstrap": 1000,
+    "split": 20261122
+  },
+  "temporal_cut": false,
+  "thresholds": {
+    "eps_high": 0.839,
+    "eps_low": 0.009,
+    "fit_source": "validation split only (make fit-thresholds)",
+    "tau_high": 0.789,
+    "tau_low": 0.6014
+  }
+}

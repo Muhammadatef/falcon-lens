@@ -49,6 +49,15 @@ def load_set(name: str) -> tuple[list[str], dict[str, str]]:
     return urls, web
 
 
+def set_seed(name: str) -> int | None:
+    """The seed the held-out set was DRAWN with (column ``seed`` of the csv); None when the set has no such column."""
+    with (ROOT / "evals" / "datasets" / name).open(newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            s = r.get("seed", "")
+            return int(s) if s.isdigit() else None
+    return None
+
+
 def rate(res: list[dict[str, Any]]) -> dict[str, Any]:
     flagged = [int(r["verdict"] in ("suspicious", "dangerous")) for r in res]
     lo, hi = bootstrap_ci(flagged)
@@ -97,6 +106,11 @@ def check(url: str, delay: float) -> dict[str, Any]:
                     "degraded_reasons": d.get("degraded_reasons") or [],
                     "risk_signals": [e["signal"] for e in risk[:3]],
                     "risk_score": d.get("risk_score"),
+                    # read before the page finished loading (page.truncated with partial=true)
+                    "partial": any(
+                        e.get("signal") == "page.truncated" and (e.get("observed") or {}).get("partial") is True
+                        for e in d.get("evidence", [])
+                    ),
                 }
             time.sleep(0.5)
     raise TimeoutError("no final verdict")
@@ -122,6 +136,9 @@ def main() -> int:
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     pool, web = load_set(a.set)
+    drawn = set_seed(a.set)
+    if drawn is not None and a.n <= 0:
+        a.seed = drawn  # a full-set run samples nothing: record the seed the set was drawn with
     urls = pool if a.n <= 0 else random.Random(a.seed).sample(pool, min(a.n, len(pool)))  # noqa: S311
     print(f"fp-regress: gateway={BASE} set={a.set} sample={len(urls)}/{len(pool)} seed={a.seed}", flush=True)
 
@@ -145,7 +162,10 @@ def main() -> int:
         f"fp-regress: n={len(res)} {dict(counts)} degraded={degraded} errors={errors} "
         f"fpr={fpr:.4f} ci95=[{lo:.4f},{hi:.4f}] target={a.target}"
     )
-    print(f"degraded_reasons={dict(why)} top_risk_signal_of_flagged={dict(top)}")
+    print(
+        f"partial_reads={sum(bool(r.get('partial')) for r in res)} degraded_reasons={dict(why)} "
+        f"top_risk_signal_of_flagged={dict(top)}"
+    )
     if web:
         for flag, label in (("1", "serves_web_page"), ("0", "no_web_host")):
             sub_res = rate([r for r in res if web.get(r["url"]) == flag])
@@ -165,6 +185,7 @@ def main() -> int:
         "degraded": degraded,
         "errors": errors,
         "degraded_reasons": dict(why),
+        "partial_reads": sum(bool(r.get("partial")) for r in res),
         "top_risk_signal_of_flagged": dict(top),
         "by_tier": dict(Counter(str(r["tier"]) for r in res)),
         "items": [
@@ -174,6 +195,7 @@ def main() -> int:
                 "verdict": r["verdict"],
                 "tier": r.get("tier"),
                 "degraded_reasons": r.get("degraded_reasons", []),
+                "partial": bool(r.get("partial", False)),
             }
             for r in res
         ],

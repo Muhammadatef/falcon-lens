@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "editable": false,
   "graphTooltip": 1,
   "refresh": "5s",
@@ -66,6 +66,13 @@
       "url": "/d/fl-sentinel",
       "icon": "dashboard",
       "targetBlank": false
+    },
+    {
+      "title": "Model quality | جودة النموذج",
+      "type": "link",
+      "url": "/d/fl-model-quality",
+      "icon": "dashboard",
+      "targetBlank": false
     }
   ],
   "annotations": {
@@ -78,7 +85,8 @@
     {
       "type": "stat",
       "title": "Data source | مصدر البيانات",
-      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live.",
+      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live. Counters without a source label (LLM, sandbox, security) include replayed traffic while the banner says REPLAY. Thresholds: green = LIVE only, orange = replayed data present (a label, not a fault). No data: no check was recorded at all; the panel then reads LIVE.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -113,6 +121,7 @@
               }
             ]
           },
+          "noValue": "No data",
           "mappings": [
             {
               "type": "value",
@@ -154,128 +163,32 @@
       }
     },
     {
-      "type": "stat",
-      "title": "LLM spend, 1 h | تكلفة النماذج",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(increase(fl_llm_cost_usd_total[1h]))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": ""
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#5B9BF0",
-                "value": null
-              }
-            ]
-          },
-          "decimals": 4
-        },
-        "overrides": []
-      },
+      "type": "text",
+      "title": "Traces | التتبع",
       "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "mode": "markdown",
+        "content": "LLM spans (OpenInference) go collector -> **Phoenix**. Filter by `verdict_id` to join a trace with its logs (Loki) and these metrics. The LLM never sets a score: the arbiter does."
       },
+      "transparent": true,
       "id": 2,
       "gridPos": {
         "h": 3,
-        "w": 4,
+        "w": 8,
         "x": 8,
         "y": 0
       }
     },
     {
       "type": "stat",
-      "title": "Fallbacks, 1 h | الرجوع للنموذج المحلي",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
+      "title": "Canary leaks, 1 h | تسرب الكناري",
+      "description": "A canary token seen in model output means prompt exfiltration. Must stay 0. Thresholds: green 0, red >= 1: any leak is an incident. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
         {
-          "refId": "A",
-          "expr": "sum(increase(fl_llm_fallback_total[1h]))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": ""
+          "title": "Runbook: canary-leak",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#canary-leak",
+          "targetBlank": true
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#3FB68B",
-                "value": null
-              },
-              {
-                "color": "#F5A623",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "id": 3,
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 12,
-        "y": 0
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Canary leaks | تسرب الكناري",
-      "description": "Must stay 0. A canary seen in model output means prompt exfiltration.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -309,13 +222,83 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "0 (series appears at the first leak)"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 3,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 16,
+        "y": 0
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Forbidden-tool attempts, 1 h | محاولات أدوات ممنوعة",
+      "description": "Investigator tool calls the registry blocked: an unlisted tool or a URL/domain not from the evidence chain. Blocked, but must stay 0 on live traffic. Thresholds: green 0, red >= 1 (expected under red-team replay: check the banner). No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: injection-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#injection-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_tool_errors_total{reason=~\"provenance|unknown_tool\"}[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 1
+              }
+            ]
+          },
+          "noValue": "0 (series appears at the first attempt)"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -328,44 +311,16 @@
       "id": 4,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 16,
-        "y": 0
-      }
-    },
-    {
-      "type": "text",
-      "title": "Traces | التتبع",
-      "options": {
-        "mode": "markdown",
-        "content": "LLM spans (OpenInference) go collector -> **Phoenix**. Filter by `verdict_id` to join a trace with its logs (Loki) and metrics."
-      },
-      "transparent": true,
-      "id": 5,
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 20,
-        "y": 0
-      }
-    },
-    {
-      "id": 6,
-      "type": "row",
-      "title": "Usage | الاستخدام",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
+        "w": 6,
         "x": 0,
         "y": 3
-      },
-      "panels": []
+      }
     },
     {
-      "type": "timeseries",
-      "title": "Tokens / min by model and role | الرموز",
-      "description": "",
+      "type": "stat",
+      "title": "LLM spend, 1 h | تكلفة النماذج",
+      "description": "Estimated cloud spend from token counts and the price table (local route costs 0). Thresholds: none: no budget is set in the repo. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -373,12 +328,334 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (model, role) (rate(fl_llm_tokens_total[1m])) * 60",
+          "expr": "sum(increase(fl_llm_cost_usd_total[1h])) or vector(0)",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{model}} · {{role}}"
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 4
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 5,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Cost / 1k checks | تكلفة لكل ألف فحص",
+      "description": "Estimated LLM spend divided by checks, per 1000 checks. Thresholds: none: no budget is set in the repo. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "1000 * (sum(increase(fl_llm_cost_usd_total[1h])) or vector(0)) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 4
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 6,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 3
+      }
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Per role | لكل دور",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "panels": []
+    },
+    {
+      "type": "table",
+      "title": "Role scorecard, last hour | بطاقة الأدوار",
+      "description": "One row per LLM role (extractor, investigator, responder...): call rate, latency, share of provider calls that failed or timed out, and share of requests that ended on the caller's template. Thresholds: failure and template above 10% are worth a look (heuristic); LLMFallbackActive fires on cloud->local fallback. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [
+        {
+          "title": "Runbook: llm-fallback",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#llm-fallback",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (role) (rate(fl_llm_calls_total[5m])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.5, sum by (le, role) (rate(fl_llm_call_seconds_bucket[5m])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.95, sum by (le, role) (rate(fl_llm_call_seconds_bucket[5m])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "sum by (role) (increase(fl_llm_calls_total{outcome!=\"ok\"}[1h])) / clamp_min(sum by (role) (increase(fl_llm_calls_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "E",
+          "expr": "fl:llm_template_ratio:increase1h",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "role",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "^(role|Value.*)$"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true,
+              "Time 4": true,
+              "Time 5": true
+            },
+            "renameByName": {
+              "Value #A": "calls/min",
+              "Value #B": "p50 s",
+              "Value #C": "p95 s",
+              "Value #D": "failure %",
+              "Value #E": "template %"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p50 s"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95 s"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failure %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "template %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "id": 8,
+      "gridPos": {
+        "h": 8,
+        "w": 14,
+        "x": 0,
+        "y": 7
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "LLM calls / min by role | نداءات الدور",
+      "description": "Provider calls per minute by role. Thresholds: none: volume. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (role) (rate(fl_llm_calls_total[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{role}}"
         }
       ],
       "fieldConfig": {
@@ -407,18 +684,19 @@
           "sort": "desc"
         }
       },
-      "id": 7,
+      "id": 9,
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 4
+        "w": 10,
+        "x": 14,
+        "y": 7
       }
     },
     {
       "type": "timeseries",
-      "title": "Cost rate (USD/h) | معدل التكلفة",
-      "description": "",
+      "title": "Call latency p50 / p95 by role | زمن النداء",
+      "description": "Provider call time by role. Thresholds: dashed line at 12 s: the default FL_LLM_TIMEOUT_S, calls beyond it time out. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -426,17 +704,102 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (model) (rate(fl_llm_cost_usd_total[5m])) * 3600",
+          "expr": "histogram_quantile(0.5, sum by (le, role) (rate(fl_llm_call_seconds_bucket[$__rate_interval])))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{model}}"
+          "legendFormat": "p50 {{role}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, role) (rate(fl_llm_call_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p95 {{role}}"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyUSD",
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 12
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 10,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Error / timeout rate by role | الأخطاء والمهلات",
+      "description": "Failed provider calls per minute (timeout, error, budget). Thresholds: none: counts; a steady non-zero line means a provider problem. No data: every provider call succeeded.",
+      "links": [
+        {
+          "title": "Runbook: llm-fallback",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#llm-fallback",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (role, outcome) (rate(fl_llm_calls_total{outcome!=\"ok\"}[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{role}} · {{outcome}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 18,
@@ -460,18 +823,107 @@
           "sort": "desc"
         }
       },
-      "id": 8,
+      "id": 11,
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 4
+        "y": 15
       }
     },
     {
       "type": "timeseries",
-      "title": "Fallbacks by role | الرجوع حسب الدور",
-      "description": "",
+      "title": "Template fallback % by role | الرجوع للقالب",
+      "description": "Share of finished requests that ended on the caller's deterministic template or failed (the verdict stays valid). Thresholds: dashed lines at 10% amber and 25% red: heuristics. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [
+        {
+          "title": "Runbook: llm-fallback",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#llm-fallback",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl:llm_template_ratio:increase1h",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{role}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 0.1
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.25
+              }
+            ]
+          },
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 12,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 22
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Cloud to local fallbacks | الرجوع للنموذج المحلي",
+      "description": "Times the cloud route failed and the local model answered. Thresholds: none: counts; any value fires LLMFallbackActive. No data: no fallback happened.",
+      "links": [
+        {
+          "title": "Runbook: llm-fallback",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#llm-fallback",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -513,18 +965,25 @@
           "sort": "desc"
         }
       },
-      "id": 9,
+      "id": 13,
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 0,
-        "y": 12
+        "x": 8,
+        "y": 22
       }
     },
     {
       "type": "timeseries",
       "title": "Route agreement | اتفاق المسارات",
-      "description": "",
+      "description": "Cloud and local agreement on shadow samples. Thresholds: dashed line at 80%: below it RouteAgreementDrop fires. No data: shadow sampling is off.",
+      "links": [
+        {
+          "title": "Runbook: route-agreement-drop",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#route-agreement-drop",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -551,6 +1010,91 @@
             "stacking": {
               "mode": "none",
               "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E5484D",
+                "value": null
+              },
+              {
+                "color": "#3FB68B",
+                "value": 0.8
+              }
+            ]
+          },
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 14,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 22
+      }
+    },
+    {
+      "id": 15,
+      "type": "row",
+      "title": "Tokens and cost by route | الرموز والتكلفة",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Tokens / min by model and role | الرموز",
+      "description": "Input plus output tokens per minute. Thresholds: none: volume. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (model, role) (rate(fl_llm_tokens_total[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{model}} · {{role}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
             }
           }
         },
@@ -566,18 +1110,19 @@
           "sort": "desc"
         }
       },
-      "id": 10,
+      "id": 16,
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 8,
-        "y": 12
+        "x": 0,
+        "y": 30
       }
     },
     {
       "type": "timeseries",
-      "title": "Agent steps p50 / p95 | خطوات الوكيل",
-      "description": "",
+      "title": "Tokens / min by route | الرموز حسب المسار",
+      "description": "Tokens by route, read from the model name (claude-* is cloud). Thresholds: none: composition. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -585,7 +1130,146 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.5, sum by (le) (rate(fl_agent_steps_bucket[5m])))",
+          "expr": "sum(rate(fl_llm_tokens_total{model=~\"claude.*\"}[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "cloud (Claude)"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(fl_llm_tokens_total{model!~\"claude.*\"}[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "local"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 17,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 30
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Estimated cost USD / h by route | التكلفة",
+      "description": "Estimated spend rate from the price table; the local route is free by construction. Thresholds: none: no budget is set in the repo. No data: the AI tiers made no call in this range (T3/extractor/Sentinel idle, or the stack runs without AI).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(fl_llm_cost_usd_total{model=~\"claude.*\"}[$__rate_interval])) * 3600",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "cloud (Claude)"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(fl_llm_cost_usd_total{model!~\"claude.*\"}[$__rate_interval])) * 3600",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "local"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 18,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 30
+      }
+    },
+    {
+      "id": 19,
+      "type": "row",
+      "title": "Investigator (T3) | المحقق",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Steps per run p50 / p95 | خطوات الوكيل",
+      "description": "Tool calls per investigator run. Thresholds: dashed line at 6 calls: the usual cap, runs stopping at it ran out of budget. No data: the investigator has not run.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(fl_agent_steps_bucket[$__rate_interval])))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -594,7 +1278,7 @@
         },
         {
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(fl_agent_steps_bucket[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(fl_agent_steps_bucket[$__rate_interval])))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -613,6 +1297,76 @@
             "stacking": {
               "mode": "none",
               "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 6
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 20,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 38
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Tool-call mix | مزيج الأدوات",
+      "description": "Which tools the investigator called. 'unknown' = a name outside the registry (never forwarded). Thresholds: none: composition. No data: the investigator has called no tool.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (tool) (increase(fl_agent_tool_calls_total[5m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{tool}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
             }
           }
         },
@@ -628,18 +1382,86 @@
           "sort": "desc"
         }
       },
-      "id": 11,
+      "id": 21,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 38
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Tool call status | حالة الأدوات",
+      "description": "ok, rejected (blocked by the registry), timeout, error. Thresholds: none: composition; rejected is the guard working, see forbidden-tool attempts. No data: the investigator has called no tool.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (increase(fl_agent_tool_calls_total[5m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 22,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 12
+        "y": 38
       }
     },
     {
+      "id": 23,
+      "type": "row",
+      "title": "Sentinel LLM | نموذج الحارس",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "panels": []
+    },
+    {
       "type": "timeseries",
-      "title": "Escalations to LLM tier | التصعيد للنموذج",
-      "description": "",
+      "title": "Sentinel asks by task and outcome | طلبات الحارس",
+      "description": "assess, summarise and propose asks to the model: ok, timeout, budget (skipped by the per-incident budget), invalid. Thresholds: none: counts. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -647,12 +1469,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (from, to) (rate(fl_escalations_total[5m])) * 60",
+          "expr": "sum by (task, outcome) (increase(fl_sentinel_llm_calls_total[5m]))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{from}} -> {{to}}"
+          "legendFormat": "{{task}} · {{outcome}}"
         }
       ],
       "fieldConfig": {
@@ -681,18 +1503,19 @@
           "sort": "desc"
         }
       },
-      "id": 12,
+      "id": 24,
       "gridPos": {
         "h": 7,
-        "w": 12,
+        "w": 8,
         "x": 0,
-        "y": 19
+        "y": 46
       }
     },
     {
       "type": "timeseries",
-      "title": "Checks reaching T3 | فحوصات المستوى الثالث | REPLAY-aware",
-      "description": " Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "title": "Sentinel ask latency p50 / p95 | زمن طلبات الحارس",
+      "description": "Wall time of Sentinel model asks (the local model takes 15-25 s). Thresholds: dashed line at 120 s: the per-incident time budget. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -700,17 +1523,26 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "label_replace(label_replace(sum by (source) (rate(fl_checks_total{tier=\"T3\"}[5m])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
+          "expr": "histogram_quantile(0.5, sum by (le, task) (rate(fl_sentinel_llm_seconds_bucket[$__rate_interval])))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{source}}"
+          "legendFormat": "p50 {{task}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, task) (rate(fl_sentinel_llm_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p95 {{task}}"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "s",
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 18,
@@ -719,51 +1551,26 @@
             "stacking": {
               "mode": "none",
               "group": "A"
-            }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*REPLAY.*"
             },
-            "properties": [
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
               {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#F5A623"
-                }
+                "color": "#3FB68B",
+                "value": null
               },
               {
-                "id": "custom.lineStyle",
-                "value": {
-                  "fill": "dash",
-                  "dash": [
-                    8,
-                    6
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*LIVE.*"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "#3FB68B"
-                }
+                "color": "#E5484D",
+                "value": 120
               }
             ]
           }
-        ]
+        },
+        "overrides": []
       },
       "options": {
         "legend": {
@@ -775,12 +1582,68 @@
           "sort": "desc"
         }
       },
-      "id": 13,
+      "id": 25,
       "gridPos": {
         "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 19
+        "w": 8,
+        "x": 8,
+        "y": 46
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "LLM text accepted by verifier % | قبول المدقق",
+      "description": "Share of Sentinel texts that passed the verifier (cites real evidence ids, no foreign URL) and were kept; the rest fell to the template. Thresholds: none: a falling line means the model drifts from the evidence. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl:sentinel_llm_text_share:increase1h",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{task}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 26,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 46
       }
     }
   ]

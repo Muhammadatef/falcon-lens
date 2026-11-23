@@ -15,7 +15,7 @@ test("a Falcon Demo Bank lookalike is rated dangerous, with reasons and a next s
   await expect(page.getByTestId("verdict-word")).toHaveText("خطِر");
   expect(await page.getByTestId("verdict-card").locator("ol li, .reasons li").count()).toBeGreaterThan(0);
   await expect(page.getByTestId("impersonated")).toContainText("بنك الصقر التجريبي");
-  await expect(page.getByTestId("result").locator("a")).toHaveCount(0);
+  await expect(page.getByTestId("result").locator("a:not([href=\"/docs/cascade\"])")).toHaveCount(0);
 });
 
 test("the official fixture gets 'no warning signs' with the caution reminder, never 'safe'", async ({ page }) => {

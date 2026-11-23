@@ -21,6 +21,10 @@ ROUTE_AGREEMENT = "fl_route_agreement_ratio"  # observed per shadow sample {role
 AGENT_STEPS = "fl_agent_steps"  # histogram
 TOOL_ERRORS = "fl_tool_errors_total"  # {tool, reason}
 INJECTION_DETECTED = "fl_injection_detected_total"  # {source}
+LLM_CALLS = "fl_llm_calls_total"  # {role, route, outcome}
+LLM_CALL_SECONDS = "fl_llm_call_seconds"  # histogram {role, route}
+LLM_RESULTS = "fl_llm_results_total"  # {role, status}
+AGENT_TOOL_CALLS = "fl_agent_tool_calls_total"  # {tool, status}
 
 LabelKey = tuple[tuple[str, str], ...]
 
@@ -88,6 +92,10 @@ _TELEMETRY_ATTRS: dict[str, str] = {
     AGENT_STEPS: "AGENT_STEPS",
     TOOL_ERRORS: "TOOL_ERRORS",
     INJECTION_DETECTED: "INJECTION",
+    LLM_CALLS: "LLM_CALLS",
+    LLM_CALL_SECONDS: "LLM_CALL_SECONDS",
+    LLM_RESULTS: "LLM_RESULTS",
+    AGENT_TOOL_CALLS: "AGENT_TOOL_CALLS",
 }
 AGREEMENT_WINDOW = 200
 

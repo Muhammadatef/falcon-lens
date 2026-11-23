@@ -26,6 +26,8 @@ from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from opentelemetry.trace import Status as SpanStatus
+from opentelemetry.trace import StatusCode
 from pydantic import BaseModel
 
 from falcon_core.llm import metrics as m
@@ -47,6 +49,7 @@ from falcon_core.llm.redaction import redact
 from falcon_core.llm.spotlight import UntrustedText, new_nonce, spotlight, spotlight_notice
 from falcon_core.prompts import BASE_SYSTEM, CANARY_LINE, REPAIR_PROMPT, SCHEMA_LINE
 from falcon_core.prompts.compiled import task_text
+from falcon_core.telemetry.tracing import llm_span, set_llm_usage
 
 log = logging.getLogger("falcon_core.llm")
 
@@ -114,6 +117,11 @@ ShadowHook = Callable[[ShadowSample], Awaitable[None]]
 
 def _schema_json(schema: type[BaseModel]) -> str:
     return json.dumps(schema.model_json_schema(), ensure_ascii=False, separators=(",", ":"))
+
+
+def _provider_name(route: str, model: str) -> str:
+    """Coarse provider label for traces (``anthropic`` for the cloud route, ``ollama`` locally)."""
+    return "anthropic" if route == "cloud" else "ollama"
 
 
 class LLMRouter:
@@ -276,11 +284,46 @@ class LLMRouter:
         deadline: float | None,
         calls: list[CallRecord],
     ) -> ProviderResponse | None:
+        """One provider call inside an OpenInference LLM span: role, route, model, latency and
+        token counts only. Prompts and outputs are never recorded (untrusted text)."""
+        n = len(calls)
+        with llm_span(
+            model=model, role=req.role, verdict_id=req.verdict_id, provider=_provider_name(route, model)
+        ) as sp:
+            sp.set_attribute("fl.llm.route", route)
+            resp = await self._call_inner(req, route, model, provider, system, turns, deadline, calls)
+            if len(calls) > n:
+                rec = calls[-1]
+                sp.set_attribute("fl.latency_ms", rec.ms)
+                if rec.error is None:
+                    set_llm_usage(
+                        sp,
+                        input_tokens=rec.usage.prompt_tokens,
+                        output_tokens=rec.usage.output_tokens,
+                        cost_usd=rec.cost_usd or None,
+                    )
+                else:
+                    sp.set_attribute("error.type", rec.error[:40])
+                    sp.set_status(SpanStatus(StatusCode.ERROR))
+            return resp
+
+    async def _call_inner(
+        self,
+        req: JsonRequest[Any],
+        route: Route,
+        model: str,
+        provider: Provider,
+        system: str,
+        turns: Sequence[ChatTurn],
+        deadline: float | None,
+        calls: list[CallRecord],
+    ) -> ProviderResponse | None:
         timeout = self._timeout_for(route)
         if deadline is not None:
             timeout = min(timeout, deadline - self._clock())
         if timeout <= 0:
             calls.append(CallRecord(route, model, Usage(), 0.0, 0, "budget exhausted"))
+            self.metrics.inc(m.LLM_CALLS, role=req.role, route=route, outcome="budget")
             return None
         preq = ProviderRequest(
             model=model,
@@ -297,6 +340,10 @@ class LLMRouter:
             kind = exc.kind if isinstance(exc, ProviderError) else "timeout"
             ms = int((self._clock() - t0) * 1000)
             calls.append(CallRecord(route, model, Usage(), 0.0, ms, kind))
+            self.metrics.inc(
+                m.LLM_CALLS, role=req.role, route=route, outcome="timeout" if kind == "timeout" else "error"
+            )
+            self.metrics.observe(m.LLM_CALL_SECONDS, ms / 1000, role=req.role, route=route)
             log.info(
                 "llm call failed",
                 extra={
@@ -311,6 +358,8 @@ class LLMRouter:
         ms = int((self._clock() - t0) * 1000)
         usd = cost_usd(route, model, resp.usage)
         calls.append(CallRecord(route, model, resp.usage, usd, ms))
+        self.metrics.inc(m.LLM_CALLS, role=req.role, route=route, outcome="ok")
+        self.metrics.observe(m.LLM_CALL_SECONDS, ms / 1000, role=req.role, route=route)
         self.metrics.inc(
             m.LLM_TOKENS,
             resp.usage.prompt_tokens + resp.usage.output_tokens,
@@ -359,6 +408,7 @@ class LLMRouter:
             status = "fallback"
         else:
             status = "failed"
+        self.metrics.inc(m.LLM_RESULTS, role=req.role, status=status)
         return LLMResult(
             value=value,
             status=status,

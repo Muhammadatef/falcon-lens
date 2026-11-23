@@ -108,6 +108,9 @@ def _headline(y: np.ndarray, warn: np.ndarray, p: np.ndarray, n_boot: int, seed:
         "f1": M.with_ci(rate(M.f1), y, warn, n_boot, seed + 2),
         "fpr": M.with_ci(rate(M.fpr), y, warn, n_boot, seed + 3),
         "pr_auc": M.with_ci(M.pr_auc, y, p, n_boot, seed + 4),
+        # new keys (additive): rank metric on the calibrated probability, and accuracy at the operating point
+        "roc_auc": M.with_ci(M.roc_auc, y, p, n_boot, seed + 6),
+        "accuracy": M.with_ci(rate(M.accuracy), y, warn, n_boot, seed + 7),
         "ece": M.with_ci(lambda yy, pp: M.ece(yy, pp), y, p, n_boot, seed + 5),
         "reliability": M.reliability(y, p),
     }
@@ -348,7 +351,7 @@ def publish_doc(doc: dict[str, Any]) -> dict[str, Any]:
     """Compact, URL-free summary for evals/results/published/ (feeds the README block via readme_metrics)."""
     metrics: dict[str, Any] = {}
     for split, s in doc["splits"].items():
-        for name in ("precision", "recall", "f1", "fpr", "pr_auc", "ece"):
+        for name in ("precision", "recall", "f1", "fpr", "pr_auc", "roc_auc", "accuracy", "ece"):
             m = s["overall"][name]
             metrics[f"{split}.{name}"] = m["value"]
             metrics[f"{split}.{name}_ci95"] = [m["ci_low"], m["ci_high"]]

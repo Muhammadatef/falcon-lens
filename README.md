@@ -134,6 +134,8 @@ Each picture follows one agent from start to finish. The colour of each step say
 
 **The Sentinel | الحارس.** The Sentinel listens to every finished check and groups similar ones, so many fake pages copying one bank are seen as a single campaign. Written rules decide when that is an incident. It may block a known-bad link inside our own system, and that block can be undone. Anything that would leave the system, such as a takedown request or a police report, is only a draft until an officer approves it.
 
+**Why DSPy and LangGraph.** The Sentinel is a LangGraph graph because its steps must be visible, resumable after a restart and stopped by a human before anything leaves the system. The Investigator is deliberately not LangGraph: it is a short, bounded loop of at most six typed tool calls. DSPy defines the typed contract of each AI role and tunes its prompt offline against our own checks (this part is still in progress). AI-call tracing with Arize Phoenix is wired in the stack and shown as In progress until the services start the tracer. The website has the whole system as one clickable diagram on the AI agents page and in the technical docs; the details are in [docs/TECHNICAL.md](docs/TECHNICAL.md).
+
 ## What makes it different
 
 | | In plain words | Honest note |
@@ -189,13 +191,13 @@ Every figure below is copied by a script from a saved test result. No number on 
 - **The sets are small.** The lines ending in `ci95` give the likely range, and a wide range means the figure could move as more links are tested.
 
 <!-- metrics:start -->
-Source artifact: [`evals/results/published/20261123T111023Z.json`](evals/results/published/20261123T111023Z.json). Values are copied verbatim.
+Source artifact: [`evals/results/published/20261123T122549Z.json`](evals/results/published/20261123T122549Z.json). Values are copied verbatim.
 
 | Provenance | Value |
 |---|---|
 | `scope` | `offline T1 + arbiter on URLs; real data only; temporal_cut false (single poll)` |
-| `created_at` | `2026-11-23T11:10:23Z` |
-| `git_sha` | `e9854b561d3c454b5322a5d44b0788fad339468d-dirty` |
+| `created_at` | `2026-11-23T12:25:49Z` |
+| `git_sha` | `fc577d7a5d2f59366f35da287a9be106fe6bb03c-dirty` |
 | `dataset_hash` | `3467e9f6b9f930c23a3a001f7126330bd0d129b32e01f40678e003b03bb07ac2` |
 | `temporal_cut` | `false` |
 | `seeds` | `{"bootstrap": 20261122, "model": 20261122, "n_bootstrap": 1000, "split": 20261122}` |
@@ -209,6 +211,8 @@ Source artifact: [`evals/results/published/20261123T111023Z.json`](evals/results
 
 | Metric | Value | In plain words |
 |---|---|---|
+| `test.accuracy` | 0.978571 |  |
+| `test.accuracy_ci95` | [0.95, 1.0] |  |
 | `test.ece` | 0.101203 | How far our stated confidence is from what really happened. Closer to zero is better. |
 | `test.ece_ci95` | [0.086972, 0.127847] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.f1` | 0.974359 | A single figure that balances recall and precision. Higher is better. |
@@ -230,6 +234,10 @@ Source artifact: [`evals/results/published/20261123T111023Z.json`](evals/results
 | `test.precision_ci95` | [1.0, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `test.recall` | 0.95 | Of the real scam checks in the set, the share we flagged. Higher is better. |
 | `test.recall_ci95` | [0.888889, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `test.roc_auc` | 0.995417 |  |
+| `test.roc_auc_ci95` | [0.983348, 1.0] |  |
+| `val.accuracy` | 0.97561 |  |
+| `val.accuracy_ci95` | [0.955285, 0.99187] |  |
 | `val.ece` | 0.130744 | How far our stated confidence is from what really happened. Closer to zero is better. |
 | `val.ece_ci95` | [0.11339, 0.153559] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `val.f1` | 0.978723 | A single figure that balances recall and precision. Higher is better. |
@@ -251,6 +259,8 @@ Source artifact: [`evals/results/published/20261123T111023Z.json`](evals/results
 | `val.precision_ci95` | [0.963501, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
 | `val.recall` | 0.971831 | Of the real scam checks in the set, the share we flagged. Higher is better. |
 | `val.recall_ci95` | [0.940732, 0.993197] | Likely range for the line above if the test were repeated (lower and upper bound). |
+| `val.roc_auc` | 0.981751 |  |
+| `val.roc_auc_ci95` | [0.962073, 0.995888] |  |
 
 Not evaluated in this artifact, so no figure is shown for them: `arabic_clarity`, `cost_per_check_llm`, `faithfulness`, `flip_rate_3_runs`, `injection_attack_success_rate`, `llm_tier_T3`, `sandbox_tier_T2`, `zero_day`, `synthetic`, `cloud_route`, `sovereign_route`.
 <!-- metrics:end -->

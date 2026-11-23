@@ -354,3 +354,46 @@ async def test_stale_mirror_entry_is_not_h2() -> None:
     await rig.worker.read_batch(pending=False, block_ms=100)
     final = rig.store.verdicts[vid]
     assert not any(e.get("hard_rule") == "H2" for e in final["evidence"])
+
+
+async def test_queue_depth_gauge_reports_pending_and_lag() -> None:
+    from falcon_core.telemetry import metrics as tm
+
+    rig = Rig(StubSandboxClient(default=benign_features()))
+    await rig.worker.ensure_group()
+    await rig.submit(DEMO_BENIGN_URL)
+    await rig.submit(DEMO_BENIGN_URL)
+    await rig.worker.observe_queue()
+    lag = tm.REGISTRY.get_sample_value("fl_queue_depth", {"stream": "jobs", "state": "lag"})
+    assert lag == 2  # two jobs queued, none delivered yet
+    assert tm.REGISTRY.get_sample_value("fl_queue_depth", {"stream": "jobs", "state": "pending"}) == 0
+
+
+async def test_jobs_stream_is_empty_after_success_dead_letter_and_duplicate() -> None:
+    sandbox = StubSandboxClient(default=benign_features())
+    rig = Rig(sandbox)
+    await rig.worker.ensure_group()
+    await rig.submit(DEMO_BENIGN_URL)
+    fields = (await rig.r.xrange(keys.JOBS_STREAM))[0][1]
+    await rig.r.xadd(keys.JOBS_STREAM, fields)  # duplicate entry
+    await rig.r.xadd(keys.JOBS_STREAM, {"verdict_id": "nope", "payload_json": "{"})  # dead letter
+    assert await rig.worker.read_batch(pending=False, block_ms=100) == 3
+    assert await rig.r.xlen(keys.JOBS_STREAM) == 0
+    assert (await rig.r.xpending(keys.JOBS_STREAM, keys.JOBS_GROUP))["pending"] == 0
+
+
+async def test_userinfo_and_pii_never_reach_verdict_evidence_events_or_dead_letters() -> None:
+    rig = Rig(StubSandboxClient(default=benign_features()))
+    await rig.worker.ensure_group()
+    url = "https://secret.user:pw0rd@falcon-demo-bank.test/login?e=test.user@example.invalid"
+    vid = await rig.submit(url)
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    assert await rig.r.xlen(keys.JOBS_STREAM) == 0
+    blobs = [json.dumps(rig.store.verdicts[vid], ensure_ascii=False)]
+    blobs.append(json.dumps({str(k): v for k, v in rig.store.evidence.items()}, default=str, ensure_ascii=False))
+    for stream in (keys.EVENTS_STREAM, keys.JOBS_DEAD):
+        blobs.append(json.dumps(await rig.r.xrange(stream), ensure_ascii=False))
+    blobs.append(str(await rig.r.get(keys.last_key(vid))))
+    for blob in blobs:
+        for leak in ("secret.user", "pw0rd", "test.user", "example.invalid"):
+            assert leak not in blob, leak
