@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1270" width="720" height="1270" role="img" aria-labelledby="t d">
 <title id="t">The two AI helpers in Falcon Lens</title>
-<desc id="d">The Investigator looks closer at unclear cases. It is used only when the fixed rules cannot settle a case, it has a short list of approved tools, web pages cannot give it orders, and it cannot change the score: fixed code decides. The Sentinel watches every check around the clock. It links similar checks to spot a scam campaign early, blocks known-bad links inside the system, and drafts takedown requests and police reports. It sends nothing itself: a person must approve first.</desc>
+<desc id="d">The Investigator looks closer at unclear cases. It is used only when the fixed rules cannot settle a case, it has a short list of approved tools, it is built so that page text cannot change the score, and it cannot change the score: fixed code decides. The Sentinel watches every check around the clock. It links similar checks to spot a scam campaign early, blocks known-bad links inside the system, and drafts takedown requests and police reports. It sends nothing itself: a person must approve first.</desc>
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
 .h1{font-size:36px;font-weight:700}
@@ -78,7 +78,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <g class="b">
 <circle cx="70" cy="438" r="6" fill="#3fe0c5"/><text x="92" y="446">Used only when fixed rules cannot settle a case.</text>
 <circle cx="70" cy="482" r="6" fill="#3fe0c5"/><text x="92" y="490">Works with a short list of approved tools.</text>
-<circle cx="70" cy="526" r="6" fill="#3fe0c5"/><text x="92" y="534">A web page cannot give it orders.</text>
+<circle cx="70" cy="526" r="6" fill="#3fe0c5"/><text x="92" y="534">Built so page text cannot change the score.</text>
 <path d="M63 563l14 14M77 563l-14 14" stroke="#ff8589" stroke-width="3.400" stroke-linecap="round"/><text x="92" y="578" fill="#f2eee6">It cannot change the score. Fixed code decides.</text>
 </g>
 </g>
