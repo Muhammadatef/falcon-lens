@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import fakeredis
@@ -14,7 +15,9 @@ from falcon_api.app import build_app
 from falcon_api.jobs import channel, last_key
 from falcon_core.config import Settings
 
+ROOT = Path(__file__).resolve().parents[3]
 SANDBOX_KEY = "test-sandbox-key"
+OPERATOR_KEY = "test-operator-key"
 
 
 class FakeStore:
@@ -73,6 +76,9 @@ def make_settings(**kw: Any) -> Settings:
     return Settings(
         _env_file=None,  # type: ignore[call-arg]
         fl_sandbox_api_key=SecretStr(SANDBOX_KEY),
+        fl_operator_key=SecretStr(OPERATOR_KEY),
+        fl_api_key_pepper=SecretStr("test-pepper"),
+        fl_webhook_secret=SecretStr("test-webhook-secret"),
         fl_public_base_url="https://app.example.test",
         **kw,
     )

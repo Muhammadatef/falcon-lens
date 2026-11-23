@@ -75,6 +75,9 @@ data/private/       GITIGNORED — live URLs, snapshots, logos
 - All untrusted text is spotlighted (delimited and datamarked) before any model sees it. The investigator and Sentinel see structured evidence only.
 - Secrets only through the environment. `gitleaks` runs in pre-commit and CI. **The repo is public.**
 
+## Audience (owner directive)
+The website is judged by the Abu Dhabi Police × 42 evaluation committee: every page and state must be production-ready (formal Arabic first, clear English, accessible, fast, no placeholders, honest numbers, no ADP branding).
+
 ## Workflow
 - L1 (main session) writes docs and contracts, dispatches builders, and merges only PRs the supervisor approved.
 - Builders work on `feat/<module>-<slug>`, open a PR, and the supervisor reviews it (`reviews/PR-<n>.md`). Max two review rounds.

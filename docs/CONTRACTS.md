@@ -8,7 +8,8 @@ The machine-readable sources of truth are in `contracts/`. Pydantic models in `p
 | `evidence.schema.json` | signals → arbiter → reasons |
 | `signal.schema.json` | signal plugin registration (`add-signal` skill) |
 | `event.schema.json` | Redis Stream `fl:events` → Sentinel |
-| `incident.schema.json` | Sentinel → board, REST, MCP, STIX |
+| `incident.schema.json` | Sentinel → board, REST, MCP, STIX. Timeline entries carry `what` (compat) plus optional bilingual `what_ar` / `what_en` |
+| `campaign.schema.json` | `GET /v1/campaigns`, SSE `/v1/campaigns/stream` (projection of an incident; computed by the API) |
 | `tools.schema.json` | investigator, Sentinel and MCP tool registry plus the JSON `Action` |
 | `openapi.yaml` | REST v1. FastAPI generates it; CI checks it hasn't drifted from the committed file |
 
@@ -17,7 +18,7 @@ Key invariants:
 2. `verdict` is never the word "safe".
 3. `no_warning_signs` always carries `actions.caution`.
 4. Degraded verdicts are never `no_warning_signs`.
-5. URLs in any output are defanged.
+5. URLs in any output are defanged. **One exception (L1 decision):** `GET /v1/intel/stix` returns fully refanged indicator values inside STIX patterns (valid STIX 2.1) and only to callers with the `intel` scope. Incidents, campaigns, MCP and the board stay defanged.
 6. Events and incidents never carry raw page or message text.
 
 ## Internal messages (API <-> worker)
@@ -44,3 +45,14 @@ The JSON is a full `verdict.schema.json` document with `final` set. Exactly one 
 **Events (worker -> Sentinel).** After the final PUBLISH the worker emits one `verdict.created` per final verdict: `XADD fl:events MAXLEN ~ 100000 * event <json>`, a single field named `event` whose value is the full PlatformEvent JSON (`contracts/event.schema.json`). The Sentinel reads exactly that field. Payload: `{verdict, risk_score, input_type, registrable_domain (defanged), brand_id, fingerprints{dom_simhash, favicon_hash, script_embedding_id, asn, registrar, cert_issuer, registered_at}, top_signals[], tier_reached, degraded}`. Unknown fingerprints are `null`. Never raw page or message text.
 
 **Worker-side keys.** Consumer group `workers` on `fl:jobs`. `fl:wsf:<fingerprint>` = leader verdict_id (worker single-flight, NX, TTL 120 s): a follower waits for the leader's final in `fl:verdict:last:` and re-issues it under its own id. `fl:wclaim:<verdict_id>` = stream entry id (idempotency, TTL 300 s). Malformed jobs go to `fl:jobs:dead` and are acked. The worker fills `vc:<fingerprint>` only for non-degraded finals. Postgres `evidence` (one row per evidence item of a final verdict) is worker-internal.
+
+## Internal messages (feeds)
+
+### OpenPhish mirror (Redis)
+- `feed:openphish` is a Redis SET of lowercase sha256 hex digests, never plaintext: the sha256 of the canonical URL
+  (lowercase scheme and host, default port and fragment dropped, empty path becomes `/`; same form as the collector's
+  `sha256` field) and the sha256 of the lowercase ASCII (punycode) host. Host digests are stored only for bare-path
+  listings, so one phishing page on a shared host never condemns the host.
+- `feed:openphish:updated_at` is the last poll time as epoch seconds (JSON number). Age = now minus this value; H2 needs age < 6 h.
+- Writer: `falcon_core.signals.reputation.mirror.refresh_openphish` (periodic job, reads `data/private/feeds/openphish/2*.jsonl`, emits `feed.updated {feed, entries, age_s}` on `fl:events` as field `event` = JSON).
+- Reader: signal `rep.openphish` via `FeedMirror.lookup`. The set is private and is never exported (OpenPhish terms).

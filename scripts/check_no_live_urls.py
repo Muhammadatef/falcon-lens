@@ -8,6 +8,29 @@ Fails (exit 1) when
     test domains) and the line is not a `source_url:` provenance entry.
 
 Defanged forms (hxxp://, example[.]com) never match. Run from the repo root.
+
+What it does:
+    Lists every file git tracks (`git ls-files`) and fails if one sits under data/private/, or if a file
+    under data/, evals/, config/ or a tests/fixtures folder holds a normal http(s) URL to a host that is not
+    on the built-in allow-list. Lines starting with `source_url:` are skipped. It only reads files.
+
+When to use it:
+    Before every commit or PR, and in CI. It protects the "defensive only" rule: no live phishing links.
+
+How to run:
+    make guard                          (same as: python3 scripts/check_no_live_urls.py)
+    Run it from the repo root; it needs `git` and nothing else (standard library only).
+
+Inputs:
+    No arguments or env vars. Reads the tracked files of the current git checkout.
+
+Outputs / side effects:
+    Prints "check_no_live_urls: ok" and exits 0, or prints one `path:line: ...` per problem to stderr and
+    exits 1. Writes nothing and makes no network calls.
+
+Safety notes:
+    To fix a failure, write the URL defanged (hxxp://, example[.]com) instead of adding the host to the
+    allow-list. Never commit anything under data/private/.
 """
 
 from __future__ import annotations
@@ -58,6 +81,7 @@ URL_RE = re.compile(r"https?://[^\s\"'<>)\]}\\,]+", re.IGNORECASE)
 
 
 def host_of(url: str) -> str:
+    """Return the lower-case host of a URL (empty string if it cannot be parsed)."""
     try:
         return urlsplit(url).hostname or ""
     except ValueError:  # malformed (e.g. bad IPv6 literal): treat as unknown host, i.e. flagged
@@ -76,11 +100,18 @@ REVIEWED_TEST_HOSTS = (
     "adpolice.com",
     "dubaipolice-gov.ae",
     "verify-fine.xyz",
+    # T-008 domain/reputation tests: public service endpoints (mocked, never fetched) and invented hosts
+    "crt.sh",
+    "data.iana.org",
+    "safebrowsing.googleapis.com",
+    "falcon-demo-shop.com",
+    "falcon-demo-shop.ae",
 )
 INTERNAL_SUFFIXES = (".internal", ".arpa", ".docker.internal")
 
 
 def allowed(host: str) -> bool:
+    """True if the host is on the allow-list (docs, official domains, reserved test domains)."""
     host = host.lower().rstrip(".")
     if not host or "<" in host or "{" in host or "%" in host or not host.isascii():
         return True  # templated / malformed / non-ASCII test input, not a fetchable host
@@ -101,15 +132,18 @@ def allowed(host: str) -> bool:
 
 
 def tracked_files() -> list[str]:
+    """Every file git tracks, as repo-relative paths."""
     out = subprocess.run(["git", "ls-files"], check=True, capture_output=True, text=True)  # noqa: S607
     return out.stdout.splitlines()
 
 
 def in_scope(path: str) -> bool:
+    """True for files this guard scans (data/, evals/, config/ and tests/fixtures folders)."""
     return path.startswith(SCAN_DIRS) or any(part in SCAN_PARTS for part in Path(path).parts[:-1])
 
 
 def main() -> int:
+    """Run the guard; return 0 if clean, 1 if any problem was found."""
     problems: list[str] = []
     for path in tracked_files():
         if path.startswith("data/private/"):

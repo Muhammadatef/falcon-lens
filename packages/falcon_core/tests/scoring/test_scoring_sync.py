@@ -82,9 +82,10 @@ def test_every_section2_signal_has_params_entry(row: tuple[str, str]) -> None:
 
 
 def test_data_uri_weight_feeds_draft_classifier() -> None:
-    res = score([mk("url.data_uri")], p_clf=None)
+    ctx = ArbiterContext(params=load_params(Path(__file__).with_name("params_draft.yaml")))
+    res = score([mk("url.data_uri")], p_clf=None, ctx=ctx)
     assert res.weighted_evidence[0].weight == 2.0
-    base = score([], p_clf=None)
+    base = score([], p_clf=None, ctx=ctx)
     assert res.calibrated_probability > base.calibrated_probability
     assert template_reasons(res, "en")[0].key == "reasons.url.data_uri"
 
@@ -148,6 +149,8 @@ def test_invalid_input_sets_degraded(signal: str) -> None:
         ("rep.urlhaus", "feed_disabled", "urlhaus"),
         ("rep.openphish", "feed_disabled", "openphish"),
         ("domain.age", "rdap_unsupported_tld", "rdap"),
+        ("domain.age", "rdap_not_found", "rdap"),
+        ("domain.age", "rdap_no_registration_date", "rdap"),
     ],
 )
 def test_informational_errors_do_not_degrade(signal: str, error: str, source: str) -> None:

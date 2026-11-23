@@ -142,9 +142,12 @@ async def test_wait_returns_final_200(client: httpx.AsyncClient, redis: Any) -> 
 
 async def test_wait_timeout_returns_partial_202(client: httpx.AsyncClient, redis: Any) -> None:
     async def worker() -> None:
-        await asyncio.sleep(0.2)
-        entries = await redis.xrange(STREAM)
-        await publish(redis, make_doc(entries[0][1]["verdict_id"], final=False))
+        for _ in range(250):  # bounded poll (5 s) until the job appears on the stream
+            entries = await redis.xrange(STREAM)
+            if entries:
+                await publish(redis, make_doc(entries[0][1]["verdict_id"], final=False))
+                return
+            await asyncio.sleep(0.02)
 
     task = asyncio.create_task(worker())
     r = await post_url(client, "http://x.test/p", params={"wait": 1.2})
@@ -178,7 +181,7 @@ async def test_get_verdict(client: httpx.AsyncClient, store: FakeStore) -> None:
     authed = await client.get(f"/v1/verdicts/{vid}", headers={"X-API-Key": SANDBOX_KEY})
     assert authed.json()["screenshot_url"] == "http://internal/shot.png"
     wrong = await client.get(f"/v1/verdicts/{vid}", headers={"X-API-Key": "nope"})
-    assert wrong.json()["screenshot_url"] is None
+    assert wrong.status_code == 401 and wrong.headers["content-type"].startswith(PROBLEM)
     assert (await client.get("/v1/verdicts/not-an-id")).status_code == 422
 
 

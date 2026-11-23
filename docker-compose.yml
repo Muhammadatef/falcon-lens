@@ -35,12 +35,21 @@ x-app-env: &app-env
   REDIS_URL: redis://redis:6379/0
   FL_API_KEY_PEPPER: ${FL_API_KEY_PEPPER:-change-me}
   FL_SANDBOX_API_KEY: ${FL_SANDBOX_API_KEY:-fl_sandbox_demo_key}
+  FL_SANDBOX_URL: ${FL_SANDBOX_URL:-http://sandbox:8000}
+  # Demo/test fixture hosts exempt from the SSRF internal-name check. Honoured only when FL_ENV is local, demo or ci.
+  FL_SSRF_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test}
+  FL_SMOKE_OFFICIAL_URL: ${FL_SMOKE_OFFICIAL_URL:-http://falcon-demo-bank.test/}
+  FL_SMOKE_PHISH_URL: ${FL_SMOKE_PHISH_URL:-http://falcon-demo-bank-secure.test/login}
   FL_SANDBOX_TOKEN: ${FL_SANDBOX_TOKEN:-change-me-sandbox}
   FALCON_BRANDS_YAML: /app/data/brands.yaml
   FL_REPORTING_CHANNELS: /app/config/reporting_channels.yaml
   FL_OPERATOR_KEY: ${FL_OPERATOR_KEY:-change-me-operator}
   FL_MCP_BEARER_TOKEN: ${FL_MCP_BEARER_TOKEN:-change-me-mcp}
   FL_WEBHOOK_SECRET: ${FL_WEBHOOK_SECRET:-change-me-webhook}
+  FL_WEBHOOK_TARGETS: ${FL_WEBHOOK_TARGETS:-}
+  FL_MCP_SERVICE_KEY: ${FL_MCP_SERVICE_KEY:-change-me-mcp-service}
+  FL_SENTINEL_URL: ${FL_SENTINEL_URL:-http://sentinel:8000}
+  FL_API_URL: ${FL_API_URL:-http://api:8000}
   FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-60}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
@@ -129,7 +138,23 @@ services:
     build: { context: ., dockerfile: services/worker/Dockerfile }
     image: falcon-lens/worker:0.1.0
     <<: [*hardened, *host-gateway]
-    environment: *app-env
+    environment:
+      <<: *app-env
+      # Stable consumer name in the fl:jobs group (XAUTOCLAIM reclaims idle entries either way).
+      FL_WORKER_ID: ${FL_WORKER_ID:-worker-1}
+      # Network signals (RDAP, crt.sh, GSB, URLhaus) go through the filtering egress proxy.
+      # FL_SANDBOX_URL / FL_SANDBOX_TOKEN / FL_SSRF_ALLOW_HOSTS come from x-app-env (allow-list honoured
+      # only when FL_ENV is local, demo or ci, same rule as the sandbox).
+      FL_EGRESS_PROXY: ${FL_EGRESS_PROXY:-http://egress-proxy:3128}
+      FL_OPENPHISH_FEED_DIR: /app/data/private/feeds/openphish
+      # AI parts: quarantined extractor (T2), investigator (T3), responder; fitted T1 classifier for p_clf.
+      # Each fails soft to the deterministic cascade; set false to run offline / for evals.
+      FL_AI_ENABLED: ${FL_AI_ENABLED:-true}
+      FL_T1_MODEL_ENABLED: ${FL_T1_MODEL_ENABLED:-true}
+    volumes:
+      # Private OpenPhish rows (gitignored). The worker's refresh job loads them into the hash-only
+      # Redis mirror every FL_OPENPHISH_REFRESH_S. Missing dir = mirror unavailable (degraded checks).
+      - ${FL_OPENPHISH_HOST_DIR:-./data/private/feeds/openphish}:/app/data/private/feeds/openphish:ro
     networks: [app, data, sandbox_ctl, observability]
     depends_on:
       postgres: { condition: service_healthy }
@@ -151,6 +176,14 @@ services:
       HTTP_PROXY: http://egress-proxy:3128
       HTTPS_PROXY: http://egress-proxy:3128
       NO_PROXY: localhost,127.0.0.1
+      FL_SANDBOX_PROXY: http://egress-proxy:3128
+      FL_SNAPSHOT_DIR: /data/snapshots
+      # Internal Falcon Demo Bank fixture hosts (tools profile): bypass the proxy and are exempt from
+      # the internal-name check; honoured only when FL_ENV is local, demo or ci. Extra *.test hosts (cloaked, injection,
+      # bot relay) are appended for the fixture tests.
+      FL_SSRF_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test},falcon-demo-bank-cloak.test,falcon-demo-bank-injection.test,falcon-bot-relay.test
+    volumes:
+      - ./data/private/snapshots:/data/snapshots
     # No `observability` here: the sandbox must not reach Prometheus/Loki/Alertmanager/etc.
     # Metrics are relayed by the worker (/metrics/sandbox) over sandbox_ctl.
     networks: [sandbox, sandbox_ctl]
@@ -166,6 +199,9 @@ services:
     build: { context: ., dockerfile: services/egress/Dockerfile }
     image: falcon-lens/egress:0.1.0
     <<: *hardened
+    environment:
+      FL_ENV: ${FL_ENV:-local}
+      FL_EGRESS_ALLOW_HOSTS: ${FL_SSRF_ALLOW_HOSTS:-fixtures,falcon-demo-bank.test,falcon-demo-bank-secure.test,falcon-demo-bank-login.test}
     # `app` is the non-internal network that gives the proxy its route to the internet.
     networks: [sandbox, app, observability]
     mem_limit: 128m
@@ -452,21 +488,31 @@ services:
     pids_limit: 64
 
   # ───────────────────────────── tools ────────────────────────────
-  # Placeholder fixture server: invented brand only, internal network only, never published.
+  # Falcon Demo Bank fixtures: invented brand only, internal `sandbox` network only, never published.
+  # One nginx answers for every fixture host via network aliases (*.test never resolves outside Docker).
   fixtures:
     profiles: [tools]
     image: nginxinc/nginx-unprivileged:1.29-alpine
     <<: *hardened
     volumes:
-      - ./services/fixtures/html:/usr/share/nginx/html:ro
+      - ./services/fixtures/conf/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./services/fixtures/conf/redirs.inc:/etc/nginx/conf.d/redirs.inc:ro
+      - ./services/fixtures/sites:/srv:ro
     tmpfs:
       - /tmp
       - /var/cache/nginx
     networks:
       sandbox:
-        aliases: [fixtures]
+        aliases:
+          - fixtures
+          - falcon-demo-bank.test
+          - falcon-demo-bank-secure.test
+          - falcon-demo-bank-login.test
+          - falcon-demo-bank-cloak.test
+          - falcon-demo-bank-injection.test
+          - falcon-bot-relay.test
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/"]
       interval: 10s
       timeout: 3s
       retries: 5

@@ -16,10 +16,7 @@ from falcon_core.cascade.metrics import CascadeMetrics
 from falcon_core.cascade.models import CheckJob, SandboxFeatures, SandboxForm
 from falcon_core.cascade.ports import (
     Extractor,
-    FeedHit,
-    FeedMirror,
     HttpSandboxClient,
-    NullFeedMirror,
     SandboxClient,
     SandboxError,
     StubSandboxClient,
@@ -32,12 +29,9 @@ __all__ = [
     "CascadeMetrics",
     "CheckJob",
     "Extractor",
-    "FeedHit",
-    "FeedMirror",
     "HttpSandboxClient",
     "NullCache",
     "SinkError",
-    "NullFeedMirror",
     "SandboxClient",
     "SandboxError",
     "SandboxFeatures",

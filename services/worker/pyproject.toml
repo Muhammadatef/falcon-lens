@@ -3,7 +3,14 @@ name = "falcon-worker"
 version = "0.1.0"
 description = "Falcon Lens cascade worker"
 requires-python = ">=3.12,<3.13"
-dependencies = ["falcon-core", "asyncpg>=0.30,<0.33", "redis>=8.1,<9"]
+dependencies = [
+  "falcon-core",
+  "asyncpg>=0.30,<0.33",
+  "redis>=8.1,<9",
+  "scikit-learn>=1.9.1",  # fitted T1 classifier (falcon_core.scoring.t1_model)
+  "joblib>=1.6.0",
+  "numpy>=2.5.5",
+]
 
 [build-system]
 requires = ["hatchling"]

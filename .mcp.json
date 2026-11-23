@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "falcon-lens": {
+      "type": "http",
+      "url": "${FL_MCP_URL:-https://localhost:8443/mcp}",
+      "headers": {
+        "Authorization": "Bearer ${FL_MCP_BEARER_TOKEN}"
+      }
+    }
+  }
+}
