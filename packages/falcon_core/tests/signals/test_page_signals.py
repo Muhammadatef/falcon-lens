@@ -75,6 +75,25 @@ def test_cloaking_ignores_identical_and_failed() -> None:
     assert not compare_profiles(a, failed).diff
 
 
+def test_cloaking_skips_comparison_when_one_side_was_read_partially() -> None:
+    """A half-loaded profile differs from a full one only by how much was read: that is not cloaking."""
+    from falcon_core.signals.page.features import NetworkSummary
+
+    full = _profile("desktop_en", dom_simhash="0" * 16, visible_text="one two three four five six seven")
+    half = _profile(
+        "mobile_ar",
+        forms=[FormFeature(cred_form=True, sensitive_kinds=["password"])],
+        dom_simhash="f" * 16,
+        network=NetworkSummary(partial=True),
+    )
+    assert not compare_profiles(half, full).diff
+    assert not compare_profiles(full, half).diff
+    cut = _profile("mobile_ar", network=NetworkSummary(truncated=True))
+    assert not compare_profiles(cut, full).diff
+    elsewhere = _profile("mobile_ar", url="http://b.test/", network=NetworkSummary(partial=True))
+    assert compare_profiles(elsewhere, full).diff  # a different final site is still a behavioural difference
+
+
 def test_features_forbid_raw_html_fields() -> None:
     with pytest.raises(ValueError):
         ProfileFeatures.model_validate({"profile": "desktop_en", "requested_url": "x", "html": "<"})
