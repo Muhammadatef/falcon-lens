@@ -146,7 +146,9 @@ async def test_t0_host_listing_hits_whole_host() -> None:
 
 async def test_t0_stale_feed_hit_is_not_h2() -> None:
     url = "https://synthetic-feed-entry.test/b"
-    cascade, _ = make_cascade(StubSandboxClient(default=benign_features(url)), mirror=loaded_mirror([url], 7 * 3600))
+    cascade, _ = make_cascade(
+        StubSandboxClient(default=benign_features(url)), mirror=loaded_mirror([url], 7 * 3600), t1_model=None
+    )  # draft p_clf: T1 evidence adds to it
     sink = await run(cascade, url)
     final = sink.docs[-1]
     assert "H2" not in rules(final)
@@ -316,7 +318,7 @@ async def test_t1_confident_high_exits_without_sandbox() -> None:
         "url.raw_ip_host": _const_signal("url.raw_ip_host", {"present": True}),
     }
     sandbox = StubSandboxClient(error="must_not_render")
-    cascade, _ = make_cascade(sandbox, signals=sigs)
+    cascade, _ = make_cascade(sandbox, signals=sigs, t1_model=None)  # draft p_clf: signal evidence drives p
     sink = await run(cascade, "https://plain-host.test/")
     _all_valid(sink.docs)
     final = sink.docs[-1]
@@ -334,25 +336,32 @@ async def test_t1_uncertain_escalates_and_partial_is_not_final() -> None:
 
 
 async def test_t1_signals_run_concurrently() -> None:
-    # Five signals of 30 ms each must finish in well under 5 x 30 ms.
+    # Deterministic: every signal waits on a barrier that opens only once all N have started.
+    # If signals ran sequentially the first would never be released and would hit the bound.
     import asyncio
-    import time
+
+    n = 5
+    started = 0
+    all_started = asyncio.Event()
 
     def mk(i: int) -> Any:
         name = f"url.sleepy{i}"
         spec = SignalSpec(name=name, family="url", tier="T1", input_types=("url",),
-                          timeout_ms=500, network="none", emits=(name,))  # fmt: skip
+                          timeout_ms=5000, network="none", emits=(name,))  # fmt: skip
 
         async def fn(ctx: SignalContext) -> list[SignalEvidence]:
-            await asyncio.sleep(0.03)
+            nonlocal started
+            started += 1
+            if started == n:
+                all_started.set()
+            await asyncio.wait_for(all_started.wait(), timeout=2.0)
             return []
 
         return spec, fn
 
-    cascade, _ = make_cascade(signals={f"url.sleepy{i}": mk(i) for i in range(5)})
-    t0 = time.perf_counter()
+    cascade, _ = make_cascade(signals={f"url.sleepy{i}": mk(i) for i in range(n)})
     await run(cascade, "https://plain-host.test/")
-    assert time.perf_counter() - t0 < 0.12
+    assert started == n and all_started.is_set()
 
 
 async def test_crashing_signal_is_error_evidence_not_crash() -> None:
