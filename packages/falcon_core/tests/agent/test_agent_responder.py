@@ -269,3 +269,17 @@ async def test_reason_citing_evidence_outside_the_template_selection_falls_back(
     cited = {i for r in templates for i in r.evidence_ids}
     if "ev_sig00004" not in cited:
         assert out.generated_by == "template"
+
+
+def test_link_regex_catches_spelled_out_dots() -> None:
+    from falcon_core.agent.responder import _LINK_RE
+
+    for text in [
+        "falcon-demo-bank-help dot example",
+        "falcon-demo-bank-help (dot) example",
+        "falcon-demo-bank-help [dot] example",
+        "falcon-demo-bank-help⸳example",
+        "falcon-demo-bank-help.example",
+    ]:
+        assert _LINK_RE.search(text), text
+    assert not _LINK_RE.search("The site name adds words like pay to a known name")

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1776" width="720" height="1776" role="img" aria-labelledby="t d">
+<title id="t">The Investigator, step by step</title><desc id="d">Seven steps. Fixed rules go first. A tool-less reader pulls facts out of page text. A limited, checked set of lookups follows only when unsure. Fixed code sets the score. The AI writes reasons that must each point to evidence.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
+.h1{font-size:38px;font-weight:700}
+.sub{font-size:24px;fill:#aeb8cc}
+.t{font-size:27px;font-weight:650}
+.b{font-size:22px;fill:#aeb8cc}
+.n{font-size:26px;font-weight:700;fill:#0a0f1c}
+.p{font-size:20px;font-weight:600}
+.card{fill:#0e1626;stroke:#2a3757;stroke-width:1.5}
+.spine{stroke:#2a3757;stroke-width:4;stroke-linecap:round}
+.flow{stroke:#3fe0c5;stroke-width:4;stroke-linecap:round;stroke-dasharray:3 16;opacity:.7;animation:dash 1.4s linear infinite}
+.glow{fill:#3fe0c5;fill-opacity:.07;stroke:#3fe0c5;stroke-width:2.5;opacity:0;animation:lit 14s linear infinite}
+.glow.am{fill:#ffc55c;stroke:#ffc55c}
+@keyframes dash{to{stroke-dashoffset:-19}}
+@keyframes lit{0%{opacity:0}2%,12%{opacity:1}16%,100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.glow{opacity:0}}
+</style>
+<defs><radialGradient id="halo" cx="50%" cy="0%" r="80%"><stop offset="0" stop-color="#3fe0c5" stop-opacity=".12"/><stop offset="1" stop-color="#3fe0c5" stop-opacity="0"/></radialGradient></defs>
+<rect width="720" height="1776" fill="#0a0f1c"/><rect width="720" height="1776" fill="url(#halo)"/>
+<text class="h1" x="40" y="70">The Investigator</text>
+<text class="sub" x="40" y="116">Looks closer at one unclear check. Step by step.</text>
+<line class="spine" x1="60" y1="230" x2="60" y2="1572"/><line class="flow" x1="60" y1="230" x2="60" y2="1572"/>
+<rect class="card" x="110" y="190" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:0s" x="110" y="190" width="580" height="184" rx="16"/>
+<circle cx="60" cy="230" r="26" fill="#8794ae"/><text class="n" x="60" y="239" text-anchor="middle">1</text>
+<rect x="136" y="206" width="83" height="32" rx="16" fill="none" stroke="#8794ae" stroke-width="1.8"/><text class="p" x="150" y="229" style="fill:#8794ae">Input</text>
+<text class="t" x="136" y="274">Something to check arrives</text>
+<text class="b" x="136" y="304">A link, message, email or picture. Nothing</text>
+<text class="b" x="136" y="333">personal is asked for.</text>
+<rect class="card" x="110" y="408" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:2s" x="110" y="408" width="580" height="184" rx="16"/>
+<circle cx="60" cy="448" r="26" fill="#3fe0c5"/><text class="n" x="60" y="457" text-anchor="middle">2</text>
+<rect x="136" y="424" width="138" height="32" rx="16" fill="none" stroke="#3fe0c5" stroke-width="1.8"/><text class="p" x="150" y="447" style="fill:#3fe0c5">Fixed code</text>
+<text class="t" x="136" y="492">Fixed rules go first</text>
+<text class="b" x="136" y="522">Clear cases are settled here and the AI is never</text>
+<text class="b" x="136" y="551">called.</text>
+<rect class="card" x="110" y="626" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:4s" x="110" y="626" width="580" height="184" rx="16"/>
+<circle cx="60" cy="666" r="26" fill="#a9c0ff"/><text class="n" x="60" y="675" text-anchor="middle">3</text>
+<rect x="136" y="642" width="50" height="32" rx="16" fill="none" stroke="#a9c0ff" stroke-width="1.8"/><text class="p" x="150" y="665" style="fill:#a9c0ff">AI</text>
+<text class="t" x="136" y="710">Reads the page text in a sealed room</text>
+<text class="b" x="136" y="740">This reader has no tools. It only pulls out facts,</text>
+<text class="b" x="136" y="769">so text on a page cannot give it orders.</text>
+<rect class="card" x="110" y="844" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:6s" x="110" y="844" width="580" height="184" rx="16"/>
+<circle cx="60" cy="884" r="26" fill="#a9c0ff"/><text class="n" x="60" y="893" text-anchor="middle">4</text>
+<rect x="136" y="860" width="50" height="32" rx="16" fill="none" stroke="#a9c0ff" stroke-width="1.8"/><text class="p" x="150" y="883" style="fill:#a9c0ff">AI</text>
+<text class="t" x="136" y="928">Looks closer only when unsure</text>
+<text class="b" x="136" y="958">At most 6 checked lookups from an approved list. A</text>
+<text class="b" x="136" y="987">lookup the page itself suggested is refused.</text>
+<rect class="card" x="110" y="1062" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:8s" x="110" y="1062" width="580" height="184" rx="16"/>
+<circle cx="60" cy="1102" r="26" fill="#3fe0c5"/><text class="n" x="60" y="1111" text-anchor="middle">5</text>
+<rect x="136" y="1078" width="138" height="32" rx="16" fill="none" stroke="#3fe0c5" stroke-width="1.8"/><text class="p" x="150" y="1101" style="fill:#3fe0c5">Fixed code</text>
+<text class="t" x="136" y="1146">Code, not AI, decides the score</text>
+<text class="b" x="136" y="1176">A fixed formula and fixed rules. No AI can raise</text>
+<text class="b" x="136" y="1205">or lower the score.</text>
+<rect class="card" x="110" y="1280" width="580" height="218" rx="16"/>
+<rect class="glow" style="animation-delay:10s" x="110" y="1280" width="580" height="218" rx="16"/>
+<circle cx="60" cy="1320" r="26" fill="#a9c0ff"/><text class="n" x="60" y="1329" text-anchor="middle">6</text>
+<rect x="136" y="1296" width="50" height="32" rx="16" fill="none" stroke="#a9c0ff" stroke-width="1.8"/><text class="p" x="150" y="1319" style="fill:#a9c0ff">AI</text>
+<text class="t" x="136" y="1364">Writes the reasons; every reason</text>
+<text class="t" x="136" y="1398">must point to evidence</text>
+<text class="b" x="136" y="1428">A checker throws out any reason that has no</text>
+<text class="b" x="136" y="1457">evidence behind it.</text>
+<rect class="card" x="110" y="1532" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:12s" x="110" y="1532" width="580" height="184" rx="16"/>
+<circle cx="60" cy="1572" r="26" fill="#8794ae"/><text class="n" x="60" y="1581" text-anchor="middle">7</text>
+<rect x="136" y="1548" width="94" height="32" rx="16" fill="none" stroke="#8794ae" stroke-width="1.8"/><text class="p" x="150" y="1571" style="fill:#8794ae">Output</text>
+<text class="t" x="136" y="1616">You get a clear answer</text>
+<text class="b" x="136" y="1646">Dangerous, suspicious or no warning signs found,</text>
+<text class="b" x="136" y="1675">in Arabic and English, with what to do now.</text>
+</svg>

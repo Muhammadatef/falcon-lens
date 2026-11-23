@@ -6,6 +6,18 @@ Sources (each optional, a missing one is reported, never fatal):
   (red-team cases are never seeded: `make redteam` runs them)
   message  evals/datasets/{synthetic,human}_messages*.jsonl   {"text"}; kept if all domains reserved
   phish    evals/manifests/phishing.manifest.jsonl   hashes only -> verdict.created replay events
+
+What it does (details):
+    `build_corpus` gathers items from the sources above, drops anything whose domain is not on the
+    reserved/test allow-list, and returns them in a stable order. Real phishing entries are represented only
+    by their hashes, never by a URL.
+
+When to use it:
+    Used by `make seed`; no command of its own.
+
+Inputs / outputs:
+    Reads evals/datasets/legit_urls.csv, evals/datasets/*messages*.jsonl and
+    evals/manifests/phishing.manifest.jsonl if present. Writes nothing and makes no network calls.
 """
 
 from __future__ import annotations
@@ -59,6 +71,7 @@ def text_domains(text: str) -> set[str]:
 
 
 def message_allowed(text: str) -> bool:
+    """True if every domain mentioned in the message text is on the reserved/test allow-list."""
     return all(_host_ok(h) for h in text_domains(text))
 
 
@@ -82,6 +95,8 @@ BRAND = "falcon_demo_bank"
 
 @dataclass(frozen=True)
 class Item:
+    """One seedable item: a URL, a message or a replay event, with its expected label and group."""
+
     group: str
     kind: str  # url | message | event
     value: str  # url or message text; for `event` a sha256 (never a URL)
@@ -116,6 +131,7 @@ FIXTURE_MESSAGES: tuple[tuple[str, str], ...] = (
 
 
 def fixture_items() -> list[Item]:
+    """The built-in Falcon Demo Bank fixture items (.test domains)."""
     items = [Item("fixture", "url", u, e) for u, e in FIXTURE_URLS]
     items += [Item("fixture", "message", t, e) for t, e in FIXTURE_MESSAGES]
     return items
@@ -129,6 +145,7 @@ def _every_kth(rows: list[Any], limit: int | None) -> list[Any]:
 
 
 def legit_items(path: Path | None = None, limit: int | None = 60) -> list[Item]:
+    """Deterministic sample of the legitimate (official) URLs from evals/datasets/legit_urls.csv."""
     p = path or REPO_ROOT / "evals" / "datasets" / "legit_urls.csv"
     if not p.is_file():
         return []
@@ -146,6 +163,7 @@ def _jsonl(path: Path) -> Iterator[dict[str, Any]]:
 
 
 def message_items(root: Path | None = None, limit: int | None = 60) -> list[Item]:
+    """Synthetic or human messages from evals/datasets whose domains are all reserved."""
     d = root or REPO_ROOT / "evals" / "datasets"
     rows: list[dict[str, Any]] = []
     for pat in ("synthetic_messages*.jsonl", "human_messages*.jsonl"):

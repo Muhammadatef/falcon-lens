@@ -350,7 +350,7 @@ test.describe("demo mode is explicit and labelled", () => {
 
     await page.getByTestId("demo-danger").click();
     await expect(page.getByTestId("verdict-word")).toHaveText("خطِر", { timeout: 10_000 });
-    await expect(page.getByTestId("source-badge")).toContainText("DEMO DATA");
+    await expect(page.getByTestId("source-badge")).toContainText("بيانات تجريبية");
     await expect(page.getByTestId("impersonated")).toContainText("بنك الصقر التجريبي");
   });
 });
@@ -361,7 +361,7 @@ test.describe("language, theme, layout, motion", () => {
     await page.getByTestId("lang-toggle").click();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
-    await expect(page.locator("h1")).toHaveText("Got a suspicious message? Paste it here.");
+    await expect(page.locator("h1")).toHaveText("Received a suspicious link or message? Check it here.");
     await page.getByTestId("theme-toggle").click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     await page.reload();

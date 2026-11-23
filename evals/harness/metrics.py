@@ -2,6 +2,9 @@
 
 Positive class = phishing. A "warning" is a verdict of ``suspicious`` or ``dangerous``.
 All functions are pure and deterministic; the bootstrap takes an explicit seed.
+
+When to use it:
+    As a library, imported by run.py and the tests; it has no command of its own. No files, no network.
 """
 
 from __future__ import annotations
@@ -15,6 +18,7 @@ Array = Any
 
 
 def confusion(y: Sequence[int], pred: Sequence[bool]) -> tuple[int, int, int, int]:
+    """Counts (tp, fp, tn, fn) with phishing as the positive class."""
     yt = np.asarray(y, dtype=bool)
     yp = np.asarray(pred, dtype=bool)
     return int((yt & yp).sum()), int((~yt & yp).sum()), int((yt & ~yp).sum()), int((~yt & ~yp).sum())
@@ -25,21 +29,25 @@ def _div(a: float, b: float) -> float:
 
 
 def precision(y: Sequence[int], pred: Sequence[bool]) -> float:
+    """tp / (tp + fp); 0.0 when undefined."""
     tp, fp, _, _ = confusion(y, pred)
     return _div(tp, tp + fp)
 
 
 def recall(y: Sequence[int], pred: Sequence[bool]) -> float:
+    """tp / (tp + fn); 0.0 when undefined."""
     tp, _, fn, _ = confusion(y, pred)
     return _div(tp, tp + fn)
 
 
 def fpr(y: Sequence[int], pred: Sequence[bool]) -> float:
+    """fp / (fp + tn): share of legitimate items that received a warning."""
     _, fp, _, tn = confusion(y, pred)
     return _div(fp, fp + tn)
 
 
 def f1(y: Sequence[int], pred: Sequence[bool]) -> float:
+    """Harmonic mean of precision and recall."""
     p, r = precision(y, pred), recall(y, pred)
     return _div(2 * p * r, p + r) if not (np.isnan(p) or np.isnan(r)) else float("nan")
 
@@ -117,6 +125,7 @@ def bootstrap_ci(
 def with_ci(
     stat: Callable[[Array, Array], float], y: Sequence[int], x: Sequence[Any], n_boot: int, seed: int
 ) -> dict[str, float | None]:
+    """A metric value together with its bootstrap confidence interval."""
     v = stat(np.asarray(y), np.asarray(x))
     lo, hi = bootstrap_ci(stat, y, x, n_boot, seed)
     return {"value": _clean(v), "ci_low": _clean(lo), "ci_high": _clean(hi)}

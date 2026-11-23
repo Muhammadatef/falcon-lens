@@ -4,6 +4,19 @@
 The JSON is committed (Grafana provisions it from disk); this script keeps the six
 consistent: 5 s refresh, a REPLAY banner, `source`-split series, EN | AR titles.
 Run: uv run python infra/grafana/gen_dashboards.py
+
+When to use it:
+    After you change a dashboard definition in this file. Grafana reads the generated JSON, not this script.
+
+How to run:
+    uv run python infra/grafana/gen_dashboards.py       (no make target; restart Grafana to reload)
+
+Inputs:
+    None (no env vars or arguments).
+
+Outputs / side effects:
+    Deletes every *.json in infra/grafana/dashboards/ and rewrites the six dashboard files there, printing
+    one line per file. No network calls. Commit the regenerated JSON together with this file.
 """
 
 from __future__ import annotations
@@ -50,6 +63,8 @@ REPLAY_OVERRIDES: list[dict[str, Any]] = [
 
 
 class Board:
+    """A dashboard under construction: collects panels and renders Grafana JSON."""
+
     def __init__(self, uid: str, title: str, tags: list[str]) -> None:
         self.uid, self.title, self.tags = uid, title, tags
         self.panels: list[Panel] = []
@@ -134,6 +149,7 @@ NAV = [
 
 
 def target(expr: str, legend: str = "", ref: str = "A", instant: bool = False) -> dict[str, Any]:
+    """A Prometheus query target for a panel."""
     t: dict[str, Any] = {"refId": ref, "expr": expr, "datasource": PROM, "legendFormat": legend}
     if instant:
         t["instant"] = True
@@ -148,6 +164,7 @@ def ts(
     stack: bool = False,
     desc: str = "",
 ) -> Panel:
+    """A time-series panel."""
     overrides = REPLAY_OVERRIDES if replay else []
     return {
         "type": "timeseries",
@@ -185,6 +202,7 @@ def stat(
     decimals: int | None = None,
     graph: bool = True,
 ) -> Panel:
+    """A single-value (stat) panel."""
     steps = steps or [(None, BLUE)]
     d: dict[str, Any] = {
         "unit": unit,
@@ -244,6 +262,7 @@ def banner(board: Board) -> None:
 
 
 def markdown(title: str, content: str) -> Panel:
+    """A text (markdown) panel."""
     return {
         "type": "text",
         "title": title,
@@ -253,6 +272,7 @@ def markdown(title: str, content: str) -> Panel:
 
 
 def table(title: str, targets: list[dict[str, Any]], desc: str = "") -> Panel:
+    """A table panel."""
     for t in targets:
         t["format"] = "table"
         t["instant"] = True
@@ -271,6 +291,7 @@ def table(title: str, targets: list[dict[str, Any]], desc: str = "") -> Panel:
 
 
 def bargauge(title: str, expr: str, legend: str, unit: str = "short") -> Panel:
+    """A bar-gauge panel."""
     return {
         "type": "bargauge",
         "title": title,
@@ -293,6 +314,7 @@ def bargauge(title: str, expr: str, legend: str, unit: str = "short") -> Panel:
 
 
 def donut(title: str, expr: str, legend: str, replay: bool = False) -> Panel:
+    """A donut (pie) panel."""
     return {
         "type": "piechart",
         "title": title,
@@ -308,6 +330,7 @@ def donut(title: str, expr: str, legend: str, replay: bool = False) -> Panel:
 
 
 def logs(title: str, expr: str) -> Panel:
+    """A logs panel."""
     return {
         "type": "logs",
         "title": title,
@@ -323,6 +346,7 @@ def logs(title: str, expr: str) -> Panel:
 
 
 def heatmap(title: str, expr: str) -> Panel:
+    """A heatmap panel."""
     return {
         "type": "heatmap",
         "title": title,
@@ -346,6 +370,7 @@ GOOD_BAD = [(None, GREEN), (1, RED)]
 
 
 def overview() -> Board:
+    """Dashboard 1: command overview."""
     b = Board("fl-command-overview", "Command overview | مركز القيادة", ["overview"])
     banner(b)
     b.add(
@@ -452,6 +477,7 @@ def overview() -> Board:
 
 
 def detection() -> Board:
+    """Dashboard 2: detection quality."""
     b = Board("fl-detection-quality", "Detection quality | جودة الكشف", ["quality"])
     banner(b)
     b.add(
@@ -558,6 +584,7 @@ def detection() -> Board:
 
 
 def pipeline() -> Board:
+    """Dashboard 3: pipeline performance."""
     b = Board("fl-pipeline", "Pipeline performance | أداء المسار", ["pipeline"])
     banner(b)
     b.add(
@@ -687,6 +714,7 @@ def pipeline() -> Board:
 
 
 def ai_ops() -> Board:
+    """Dashboard 4: AI operations."""
     b = Board("fl-ai-ops", "AI operations | عمليات الذكاء الاصطناعي", ["ai"])
     banner(b)
     b.add(
@@ -800,6 +828,7 @@ def ai_ops() -> Board:
 
 
 def security() -> Board:
+    """Dashboard 5: security."""
     b = Board("fl-security", "Security | الأمن", ["security"])
     banner(b)
     b.add(
@@ -898,6 +927,7 @@ def security() -> Board:
 
 
 def sentinel() -> Board:
+    """Dashboard 6: Sentinel incidents and approvals."""
     b = Board("fl-sentinel", "Sentinel | الحارس", ["sentinel"])
     banner(b)
     b.add(
@@ -1024,6 +1054,7 @@ def sentinel() -> Board:
 
 
 def main() -> None:
+    """Rewrite all six dashboard JSON files in infra/grafana/dashboards/."""
     OUT.mkdir(parents=True, exist_ok=True)
     for old in OUT.glob("*.json"):
         old.unlink()
