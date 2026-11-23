@@ -22,7 +22,7 @@ Differences from GitHub (all visible in the logs, none weaken a check)
       shared falcon-lens/* tags never move. Only `docker compose build` runs: no container, network
       or volume is created, and nothing is pruned (the running `falcon` stack is untouched).
     - Playwright installs chromium without --with-deps (a Linux-only flag).
-    - trivy additionally skips local-only directories (extension/node_modules, work, web/.next).
+    - trivy scans a `git archive HEAD` snapshot (all tracked files), so parallel jobs' outputs can't race it.
     - Tool versions are the ones installed locally; CI pins gitleaks/trivy/uv versions.
 
 Parity: scripts/tests/test_ci_local.py parses ci.yml and fails if any job lacks an entry in JOBS.
@@ -81,9 +81,10 @@ JOBS: dict[str, tuple[tuple[str, ...], str]] = {
         ' -o "$FL_CI_LOGDIR/requirements.audit.txt"'
         ' && uvx pip-audit -r "$FL_CI_LOGDIR/requirements.audit.txt" --no-deps --disable-pip'
         " && (cd web && pnpm audit --prod)"
+        ' && SNAP="$(mktemp -d)" && trap \'rm -rf "$SNAP"\' EXIT'
+        ' && git archive HEAD | tar -x -C "$SNAP"'
         " && trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1"
-        " --skip-dirs web/node_modules --skip-dirs extension/node_modules --skip-dirs .venv"
-        " --skip-dirs work --skip-dirs web/.next ."
+        ' "$SNAP"'
         " && python3 scripts/check_no_live_urls.py",
     ),
     "docker-build": (("docker", "python3"), f"python3 {Path(__file__).resolve()} --docker-build"),
