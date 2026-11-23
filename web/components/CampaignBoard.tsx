@@ -76,7 +76,7 @@ export function CampaignBoard({ demo }: { demo: boolean }) {
 
     const openStream = () => {
       closeStream();
-      const es = new EventSource("/v1/campaigns/stream");
+      const es = new EventSource("/api/public/campaigns/stream");
       source.current = es;
       es.onopen = () => setLive(true);
       es.onerror = () => {
@@ -88,7 +88,7 @@ export function CampaignBoard({ demo }: { demo: boolean }) {
     };
 
     const refresh = async () => {
-      const result = await loadBoard("/v1/campaigns", parseCampaign, unwrapList, undefined, abort.signal);
+      const result = await loadBoard("/api/public/campaigns", parseCampaign, unwrapList, undefined, abort.signal);
       if (cancelled) return;
       if (result.state !== "ok") return setLoad({ state: "not_connected" });
       setLoad({ state: "ok", items: result.items });

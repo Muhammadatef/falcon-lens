@@ -33,6 +33,8 @@ export async function scenarioLog(request: APIRequestContext, match: string): Pr
 
 export interface Boards {
   campaigns?: unknown[] | null;
+  /** The mock API answers 401 to the campaign calls (service key rejected). */
+  rejectKey?: boolean;
   incidents?: unknown[] | null;
   campaignEvents?: unknown[];
   incidentEvents?: unknown[];

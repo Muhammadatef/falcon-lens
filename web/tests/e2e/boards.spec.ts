@@ -13,6 +13,27 @@ test.describe("campaign board", () => {
     await expect(page.getByTestId("demo-ribbon")).toHaveCount(0);
   });
 
+  test("public route: renders from the server-side feed, strips operator-only fields, key never reaches the browser", async ({ page, context, request, baseURL }) => {
+    await useBoards(context, request, baseURL!, { campaigns: [liveCampaign(newIncidentId())] });
+    const seen: string[] = [];
+    page.on("request", (r) => seen.push(`${r.url()} ${r.headers()["x-api-key"] ?? ""}`));
+    await page.goto("/campaigns");
+    await expect(page.getByTestId("campaign-card")).toHaveCount(1);
+    expect(seen.some((u) => u.includes("/api/public/campaigns"))).toBe(true);
+    expect(seen.some((u) => /\/v1\/campaigns/.test(u) || u.includes("test-read-key"))).toBe(false);
+    const res = await page.request.get("/api/public/campaigns");
+    expect(res.status()).toBe(200);
+    const raw = await res.text();
+    for (const secret of ["SECRET-DRAFT", "SECRET-APPROVER", "evil.example", "actions", "test-read-key"]) expect(raw).not.toContain(secret);
+  });
+
+  test("upstream rejects the service key (401): honest 'not connected'", async ({ page, context, request, baseURL }) => {
+    await useBoards(context, request, baseURL!, { campaigns: [liveCampaign(newIncidentId())], rejectKey: true });
+    await page.goto("/campaigns");
+    await expect(page.getByTestId("board-not-connected")).toBeVisible();
+    await expect(page.getByTestId("campaign-card")).toHaveCount(0);
+  });
+
   test("empty list: empty state", async ({ page, context, request, baseURL }) => {
     await useBoards(context, request, baseURL!, { campaigns: [] });
     await page.goto("/campaigns");
