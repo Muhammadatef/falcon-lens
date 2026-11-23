@@ -9,6 +9,7 @@ get ONE repair retry; the model never sets a score and only ever sees structured
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -135,7 +136,13 @@ class OpenAICompatLLM:
         model: str = "inkling-2-mini-chat",
         timeout: float = 30.0,
         client: httpx.AsyncClient | None = None,
+        structured: bool | None = None,
     ) -> None:
+        # inkling* has no structured output (infra/ollama/README.md): prompt-level JSON only, unless FL_LOCAL_STRUCTURED=1.
+        env = os.environ.get("FL_LOCAL_STRUCTURED")
+        self.structured = (
+            structured if structured is not None else (env == "1" if env else not model.startswith("inkling"))
+        )
         self.url = base_url.rstrip("/") + "/v1/chat/completions"
         self.model = model
         self._client = client or httpx.AsyncClient(timeout=timeout)
@@ -144,18 +151,17 @@ class OpenAICompatLLM:
         self, *, role: str, system: str, user_json: dict[str, Any], schema: dict[str, Any]
     ) -> dict[str, Any]:
         sys_prompt = f"{system}\nReturn ONLY a JSON object matching this JSON Schema:\n{json.dumps(schema)}"
-        resp = await self._client.post(
-            self.url,
-            json={
-                "model": self.model,
-                "temperature": 0,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": sys_prompt},
-                    {"role": "user", "content": json.dumps(user_json, ensure_ascii=False)},
-                ],
-            },
-        )
+        body: dict[str, Any] = {
+            "model": self.model,
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": json.dumps(user_json, ensure_ascii=False)},
+            ],
+        }
+        if self.structured:
+            body["response_format"] = {"type": "json_object"}
+        resp = await self._client.post(self.url, json=body)
         resp.raise_for_status()
         content = resp.json()["choices"][0]["message"]["content"]
         try:

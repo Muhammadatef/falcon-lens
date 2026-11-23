@@ -137,3 +137,48 @@ def test_trace_endpoint_needs_operator_key():
     from falcon_sentinel.main import app
 
     assert TestClient(app).get("/internal/incidents/inc_X/trace").status_code == 401
+
+
+async def test_unreachable_llm_falls_back_to_templates_and_reaches_interrupt():
+    import httpx
+
+    env = await make_env()
+    iid = env.campaign_id()
+
+    def down(u: dict[str, Any]) -> Exception:
+        return httpx.ConnectError("down")
+
+    llm = StubLLM(overrides={t: down for t in ("assess", "summarise", "propose")})
+    await env.runner(llm).run(iid)
+    doc = await trace_of(env, iid)
+    (run,) = doc["runs"]
+    assert run["status"] == "interrupted"  # template fallback still proposes a takedown draft that waits for a human
+    by = {s["node"]: s for s in run["steps"]}
+    assert all(by[n]["llm"]["fallback_template"] for n in ("assess", "summarise", "propose"))
+    assert (env.cache.get(iid) or {})["summary"]["generated_by"] == "template"
+
+
+async def test_local_inkling_gets_no_response_format():
+    import json as _json
+
+    import httpx
+
+    from falcon_sentinel.llm import OpenAICompatLLM
+
+    seen: list[dict[str, Any]] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(_json.loads(req.content))
+        return httpx.Response(
+            200, json={"choices": [{"message": {"content": '```json\n{"a": 1}<|end_message|>\n```'}}]}
+        )
+
+    c = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    out = await OpenAICompatLLM("http://x", "inkling-2-mini-chat", client=c).complete_json(
+        role="sentinel", system="s", user_json={}, schema={}
+    )
+    assert out == {"a": 1} and "response_format" not in seen[0]
+    await OpenAICompatLLM("http://x", "other", client=c).complete_json(
+        role="sentinel", system="s", user_json={}, schema={}
+    )
+    assert seen[1]["response_format"] == {"type": "json_object"}

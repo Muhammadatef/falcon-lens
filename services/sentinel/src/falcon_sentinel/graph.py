@@ -266,6 +266,13 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                 ),
                 timeout=remaining,
             )
+        except (
+            httpx.HTTPError,
+            OSError,
+        ) as exc:  # model endpoint down or erroring: template fallback, not a node retry
+            if rec is not None:
+                rec.fallback = True
+            raise LLMOutputError(f"llm_unavailable: {type(exc).__name__}") from exc
         finally:
             budget["tokens"] += used
 
@@ -278,6 +285,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             t0 = time.monotonic()
             b = _budget(state)
             iid = state["incident_id"]
+            base_s = float(b["elapsed_s"])
             rec = StepRec()
             tok = CUR_STEP.set(rec)
             run_id = CUR_RUN.get()
@@ -307,7 +315,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
                         "budget": {
                             "steps_used": int(b["steps"]),
                             "tokens_used": int(b["tokens"]),
-                            "elapsed_ms": int((b["elapsed_s"] + time.monotonic() - t0) * 1000),
+                            "elapsed_ms": int((base_s + time.monotonic() - t0) * 1000),
                         },
                         "error_code": err,
                     },
@@ -484,6 +492,8 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             ("update_campaign_board", {"incident_id": iid}),
             ("export_stix", {"incident_id": iid}),
         ]
+        if "propose" in degraded:  # no model proposals: the template still holds a takedown draft for a human
+            det.append(("draft_takedown", {"incident_id": iid, "recipient_kind": "registrar"}))
         if inc["severity"] in ("high", "critical"):
             det.append(("raise_alert", {"incident_id": iid, "severity": inc["severity"]}))
         for tool, args in det:
