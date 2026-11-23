@@ -112,6 +112,8 @@ class SandboxFeatures(BaseModel):
     post_targets: list[str] = Field(default_factory=list)
     # Cross-origin POST targets that carry NO form-field data (telemetry, pixels): informational only.
     beacon_origins: list[str] = Field(default_factory=list)
+    # Post origins that count only because of the credential-page rule (basis=credential_page_rule).
+    credential_rule_origins: list[str] = Field(default_factory=list)
     hotlinked_origins: list[str] = Field(default_factory=list)
     visible_text: str = ""
     favicon_sha256: str | None = None

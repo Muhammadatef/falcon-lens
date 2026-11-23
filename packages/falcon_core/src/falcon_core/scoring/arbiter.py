@@ -212,6 +212,46 @@ def _clip(x: float, bound: float) -> float:
     return max(-bound, min(bound, x))
 
 
+#: Evidence that corroborates a credential-page-rule post (SCORING §3.1): any of these lifts the cap.
+_CORROBORATING_SIGNALS = frozenset(
+    ["brand.claimed_not_owned", "url.free_host_or_tunnel", "page.cloaking", "rep.openphish", "rep.gsb", "rep.urlhaus"]
+)
+YOUNG_DOMAIN_DAYS = 30
+
+
+def credential_rule_cap_applies(
+    evidence: Sequence[Evidence], contrib: Sequence[float], fired: Sequence[object]
+) -> bool:
+    """True when a would-be `dangerous` rests on the credential-page rule alone.
+
+    ``page.cross_origin_post`` with ``basis=credential_page_rule`` means: the page has a password/OTP/card/ID input
+    and a script POSTs somewhere else, but nothing shows the form data is in that POST. Such a post may lift a page
+    to `suspicious`, never alone to `dangerous`. Corroboration lifts the cap: a fired hard rule (H1/H2/H4/H5/H6),
+    brand.claimed_not_owned, a young domain (< 30 days), a free host or tunnel, a feed hit, or detected cloaking.
+    No weight is lowered; posts with payload or relay basis are untouched."""
+    rule_only = False
+    for ev in evidence:
+        if (
+            ev.signal == "page.cross_origin_post"
+            and ev.error is None
+            and observed_get(ev, "basis") == "credential_page_rule"
+        ):
+            rule_only = True
+            break
+    if not rule_only or fired:
+        return False
+    for ev, c in zip(evidence, contrib, strict=True):
+        if ev.error is not None:
+            continue
+        if ev.signal in _CORROBORATING_SIGNALS and c > 0:
+            return False
+        if canonical_signal(ev.signal) == "domain.age":
+            age = observed_number(ev, "age_days")
+            if age is not None and 0 <= age < YOUNG_DOMAIN_DAYS:
+                return False
+    return True
+
+
 def score(
     evidence: Sequence[Evidence],
     p_clf: float | None = None,
@@ -259,6 +299,8 @@ def score(
         elif rule.effect == "cap_no_warning_signs":
             p = min(p, params.h3_p_cap)
     p = min(1.0, max(0.0, p))
+    if p >= params.tau_high and credential_rule_cap_applies(evidence, contrib, outcome.fired):
+        p = math.nextafter(params.tau_high, 0.0)  # capped at suspicious: see credential_rule_cap_applies
     verdict = band(p, params)
 
     # Degradation (SCORING §4).

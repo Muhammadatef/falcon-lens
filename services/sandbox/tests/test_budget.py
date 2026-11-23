@@ -64,6 +64,19 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                     n = min(left, 1_000_000)
                     self.wfile.write(b" " * n)
                     left -= n
+        elif path in ("/huge-undeclared", "/big-undeclared"):  # no Content-Length: the body ends when we close
+            self.send_response(200)
+            self.send_header("content-type", "text/html")
+            self.end_headers()
+            head = page("Undeclared", FORM, "<!--")
+            total = policy.MAIN_DOC_HARD_BYTES + 1 if path == "/huge-undeclared" else 400_000
+            with contextlib.suppress(OSError):
+                self.wfile.write(head)
+                left = total - len(head)
+                while left > 0:
+                    n = min(left, 1_000_000)
+                    self.wfile.write(b"x" * n)
+                    left -= n
         elif path == "/many-images":  # sub-resources add up past the (patched) budget
             imgs = "".join(f'<img src="/img/{i}.png" width="10" height="10">' for i in range(6))
             self._send(page("Images", FORM, imgs))
@@ -229,3 +242,13 @@ async def test_head_stalling_page_is_a_partial_read_without_the_body(
 def test_local_documents_are_never_accepted_as_a_partial_read(url: str) -> None:
     pol = policy.RequestPolicy(Settings(allow_hosts=frozenset({"127.0.0.1"})).guard)
     assert not policy.partial_read_allowed(pol, url)
+
+
+async def test_undeclared_huge_main_document_is_refused_and_modest_one_is_cut(
+    base: str, sandbox: SandboxBrowser, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    f = (await sandbox.visit(f"{base}/huge-undeclared", "desktop_en")).features
+    assert f.error == "size_cap" and f.final_url is None
+    monkeypatch.setattr(browser_mod, "MAIN_DOC_MAX_BYTES", 100_000)
+    f = (await sandbox.visit(f"{base}/big-undeclared", "desktop_en")).features
+    assert f.error is None and f.network.truncated and f.network.doc_bytes == 100_000

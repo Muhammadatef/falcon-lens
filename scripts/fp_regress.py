@@ -49,6 +49,15 @@ def load_set(name: str) -> tuple[list[str], dict[str, str]]:
     return urls, web
 
 
+def set_seed(name: str) -> int | None:
+    """The seed the held-out set was DRAWN with (column ``seed`` of the csv); None when the set has no such column."""
+    with (ROOT / "evals" / "datasets" / name).open(newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            s = r.get("seed", "")
+            return int(s) if s.isdigit() else None
+    return None
+
+
 def rate(res: list[dict[str, Any]]) -> dict[str, Any]:
     flagged = [int(r["verdict"] in ("suspicious", "dangerous")) for r in res]
     lo, hi = bootstrap_ci(flagged)
@@ -127,6 +136,9 @@ def main() -> int:
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     pool, web = load_set(a.set)
+    drawn = set_seed(a.set)
+    if drawn is not None and a.n <= 0:
+        a.seed = drawn  # a full-set run samples nothing: record the seed the set was drawn with
     urls = pool if a.n <= 0 else random.Random(a.seed).sample(pool, min(a.n, len(pool)))  # noqa: S311
     print(f"fp-regress: gateway={BASE} set={a.set} sample={len(urls)}/{len(pool)} seed={a.seed}", flush=True)
 

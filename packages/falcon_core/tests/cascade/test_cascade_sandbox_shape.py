@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from cascade_helpers import age_signal, assert_valid, make_cascade, offline_signals, rules, run
 
 from falcon_core.cascade import SandboxFeatures, StubSandboxClient
@@ -146,3 +148,39 @@ async def test_inconclusive_cloaking_comparison_is_visible_evidence_weight_zero(
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
     ev = next(e for e in final["evidence"] if e["signal"] == "page.cloaking_inconclusive")
     assert ev["weight"] == 0
+
+
+def _sso(rule_only: bool) -> SandboxFeatures:
+    """A neutral SSO-style page: a password field, and a script POST to another site."""
+    other = "https://sso.identity-provider.test"
+    return SandboxFeatures.model_validate(
+        {
+            "final_url": DEMO_BENIGN_URL,
+            "title": "Garden club sign in",
+            "forms": [{"fields": ["password"], "action_origin": None}],
+            "post_targets": [other],
+            "credential_rule_origins": [other] if rule_only else [],
+        }
+    )
+
+
+async def _final_for(feats: SandboxFeatures, age: int) -> dict[str, Any]:
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(age))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert_valid(final)
+    return final  # type: ignore[no-any-return]
+
+
+async def test_credential_page_rule_alone_is_capped_at_suspicious_but_payload_post_is_not() -> None:
+    capped = await _final_for(_sso(True), 9000)
+    post = next(e for e in capped["evidence"] if e["signal"] == "page.cross_origin_post")
+    assert post["observed"]["basis"] == "credential_page_rule" and post["weight"] > 0
+    assert capped["verdict"] != "dangerous"
+    full = await _final_for(_sso(False), 9000)
+    assert full["verdict"] == "dangerous"  # same page, the body carried form data: untouched
+
+
+async def test_credential_page_rule_with_a_young_domain_is_dangerous() -> None:
+    assert (await _final_for(_sso(True), 10))["verdict"] == "dangerous"

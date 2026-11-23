@@ -74,6 +74,9 @@ Informational evidence with no weight (proposed by builder-signals; fingerprints
 
 Hard rules are evidence too: the triggering evidence carries `hard_rule: H1`, so the reasons can cite it.
 
+### 3.1 Credential-page post cap
+`page.cross_origin_post` carries `observed.basis`: `payload` (the body uses the page's field names or credential/ID-like names), `relay` (a known bot/webhook/form relay; H4) or `credential_page_rule` (the page has a password/OTP/card/ID input and a script POSTs to another site, but nothing shows the form data is in that POST). A verdict that would be `dangerous` only because of a `credential_page_rule` post is capped at `suspicious` (p just below tau_high). The cap is lifted by any corroboration: a fired hard rule (H1, H2, H4, H5, H6), `brand.claimed_not_owned`, a domain younger than 30 days, `url.free_host_or_tunnel`, a feed hit (`rep.openphish`/`rep.gsb`/`rep.urlhaus`) or detected `page.cloaking`. No weight is lowered, and `payload`/`relay` posts keep full weight.
+
 ## 4. Degradation
 Signals carry a `criticality` (`SignalSpec.criticality`, default `critical`). **Critical** signal errors or timeouts at T0/T1 set `degraded=true` and list `signal_error:<signal>`. **Enrichment** signals (`domain.cert_age_days`/`cert_issuer`/`ct_siblings` from third-party crt.sh; any feed reporting `feed_disabled`; `domain.age_days` with `rdap_unsupported_tld`, `rdap_not_found` or `rdap_no_registration_date`, i.e. the registry holds no data) are informational: their errors stay in the evidence at weight 0 and **never** set `degraded`. Transient RDAP failures (timeout, HTTP errors) still degrade.
 

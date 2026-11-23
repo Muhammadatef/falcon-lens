@@ -290,6 +290,10 @@ def page_evidence(
                     "bot": bot_kind is not None,
                     "target_kind": bot_kind or "other",
                     "credentials": any(v["credentials"] for v in targets.values()),
+                    # only the credential-page rule flagged these: the arbiter caps such a verdict at suspicious
+                    "basis": "credential_page_rule"
+                    if all(t in set(features.credential_rule_origins) for t in targets)
+                    else "payload",
                 },
                 tier="T2",
                 source="sandbox",
