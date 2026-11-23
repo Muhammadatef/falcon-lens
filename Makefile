@@ -40,6 +40,7 @@ unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py
 	python3 scripts/check_env_example.py
+	uv run python scripts/readme_stack.py --check
 
 # Merge gate for detection quality. Becomes real when builder-evals lands evals/baseline.json:
 # until then it says so loudly and does NOT claim a pass.
