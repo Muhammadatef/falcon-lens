@@ -35,6 +35,7 @@ T1_MS = 100
 # Rules and the brand check read the first and last MAX_LINK_SCAN_CHARS // 2 characters in 8 KiB windows (expensive,
 # so bounded for CPU). Link extraction is NOT windowed: it reads the whole input (<= HARD_MAX_MESSAGE_CHARS).
 MAX_LINK_SCAN_CHARS = 65_536
+_INTENT_OVERLAP = 512  # chars shared by neighbouring intent windows so a message is not cut in two
 _DATA_URI = re.compile(
     r"(?<![a-z0-9+.-])data:([a-z0-9.+/-]{0,80})((?:;[a-z0-9=.+-]{1,40}){0,4}),([^\s\"'<>]{0,65536})", re.I
 )
@@ -309,7 +310,11 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
         _rules_over(windows), brand_named=any(e_.signal == "message.brand_mention" for e_ in brand_ev)
     )
     intent_ev: dict[str, Evidence] = {}
-    for w in windows:  # padding must not hide the ask: every window is scored, the strongest item per signal/pair stays
+    # Padding must not hide the ask: the WHOLE input (<= HARD_MAX_MESSAGE_CHARS, linear time) is scored in overlapping
+    # windows, not only the head/tail text the rules read. The strongest item per signal/pair stays.
+    step = MAX_MESSAGE_CHARS - _INTENT_OVERLAP
+    intent_windows = [full[i : i + MAX_MESSAGE_CHARS] for i in range(0, max(1, len(full) - _INTENT_OVERLAP), step)]
+    for w in intent_windows:
         for e_ in [*scam_intent(w), *floor_evidence(w)]:
             key = e_.signal + str(e_.observed.get("pair", "")) if isinstance(e_.observed, dict) else e_.signal
             if key not in intent_ev or e_.confidence > intent_ev[key].confidence:

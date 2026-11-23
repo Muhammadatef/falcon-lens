@@ -68,7 +68,7 @@ def main() -> int:
             "dataset_hash": dataset_hash(),
             "git_sha": sha,
             "class_weight": "balanced",
-            "note": "the fit itself never read test; test was read three times for reporting only, disclosed in test_read of the published artifacts",
+            "note": "the fit never read test; test was read three times for reporting only (see test_read)",
         },
     }
     WEIGHTS_PATH.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
