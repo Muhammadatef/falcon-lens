@@ -1,0 +1,356 @@
+{
+  "schema_version": 1,
+  "kind": "message_text_eval",
+  "synthetic": true,
+  "label": "synthetic, single-author, pending audit",
+  "test_read": "second read after floor rules (first read: message_text_21516c13e0c7_20261123T115126Z.json, before RF1-RF3 and the val-fitted weight)",
+  "note": "Synthetic, link-free messages (Falcon Demo Bank and generic roles). Recall/FPR with Wilson 95% intervals; small n means wide intervals. Test is evaluated once per build; report-only (not in evals/baseline.json).",
+  "git_sha": "d065e909c507636f75211cb3f3523bed7343ba46-dirty",
+  "created_at": "20261123T120916Z",
+  "dataset_hash": "036de1048cd68797338115ca65a840508aebf4dfa193b2bac8fe17f304ddf7a7",
+  "intent_fit": {
+    "split": "train (weights), val (C, theta)",
+    "C": 10.0,
+    "val_logloss": 0.1243,
+    "n_train": 128,
+    "n_val": 41,
+    "dataset_hash": "036de1048cd68797338115ca65a840508aebf4dfa193b2bac8fe17f304ddf7a7",
+    "git_sha": "d065e909c507636f75211cb3f3523bed7343ba46",
+    "class_weight": "balanced",
+    "note": "test split never read"
+  },
+  "intent_theta": 0.65,
+  "metrics": {
+    "message_text.val.shipped.recall": 0.9231,
+    "message_text.val.shipped.fpr": 0.0,
+    "message_text.val.rules_only_before.recall": 0.1154,
+    "message_text.val.rules_only_before.fpr": 0.0,
+    "message_text.test.shipped.recall": 0.8182,
+    "message_text.test.shipped.fpr": 0.125,
+    "message_text.test.rules_only_before.recall": 0.0455,
+    "message_text.test.rules_only_before.fpr": 0.0
+  },
+  "results": {
+    "val": {
+      "shipped": {
+        "n": 41,
+        "n_scam": 26,
+        "n_legit": 15,
+        "recall": {
+          "value": 0.9231,
+          "ci_low": 0.7586,
+          "ci_high": 0.9786,
+          "k": 24,
+          "n": 26
+        },
+        "fpr": {
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2039,
+          "k": 0,
+          "n": 15
+        },
+        "recall_by_language": {
+          "arabizi": {
+            "value": 0.6667,
+            "ci_low": 0.2077,
+            "ci_high": 0.9385,
+            "k": 2,
+            "n": 3
+          },
+          "english": {
+            "value": 0.9091,
+            "ci_low": 0.6226,
+            "ci_high": 0.9838,
+            "k": 10,
+            "n": 11
+          },
+          "gulf_arabic": {
+            "value": 1.0,
+            "ci_low": 0.6457,
+            "ci_high": 1.0,
+            "k": 7,
+            "n": 7
+          },
+          "msa": {
+            "value": 1.0,
+            "ci_low": 0.5655,
+            "ci_high": 1.0,
+            "k": 5,
+            "n": 5
+          }
+        },
+        "fpr_by_language": {
+          "arabizi": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.7935,
+            "k": 0,
+            "n": 1
+          },
+          "english": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.3903,
+            "k": 0,
+            "n": 6
+          },
+          "gulf_arabic": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.4345,
+            "k": 0,
+            "n": 5
+          },
+          "msa": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615,
+            "k": 0,
+            "n": 3
+          }
+        }
+      },
+      "rules_only_before": {
+        "n": 41,
+        "n_scam": 26,
+        "n_legit": 15,
+        "recall": {
+          "value": 0.1154,
+          "ci_low": 0.04,
+          "ci_high": 0.2898,
+          "k": 3,
+          "n": 26
+        },
+        "fpr": {
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.2039,
+          "k": 0,
+          "n": 15
+        },
+        "recall_by_language": {
+          "arabizi": {
+            "value": 0.3333,
+            "ci_low": 0.0615,
+            "ci_high": 0.7923,
+            "k": 1,
+            "n": 3
+          },
+          "english": {
+            "value": 0.0909,
+            "ci_low": 0.0162,
+            "ci_high": 0.3774,
+            "k": 1,
+            "n": 11
+          },
+          "gulf_arabic": {
+            "value": 0.1429,
+            "ci_low": 0.0257,
+            "ci_high": 0.5131,
+            "k": 1,
+            "n": 7
+          },
+          "msa": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.4345,
+            "k": 0,
+            "n": 5
+          }
+        },
+        "fpr_by_language": {
+          "arabizi": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.7935,
+            "k": 0,
+            "n": 1
+          },
+          "english": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.3903,
+            "k": 0,
+            "n": 6
+          },
+          "gulf_arabic": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.4345,
+            "k": 0,
+            "n": 5
+          },
+          "msa": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615,
+            "k": 0,
+            "n": 3
+          }
+        }
+      }
+    },
+    "test": {
+      "shipped": {
+        "n": 38,
+        "n_scam": 22,
+        "n_legit": 16,
+        "recall": {
+          "value": 0.8182,
+          "ci_low": 0.6148,
+          "ci_high": 0.9269,
+          "k": 18,
+          "n": 22
+        },
+        "fpr": {
+          "value": 0.125,
+          "ci_low": 0.035,
+          "ci_high": 0.3602,
+          "k": 2,
+          "n": 16
+        },
+        "recall_by_language": {
+          "arabizi": {
+            "value": 1.0,
+            "ci_low": 0.4385,
+            "ci_high": 1.0,
+            "k": 3,
+            "n": 3
+          },
+          "english": {
+            "value": 0.6667,
+            "ci_low": 0.3,
+            "ci_high": 0.9032,
+            "k": 4,
+            "n": 6
+          },
+          "gulf_arabic": {
+            "value": 0.8333,
+            "ci_low": 0.4365,
+            "ci_high": 0.9699,
+            "k": 5,
+            "n": 6
+          },
+          "msa": {
+            "value": 0.8571,
+            "ci_low": 0.4869,
+            "ci_high": 0.9743,
+            "k": 6,
+            "n": 7
+          }
+        },
+        "fpr_by_language": {
+          "arabizi": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615,
+            "k": 0,
+            "n": 3
+          },
+          "english": {
+            "value": 0.1429,
+            "ci_low": 0.0257,
+            "ci_high": 0.5131,
+            "k": 1,
+            "n": 7
+          },
+          "gulf_arabic": {
+            "value": 0.3333,
+            "ci_low": 0.0615,
+            "ci_high": 0.7923,
+            "k": 1,
+            "n": 3
+          },
+          "msa": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615,
+            "k": 0,
+            "n": 3
+          }
+        }
+      },
+      "rules_only_before": {
+        "n": 38,
+        "n_scam": 22,
+        "n_legit": 16,
+        "recall": {
+          "value": 0.0455,
+          "ci_low": 0.0081,
+          "ci_high": 0.218,
+          "k": 1,
+          "n": 22
+        },
+        "fpr": {
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.1936,
+          "k": 0,
+          "n": 16
+        },
+        "recall_by_language": {
+          "arabizi": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615,
+            "k": 0,
+            "n": 3
+          },
+          "english": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.3903,
+            "k": 0,
+            "n": 6
+          },
+          "gulf_arabic": {
+            "value": 0.1667,
+            "ci_low": 0.0301,
+            "ci_high": 0.5635,
+            "k": 1,
+            "n": 6
+          },
+          "msa": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.3543,
+            "k": 0,
+            "n": 7
+          }
+        },
+        "fpr_by_language": {
+          "arabizi": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615,
+            "k": 0,
+            "n": 3
+          },
+          "english": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.3543,
+            "k": 0,
+            "n": 7
+          },
+          "gulf_arabic": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615,
+            "k": 0,
+            "n": 3
+          },
+          "msa": {
+            "value": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.5615,
+            "k": 0,
+            "n": 3
+          }
+        }
+      }
+    }
+  },
+  "provenance": "synthetic, single-author, pending audit"
+}

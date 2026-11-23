@@ -1,0 +1,356 @@
+{
+ "schema_version": 1,
+ "kind": "message_text_eval",
+ "synthetic": true,
+ "label": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
+ "provenance": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
+ "test_read": "third read, after the PR-88 review fixes (anchor gate, scoring cap, train-only hard negatives); earlier reads: second after floor rules, first message_text_21516c13e0c7_20261123T115126Z.json, before RF1-RF3 and the val-fitted weight)",
+ "note": "Synthetic, link-free messages (Falcon Demo Bank and generic roles). Recall/FPR with Wilson 95% intervals; small n means wide intervals. Test is evaluated once per build; report-only (not in evals/baseline.json).",
+ "git_sha": "d80de23eb52fa6e788a332da391a6ac78e181d6c-dirty",
+ "created_at": "20261123T175212Z",
+ "dataset_hash": "7cb0f6585fe53be4b5a943a9f331b3ae0c2c76c03e576e8fa41a28e5fa8ce14e",
+ "intent_fit": {
+  "split": "train (weights), val (C, theta)",
+  "C": 10.0,
+  "val_logloss": 0.1965,
+  "n_train": 158,
+  "n_val": 41,
+  "dataset_hash": "7cb0f6585fe53be4b5a943a9f331b3ae0c2c76c03e576e8fa41a28e5fa8ce14e",
+  "git_sha": "d80de23eb52fa6e788a332da391a6ac78e181d6c",
+  "class_weight": "balanced",
+  "note": "test split never read"
+ },
+ "intent_theta": 0.772,
+ "metrics": {
+  "message_text.val.shipped.recall": 0.7692,
+  "message_text.val.shipped.fpr": 0.0,
+  "message_text.val.rules_only_before.recall": 0.1154,
+  "message_text.val.rules_only_before.fpr": 0.0,
+  "message_text.test.shipped.recall": 0.6818,
+  "message_text.test.shipped.fpr": 0.0625,
+  "message_text.test.rules_only_before.recall": 0.0455,
+  "message_text.test.rules_only_before.fpr": 0.0
+ },
+ "results": {
+  "val": {
+   "shipped": {
+    "n": 41,
+    "n_scam": 26,
+    "n_legit": 15,
+    "recall": {
+     "value": 0.7692,
+     "ci_low": 0.5795,
+     "ci_high": 0.8897,
+     "k": 20,
+     "n": 26
+    },
+    "fpr": {
+     "value": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.2039,
+     "k": 0,
+     "n": 15
+    },
+    "recall_by_language": {
+     "arabizi": {
+      "value": 0.6667,
+      "ci_low": 0.2077,
+      "ci_high": 0.9385,
+      "k": 2,
+      "n": 3
+     },
+     "english": {
+      "value": 0.8182,
+      "ci_low": 0.523,
+      "ci_high": 0.9486,
+      "k": 9,
+      "n": 11
+     },
+     "gulf_arabic": {
+      "value": 0.7143,
+      "ci_low": 0.3589,
+      "ci_high": 0.9178,
+      "k": 5,
+      "n": 7
+     },
+     "msa": {
+      "value": 0.8,
+      "ci_low": 0.3755,
+      "ci_high": 0.9638,
+      "k": 4,
+      "n": 5
+     }
+    },
+    "fpr_by_language": {
+     "arabizi": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.7935,
+      "k": 0,
+      "n": 1
+     },
+     "english": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.3903,
+      "k": 0,
+      "n": 6
+     },
+     "gulf_arabic": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.4345,
+      "k": 0,
+      "n": 5
+     },
+     "msa": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     }
+    }
+   },
+   "rules_only_before": {
+    "n": 41,
+    "n_scam": 26,
+    "n_legit": 15,
+    "recall": {
+     "value": 0.1154,
+     "ci_low": 0.04,
+     "ci_high": 0.2898,
+     "k": 3,
+     "n": 26
+    },
+    "fpr": {
+     "value": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.2039,
+     "k": 0,
+     "n": 15
+    },
+    "recall_by_language": {
+     "arabizi": {
+      "value": 0.3333,
+      "ci_low": 0.0615,
+      "ci_high": 0.7923,
+      "k": 1,
+      "n": 3
+     },
+     "english": {
+      "value": 0.0909,
+      "ci_low": 0.0162,
+      "ci_high": 0.3774,
+      "k": 1,
+      "n": 11
+     },
+     "gulf_arabic": {
+      "value": 0.1429,
+      "ci_low": 0.0257,
+      "ci_high": 0.5131,
+      "k": 1,
+      "n": 7
+     },
+     "msa": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.4345,
+      "k": 0,
+      "n": 5
+     }
+    },
+    "fpr_by_language": {
+     "arabizi": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.7935,
+      "k": 0,
+      "n": 1
+     },
+     "english": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.3903,
+      "k": 0,
+      "n": 6
+     },
+     "gulf_arabic": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.4345,
+      "k": 0,
+      "n": 5
+     },
+     "msa": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     }
+    }
+   }
+  },
+  "test": {
+   "shipped": {
+    "n": 38,
+    "n_scam": 22,
+    "n_legit": 16,
+    "recall": {
+     "value": 0.6818,
+     "ci_low": 0.4732,
+     "ci_high": 0.8364,
+     "k": 15,
+     "n": 22
+    },
+    "fpr": {
+     "value": 0.0625,
+     "ci_low": 0.0111,
+     "ci_high": 0.2833,
+     "k": 1,
+     "n": 16
+    },
+    "recall_by_language": {
+     "arabizi": {
+      "value": 0.6667,
+      "ci_low": 0.2077,
+      "ci_high": 0.9385,
+      "k": 2,
+      "n": 3
+     },
+     "english": {
+      "value": 0.5,
+      "ci_low": 0.1876,
+      "ci_high": 0.8124,
+      "k": 3,
+      "n": 6
+     },
+     "gulf_arabic": {
+      "value": 0.6667,
+      "ci_low": 0.3,
+      "ci_high": 0.9032,
+      "k": 4,
+      "n": 6
+     },
+     "msa": {
+      "value": 0.8571,
+      "ci_low": 0.4869,
+      "ci_high": 0.9743,
+      "k": 6,
+      "n": 7
+     }
+    },
+    "fpr_by_language": {
+     "arabizi": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     },
+     "english": {
+      "value": 0.1429,
+      "ci_low": 0.0257,
+      "ci_high": 0.5131,
+      "k": 1,
+      "n": 7
+     },
+     "gulf_arabic": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     },
+     "msa": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     }
+    }
+   },
+   "rules_only_before": {
+    "n": 38,
+    "n_scam": 22,
+    "n_legit": 16,
+    "recall": {
+     "value": 0.0455,
+     "ci_low": 0.0081,
+     "ci_high": 0.218,
+     "k": 1,
+     "n": 22
+    },
+    "fpr": {
+     "value": 0.0,
+     "ci_low": 0.0,
+     "ci_high": 0.1936,
+     "k": 0,
+     "n": 16
+    },
+    "recall_by_language": {
+     "arabizi": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     },
+     "english": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.3903,
+      "k": 0,
+      "n": 6
+     },
+     "gulf_arabic": {
+      "value": 0.1667,
+      "ci_low": 0.0301,
+      "ci_high": 0.5635,
+      "k": 1,
+      "n": 6
+     },
+     "msa": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.3543,
+      "k": 0,
+      "n": 7
+     }
+    },
+    "fpr_by_language": {
+     "arabizi": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     },
+     "english": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.3543,
+      "k": 0,
+      "n": 7
+     },
+     "gulf_arabic": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     },
+     "msa": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.5615,
+      "k": 0,
+      "n": 3
+     }
+    }
+   }
+  }
+ }
+}

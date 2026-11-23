@@ -20,7 +20,7 @@ from falcon_core.scoring.evidence import (
 )
 from falcon_core.scoring.params import ScoringParams
 
-RuleId = Literal["H1", "H2", "H3", "H4", "H5", "H6"]
+RuleId = Literal["H1", "H2", "H3", "H4", "H5", "H6", "RF1", "RF2", "RF3"]
 Effect = Literal["floor_dangerous", "floor_suspicious", "cap_no_warning_signs"]
 InputType = Literal["url", "message", "email", "image"]
 
@@ -171,6 +171,20 @@ def h6_otp_remote_access(present: Sequence[Evidence]) -> FiredRule | None:
     return FiredRule("H6", "floor_suspicious", tuple(e.id for e in [*asks, *imp]))
 
 
+def rf_floors(present: Sequence[Evidence]) -> list[FiredRule]:
+    """R-floor rules (SCORING section 3): ``message.floor_pair`` evidence says both halves of a pair were found and
+    no protective wording was present. Floor at ``suspicious``, never higher."""
+    out: dict[str, list[str]] = {}
+    for e in _by_signal(present, "message.floor_pair"):
+        rid = observed_get(e, "rule")
+        if rid in ("RF1", "RF2", "RF3"):
+            out.setdefault(str(rid), []).append(e.id)
+    return [
+        FiredRule(rid, "floor_suspicious", tuple(ids))  # type: ignore[arg-type]
+        for rid, ids in sorted(out.items())
+    ]
+
+
 def evaluate(
     present: Sequence[Evidence],
     params: ScoringParams,
@@ -189,7 +203,7 @@ def evaluate(
         h5_message_dangerous_link(present),
         h6_otp_remote_access(present),
     ]
-    risk = tuple(r for r in candidates if r is not None)
+    risk = (*(r for r in candidates if r is not None), *rf_floors(present))
     h3 = h3_verified_official(present, input_type, registrable_domain, verified_domains)
     if h3 is None:
         return HardRuleOutcome(fired=risk, suppressed=())

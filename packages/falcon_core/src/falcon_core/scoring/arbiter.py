@@ -264,6 +264,29 @@ def credential_rule_cap_applies(
     return True
 
 
+def message_text_cap_applies(
+    evidence: Sequence[Evidence],
+    contrib: Sequence[float],
+    fired: Sequence[object],
+    p_clf: float | None = None,
+    tau_high: float = 1.0,
+) -> bool:
+    """True when a would-be `dangerous` rests on message wording that includes the fitted ``message.scam_intent``
+    and nothing else: no hard rule fired and no positive evidence outside the message family (no link, domain,
+    feed or page evidence). Wording alone may lift a message to `suspicious`, never alone to `dangerous`."""
+    if fired or (p_clf is not None and p_clf >= tau_high):
+        return False
+    has_intent = False
+    for ev, c in zip(evidence, contrib, strict=True):
+        if ev.error is not None or c <= 0:
+            continue
+        if ev.family != "message":
+            return False
+        if ev.signal == "message.scam_intent":
+            has_intent = True
+    return has_intent
+
+
 def score(
     evidence: Sequence[Evidence],
     p_clf: float | None = None,
@@ -313,6 +336,8 @@ def score(
     p = min(1.0, max(0.0, p))
     if p >= params.tau_high and credential_rule_cap_applies(evidence, contrib, outcome.fired, p_clf, params.tau_high):
         p = math.nextafter(params.tau_high, 0.0)  # capped at suspicious: see credential_rule_cap_applies
+    if p >= params.tau_high and message_text_cap_applies(evidence, contrib, outcome.fired, p_clf, params.tau_high):
+        p = math.nextafter(params.tau_high, 0.0)  # capped at suspicious: see message_text_cap_applies
     verdict = band(p, params)
 
     # Degradation (SCORING §4).

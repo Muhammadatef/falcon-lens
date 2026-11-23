@@ -17,6 +17,9 @@ hard_rules:
   H5: "This message contains a link we found dangerous."
   H5s: "This message contains a link we found suspicious."
   H6: "This message asks for a code or an app install while posing as an official body or bank."
+  RF1: "This message asks for money while posing as an official body, a bank or a service."
+  RF2: "This message claims a problem with your account and asks you to install a remote-access app."
+  RF3: "This message asks for a code, PIN or card details and pushes you to act."
 
 reasons:
   rep.feed_hit: "This link is on a list of known scam sites."
@@ -42,6 +45,7 @@ reasons:
   brand.claimed_not_owned: "The page claims to be a known organisation, but the site is not theirs."
   registry.verified_official: "This is a registered official website of the organisation."
   message.script_match: "This message is close to known scam messages."
+  message.scam_intent: "The message asks for a code, money or access the way scam messages do."
   message.link_verdict: "This message contains a link we found dangerous."
   message.rule.urgency: "The message pushes you to act right now."
   message.rule.secrecy: "The message asks you not to tell anyone."

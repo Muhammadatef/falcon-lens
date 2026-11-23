@@ -36,9 +36,11 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | visual.favicon_match_brand | visual | +1.0 | only risk if domain not owned |
 | brand.claimed_not_owned | brand | +3.0 | see H1 |
 | message.script_match (nearest known scam, sim ≥ θ) | message | +2.5 | |
+| message.scam_intent (fitted text model, p ≥ θ) | message | +3.0 × p | weight fitted on val (`evals/results/published/fits/message_scam_intent_weight_fit.json`); synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md); features: OTP/card ask, remote access, authority claim, payment ask, penalty, advance fee, off-platform, callback; weights fitted on train only (`intent_weights.json`) |
 | message.rule.<name> for name ∈ urgency, secrecy, otp_request, remote_access, payment, authority, prize, job, investment, delivery_fee, fine | message | +0.6 each, cap +3.0 | evidence name is literally e.g. `message.rule.otp_request` |
 | message.brand_mention | message | +0.5 | |
 | message.brand_url_mismatch | message | +1.0 | brand named, link to unofficial domain |
+| message.floor_pair | message | 0 (informational) | carries one R-floor pair (RF1-RF3, §3); the floor is a hard rule |
 | message.contains_url / message.contains_phone | message | 0 (informational) | children go to the URL pipeline (H5) |
 | page.static_fallback | page | 0 (informational) | the browser failed after the target answered; only the document's plain HTML was read (no JavaScript, no screenshot). Always a partial read for clearance |
 | page.truncated | page | 0 (informational) | the page was read in part (cut at the size cap or half-loaded); never an error |
@@ -74,6 +76,13 @@ Informational evidence with no weight (proposed by builder-signals; fingerprints
 | H4 exfil-to-bot | form or script posts credentials to a messaging-bot API or webhook relay | `dangerous` |
 | H5 message-with-dangerous-link | message/email contains a URL whose verdict is `dangerous` (or `suspicious`) | message verdict ≥ the worst child link verdict: `dangerous` child → `dangerous`, `suspicious` child → ≥ `suspicious`; cites the child verdict evidence |
 | H6 OTP/remote-access ask | message requests an OTP or a remote-access app install AND authority/bank impersonation. Impersonation is an identity claim (`message.rule.authority`, `email.display_name_impersonation`, `brand.claimed_not_owned`) or a registered brand named in the message (`message.brand_mention`, the usual "BankName: …" sender line). A code delivery or a "never share your code" reminder does not fire the ask rules, so a named brand alone never fires H6. | ≥ `suspicious` |
+
+**R-floor rules (message text, L1-approved 2026-11-23).** Each needs BOTH halves, no protective wording ("never share" warning or plain code delivery), floors at `suspicious` only, cites its `message.floor_pair` evidence. Numbers for them are synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md). The fitted `message.scam_intent` model alone never reaches `dangerous`; the deterministic floor rules (RF1–RF3) and H6 can. When no hard rule fired and no positive evidence lies outside the message family, a would-be `dangerous` carrying `message.scam_intent` is capped at `suspicious`. `message.scam_intent` needs an anchor (an ask, an authority claim, a call-back or an off-platform move); urgency, penalty or fine words alone never produce it.
+| Id | Ask half | Claim/lure half |
+|---|---|---|
+| RF1 | payment/fee, gift card, crypto or personal-account ask (`pay_ask`, `gift_card_crypto`, `personal_account`) | authority claim (`authority`, bank staff, utility/telecom/courier/government role) |
+| RF2 | remote-access app ask | account-trouble claim |
+| RF3 | secret ask: OTP, card number or PIN (`otp_request`, `ask_card_data`) | urgency, penalty, prize or fine |
 
 **Model cap (L1 D2, fitted on validation only).** The fitted T1 classifier alone never produces `dangerous`: its probability is capped `model_cap.margin` log-odds under `tau_high`, and `dangerous` without a floor rule needs `model_cap.strong_adj` log-odds of non-`url`, non-LLM risk evidence (and more than zero). Both values live in `params.yaml` (`model_cap`) and are fitted by `make fit-thresholds` (artifact `evals/results/published/fits/model_cap_fit.json`); the shipped fit chose margin 0 and strong_adj 0, i.e. "p ≥ tau_high AND any page/domain risk evidence". A model-driven warning cites a `url.classifier` evidence item so every warning has a reason. User-facing reasons are always evidence-grounded templates (the LLM never writes them).
 

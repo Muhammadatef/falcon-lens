@@ -236,3 +236,80 @@ async def _run(ctx: SignalContext) -> list[Evidence]:
 run_script_match = _run
 if SPEC_SCRIPT.name not in REGISTRY:
     REGISTRY[SPEC_SCRIPT.name] = (SPEC_SCRIPT, _run)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Offline script index. WHY message.script_match never appeared: the registered runner above needs ctx.scripts (a
+# pgvector ScriptStore), ctx.ollama_base_url and an embedder, but (1) the cascade's message path calls
+# ``analyze_message`` only and never runs registry signals for messages, (2) ``SignalCtx`` has no ``scripts`` or
+# ``ollama_base_url``, (3) nothing seeds the ``scam_scripts`` table and no script corpus existed. The runner therefore
+# only ever returned its "not configured" error. The offline index below needs no DB and no network: character
+# 3-gram cosine over a small corpus of SYNTHETIC scam scripts (``scam_scripts.jsonl``: TRAIN split items only),
+# called from ``analyze_message``. The pgvector/Ollama path stays available for a wired deployment.
+# ---------------------------------------------------------------------------------------------------------------
+OFFLINE_THETA_FILE = Path(__file__).with_name("script_theta.json")
+CORPUS_FILE = Path(__file__).with_name("scam_scripts.jsonl")
+
+
+def _grams(text: str) -> dict[str, float]:
+    t = " " + normalize(text[:MAX_MESSAGE_CHARS], collapse=False).text + " "
+    g: dict[str, float] = {}
+    for i in range(len(t) - 2):
+        g[t[i : i + 3]] = g.get(t[i : i + 3], 0.0) + 1.0
+    n = sum(v * v for v in g.values()) ** 0.5 or 1.0
+    return {k: v / n for k, v in g.items()}
+
+
+class LocalScriptIndex:
+    def __init__(self, rows: Sequence[dict[str, Any]]) -> None:
+        self.rows = [(str(r["id"]), str(r["label"]), _grams(str(r["text"]))) for r in rows]
+
+    def nearest(self, text: str, k: int = 3) -> list[ScriptMatch]:
+        q = _grams(text)
+        sims = [ScriptMatch(i, lab, sum(v * g.get(t, 0.0) for t, v in q.items())) for i, lab, g in self.rows]
+        return sorted(sims, key=lambda m: -m.similarity)[:k]
+
+
+_INDEX: list[LocalScriptIndex | None] = []
+
+
+def default_index() -> LocalScriptIndex | None:
+    if not _INDEX:
+        try:
+            _INDEX.append(LocalScriptIndex(read_jsonl(CORPUS_FILE)))
+        except (OSError, ValueError):
+            _INDEX.append(None)
+    return _INDEX[0]
+
+
+def offline_theta() -> float:
+    try:
+        return float(json.loads(OFFLINE_THETA_FILE.read_text())["theta"])
+    except (OSError, ValueError, KeyError):
+        return 2.0  # unreachable: no fitted threshold, no evidence
+
+
+def script_match_offline(
+    text: str, index: LocalScriptIndex | None = None, theta: float | None = None
+) -> list[Evidence]:
+    index = index or default_index()
+    theta = offline_theta() if theta is None else theta
+    if index is None or not text.strip():
+        return []
+    matches = [m for m in index.nearest(text) if m.similarity >= theta]
+    if not matches:
+        return []
+    top = matches[0]
+    return [
+        Evidence(
+            signal="message.script_match",
+            family="message",
+            confidence=min(1.0, top.similarity),
+            observed={
+                "theta": theta,
+                "index": "offline_char3gram",
+                "matches": [{"id": m.id, "label": m.label, "similarity": round(m.similarity, 4)} for m in matches],
+            },
+            display={"en": "Matches a known scam script", "ar": "يطابق نصا احتياليا معروفا"},
+        )
+    ]
