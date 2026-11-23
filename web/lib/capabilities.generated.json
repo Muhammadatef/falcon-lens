@@ -4,7 +4,7 @@
   "image_check": true,
   "injection_defence": true,
   "investigator": true,
-  "sentinel_agent": true,
+  "sentinel_agent": false,
   "rest_api": true,
   "mcp": true,
   "stix": true,
