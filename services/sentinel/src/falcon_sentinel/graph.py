@@ -26,6 +26,8 @@ from langgraph.types import Command, RetryPolicy, interrupt
 from redis.exceptions import RedisError
 from sentinel_core.events import find_raw_text
 
+from falcon_core.telemetry.logging import incident_id_var
+from falcon_core.telemetry.tracing import fl_span
 from falcon_core.tools.sentinel import (
     ARG_MODELS,
     DRAFT_TOOLS,
@@ -269,7 +271,12 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         async def node(state: TriageState) -> dict[str, Any]:
             t0 = time.monotonic()
             b = _budget(state)
-            out = await fn(state, b)
+            token = incident_id_var.set(state["incident_id"])
+            try:
+                with fl_span(f"sentinel.{name}", "CHAIN", **{"fl.node": name}):
+                    out = await fn(state, b)
+            finally:
+                incident_id_var.reset(token)
             if count_step:
                 b["steps"] += 1
             b["elapsed_s"] = round(b["elapsed_s"] + time.monotonic() - t0, 3)
@@ -630,7 +637,12 @@ class TriageRunner:
                 return dict(snap.values)  # already finished
             else:
                 inp = {"incident_id": incident_id}
-            out = await self.graph.ainvoke(inp, self._cfg(incident_id))
+            token = incident_id_var.set(incident_id)
+            try:
+                with fl_span("sentinel.triage", "AGENT"):
+                    out = await self.graph.ainvoke(inp, self._cfg(incident_id))
+            finally:
+                incident_id_var.reset(token)
             return dict(out)
 
     async def pending_approvals(self, incident_id: str) -> list[dict[str, Any]]:

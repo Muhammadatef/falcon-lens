@@ -62,6 +62,7 @@ from falcon_core.signals.base import SignalFn, SignalSpec
 from falcon_core.signals.brands.registry import BrandRegistry
 from falcon_core.signals.url.canonical import CanonicalURL, canonicalize
 from falcon_core.signals.url.textutil import defang
+from falcon_core.telemetry.tracing import fl_span, set_span_attrs, verdict_span
 
 log = logging.getLogger("falcon.cascade")
 
@@ -293,17 +294,36 @@ class Cascade:
     ) -> dict[str, Any]:
         """Run the cascade and return the final verdict doc (also emitted to ``sink``)."""
         run = _Run(verdict_id=verdict_id, source=source, t_start=time.perf_counter())
+        with verdict_span("cascade.url", verdict_id) as root:
+            set_span_attrs(root, **{"openinference.span.kind": "CHAIN", "fl.input_type": "url", "fl.source": source})
+            doc = await self._run_url_tiers(run, url, sink, cache_key)
+            set_span_attrs(
+                root,
+                **{
+                    "fl.verdict": str(doc.get("verdict", ""))[:40] or None,
+                    "fl.tier_reached": str(doc.get("tier_reached", ""))[:8] or None,
+                    "fl.model_route": str(doc.get("model_route", ""))[:16] or None,
+                    "fl.latency_ms": run.ms(),
+                },
+            )
+            return doc
+
+    async def _run_url_tiers(self, run: _Run, url: str, sink: VerdictSink, cache_key: str | None) -> dict[str, Any]:
+        verdict_id = run.verdict_id
         tier: Tier = "T0"
         try:
-            done = await self._t0(run, url, sink, cache_key)
+            with fl_span("cascade.T0", "CHAIN", **{"fl.tier": "T0"}):
+                done = await self._t0(run, url, sink, cache_key)
             if done is not None:
                 return done
             tier = "T1"
-            done = await self._t1(run, sink)
+            with fl_span("cascade.T1", "CHAIN", **{"fl.tier": "T1"}):
+                done = await self._t1(run, sink)
             if done is not None:
                 return done
             tier = "T2"
-            return await self._t2(run, sink)
+            with fl_span("cascade.T2", "CHAIN", **{"fl.tier": "T2"}):
+                return await self._t2(run, sink)
         except SinkError:
             raise  # transport failure: the worker leaves the job pending and retries
         except Exception as exc:  # noqa: BLE001 - a cascade bug still ends with one final verdict
@@ -599,10 +619,11 @@ class Cascade:
         features_partial = False
         summary = "Page rendered in the sandbox"
         try:
-            features = await asyncio.wait_for(
-                self.d.sandbox.render(run.canonical.url, run.verdict_id),
-                self.d.sandbox_timeout_s,
-            )
+            with fl_span("tool.sandbox_render", "TOOL", **{"fl.tool": "sandbox_render"}):
+                features = await asyncio.wait_for(
+                    self.d.sandbox.render(run.canonical.url, run.verdict_id),
+                    self.d.sandbox_timeout_s,
+                )
             if features.error and not features.final_url:
                 err = features.error.lower()
                 raise SandboxError(err if re.fullmatch(r"[a-z0-9_:]{1,40}", err) else "render_failed")
@@ -672,7 +693,8 @@ class Cascade:
         if not (uncertain and self.d.investigator is not None and self.llm_allowed()):
             return await self._emit(sink, run, result, "T2", final=True)
         await self._emit(sink, run, result, "T2", final=False)
-        return await self._t3(run, sink, result)
+        with fl_span("cascade.T3", "AGENT", **{"fl.tier": "T3"}):
+            return await self._t3(run, sink, result)
 
     # --- T3 --------------------------------------------------------------------------------
 
