@@ -108,3 +108,63 @@ async def test_child_link_verdict_evidence_carries_display_url_not_userinfo_or_p
     blob = str(final)
     for leak in ("secret.user", "pw0rd", "test.user", "example.invalid"):
         assert leak not in blob
+
+
+# ---- image / QR (fixtures: services/api/tests/fixtures/qr, TEST FIXTURE, Falcon Demo Bank .test only) ----
+import io  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+QR_DIR = Path(__file__).resolve().parents[3].parent / "services/api/tests/fixtures/qr"
+
+
+def _qr_png(text: str) -> bytes:
+    import zxingcpp
+    from PIL import Image
+
+    bc = zxingcpp.write_barcode(zxingcpp.BarcodeFormat.QRCode, text, width=400, height=400)
+    buf = io.BytesIO()
+    Image.fromarray(bc).convert("RGB").save(buf, "PNG")
+    return buf.getvalue()
+
+
+def _sandbox_for(official: bool) -> StubSandboxClient:
+    return StubSandboxClient(default=benign_features() if official else phish_features())
+
+
+async def test_official_qr_matches_pasted_link_and_is_not_degraded() -> None:
+    data = (QR_DIR / "02-qr-official.png").read_bytes()
+    img = (await check("image", data, sandbox=_sandbox_for(True))).docs[-1]
+    link = (await check("message", b"http://falcon-demo-bank.test/", sandbox=_sandbox_for(True))).docs[-1]
+    assert_valid(img)
+    assert img["verdict"] == link["verdict"] == "no_warning_signs"
+    assert not img["degraded"]
+    skipped = [e for e in img["evidence"] if e["signal"] == "image.ocr_skipped"]
+    assert skipped and skipped[0]["weight"] == 0
+
+
+async def test_phishing_qr_is_dangerous() -> None:
+    # The demo-kit poster uses an http .test host the stub harness cannot render; encode the harness lookalike.
+    data = _qr_png(DEMO_LOOKALIKE_URL)
+    final = (await check("image", data, sandbox=StubSandboxClient(default=phish_features()))).docs[-1]
+    assert_valid(final)
+    assert final["verdict"] == "dangerous" and "H5" in rules(final)
+
+
+async def test_image_without_decodable_qr_stays_degraded() -> None:
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 64), "white").save(buf, "PNG")
+    final = (await check("image", buf.getvalue(), sandbox=StubSandboxClient(default=benign_features()))).docs[-1]
+    assert_valid(final)
+    assert final["degraded"] and final["verdict"] != "no_warning_signs"
+
+
+async def test_qr_with_two_links_worst_wins() -> None:
+    data = _qr_png("http://falcon-demo-bank.test/ http://falcon-demo-bank-login.test/secure/")
+    sb = StubSandboxClient(
+        default=benign_features(), by_url={"http://falcon-demo-bank-login.test/secure/": phish_features()}
+    )
+    final = (await check("image", data, sandbox=sb)).docs[-1]
+    assert_valid(final)
+    assert final["verdict"] == "dangerous"
