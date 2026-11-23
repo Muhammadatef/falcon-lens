@@ -76,6 +76,7 @@ class Budget:
     calls: int = 0
     in_tokens: int = 0
     out_tokens: int = 0
+    cache_hits: int = 0  # DSPy disk/memory cache answers: no model call, no tokens, not counted in `calls`
     dspy_limit: int | None = None  # DSPy phase stops here so the production evaluations always fit
 
     def spend(self, in_t: int = 0, out_t: int = 0) -> None:
@@ -195,7 +196,10 @@ class CappedLM(dspy.LM):  # type: ignore[misc]
         u: dict[str, Any] = {}
         if len(self.history) > n:
             u = self.history[-1].get("usage") or {}
-        self._budget.spend(int(u.get("prompt_tokens", 0) or 0), int(u.get("completion_tokens", 0) or 0))
+        if not u:  # an empty usage record marks a cache hit
+            self._budget.cache_hits += 1
+        else:
+            self._budget.spend(int(u.get("prompt_tokens", 0) or 0), int(u.get("completion_tokens", 0) or 0))
         return out
 
 
@@ -370,13 +374,20 @@ def run_role(args: argparse.Namespace, spec: R.RoleSpec, route: str, ts: str) ->
 
     best = max(after, key=lambda k: statistics.fmean(after[k][0]), default=None)
     base_mean = statistics.fmean(before_s)
-    adopted = best is not None and statistics.fmean(after[best][0]) > base_mean
     exported = None
     result_after = summarise(after[best][0], after[best][1]) if best else summarise(before_s, before_v)
     paired = None
+    adopted = False
+    decision = "no candidate"
     if best:
         diffs = [a - b for a, b in zip(after[best][0], before_s, strict=True)]
         paired = {"mean_diff": round(statistics.fmean(diffs), 4), "ci95": bootstrap_ci(diffs)}
+        # Adoption rule (L1): the paired bootstrap 95% CI of (after - before) on VALIDATION must exclude 0.
+        adopted = paired["ci95"][0] > 0
+        decision = "adopted" if adopted else "not adopted (within noise)"
+    if not adopted and not args.smoke and not args.no_export:  # stale file from an earlier run must not linger
+        path_for(spec.name, route).unlink(missing_ok=True)
+        (RECORDED / f"{spec.name}.{route}.json").unlink(missing_ok=True)
     if adopted and best and not args.smoke and not args.no_export:
         cp = after[best][2]
         meta = {
@@ -437,9 +448,12 @@ def run_role(args: argparse.Namespace, spec: R.RoleSpec, route: str, ts: str) ->
         "candidates": cand_report,
         "selected": best if adopted else None,
         "adopted": adopted,
+        "decision": decision,
         "budget": {
             "cap_calls": args.cap_calls,
+            "calls_note": "calls = real model calls (DSPy + production evaluation); DSPy cache hits are counted separately",
             "calls": budget.calls,
+            "dspy_cache_hits": budget.cache_hits,
             "input_tokens": budget.in_tokens,
             "output_tokens": budget.out_tokens,
             "n_train": args.n_train,
@@ -513,7 +527,7 @@ def main() -> int:
         b, a, bu = r["before_val"], r["after_val"], r["budget"]
         print(
             f"{r['role']} | {r['route']} | {r['model']} | {b['mean']} {b['ci95']} | {a['mean']} {a['ci95']} | "
-            f"{bu['calls']} | {bu['input_tokens']}/{bu['output_tokens']} | {r['seconds']} | {r['adopted']}"
+            f"{bu['calls']} | {bu['input_tokens']}/{bu['output_tokens']} | {r['seconds']} | {r['decision']}"
         )
     return 0
 

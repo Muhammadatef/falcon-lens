@@ -13,7 +13,7 @@
     },
     {
       "case_id": "msg-delivery_fee-en-2-1",
-      "reply": "{\"claimed_brand_id\":\"emirates_post\",\"requested_data\":[\"click_link\",\"payment\",\"personal_info\"],\"script_category\":\"delivery_fee\",\"language\":\"en\",\"instruction_like\":false}"
+      "reply": "{\"claimed_brand_id\":null,\"requested_data\":[\"click_link\",\"payment\",\"personal_info\"],\"script_category\":\"delivery_fee\",\"language\":\"en\",\"instruction_like\":false}"
     },
     {
       "case_id": "msg-delivery_fee-msa-2-2",

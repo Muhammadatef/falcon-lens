@@ -1,12 +1,12 @@
 {
   "kind": "dspy_role_optimisation",
-  "role": "sentinel_assess",
+  "role": "sentinel_propose",
   "router_role": "sentinel",
   "route": "local",
   "model": "inkling-2-mini-chat",
   "dspy_version": "3.5.0",
-  "generated_at": "20261123T114200Z",
-  "git_sha": "ffcb601",
+  "generated_at": "20261123T125644Z",
+  "git_sha": "2bbb085",
   "seed": {
     "data": 20261123,
     "optimizer": 9,
@@ -17,42 +17,42 @@
   "splits": {
     "train": 8,
     "val": 8,
-    "train_sha256": "6954905d94f28310d8712c7f129a65b8fca6486341e749fbfc77ec3ab4ca3e09",
-    "val_sha256": "0910401e900c8b57cc8b5a255d28342945a856cf7218e77c9c5fc1c99e0a4c21",
+    "train_sha256": "f1489a92ffe2a9b1ee698f7cf8fd8e8aa9f05331ec0a2fbbf212b114d7c19fae",
+    "val_sha256": "d697c72a64d803552a1d638cb4afbba765daeba8aecafa7e14291364c1a2a7c8",
     "note": "train for optimisation, validation for selection; frozen test split and held-out legit sets never read"
   },
   "metric": "production validators (see evals/dspy/roles.py), mean task score in [0,1]; invalid output scores 0",
   "before_val": {
-    "mean": 1.0,
+    "mean": 0.8988,
     "ci95": [
-      1.0,
-      1.0
+      0.85,
+      0.95
     ],
     "valid_rate": 1.0,
     "n": 8
   },
   "after_val": {
-    "mean": 1.0,
+    "mean": 0.91,
     "ci95": [
-      1.0,
-      1.0
+      0.8981,
+      0.9194
     ],
     "valid_rate": 1.0,
     "n": 8
   },
   "paired_diff": {
-    "mean_diff": 0.0,
+    "mean_diff": 0.0113,
     "ci95": [
-      0.0,
-      0.0
+      -0.0425,
+      0.0625
     ]
   },
   "candidates": {
     "bootstrap_few_shot": {
-      "mean": 1.0,
+      "mean": 0.91,
       "ci95": [
-        1.0,
-        1.0
+        0.8981,
+        0.9194
       ],
       "valid_rate": 1.0,
       "n": 8,
@@ -62,11 +62,14 @@
   },
   "selected": null,
   "adopted": false,
+  "decision": "not adopted (within noise)",
   "budget": {
     "cap_calls": 150,
-    "calls": 19,
-    "input_tokens": 69684,
-    "output_tokens": 7379,
+    "calls_note": "calls = real model calls (DSPy + production evaluation); DSPy cache hits are counted separately",
+    "calls": 16,
+    "dspy_cache_hits": 4,
+    "input_tokens": 82500,
+    "output_tokens": 8888,
     "n_train": 8,
     "n_val": 8,
     "mipro_trials": 3,
@@ -74,5 +77,5 @@
   },
   "errors": [],
   "exported": null,
-  "seconds": 574.9
+  "seconds": 637.3
 }

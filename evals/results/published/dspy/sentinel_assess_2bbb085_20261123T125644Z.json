@@ -1,12 +1,12 @@
 {
   "kind": "dspy_role_optimisation",
-  "role": "sentinel_summarise",
+  "role": "sentinel_assess",
   "router_role": "sentinel",
   "route": "local",
   "model": "inkling-2-mini-chat",
   "dspy_version": "3.5.0",
-  "generated_at": "20261123T114200Z",
-  "git_sha": "ffcb601",
+  "generated_at": "20261123T125644Z",
+  "git_sha": "2bbb085",
   "seed": {
     "data": 20261123,
     "optimizer": 9,
@@ -17,18 +17,18 @@
   "splits": {
     "train": 8,
     "val": 8,
-    "train_sha256": "34a6509964d98def78a373162304b80c9be88449583e80b1bf1f1f2ac03d152d",
-    "val_sha256": "f89402d733b81a6072939c6aea26e94fc71287816b32e8b1a4a1e89f3cf24d13",
+    "train_sha256": "6954905d94f28310d8712c7f129a65b8fca6486341e749fbfc77ec3ab4ca3e09",
+    "val_sha256": "0910401e900c8b57cc8b5a255d28342945a856cf7218e77c9c5fc1c99e0a4c21",
     "note": "train for optimisation, validation for selection; frozen test split and held-out legit sets never read"
   },
   "metric": "production validators (see evals/dspy/roles.py), mean task score in [0,1]; invalid output scores 0",
   "before_val": {
-    "mean": 1.0,
+    "mean": 0.75,
     "ci95": [
-      1.0,
+      0.375,
       1.0
     ],
-    "valid_rate": 1.0,
+    "valid_rate": 0.75,
     "n": 8
   },
   "after_val": {
@@ -41,10 +41,10 @@
     "n": 8
   },
   "paired_diff": {
-    "mean_diff": 0.0,
+    "mean_diff": 0.25,
     "ci95": [
       0.0,
-      0.0
+      0.625
     ]
   },
   "candidates": {
@@ -62,11 +62,14 @@
   },
   "selected": null,
   "adopted": false,
+  "decision": "not adopted (within noise)",
   "budget": {
     "cap_calls": 150,
-    "calls": 19,
-    "input_tokens": 83380,
-    "output_tokens": 13925,
+    "calls_note": "calls = real model calls (DSPy + production evaluation); DSPy cache hits are counted separately",
+    "calls": 18,
+    "dspy_cache_hits": 3,
+    "input_tokens": 76017,
+    "output_tokens": 8706,
     "n_train": 8,
     "n_val": 8,
     "mipro_trials": 3,
@@ -74,5 +77,5 @@
   },
   "errors": [],
   "exported": null,
-  "seconds": 867.6
+  "seconds": 607.7
 }

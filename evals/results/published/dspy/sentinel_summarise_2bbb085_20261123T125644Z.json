@@ -1,12 +1,12 @@
 {
   "kind": "dspy_role_optimisation",
-  "role": "sentinel_propose",
+  "role": "sentinel_summarise",
   "router_role": "sentinel",
   "route": "local",
   "model": "inkling-2-mini-chat",
   "dspy_version": "3.5.0",
-  "generated_at": "20261123T114200Z",
-  "git_sha": "ffcb601",
+  "generated_at": "20261123T125644Z",
+  "git_sha": "2bbb085",
   "seed": {
     "data": 20261123,
     "optimizer": 9,
@@ -17,62 +17,65 @@
   "splits": {
     "train": 8,
     "val": 8,
-    "train_sha256": "f1489a92ffe2a9b1ee698f7cf8fd8e8aa9f05331ec0a2fbbf212b114d7c19fae",
-    "val_sha256": "d697c72a64d803552a1d638cb4afbba765daeba8aecafa7e14291364c1a2a7c8",
+    "train_sha256": "34a6509964d98def78a373162304b80c9be88449583e80b1bf1f1f2ac03d152d",
+    "val_sha256": "f89402d733b81a6072939c6aea26e94fc71287816b32e8b1a4a1e89f3cf24d13",
     "note": "train for optimisation, validation for selection; frozen test split and held-out legit sets never read"
   },
   "metric": "production validators (see evals/dspy/roles.py), mean task score in [0,1]; invalid output scores 0",
   "before_val": {
-    "mean": 0.8631,
+    "mean": 0.9875,
     "ci95": [
-      0.825,
-      0.9125
+      0.9688,
+      1.0
     ],
     "valid_rate": 1.0,
     "n": 8
   },
   "after_val": {
-    "mean": 0.91,
+    "mean": 1.0,
     "ci95": [
-      0.8981,
-      0.9194
+      1.0,
+      1.0
     ],
     "valid_rate": 1.0,
     "n": 8
   },
   "paired_diff": {
-    "mean_diff": 0.0469,
+    "mean_diff": 0.0125,
     "ci95": [
-      -0.0087,
-      0.0888
+      0.0,
+      0.0313
     ]
   },
   "candidates": {
     "bootstrap_few_shot": {
-      "mean": 0.91,
+      "mean": 1.0,
       "ci95": [
-        0.8981,
-        0.9194
+        1.0,
+        1.0
       ],
       "valid_rate": 1.0,
       "n": 8,
-      "seconds_to_build": 118.2,
+      "seconds_to_build": 0.0,
       "demos": 3
     }
   },
-  "selected": "bootstrap_few_shot",
-  "adopted": true,
+  "selected": null,
+  "adopted": false,
+  "decision": "not adopted (within noise)",
   "budget": {
     "cap_calls": 150,
-    "calls": 20,
-    "input_tokens": 91998,
-    "output_tokens": 10209,
+    "calls_note": "calls = real model calls (DSPy + production evaluation); DSPy cache hits are counted separately",
+    "calls": 16,
+    "dspy_cache_hits": 3,
+    "input_tokens": 83388,
+    "output_tokens": 13315,
     "n_train": 8,
     "n_val": 8,
     "mipro_trials": 3,
     "threads": 2
   },
   "errors": [],
-  "exported": "packages/falcon_core/src/falcon_core/prompts/compiled/sentinel_propose.local.json",
-  "seconds": 678.3
+  "exported": null,
+  "seconds": 782.4
 }

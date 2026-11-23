@@ -9,8 +9,8 @@ The responder is not optimised (user-facing reasons are template-only, decision 
                   registry), then field accuracy against gold from the labelled synthetic messages.
 * investigator  : `Action` parsed by the router, then `ToolRegistry.validate` (typed args + ProvenanceRule) on the
                   action after `Investigator._resolve`; task score = useful tool choice for the open question.
-* sentinel_*    : the verifier lines of `falcon_sentinel.graph` (`_valid_ids`, `vet`, caps, `validate_args`,
-                  `find_indicator`), replicated 1:1 here because they are closures inside `build_graph`.
+* sentinel_*    : `falcon_sentinel.verify`, the same pure functions the triage graph runs (evidence-id
+                  faithfulness, `vet`, tool-arg validation, provenance, caps).
 
 Every request is made with `LLMRouter._user_turn`, so redaction, the spotlight notice, nonce delimiters and `^`
 datamarking are the production ones. Data: synthetic, Falcon Demo Bank, defanged indicators only.
@@ -47,17 +47,9 @@ from falcon_core.llm.spotlight import UntrustedText  # noqa: E402
 from falcon_core.prompts import EXTRACTOR_TASK, INVESTIGATOR_TASK  # noqa: E402
 from falcon_core.tools import ProvenanceContext, ToolBackends, ToolRegistry  # noqa: E402
 from falcon_core.tools.registry import SPECS, Action, ToolOutcome  # noqa: E402
-from falcon_core.tools.sentinel import DRAFT_TOOLS, ToolError, find_indicator, validate_args  # noqa: E402
-from falcon_sentinel.graph import (  # noqa: E402
-    LLM_PROPOSABLE,
-    MAX_ACTIONS,
-    MAX_BLOCKS,
-    SYSTEM,
-    _valid_ids,
-    propose_hint,
-)
+from falcon_sentinel.graph import SYSTEM, propose_hint  # noqa: E402
 from falcon_sentinel.llm import AssessOut, ProposeOut, SummaryOut  # noqa: E402
-from falcon_sentinel.textsafe import vet  # noqa: E402
+from falcon_sentinel.verify import verify_proposals, verify_reason, verify_summary  # noqa: E402
 
 SEED = 20261123
 
@@ -313,67 +305,36 @@ def _sentinel_items(n_train: int, n_val: int) -> dict[str, list[dict[str, Any]]]
 
 def assess_score(view: dict[str, Any]) -> Callable[[Any], tuple[float, bool]]:
     def score(v: AssessOut) -> tuple[float, bool]:
-        ids = _valid_ids(v.severity_reason.evidence_ids, view)
-        en, ar = vet(v.severity_reason.en, view), vet(v.severity_reason.ar, view)
-        if not (ids and en is not None and ar is not None):
+        reason, _rej = verify_reason(v, view)  # the runtime verifier
+        if reason is None:
             return 0.0, False  # production ships the template
         rules = [f"rule:{r}" for r in view["rule_ids"]]
-        cov = sum(r in ids for r in rules) / len(rules) if rules else 1.0
-        clean = not (M.FORBIDDEN_EN.search(en) or M.FORBIDDEN_AR.search(ar)) and bool(M.ARABIC.search(ar))
-        return round(0.6 + 0.25 * cov + 0.15 * clean, 6), True
+        cov = sum(r in reason["evidence_ids"] for r in rules) / len(rules) if rules else 1.0
+        clean = not (M.FORBIDDEN_EN.search(reason["en"]) or M.FORBIDDEN_AR.search(reason["ar"]))
+        return round(0.6 + 0.25 * cov + 0.15 * (clean and bool(M.ARABIC.search(reason["ar"]))), 6), True
 
     return score
 
 
 def summarise_score(view: dict[str, Any]) -> Callable[[Any], tuple[float, bool]]:
     def score(v: SummaryOut) -> tuple[float, bool]:
-        claims = []
-        for c in v.claims:
-            ids = _valid_ids(c.evidence_ids, view)
-            text = vet(c.text_en, view)
-            if ids and text is not None:
-                claims.append({"text_en": text, "evidence_ids": ids})
-        en, ar = vet(v.en, view), vet(v.ar, view)
-        if en is None or ar is None or not claims:
+        summary, _rej, offered = verify_summary(v, view)  # the runtime verifier
+        if summary is None:
             return 0.0, False
-        survive = len(claims) / len(v.claims)
-        cov = M.coverage({"summary_en": en, "claims": claims}, view)
-        clean = not (M.FORBIDDEN_EN.search(en) or M.FORBIDDEN_AR.search(ar)) and bool(M.ARABIC.search(ar))
-        return round(0.4 * 1.0 + 0.2 * survive + 0.3 * cov + 0.1 * clean, 6), True
+        survive = len(summary["claims"]) / max(offered, 1)
+        cov = M.coverage({"summary_en": summary["en"], "claims": summary["claims"]}, view)
+        clean = not (M.FORBIDDEN_EN.search(summary["en"]) or M.FORBIDDEN_AR.search(summary["ar"]))
+        return round(0.4 + 0.2 * survive + 0.3 * cov + 0.1 * (clean and bool(M.ARABIC.search(summary["ar"]))), 6), True
 
     return score
 
 
 def propose_score(view: dict[str, Any], inc: dict[str, Any]) -> Callable[[Any], tuple[float, bool]]:
-    iid = view["incident_id"]
-
     def score(v: ProposeOut) -> tuple[float, bool]:
-        accepted: list[str] = []
-        blocks = 0
-        for a in v.actions:
-            ev_ids = _valid_ids(a.why_evidence_ids, view)
-            try:
-                if a.tool not in LLM_PROPOSABLE:
-                    raise ToolError("not_allowed", a.tool)
-                if not ev_ids:
-                    raise ToolError("uncited", a.tool)
-                args = dict(a.args)
-                if a.tool in DRAFT_TOOLS:
-                    args.setdefault("incident_id", iid)
-                if "incident_id" in args and args["incident_id"] != iid:
-                    raise ToolError("provenance", "foreign incident_id")
-                validate_args(a.tool, args)
-                if a.tool in ("block_indicator", "requeue_check"):
-                    find_indicator(inc, str(args.get("indicator" if a.tool == "block_indicator" else "url", "")))
-                    blocks += a.tool == "block_indicator"
-                if blocks > MAX_BLOCKS or len(accepted) >= MAX_ACTIONS:
-                    raise ToolError("cap", a.tool)
-                accepted.append(a.tool)
-            except ToolError:
-                pass
+        accepted, _rejected = verify_proposals(v, view, inc)  # the runtime verifier (allow-list, args, caps)
         if not accepted:
             return 0.0, False  # production queues the rule fallback instead
-        useful = any(t in ("draft_takedown", "block_indicator") for t in accepted)
+        useful = any(t in ("draft_takedown", "block_indicator") for t, _a, _e in accepted)
         return round(0.4 + 0.3 * (len(accepted) / len(v.actions)) + 0.3 * useful, 6), True
 
     return score
