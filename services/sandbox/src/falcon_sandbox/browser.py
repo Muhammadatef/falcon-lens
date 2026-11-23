@@ -93,6 +93,8 @@ class VisitResult:
 
 
 INTERRUPTED_NAV = "is interrupted by another navigation"
+STUB_HEADER = "x-falcon-redirect-stub"
+STUB_BODY = b"<!doctype html><title></title>"
 
 
 @dataclass
@@ -108,6 +110,7 @@ class _State:
     size_cap_hit: bool = False
     redirect_limit_hit: bool = False
     pending: str | None = None
+    stub_urls: set[str] = field(default_factory=set)  # hop URLs answered with the inert stub document
     nav_fail: str | None = None
     doc_blocked: bool = False  # a top-level document navigation was refused by policy
     nav_response: Any = None  # last top-level document response seen (client-side redirects)
@@ -255,6 +258,7 @@ class SandboxBrowser:
                 record_block(req.url, d.reason, req.resource_type)
                 if req.is_navigation_request() and req.frame.parent_frame is None:
                     st.doc_blocked = True
+                    st.nav_fail = st.nav_fail or f"blocked_by_policy:{d.reason}"[:60]
                 if d.reason == "method_not_get":
                     st.non_get_blocked += 1
                     tgt = build_dynamic_post_target(req.url, req.resource_type, url)
@@ -293,8 +297,17 @@ class SandboxBrowser:
                         # hand the hop to the visit loop, which re-validates and navigates
                         st.hops.append(Hop(url=target[:512], status=resp.status))
                         st.pending = urljoin(target, location)
+                        # NOT route.abort(): that commits a chrome-error page which races (and
+                        # interrupts) the next navigation, ending as a bare blocked_by_policy for
+                        # ordinary 301/302 chains. A tiny inert stub document commits cleanly and
+                        # is superseded by the next goto.
+                        st.stub_urls.add(target)
                         with contextlib.suppress(PlaywrightError):
-                            await route.abort("blockedbyclient")
+                            await route.fulfill(
+                                status=200,
+                                headers={STUB_HEADER: "1", "content-type": "text/html", "cache-control": "no-store"},
+                                body=STUB_BODY,
+                            )
                         return
                     hops += 1
                     target = urljoin(target, location)
@@ -341,7 +354,7 @@ class SandboxBrowser:
         page.on("download", lambda dl: asyncio.ensure_future(dl.cancel()))
         page.on(
             "framenavigated",
-            lambda f: st.nav.append(f.url[:512]) if f == page.main_frame else None,
+            lambda f: st.nav.append(f.url[:512]) if f == page.main_frame and f.url not in st.stub_urls else None,
         )
         page.on(
             "requestfinished",
@@ -354,7 +367,10 @@ class SandboxBrowser:
             "response",
             lambda r: (
                 setattr(st, "nav_response", r)
-                if r.request.is_navigation_request() and r.frame == page.main_frame and not 300 <= r.status < 400
+                if r.request.is_navigation_request()
+                and r.frame == page.main_frame
+                and not 300 <= r.status < 400
+                and STUB_HEADER not in r.headers
                 else None
             ),
         )
@@ -377,7 +393,7 @@ class SandboxBrowser:
                 # fail closed: wherever the page ended up must pass the same policy
                 if not st.doc_blocked:
                     record_block(page.url, "blocked_final_url", "document")
-                nav_error = "blocked_by_policy"
+                nav_error = st.nav_fail or "blocked_by_policy:blocked_final_url"
                 return
             response = st.nav_response  # None when no document actually loaded
 
@@ -396,7 +412,7 @@ class SandboxBrowser:
                     await settle_interrupted()
                     return
                 nav_error = (
-                    "blocked_by_policy"
+                    (st.nav_fail or "blocked_by_policy:blocked_by_client")
                     if "BLOCKED_BY_CLIENT" in msg
                     else f"navigation_failed:{msg.splitlines()[0][:80]}"
                 )
@@ -420,7 +436,7 @@ class SandboxBrowser:
                             resource_type="document",
                         )
                     )
-                    feats.error = "blocked_by_policy"
+                    feats.error = f"blocked_by_policy:{d.reason}"[:60]
                     return
                 await go(nxt)
 
@@ -432,7 +448,7 @@ class SandboxBrowser:
             await asyncio.sleep(min(0.3, max(0.0, deadline - loop.time())))
             await follow_redirects()  # redirects triggered by scripts/meta refresh
         if st.doc_blocked and response is not None and not feats.error and not st.pending:
-            nav_error = nav_error or "blocked_by_policy"  # a client-side redirect was refused
+            nav_error = nav_error or st.nav_fail or "blocked_by_policy:blocked_final_url"  # client redirect refused
         if (st.nav_fail or nav_error) and not feats.error and not st.pending:
             feats.error = st.nav_fail or nav_error
         if response is None and not feats.error and not st.pending:
