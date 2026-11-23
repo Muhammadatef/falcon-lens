@@ -23,7 +23,7 @@ from falcon_core.llm.spotlight import UntrustedText
 def _text_of(item: corpus.Item) -> tuple[str, str, tuple[UntrustedText, ...]]:
     if item.kind == "message":
         return "message", item.text or "", ()
-    f = FixtureSandbox.features(item.html or "", item.url or "")
+    f = FixtureSandbox().render_html(item.html or "", item.url or "")
     extra = (UntrustedText("page_title", f.title),) if f.title else ()
     return "page", f.visible_text, extra
 

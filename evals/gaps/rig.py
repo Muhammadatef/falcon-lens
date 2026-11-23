@@ -22,11 +22,9 @@ from pathlib import Path
 from typing import Any
 
 from evals.gaps.corpus import Item
-from evals.redteam.html_segments import page_features
+from evals.redteam.shipped import FixtureSandbox, _OfflineHTTP, _stub_resolver
 from falcon_core.cascade.engine import CallbackSink, Cascade, CascadeDeps
-from falcon_core.cascade.models import SandboxFeatures, SandboxForm
-from falcon_core.cascade.ports import SandboxError
-from falcon_core.cascade.testing import FIXTURE_HOSTS, STUB_PUBLIC_IP, loaded_mirror
+from falcon_core.cascade.testing import FIXTURE_HOSTS, loaded_mirror
 from falcon_core.security import GuardPolicy
 from falcon_core.signals import REGISTRY
 from falcon_core.signals.cache import MemoryCache
@@ -61,48 +59,6 @@ class CallLog:
     cloud_provider_calls: int
     local_provider_calls: int
     error: str | None
-
-
-class FixtureSandbox:
-    """Fixture-backed ``SandboxClient``: serves the HTML of the case under test as sandbox features."""
-
-    def __init__(self) -> None:
-        self.html: dict[str, str] = {}
-        self.default_html = ""
-        self.calls: list[str] = []
-        self.fail_reason: str | None = None  # set to simulate a failed render (SandboxError reason)
-
-    @staticmethod
-    def features(html: str, final_url: str) -> SandboxFeatures:
-        feats = page_features(html)
-        forms = [SandboxForm(fields=["password"] * feats.password_fields)] if feats.password_fields else []
-        acc = feats.accessible_text()
-        text = feats.visible_text + (("\n" + acc) if acc else "")
-        return SandboxFeatures(
-            redirect_chain=[final_url], final_url=final_url, title=feats.title, visible_text=text, forms=forms
-        )
-
-    async def render(self, url: str, verdict_id: str) -> SandboxFeatures:
-        self.calls.append(url)
-        if self.fail_reason:
-            raise SandboxError(self.fail_reason)
-        html = self.html.get(url) or self.default_html
-        if not html:
-            raise SandboxError("no_stub")
-        return self.features(html, url)
-
-
-async def _stub_resolver(host: str) -> list[str]:
-    return [STUB_PUBLIC_IP]
-
-
-class _OfflineHTTP:
-    """Fails closed: no signal or investigator tool reaches the network during the run."""
-
-    async def get(self, *a: Any, **k: Any) -> Any:
-        raise RuntimeError("offline gap eval")
-
-    post = head = get
 
 
 @dataclass
@@ -342,7 +298,6 @@ async def run_item(rig: Rig, item: Item, *, link_page: str | None = None) -> Run
             rig.cascade.d.guard_policy = GuardPolicy(allow_hosts=FIXTURE_HOSTS | {host})
             rig.sandbox.html = {}
             rig.sandbox.default_html = item.html
-            rig.sandbox.fail_reason = None
             canon = canonicalize(item.url)
             if canon.ok:
                 rig.sandbox.html[canon.url] = item.html
@@ -351,7 +306,6 @@ async def run_item(rig: Rig, item: Item, *, link_page: str | None = None) -> Run
             assert item.text is not None  # noqa: S101
             rig.cascade.d.guard_policy = GuardPolicy(allow_hosts=FIXTURE_HOSTS)
             rig.sandbox.default_html = link_page or CLEAN_PAGE.read_text(encoding="utf-8")
-            rig.sandbox.fail_reason = None
             doc = await asyncio.wait_for(
                 rig.cascade.run_input(vid, "message", item.text.encode("utf-8"), sink, source="fixture"),
                 CASE_TIMEOUT_S,
