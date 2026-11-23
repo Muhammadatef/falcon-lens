@@ -48,6 +48,7 @@ from falcon_core.llm.providers import (
 from falcon_core.llm.redaction import redact
 from falcon_core.llm.spotlight import UntrustedText, new_nonce, spotlight, spotlight_notice
 from falcon_core.prompts import BASE_SYSTEM, CANARY_LINE, REPAIR_PROMPT, SCHEMA_LINE
+from falcon_core.prompts.compiled import task_text
 from falcon_core.telemetry.tracing import llm_span, set_llm_usage
 
 log = logging.getLogger("falcon_core.llm")
@@ -70,6 +71,7 @@ class JsonRequest[T: BaseModel]:
     fallback: Callable[[], T] | None = None
     verdict_id: str | None = None
     allow_shadow: bool = True
+    compiled: str | None = None  # name in falcon_core.prompts.compiled; used per route, else `task` (hand-written)
 
 
 @dataclass(frozen=True, slots=True)
@@ -182,6 +184,11 @@ class LLMRouter:
             self._system_cache[key] = cached
         return cached
 
+    def _system_for(self, req: JsonRequest[Any], route: Route) -> str:
+        """System prompt for one route: the compiled role prompt for that route when it verifies, else the
+        hand-written `req.task`. The untrusted-text handling (BASE_SYSTEM, spotlight, canary) is unchanged."""
+        return self.system_prompt(task_text(req.compiled, route, req.task), req.schema)
+
     def _user_turn(self, req: JsonRequest[Any]) -> tuple[str, dict[str, int]]:
         counts: dict[str, int] = {}
 
@@ -213,7 +220,6 @@ class LLMRouter:
     async def complete_json[T: BaseModel](self, req: JsonRequest[T]) -> LLMResult[T]:
         start = self._clock()
         deadline = start + req.timeout_s if req.timeout_s is not None else None
-        system = self.system_prompt(req.task, req.schema)
         user, redactions = self._user_turn(req)
         turns = [*req.history, ChatTurn("user", user)]
         calls: list[CallRecord] = []
@@ -221,7 +227,9 @@ class LLMRouter:
 
         resp: ProviderResponse | None = None
         used: tuple[Route, str, Provider] | None = None
+        system = ""
         for route, model, provider in self.plan(req.role):
+            system = self._system_for(req, route)
             r = await self._call(req, route, model, provider, system, turns, deadline, calls)
             if r is not None:
                 resp, used = r, (route, model, provider)
@@ -433,6 +441,7 @@ class LLMRouter:
         if not others:
             return
         route, model, provider = others[0]
+        system = self._system_for(req, route)
         task = asyncio.get_running_loop().create_task(
             self._shadow(req, primary, route, model, provider, system, turns, value)
         )

@@ -271,7 +271,7 @@ def test_make_jobs_record_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     q.enqueue("eval_sovereign", task_id="ev")
     q.enqueue("dspy_local", task_id="ds")
     assert [w.tick(), w.tick()] == ["ran_ok", "ran_ok"]
-    assert seen == [["make", "eval", "ROUTE=local"], ["make", "dspy-optimize", "LM=local"]]
+    assert seen == [["make", "eval", "ROUTE=local"], ["make", "dspy-optimize", "DSPY_ROUTE=local"]]
     m = json.loads((q.base / "done/ev/manifest.json").read_text())
     assert m["eval_artifacts"] == [str(tmp_path / "evals/results/latest.json")]
 

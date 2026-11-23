@@ -116,7 +116,7 @@ def test_deck_pptx_roundtrips_with_notes_and_rtl(tmp_path: Path) -> None:
     assert deck.verify_pptx(out, 2) != []  # a wrong slide count is reported
     with zipfile.ZipFile(out) as zf:
         xml = "".join(zf.read(n).decode() for n in zf.namelist() if n.startswith("ppt/slides/slide"))
-    assert 'rtl="1"' in xml and "Readex Pro" in xml
+    assert 'rtl="1"' in xml and "Arial" in xml
 
 
 def test_deck_text_check_rejects_an_invented_number_and_the_word_safe(tmp_path: Path) -> None:

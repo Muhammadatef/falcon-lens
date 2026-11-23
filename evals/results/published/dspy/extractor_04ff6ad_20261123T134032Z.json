@@ -1,0 +1,93 @@
+{
+  "kind": "dspy_role_optimisation",
+  "role": "extractor",
+  "router_role": "extractor",
+  "route": "local",
+  "model": "inkling-2-mini-chat",
+  "dspy_version": "3.5.0",
+  "generated_at": "20261123T134032Z",
+  "git_sha": "04ff6ad",
+  "seed": {
+    "data": 20261123,
+    "optimizer": 9,
+    "bootstrap_ci": 20261123
+  },
+  "synthetic_data": true,
+  "dataset": "synthetic labelled messages (fl_messages templates, Falcon Demo Bank), split by template",
+  "splits": {
+    "train": 16,
+    "val": 12,
+    "train_sha256": "a2d3751689d13e2d3c0aa62eef59a43a271870140fcd3de93efee601a45fd086",
+    "val_sha256": "96f5f7588e65e1dcef108060caaf9ccfadbc9d446c05732ae7a1b261c031d779",
+    "note": "train for optimisation, validation for selection; frozen test split and held-out legit sets never read"
+  },
+  "metric": "production validators (see evals/dspy/roles.py), mean task score in [0,1]; invalid output scores 0",
+  "before_val": {
+    "mean": 0.7403,
+    "ci95": [
+      0.6229,
+      0.8528
+    ],
+    "valid_rate": 1.0,
+    "n": 12
+  },
+  "after_val": {
+    "mean": 0.7715,
+    "ci95": [
+      0.6663,
+      0.8701
+    ],
+    "valid_rate": 1.0,
+    "n": 12
+  },
+  "paired_diff": {
+    "mean_diff": 0.0312,
+    "ci95": [
+      -0.0312,
+      0.1
+    ]
+  },
+  "candidates": {
+    "bootstrap_few_shot": {
+      "mean": 0.7715,
+      "ci95": [
+        0.6663,
+        0.8701
+      ],
+      "valid_rate": 1.0,
+      "n": 12,
+      "seconds_to_build": 202.4,
+      "demos": 1
+    },
+    "mipro_v2_light": {
+      "mean": 0.7611,
+      "ci95": [
+        0.6486,
+        0.8667
+      ],
+      "valid_rate": 1.0,
+      "n": 12,
+      "seconds_to_build": 394.4,
+      "demos": 1
+    }
+  },
+  "selected": null,
+  "adopted": false,
+  "decision": "not adopted (within noise)",
+  "budget": {
+    "cap_calls": 150,
+    "calls_note": "calls = real model calls (DSPy + production evaluation); DSPy cache hits are counted separately",
+    "calls": 65,
+    "dspy_cache_hits": 23,
+    "input_tokens": 129064,
+    "output_tokens": 6718,
+    "n_train": 16,
+    "n_val": 12,
+    "mipro_trials": 3,
+    "threads": 3
+  },
+  "errors": [],
+  "notes": null,
+  "exported": null,
+  "seconds": 1042.1
+}

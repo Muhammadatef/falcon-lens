@@ -11,7 +11,7 @@ Being proactive (استباقية) means linking single checks into campaigns an
 - **Trigger** (`services/sentinel/rules.yaml`, unit-tested): R1 campaign (≥3 new lookalike domains for one brand in 60 min); R2 kit reuse (one dom_simhash on ≥3 domains); R3 report burst (≥5 reports on one script cluster in 30 min); R4 reputation flip (previously no_warning_signs, now dangerous); R5 quality (≥5 FP feedback on one signal in 60 min).
 - **Triage**: a LangGraph `StateGraph` with nodes `enrich → compare → assess → summarise → propose → act`. It uses a Postgres checkpointer (thread_id = incident_id) and a per-node RetryPolicy, and calls `interrupt()` before any `external_draft` action.
 - **LangChain**: only `langchain-core` model and tool interfaces, as LangGraph requires. No chains, memory, retrievers or prebuilt agents.
-- **DSPy**: offline only. It optimises the script-classifier and incident-summary prompts on the validation split; the compiled prompts are frozen into `packages/falcon_core/prompts/compiled/`.
+- **DSPy**: offline only. It optimises the prompt of every shipped LLM role (extractor, investigator, Sentinel assess/summarise/propose) on the train split and selects on validation, per route; the compiled prompts are frozen into `packages/falcon_core/prompts/compiled/`.
 - Tools are the same typed registry used by the investigator and MCP (`contracts/tools.schema.json`), going through the same model router, so sovereign mode applies here too.
 
 ## Guardrails

@@ -106,18 +106,28 @@ def _accepted(verdict_id: str) -> dict[str, str]:
     }
 
 
+CLIENT_IP_HEADER = "x-falcon-client-ip"
+
+
 def client_ip(request: Request) -> str:
-    """Peer address; X-Forwarded-For (last hop) is honoured only from a private/loopback peer."""
+    """Real caller address.
+
+    The gateway (Caddy) computes the visitor from Cf-Connecting-Ip / trusted proxies and sends it in
+    X-Falcon-Client-IP (client-sent copies are overwritten there). That header is honoured only when
+    the TCP peer is a private/loopback address (the gateway or web container on the internal network).
+    Any other peer is used as-is; X-Forwarded-For and CF headers are never read.
+    """
     peer = request.client.host if request.client else "unknown"
     try:
         trusted = ipaddress.ip_address(peer).is_private
     except ValueError:
         trusted = False
     if trusted:
-        fwd = request.headers.get("x-forwarded-for", "")
-        last = fwd.split(",")[-1].strip()
-        if last:
-            return last
+        raw = request.headers.get(CLIENT_IP_HEADER, "").strip()
+        try:
+            return str(ipaddress.ip_address(raw))
+        except ValueError:
+            pass
     return peer
 
 

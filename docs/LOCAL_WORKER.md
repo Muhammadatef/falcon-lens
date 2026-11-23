@@ -11,7 +11,7 @@ It takes one job at a time from a folder queue. When the queue is empty it adds 
 | Sovereign eval (`make eval ROUTE=local`) | 6 h | log and artifact paths in the manifest |
 | Synthetic message batch (`evals/specs/synthetic_messages_v2.json`) | 3 h | `work/qwen/auto-<timestamp>/` |
 | Arabic review (`ar.yaml` and `web/lib/i18n.ts`) | 12 h | suggestions file |
-| DSPy optimisation (`make dspy-optimize LM=local`) | daily | log in the job folder |
+| DSPy optimisation (`make dspy-optimize DSPY_ROUTE=local`) | daily | log in the job folder |
 
 It pauses by itself when Ollama is unreachable (waits 15 s, then 30 s, 60 s... up to 15 min) and when the Mac is busy (load average above 1.5 times the CPU count, for example during a heavy Docker build). A job interrupted by Ollama going away goes back to the queue. After a crash or reboot, running jobs are re-queued.
 

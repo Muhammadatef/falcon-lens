@@ -1,1 +1,162 @@
-[]
+[
+  {
+    "artifact": "extractor_04ff6ad_20261123T134032Z.json",
+    "role": "extractor",
+    "model": "inkling-2-mini-chat",
+    "synthetic": true,
+    "adopted": false,
+    "before": {
+      "mean": 0.7403,
+      "ci95": [
+        0.6229,
+        0.8528
+      ],
+      "valid_rate": 1,
+      "n": 12
+    },
+    "after": {
+      "mean": 0.7715,
+      "ci95": [
+        0.6663,
+        0.8701
+      ],
+      "valid_rate": 1,
+      "n": 12
+    },
+    "paired": {
+      "mean_diff": 0.0312,
+      "ci95": [
+        -0.0312,
+        0.1
+      ]
+    }
+  },
+  {
+    "artifact": "investigator_04ff6ad_20261123T134032Z.json",
+    "role": "investigator",
+    "model": "inkling-2-mini-chat",
+    "synthetic": true,
+    "adopted": false,
+    "before": {
+      "mean": 0.9417,
+      "ci95": [
+        0.825,
+        1
+      ],
+      "valid_rate": 1,
+      "n": 12
+    },
+    "after": {
+      "mean": 0.9417,
+      "ci95": [
+        0.825,
+        1
+      ],
+      "valid_rate": 1,
+      "n": 12
+    },
+    "paired": {
+      "mean_diff": 0,
+      "ci95": [
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "artifact": "sentinel_assess_04ff6ad_20261123T140329Z.json",
+    "role": "sentinel_assess",
+    "model": "inkling-2-mini-chat",
+    "synthetic": true,
+    "adopted": false,
+    "before": {
+      "mean": 0.75,
+      "ci95": [
+        0.5,
+        1
+      ],
+      "valid_rate": 0.75,
+      "n": 8
+    },
+    "after": {
+      "mean": 1,
+      "ci95": [
+        1,
+        1
+      ],
+      "valid_rate": 1,
+      "n": 8
+    },
+    "paired": {
+      "mean_diff": 0.25,
+      "ci95": [
+        0,
+        0.5
+      ]
+    }
+  },
+  {
+    "artifact": "sentinel_propose_04ff6ad_20261123T140329Z.json",
+    "role": "sentinel_propose",
+    "model": "inkling-2-mini-chat",
+    "synthetic": true,
+    "adopted": false,
+    "before": {
+      "mean": 0.8888,
+      "ci95": [
+        0.8375,
+        0.9431
+      ],
+      "valid_rate": 1,
+      "n": 8
+    },
+    "after": {
+      "mean": 0.91,
+      "ci95": [
+        0.8981,
+        0.9194
+      ],
+      "valid_rate": 1,
+      "n": 8
+    },
+    "paired": {
+      "mean_diff": 0.0213,
+      "ci95": [
+        -0.0362,
+        0.0794
+      ]
+    }
+  },
+  {
+    "artifact": "sentinel_summarise_04ff6ad_20261123T140329Z.json",
+    "role": "sentinel_summarise",
+    "model": "inkling-2-mini-chat",
+    "synthetic": true,
+    "adopted": false,
+    "before": {
+      "mean": 0.9938,
+      "ci95": [
+        0.9812,
+        1
+      ],
+      "valid_rate": 1,
+      "n": 8
+    },
+    "after": {
+      "mean": 1,
+      "ci95": [
+        1,
+        1
+      ],
+      "valid_rate": 1,
+      "n": 8
+    },
+    "paired": {
+      "mean_diff": 0.0063,
+      "ci95": [
+        0,
+        0.0188
+      ]
+    }
+  }
+]
