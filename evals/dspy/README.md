@@ -40,3 +40,8 @@ is never read.
 Local-model runs are not fully repeatable at n=8. `sentinel_assess` scored 1.0 before in one run and 0.75 in the
 next (same prompt, same cases); the paired CI of the re-run was [0.0, 0.625], so it was not adopted. Treat any
 Sentinel result at n=8 as noisy, and re-run before trusting a "not adopted" or an "adopted" at that size.
+
+Local result on the clean tree (sha in each report): no role met the adoption rule, so no `*.local.json` is shipped.
+The extractor looked adopted in an earlier run (paired CI [0.06, 0.175]) but the re-run gave [-0.03, 0.10]: the gain
+did not reproduce, so the hand-written prompt stays. The loader and router paths are exercised by tests with
+temporary compiled files.
