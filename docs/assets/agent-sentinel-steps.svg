@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1805" width="720" height="1805" role="img" aria-labelledby="t d">
+<title id="t">The Sentinel, step by step</title><desc id="d">Seven steps. It listens to every check, groups similar ones into a campaign, and fixed rules decide whether it is an incident. AI writes a bilingual summary. Internal blocks are reversible. Takedown and police report drafts wait for a human officer, and every action is logged.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
+.h1{font-size:38px;font-weight:700}
+.sub{font-size:24px;fill:#aeb8cc}
+.t{font-size:27px;font-weight:650}
+.b{font-size:22px;fill:#aeb8cc}
+.n{font-size:26px;font-weight:700;fill:#0a0f1c}
+.p{font-size:20px;font-weight:600}
+.card{fill:#0e1626;stroke:#2a3757;stroke-width:1.5}
+.spine{stroke:#2a3757;stroke-width:4;stroke-linecap:round}
+.flow{stroke:#3fe0c5;stroke-width:4;stroke-linecap:round;stroke-dasharray:3 16;opacity:.7;animation:dash 1.4s linear infinite}
+.glow{fill:#3fe0c5;fill-opacity:.07;stroke:#3fe0c5;stroke-width:2.5;opacity:0;animation:lit 14s linear infinite}
+.glow.am{fill:#ffc55c;stroke:#ffc55c}
+@keyframes dash{to{stroke-dashoffset:-19}}
+@keyframes lit{0%{opacity:0}2%,12%{opacity:1}16%,100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.glow{opacity:0}}
+</style>
+<defs><radialGradient id="halo" cx="50%" cy="0%" r="80%"><stop offset="0" stop-color="#3fe0c5" stop-opacity=".12"/><stop offset="1" stop-color="#3fe0c5" stop-opacity="0"/></radialGradient></defs>
+<rect width="720" height="1805" fill="#0a0f1c"/><rect width="720" height="1805" fill="url(#halo)"/>
+<text class="h1" x="40" y="70">The Sentinel</text>
+<text class="sub" x="40" y="116">Watches every check, around the clock. Step by step.</text>
+<line class="spine" x1="60" y1="230" x2="60" y2="1601"/><line class="flow" x1="60" y1="230" x2="60" y2="1601"/>
+<rect class="card" x="110" y="190" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:0s" x="110" y="190" width="580" height="184" rx="16"/>
+<circle cx="60" cy="230" r="26" fill="#3fe0c5"/><text class="n" x="60" y="239" text-anchor="middle">1</text>
+<rect x="136" y="206" width="138" height="32" rx="16" fill="none" stroke="#3fe0c5" stroke-width="1.8"/><text class="p" x="150" y="229" style="fill:#3fe0c5">Fixed code</text>
+<text class="t" x="136" y="274">Listens to every check</text>
+<text class="b" x="136" y="304">Each finished check is passed to the Sentinel as</text>
+<text class="b" x="136" y="333">it happens.</text>
+<rect class="card" x="110" y="408" width="580" height="213" rx="16"/>
+<rect class="glow" style="animation-delay:2s" x="110" y="408" width="580" height="213" rx="16"/>
+<circle cx="60" cy="448" r="26" fill="#3fe0c5"/><text class="n" x="60" y="457" text-anchor="middle">2</text>
+<rect x="136" y="424" width="138" height="32" rx="16" fill="none" stroke="#3fe0c5" stroke-width="1.8"/><text class="p" x="150" y="447" style="fill:#3fe0c5">Fixed code</text>
+<text class="t" x="136" y="492">Groups similar ones into a campaign</text>
+<text class="b" x="136" y="522">Several new look-alike addresses copying one</text>
+<text class="b" x="136" y="551">brand, or pages built from the same kit: one</text>
+<text class="b" x="136" y="580">campaign, not many.</text>
+<rect class="card" x="110" y="655" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:4s" x="110" y="655" width="580" height="184" rx="16"/>
+<circle cx="60" cy="695" r="26" fill="#3fe0c5"/><text class="n" x="60" y="704" text-anchor="middle">3</text>
+<rect x="136" y="671" width="138" height="32" rx="16" fill="none" stroke="#3fe0c5" stroke-width="1.8"/><text class="p" x="150" y="694" style="fill:#3fe0c5">Fixed code</text>
+<text class="t" x="136" y="739">Rules decide it is an incident</text>
+<text class="b" x="136" y="769">Written rules, not AI, say when a campaign is</text>
+<text class="b" x="136" y="798">serious enough.</text>
+<rect class="card" x="110" y="873" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:6s" x="110" y="873" width="580" height="184" rx="16"/>
+<circle cx="60" cy="913" r="26" fill="#a9c0ff"/><text class="n" x="60" y="922" text-anchor="middle">4</text>
+<rect x="136" y="889" width="50" height="32" rx="16" fill="none" stroke="#a9c0ff" stroke-width="1.8"/><text class="p" x="150" y="912" style="fill:#a9c0ff">AI</text>
+<text class="t" x="136" y="957">AI writes a bilingual summary</text>
+<text class="b" x="136" y="987">A short Arabic and English summary for the</text>
+<text class="b" x="136" y="1016">officer. It cannot change the decision.</text>
+<rect class="card" x="110" y="1091" width="580" height="184" rx="16"/>
+<rect class="glow" style="animation-delay:8s" x="110" y="1091" width="580" height="184" rx="16"/>
+<circle cx="60" cy="1131" r="26" fill="#3fe0c5"/><text class="n" x="60" y="1140" text-anchor="middle">5</text>
+<rect x="136" y="1107" width="138" height="32" rx="16" fill="none" stroke="#3fe0c5" stroke-width="1.8"/><text class="p" x="150" y="1130" style="fill:#3fe0c5">Fixed code</text>
+<text class="t" x="136" y="1175">Blocks internally (reversible)</text>
+<text class="b" x="136" y="1205">Known-bad links are blocked inside our own system.</text>
+<text class="b" x="136" y="1234">Every block expires and can be undone.</text>
+<rect class="card" x="110" y="1309" width="580" height="218" rx="16"/>
+<rect class="glow am" style="animation-delay:10s" x="110" y="1309" width="580" height="218" rx="16"/>
+<circle cx="60" cy="1349" r="26" fill="#ffc55c"/><text class="n" x="60" y="1358" text-anchor="middle">6</text>
+<rect x="136" y="1325" width="138" height="32" rx="16" fill="none" stroke="#ffc55c" stroke-width="1.8"/><text class="p" x="150" y="1348" style="fill:#ffc55c">Human gate</text>
+<text class="t" x="136" y="1393">Prepares a takedown and waits for a</text>
+<text class="t" x="136" y="1427">human</text>
+<text class="b" x="136" y="1457">Takedown request and police report drafts are only</text>
+<text class="b" x="136" y="1486">drafts. Nothing is sent.</text>
+<rect class="card" x="110" y="1561" width="580" height="184" rx="16"/>
+<rect class="glow am" style="animation-delay:12s" x="110" y="1561" width="580" height="184" rx="16"/>
+<circle cx="60" cy="1601" r="26" fill="#ffc55c"/><text class="n" x="60" y="1610" text-anchor="middle">7</text>
+<rect x="136" y="1577" width="138" height="32" rx="16" fill="none" stroke="#ffc55c" stroke-width="1.8"/><text class="p" x="150" y="1600" style="fill:#ffc55c">Human gate</text>
+<text class="t" x="136" y="1645">An officer approves or rejects</text>
+<text class="b" x="136" y="1675">Every action goes into an append-only record that</text>
+<text class="b" x="136" y="1704">the application cannot edit.</text>
+</svg>
