@@ -181,3 +181,25 @@ async def test_requeue_failure_does_not_crash() -> None:
     runner.run = boom  # type: ignore[method-assign]
     assert await runner.resume_unfinished() == []
     assert calls == [iid]
+
+
+async def test_model_proposals_all_rejected_still_queue_rule_fallback_draft() -> None:
+    from falcon_core.llm.testing import ScriptedProvider as SP
+    from falcon_sentinel.llm import RouterLLM as RL
+
+    bad = '{"actions": [{"tool": "draft_takedown", "args": {"recipient_kind": "nobody"}, "why_evidence_ids": ["rule:R1"]}]}'
+
+    def reply(req: Any) -> str:
+        ctx = req.turns[-1].content
+        if '"task": "propose"' in ctx:
+            assert '"tool_args"' in ctx  # the model is told the argument shape of each tool
+            return bad
+        return "not json"
+
+    env = await make_env()
+    iid = env.campaign_id()
+    await env.runner(RL(LLMRouter(RouterConfig(), local=SP("local", [reply])))).run(iid)
+    inc = env.cache.get(iid)
+    assert inc is not None and inc["status"] == "awaiting_approval"
+    (td,) = td_of(inc)
+    assert td["origin"] == "rule_fallback" and td["status"] == "awaiting_approval"
