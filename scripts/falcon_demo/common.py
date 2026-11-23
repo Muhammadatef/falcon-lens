@@ -115,7 +115,8 @@ class ApiClient:
         if self._key:
             h["X-API-Key"] = self._key
         if idem:
-            h["Idempotency-Key"] = idem[:128]
+            # The API accepts only [A-Za-z0-9._:-]{1,128}; callers may pass URLs ('/', '?', '#' ...).
+            h["Idempotency-Key"] = re.sub(r"[^A-Za-z0-9._:-]", "_", idem)[:128]
         return h
 
     def _post(self, path: str, body: dict[str, Any], idem: str | None, wait: float) -> dict[str, Any]:
