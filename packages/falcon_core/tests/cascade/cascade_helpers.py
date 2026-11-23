@@ -22,7 +22,7 @@ from falcon_core.cascade import (
     StubSandboxClient,
 )
 from falcon_core.cascade.engine import default_t1_signals
-from falcon_core.cascade.testing import FIXTURE_POLICY, loaded_mirror, stub_resolver
+from falcon_core.cascade.testing import FIXTURE_POLICY, PriorT1Model, loaded_mirror, stub_resolver
 from falcon_core.scoring.params import load_params
 from falcon_core.signals.base import SignalFn, SignalSpec
 from falcon_core.signals.brands.registry import default_registry
@@ -60,6 +60,7 @@ def make_cascade(
     metrics = CascadeMetrics(CollectorRegistry())
     t1 = dict(signals if signals is not None else default_t1_signals())
     t1.update(extra_signals or {})
+    kw.setdefault("t1_model", PriorT1Model())
     kw.setdefault("guard_policy", FIXTURE_POLICY)
     kw.setdefault("resolver", stub_resolver)
     kw.setdefault("mirror", loaded_mirror())  # fresh, empty: no hit, not degraded

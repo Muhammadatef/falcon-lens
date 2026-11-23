@@ -8,6 +8,13 @@ const config: NextConfig = {
   reactStrictMode: true,
   turbopack: { root: dirname(fileURLToPath(import.meta.url)) },
   outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)),
+  async redirects() {
+    // Permanent (308). /architecture/agents lands on /docs/agents (built by the docs card, W2-07).
+    return [
+      { source: "/how-it-works", destination: "/agents", permanent: true },
+      { source: "/architecture/agents", destination: "/docs/agents", permanent: true },
+    ];
+  },
   async headers() {
     return [
       // The service worker must never be served stale, and may control the whole origin.

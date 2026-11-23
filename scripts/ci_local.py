@@ -22,7 +22,12 @@ Differences from GitHub (all visible in the logs, none weaken a check)
       shared falcon-lens/* tags never move. Only `docker compose build` runs: no container, network
       or volume is created, and nothing is pruned (the running `falcon` stack is untouched).
     - Playwright installs chromium without --with-deps (a Linux-only flag).
-    - trivy additionally skips local-only directories (extension/node_modules, work, web/.next).
+    - one ci-local runs at a time machine-wide (flock on $TMPDIR/falcon-ci-local.lock); others wait.
+    - Playwright workers are capped locally by FL_PW_WORKERS (default 2); CI is unchanged.
+    - uncommitted edits are not scanned by trivy (ci-local-pr scans the committed merge tree).
+    - trivy scans a `git archive HEAD` snapshot (all tracked files), so parallel jobs' outputs can't race it.
+      The snapshot holds tracked files only, so #60's test-results / playwright-report / node_modules / work /
+      .next --skip-dirs are redundant and were dropped.
     - Tool versions are the ones installed locally; CI pins gitleaks/trivy/uv versions.
 
 Parity: scripts/tests/test_ci_local.py parses ci.yml and fails if any job lacks an entry in JOBS.
@@ -32,6 +37,7 @@ Parity: scripts/tests/test_ci_local.py parses ci.yml and fails if any job lacks 
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import shutil
@@ -81,9 +87,10 @@ JOBS: dict[str, tuple[tuple[str, ...], str]] = {
         ' -o "$FL_CI_LOGDIR/requirements.audit.txt"'
         ' && uvx pip-audit -r "$FL_CI_LOGDIR/requirements.audit.txt" --no-deps --disable-pip'
         " && (cd web && pnpm audit --prod)"
+        ' && SNAP="$(mktemp -d)" && trap \'rm -rf "$SNAP"\' EXIT'
+        ' && git archive HEAD | tar -x -C "$SNAP"'
         " && trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1"
-        " --skip-dirs web/node_modules --skip-dirs extension/node_modules --skip-dirs .venv"
-        " --skip-dirs work --skip-dirs web/.next ."
+        ' "$SNAP"'
         " && python3 scripts/check_no_live_urls.py",
     ),
     "docker-build": (("docker", "python3"), f"python3 {Path(__file__).resolve()} --docker-build"),
@@ -264,6 +271,25 @@ def run_pr(pr: int, log_root: Path, names: list[str], comment: bool) -> int:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+LOCK_PATH = Path(tempfile.gettempdir()) / "falcon-ci-local.lock"
+
+
+def acquire_machine_lock() -> object:
+    """Machine-wide lock: one ci-local at a time across all worktrees (flock; released on exit/crash)."""
+    fh = LOCK_PATH.open("a+")
+    try:
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        fh.seek(0)
+        print(f"waiting for another ci-local ({fh.read().strip() or 'unknown holder'})", flush=True)
+        fcntl.flock(fh, fcntl.LOCK_EX)
+    fh.seek(0)
+    fh.truncate()
+    fh.write(f"pid {os.getpid()}, worktree {REPO}")
+    fh.flush()
+    return fh
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--pr", type=int, help="test the merge result of origin/main + this PR")
@@ -273,6 +299,7 @@ def main() -> int:
     a = ap.parse_args()
     if a.docker_build:
         return docker_build(Path.cwd())
+    _lock = acquire_machine_lock()  # noqa: F841  (held until process exit)
     names = a.jobs.replace(",", " ").split() or list(JOBS)
     unknown = [n for n in names if n not in JOBS]
     if unknown:

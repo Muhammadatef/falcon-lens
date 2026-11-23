@@ -2,7 +2,11 @@
   "message_check": true,
   "email_check": true,
   "image_check": true,
-  "injection_defence": false,
-  "investigator": false,
+  "injection_defence": true,
+  "investigator": true,
+  "sentinel_agent": true,
+  "rest_api": true,
+  "mcp": true,
+  "stix": true,
   "t1_measured_model": true
 }

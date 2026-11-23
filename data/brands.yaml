@@ -13,7 +13,7 @@
 brands:
   - brand_id: abu_dhabi_police
     name_en: Abu Dhabi Police
-    name_ar: القيادة العامة لشرطة ابوظبي
+    name_ar: القيادة العامة لشرطة أبوظبي
     category: police
     verified_domains: [adpolice.gov.ae]
     source_url: https://www.adpolice.gov.ae
@@ -22,7 +22,7 @@ brands:
     keywords_ar: [شرطة ابوظبي, شرطة أبوظبي, مخالفة, مخالفات, بلاغ, قضية, أمان]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "name_ar copied as written on the site banner (without hamza)."
+    unverified_notes: "name_ar uses أبوظبي with hamza as the official AD999 app listing writes it (Google Play ae.adpolice.sos, 2026-11-22); the site banner omits the hamza. Both spellings are in keywords_ar."
 
   - brand_id: dubai_police
     name_en: Dubai Police
@@ -129,7 +129,7 @@ brands:
     keywords_ar: [سالك, رسوم, شحن, رصيد, مخالفة]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "salik.gov.ae is NOT listed: it was the Salik portal in 2020 (rta.ae article above) but returns NXDOMAIN on 2026-11-22, although the Google Play Smart Salik listing still names it. Re-verify before ever adding it back. name_ar not confirmed on an official page (C01)."
+    unverified_notes: "salik.gov.ae is NOT listed: it was the Salik portal in 2020 (rta.ae article above) but returns NXDOMAIN on 2026-11-22, although the Google Play Smart Salik listing still names it. Re-verify before ever adding it back. name_ar «سالك» kept after the C01 review; salik.ae blocks automated fetches, so it is not confirmed on an official page."
 
   - brand_id: rta_dubai
     name_en: Roads and Transport Authority (RTA) Dubai
@@ -160,7 +160,7 @@ brands:
 
   - brand_id: addc_taqa_distribution
     name_en: Abu Dhabi Distribution Company (ADDC) / TAQA Distribution
-    name_ar: شركة أبوظبي للتوزيع
+    name_ar: طاقة للتوزيع
     category: utility
     verified_domains: [addc.ae, taqadistribution.com]
     source_url: https://taqadistribution.com/addc/en-us/residential/overview
@@ -176,10 +176,10 @@ brands:
         source_url: https://www.addc.ae/en-US/home/Pages/AboutUs.aspx
         shows: "addc.ae 'Our Company' page links branches on taqadistribution.com and the e-services portal eservices.addc.ae"
     keywords_en: [addc, taqa, taqa distribution, electricity, water, bill, disconnection, payment]
-    keywords_ar: [أبوظبي للتوزيع, طاقة, كهرباء, ماء, فاتورة, فصل الخدمة, سداد]
+    keywords_ar: [طاقة للتوزيع, شركة أبوظبي للتوزيع, أبوظبي للتوزيع, طاقة, كهرباء, ماء, فاتورة, فصل الخدمة, سداد]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "Both domains proven by the official app listings above; e-services run on eservices.addc.ae (covered by addc.ae). taqa.com (parent) served a bot challenge, so no parent-site link was confirmed. The Arabic Play listing uses the name 'طاقة للتوزيع'; name_ar to be reviewed under C01."
+    unverified_notes: "Both domains proven by the official app listings above; e-services run on eservices.addc.ae (covered by addc.ae). taqa.com (parent) served a bot challenge, so no parent-site link was confirmed. name_ar «طاقة للتوزيع» as in the official app listing (Google Play com.ADDC.addcApp, 2026-11-22)."
 
   - brand_id: dewa
     name_en: Dubai Electricity and Water Authority (DEWA)
@@ -210,16 +210,16 @@ brands:
 
   - brand_id: etisalat_by_eand
     name_en: Etisalat by e&
-    name_ar: اتصالات من e&
+    name_ar: اتصالات
     category: telecom
     verified_domains: [etisalat.ae, eand.ae, eand.com]
     source_url: https://www.eand.ae/en/index.html
     retrieved_at: 2026-11-22
     keywords_en: [etisalat, e&, eand, sim, bill, recharge, points, rewards, suspended]
-    keywords_ar: [اتصالات, إي آند, فاتورة, شحن, نقاط, إيقاف الخدمة]
+    keywords_ar: [اتصالات, اتصالات الامارات, اتصالات الإمارات, إي آند, فاتورة, شحن, نقاط, إيقاف الخدمة]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "etisalat.ae redirects (302) to www.eand.ae; the page links etisalat.ae, eand.ae and eand.com (group). name_ar not confirmed on page. eim.ae (mail) and eanduniverse.com were linked but not included."
+    unverified_notes: "etisalat.ae redirects (302) to www.eand.ae; the page links etisalat.ae, eand.ae and eand.com (group). name_ar «اتصالات» as written on eand.ae/ar (page title and header, 2026-11-22). eim.ae (mail) and eanduniverse.com were linked but not included."
 
   - brand_id: du
     name_en: du (Emirates Integrated Telecommunications)
@@ -364,7 +364,7 @@ brands:
     keywords_ar: [راك بنك, بنك رأس الخيمة الوطني, بطاقة موقوفة, تحقق]
     logo_ref: null
     favicon_hash: null
-    unverified_notes: "No separate online-banking domain found with an official source. The Play listing's contact email is a gmail.com address, so never trust a non-rakbank.ae email domain as RAKBANK. The bank's Arabic site uses the brand 'راك بنك'; name_ar to be reviewed under C01."
+    unverified_notes: "No separate online-banking domain found with an official source. The Play listing's contact email is a gmail.com address, so never trust a non-rakbank.ae email domain as RAKBANK. name_ar kept as «بنك رأس الخيمة الوطني» after the C01 review; the bank's Arabic site uses the brand «راك بنك», which is in keywords_ar."
 
   - brand_id: emirates_islamic
     name_en: Emirates Islamic

@@ -80,6 +80,7 @@ submission: ## Build submission/ (form fields, deck, PDF, CHECKLIST) and trace e
 	uv run --with-requirements scripts/submission/requirements.txt python scripts/submission/build.py
 	uv run --with-requirements scripts/submission/requirements.txt python scripts/submission/check_numbers.py
 	uv run python scripts/submission/descriptions.py --check submission/description_en.txt submission/description_ar.txt
+	uv run --no-project --with-requirements submission/build/requirements.txt --with pyyaml python submission/build/build_all.py
 
 # ---- demo tooling (gate G6) ---------------------------------------------------------------------------
 seed: ## Push the corpus through the real API/worker as source=replay (idempotent; FORCE=1 resubmits)
@@ -88,7 +89,7 @@ seed: ## Push the corpus through the real API/worker as source=replay (idempoten
 replay: ## Steady labelled traffic + planted Sentinel campaign: make replay RATE=2/s DURATION=10m
 	$(DEMO) replay --rate $(or $(RATE),2/s) --duration $(or $(DURATION),10m)
 
-demo: ## up (core+obs+tools) -> healthy -> pre-warm -> seed -> print URLs
+demo: ## up (core+obs+tools) -> healthy -> pre-warm -> seed -> URLs -> run the six scenarios + Sentinel scene (exit 1 on any FAIL)
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' first." >&2; exit 1; }
 	docker compose --profile core --profile obs --profile tools up -d --build
 	@FL_PROFILES="core obs tools" scripts/wait_healthy.sh 600
@@ -96,6 +97,7 @@ demo: ## up (core+obs+tools) -> healthy -> pre-warm -> seed -> print URLs
 	@$(DEMO) seed || echo "WARN: seed incomplete (see above); the stack is up, re-run 'make seed' when the failing service is ready." >&2
 	@$(DEMO) urls
 	@$(DEMO) next
+	@$(DEMO) scenarios
 
 urls: ## Print the local URLs of the running stack
 	@$(DEMO) urls

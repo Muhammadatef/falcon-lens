@@ -1,0 +1,8 @@
+# Build-time tools for the submission documents only. Not shipped, not in uv.lock (see DECISIONS.md).
+python-docx==1.2.0
+markdown==3.11.3
+pygments==2.21.0
+playwright==1.65.2
+pypdf==7.1.1
+pypdfium2==5.15.2
+pillow==13.0.0

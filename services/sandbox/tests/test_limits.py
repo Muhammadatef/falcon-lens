@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from falcon_sandbox import browser as browser_mod
 from falcon_sandbox.main import build_app
 from falcon_sandbox.policy import (
+    MAIN_DOC_HARD_BYTES,
     MAX_TOTAL_BYTES,
     ByteBudget,
     classify_fetch_error,
@@ -54,8 +55,8 @@ class _FakeResp:
 
 async def test_handler_never_reads_oversized_body(monkeypatch: pytest.MonkeyPatch) -> None:
     """Drive the real route handler with a fake route: the body must stay unread and the
-    request aborted when Content-Length is over the cap."""
-    resp = _FakeResp({"content-length": str(MAX_TOTAL_BYTES + 1), "content-type": "text/html"})
+    request aborted when the main document's Content-Length is over the hard ceiling."""
+    resp = _FakeResp({"content-length": str(MAIN_DOC_HARD_BYTES + 1), "content-type": "text/html"})
     aborted: list[str] = []
 
     class Req:

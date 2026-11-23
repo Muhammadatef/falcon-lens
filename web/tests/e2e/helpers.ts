@@ -100,3 +100,8 @@ export const test = base.extend<{ guard: Guard }>({
 });
 
 export { expect };
+
+/** Routes this browser context to the app instance whose /v1/meta reports every capability flag true / false (mock gateway cookie `mock_caps`). */
+export async function forceCaps(context: BrowserContext, baseURL: string, mode: "true" | "false") {
+  await context.addCookies([{ name: "mock_caps", value: mode, url: baseURL }]);
+}

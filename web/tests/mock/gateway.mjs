@@ -20,6 +20,9 @@ import http from "node:http";
 
 const PORT = Number(process.env.MOCK_PORT ?? 43110);
 const APP_PORT = Number(process.env.APP_PORT ?? 43111);
+/** Two extra app instances whose FL_API_INTERNAL_URL points at /__caps/<mode>: every capability flag forced false / true. */
+const CAP_APPS = { false: Number(process.env.APP_PORT_CAPS_FALSE ?? 43112), true: Number(process.env.APP_PORT_CAPS_TRUE ?? 43113) };
+const CAP_IDS = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "t1_measured_model"];
 const LIMITS = { url: 4096, message: 8 * 1024, email: 2 * 1024 * 1024, image: 5 * 1024 * 1024 };
 const BODY_LIMITS = { url: 32 * 1024, message: 64 * 1024, email: LIMITS.email + 64 * 1024, image: LIMITS.image + 64 * 1024 };
 
@@ -238,7 +241,9 @@ async function api(req, res, path) {
 }
 
 function proxy(req, res) {
-  const upstream = http.request({ host: "127.0.0.1", port: APP_PORT, path: req.url, method: req.method, headers: req.headers }, (up) => {
+  const forced = cookie(req, "mock_caps");
+  const port = forced === "false" || forced === "true" ? CAP_APPS[forced] : APP_PORT;
+  const upstream = http.request({ host: "127.0.0.1", port, path: req.url, method: req.method, headers: req.headers }, (up) => {
     res.writeHead(up.statusCode ?? 502, up.headers);
     up.pipe(res);
   });
@@ -252,6 +257,9 @@ function proxy(req, res) {
 http
   .createServer((req, res) => {
     const path = new URL(req.url ?? "/", "http://x").pathname;
+    // Server-side GET /v1/meta from a forced-capability app instance: /__caps/<mode>/v1/meta
+    const forcedMeta = /^\/__caps\/(true|false)\/v1\/meta$/.exec(path);
+    if (forcedMeta) return json(res, 200, { capabilities: Object.fromEntries(CAP_IDS.map((id) => [id, forcedMeta[1] === "true"])) });
     const run = path.startsWith("/__mock/") ? control(req, res, path) : path.startsWith("/v1/") ? api(req, res, path) : null;
     if (run) run.catch(() => { if (!res.headersSent) problem(req, res, 500, "internal", "Internal error"); else res.end(); });
     else proxy(req, res);

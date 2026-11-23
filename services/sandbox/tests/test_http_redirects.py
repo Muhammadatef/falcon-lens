@@ -150,15 +150,20 @@ async def test_redirect_loop_is_capped(base: str, sandbox: SandboxBrowser) -> No
 
 
 @pytest.mark.parametrize(
-    ("path", "error_prefix"),
-    [("/to-slow", "timeout"), ("/to-reset", "connect_failed"), ("/cap0", "too_many_redirects")],
+    ("path", "accepted"),
+    [
+        ("/to-slow", ("timeout",)),
+        # which failure code a reset yields depends on Chromium's retry timing; all are legitimate failures
+        ("/to-reset", ("connect_failed", "timeout", "no_response", "fetch_failed", "navigation_failed")),
+        ("/cap0", ("too_many_redirects",)),
+    ],
 )
 async def test_chain_ending_on_failure_never_returns_the_stub(
-    base: str, sandbox: SandboxBrowser, path: str, error_prefix: str
+    base: str, sandbox: SandboxBrowser, path: str, accepted: tuple[str, ...]
 ) -> None:
     out = await sandbox.visit(f"{base}{path}", "desktop_en")
     f = out.features
-    assert f.error is not None and f.error.startswith(error_prefix), f.error
+    assert f.error is not None and f.error.startswith(accepted), f.error
     assert f.final_url is None and f.status is None
     assert f.title == "" and f.visible_text == "" and f.forms == []
     assert f.dom_simhash is None and f.screenshot_phash is None

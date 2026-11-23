@@ -14,12 +14,12 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
 const args = new Set(process.argv.slice(2));
 const e2e = args.has("--e2e");
-const out = join(root, e2e ? "dist-e2e" : "dist");
+const out = e2e && process.env.FL_E2E_OUT ? process.env.FL_E2E_OUT : join(root, e2e ? "dist-e2e" : "dist");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 
 // The e2e build differs in exactly two ways: the API origin is the local mock, and the hover
 // script also matches a reserved .test host that stands in for a webmail app.
-const E2E_API = "http://127.0.0.1:8765";
+const E2E_API = `http://127.0.0.1:${process.env.FL_E2E_API_PORT ?? "8765"}`; // tests pick a free port per run
 const E2E_HOVER_MATCH = "http://webmail.test/*";
 
 function origin(value, name) {

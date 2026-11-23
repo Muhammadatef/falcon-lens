@@ -110,6 +110,10 @@ class SandboxFeatures(BaseModel):
     title: str = ""
     forms: list[SandboxForm] = Field(default_factory=list)
     post_targets: list[str] = Field(default_factory=list)
+    # Cross-origin POST targets that carry NO form-field data (telemetry, pixels): informational only.
+    beacon_origins: list[str] = Field(default_factory=list)
+    # Post origins that count only because of the credential-page rule (basis=credential_page_rule).
+    credential_rule_origins: list[str] = Field(default_factory=list)
     hotlinked_origins: list[str] = Field(default_factory=list)
     visible_text: str = ""
     favicon_sha256: str | None = None
@@ -121,6 +125,10 @@ class SandboxFeatures(BaseModel):
     exfil_targets: list[dict[str, Any]] = Field(default_factory=list)
     # Set by the sandbox when the visit failed (then there is no page to judge).
     error: str | None = None
+    # The page WAS judged, but from less than all of it: the main document was cut at the size cap, or the
+    # features were read before the page finished loading. Informational only (page.truncated, weight 0).
+    truncated: bool = False
+    partial: bool = False
 
     @field_validator("visible_text")
     @classmethod

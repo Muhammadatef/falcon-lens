@@ -1,17 +1,10 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CapBadge } from "@/components/CapBadge";
 import type { Capabilities } from "@/lib/capabilities";
-import { loadCapabilities } from "@/lib/capabilities";
 import type { Lang } from "@/lib/contracts";
 import { ARCH, type AgentBlock, type ArchContent } from "@/lib/arch-content";
-import { pageMetadata } from "@/lib/meta";
-import { serverLang } from "@/lib/server-lang";
-
-export async function generateMetadata(): Promise<Metadata> {
-  const lang = await serverLang();
-  return pageMetadata(lang, { title: ARCH[lang].title, description: ARCH[lang].lead.slice(0, 160) });
-}
+import { dt } from "@/lib/i18n-docs";
+import { flag } from "@/lib/cap-flag";
 
 /** The investigator loop. Labels are code identifiers, so the figure is always left-to-right. */
 function LoopDiagram({ c }: { c: ArchContent }) {
@@ -52,7 +45,7 @@ function Flow({ block, legend, caps, lang }: { block: AgentBlock; legend: ArchCo
         <li className="flow-node" data-kind={l.kind ?? "code"} key={l.tag + l.title}>
           <span className="flow-tag mono">{l.tag}</span>
           <div>
-            <h4>{l.title}{l.cap ? <> <CapBadge live={caps[l.cap]} lang={lang} /></> : null}</h4>
+            <h4>{l.title}{l.cap ? <> <CapBadge live={flag(caps, l.cap)} lang={lang} /></> : null}</h4>
             <p>{l.body}</p>
             <span className="flow-kind">{legend[l.kind ?? "code"]}</span>
           </div>
@@ -91,33 +84,45 @@ function Agent({ id, block, c, caps, lang, badge, children }: { id: string; bloc
   );
 }
 
-export default async function AgentsArchitecturePage() {
-  const lang = await serverLang();
-  const c = ARCH[lang];
-  const caps = await loadCapabilities();
+const FIGS = {
+  investigator: { src: "/images/investigator.svg", width: 1200, height: 790, alt: { ar: "مخطط بنية المحقّق: الطبقات من الشلال الحتمي إلى المحكّم والمجيب.", en: "Diagram of the Investigator architecture: from the deterministic cascade to the arbiter and the responder." } },
+  sentinel: { src: "/images/sentinel.svg", width: 1200, height: 776, alt: { ar: "مخطط بنية الحارس: من تدفق الأحداث إلى الرسم والموافقة البشرية.", en: "Diagram of the Sentinel architecture: from the event stream to the graph and the human approval." } },
+} as const;
+
+function Fig({ id, lang }: { id: keyof typeof FIGS; lang: Lang }) {
+  const f = FIGS[id];
   return (
-    <main id="main" className="page">
-      <div className="wrap">
-        <h1 className="page-title">{c.title}</h1>
-        <p className="page-lead">{c.lead}</p>
-        <ul className="legend" aria-label="legend">
-          {(["llm", "code", "gate"] as const).map((k) => (
-            <li key={k} data-kind={k}><i aria-hidden="true" />{c.legend[k]}</li>
-          ))}
-        </ul>
+    <div className="figure">
+      <img src={f.src} alt={f.alt[lang]} width={f.width} height={f.height} loading="lazy" decoding="async" />
+    </div>
+  );
+}
 
-        <Agent id="investigator" block={c.investigator} c={c} caps={caps} lang={lang} badge={caps.investigator}>
-          <LoopDiagram c={c} />
-          <div className="chips-wrap">
-            <h3 className="h3">{c.toolsTitle}</h3>
-            <ul className="chips">{c.tools.map((t) => <li className="chip mono" key={t}>{t}</li>)}</ul>
-          </div>
-        </Agent>
+/** Body of /docs/agents (the h1 and lead are rendered by the page). */
+export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
+  const c = ARCH[lang];
+  return (
+    <>
+      <ul className="legend" aria-label="legend">
+        {(["llm", "code", "gate"] as const).map((k) => (
+          <li key={k} data-kind={k}><i aria-hidden="true" />{c.legend[k]}</li>
+        ))}
+      </ul>
 
-        <Agent id="sentinel" block={c.sentinel} c={c} caps={caps} lang={lang} />
+      <Agent id="investigator" block={c.investigator} c={c} caps={caps} lang={lang} badge={flag(caps, "investigator")}>
+        <LoopDiagram c={c} />
+        <Fig id="investigator" lang={lang} />
+        <div className="chips-wrap">
+          <h3 className="h3">{c.toolsTitle}</h3>
+          <ul className="chips">{c.tools.map((t) => <li className="chip mono" key={t}>{t}</li>)}</ul>
+        </div>
+      </Agent>
 
-        <p><Link className="btn" href="/how-it-works">{c.back}</Link></p>
-      </div>
-    </main>
+      <Agent id="sentinel" block={c.sentinel} c={c} caps={caps} lang={lang} badge={flag(caps, "sentinel_agent")}>
+        <Fig id="sentinel" lang={lang} />
+      </Agent>
+
+      <p><Link className="btn" href="/agents">{dt(lang, "docs.agents.back")}</Link></p>
+    </>
   );
 }
