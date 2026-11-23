@@ -3,12 +3,20 @@
 For one URL: T1 url signals (``falcon_core.signals``) -> evidence, lexical features -> calibrated ``p_clf``,
 registry lookup -> ``registry.verified_official`` evidence (what the cascade's T0 registry step emits), then the
 deterministic arbiter. Tiers above T1 (sandbox render, LLM) are not run here and are reported ``not_evaluated``.
+
+When to use it:
+    As a library, imported by fit.py and the eval harness; it has no command of its own.
+
+Outputs / side effects:
+    Pure computation; the registry lookup reads the brand registry from the repo. No files written, no
+    network calls.
 """
 
 from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -17,6 +25,7 @@ import numpy as np
 from evals.common import registrable_domain
 from falcon_core.scoring.arbiter import ArbiterContext, ArbiterResult, has_brand_conflict, score
 from falcon_core.scoring.evidence import Evidence, from_contract
+from falcon_core.scoring.model_cap import score_with_model
 from falcon_core.scoring.params import ScoringParams
 from falcon_core.signals import REGISTRY
 from falcon_core.signals.brands.registry import default_registry
@@ -78,11 +87,13 @@ FEATURE_GROUPS: dict[str, tuple[str, ...]] = {
 
 
 def feature_vector(url: str) -> list[float]:
+    """Lexical feature vector of one URL."""
     f = extract_features(url)
     return [f[n] for n in FEATURE_NAMES]
 
 
 def feature_matrix(urls: list[str]) -> Any:
+    """Feature matrix (one row per URL) for the classifier."""
     return np.array([feature_vector(u) for u in urls], dtype=float)
 
 
@@ -100,10 +111,12 @@ def t1_evidence(url: str) -> list[Evidence]:
 
 
 def verified_domains() -> dict[str, frozenset[str]]:
+    """Map brand id to its verified domains from the brand registry."""
     return {b.brand_id: frozenset(b.verified_domains) for b in default_registry().brands}
 
 
 def registry_evidence(domain: str) -> list[Evidence]:
+    """The `registry.verified_official` trust evidence if the domain belongs to a registered brand, else none."""
     brand = default_registry().official_brand(domain)
     if brand is None:
         return []
@@ -122,6 +135,8 @@ def registry_evidence(domain: str) -> list[Evidence]:
 
 @dataclass
 class Scored:
+    """Result of scoring one URL: arbiter result, classifier probability, brand-conflict flag and latency."""
+
     result: ArbiterResult
     p_clf: float
     brand_conflict: bool
@@ -129,10 +144,22 @@ class Scored:
     stage_ms: dict[str, float] = field(default_factory=dict)
 
 
-def score_url(url: str, p_clf: float, params: ScoringParams, with_registry: bool = True) -> Scored:
-    """Arbiter result for one URL given its (calibrated) classifier probability."""
+def score_url(
+    url: str,
+    p_clf: float,
+    params: ScoringParams,
+    with_registry: bool = True,
+    extra_evidence: Sequence[Evidence] = (),
+    model_cap: bool = True,
+) -> Scored:
+    """Arbiter result for one URL given its (calibrated) classifier probability.
+
+    ``extra_evidence`` stands in for later tiers (e.g. a credential form seen at T2). The model-cap rule
+    (``scoring.model_cap``) is applied exactly as in the cascade unless ``model_cap=False`` (the band fit, which
+    must not depend on the cap it precedes).
+    """
     t0 = time.perf_counter()
-    ev = t1_evidence(url)
+    ev = [*t1_evidence(url), *extra_evidence]
     t1 = time.perf_counter()
     dom = registrable_domain(url)
     if with_registry:
@@ -143,7 +170,8 @@ def score_url(url: str, p_clf: float, params: ScoringParams, with_registry: bool
         verified_domains=verified_domains() if with_registry else None,
         params=params,
     )
-    res = score(ev, p_clf=min(max(p_clf, 0.0), 1.0), ctx=ctx)
+    p = min(max(p_clf, 0.0), 1.0)
+    res = score_with_model(ev, p, ctx) if model_cap else score(ev, p_clf=p, ctx=ctx)
     t2 = time.perf_counter()
     return Scored(
         result=res,

@@ -23,8 +23,10 @@ from typing import Literal
 
 from falcon_core.scoring import hard_rules
 from falcon_core.scoring.evidence import (
+    SIGNAL_ALIASES,
     Evidence,
     Polarity,
+    canonical_signal,
     confidence_of,
     family_matches,
     is_present,
@@ -51,6 +53,9 @@ BRAND_CONFLICT_SIGNALS: frozenset[str] = frozenset(
         "visual.favicon_match_brand",
     ]
 )
+# SCORING §2 domain-age rows: older than OLD is the established-domain trust row, younger than YOUNG is risk.
+OLD_DOMAIN_DAYS = 3650
+YOUNG_DOMAIN_DAYS = 30
 DEGRADING_TIERS: frozenset[str] = frozenset(["T0", "T1"])
 _P_EPS = 1e-6
 
@@ -64,6 +69,8 @@ class ArbiterContext:
     # Degradation reported by the cascade itself (e.g. sandbox unreachable), on top of
     # errored evidence.
     extra_degraded_reasons: tuple[str, ...] = ()
+    # Signals with criticality "enrichment": their errors are informational, never degrading.
+    enrichment_signals: frozenset[str] = frozenset()
     params: ScoringParams | None = None
 
 
@@ -110,7 +117,8 @@ def band(p: float, params: ScoringParams | None = None) -> Verdict:
 
 
 def _base_weight(ev: Evidence, params: ScoringParams) -> float:
-    if ev.signal == "domain.age":
+    sig = canonical_signal(ev.signal)
+    if sig == "domain.age":
         age = observed_number(ev, "age_days")
         if age is None or age < 0:
             return 0.0
@@ -118,10 +126,10 @@ def _base_weight(ev: Evidence, params: ScoringParams) -> float:
             return params.domain_age_lt7
         if age < 30:
             return params.domain_age_lt30
-        if age > 3650:
+        if age > OLD_DOMAIN_DAYS:
             return params.domain_age_gt3650
         return 0.0
-    if ev.signal == "domain.cert_age":
+    if sig == "domain.cert_age":
         age = observed_number(ev, "age_days")
         if age is not None and 0 <= age < 7:
             return params.cert_age_lt7
@@ -157,6 +165,21 @@ def _contributions(evidence: Sequence[Evidence], params: ScoringParams, h3_holds
             w = 0.0
         contrib.append(w * confidence_of(ev))
 
+    # One brand mention counts once: several claims for the same brand (e.g. a deterministic one and an
+    # extractor one) take the max, never the sum.
+    best: dict[str, int] = {}
+    for i, ev in enumerate(evidence):
+        if ev.signal == "brand.claimed_not_owned" and contrib[i] > 0:
+            bid = str(observed_get(ev, "brand_id") or "")
+            j = best.get(bid)
+            if j is None:
+                best[bid] = i
+            elif contrib[i] > contrib[j]:
+                contrib[j] = 0.0
+                best[bid] = i
+            else:
+                contrib[i] = 0.0
+
     # message.rule.* : +0.6 each, family total capped at +3.0 (first come, first counted).
     budget = params.message_rule_cap
     for i, ev in enumerate(evidence):
@@ -164,10 +187,23 @@ def _contributions(evidence: Sequence[Evidence], params: ScoringParams, h3_holds
             contrib[i] = min(contrib[i], max(0.0, budget))
             budget -= contrib[i]
 
+    # The same domain fact can arrive twice (T1 signal and T3 tool, or both spellings): count it once, keeping the
+    # largest contribution so the result does not depend on evidence order and risk is never hidden by trust.
+    groups: dict[str, list[int]] = {}
+    for i, ev in enumerate(evidence):
+        canon = canonical_signal(ev.signal)
+        if canon in SIGNAL_ALIASES.values() and contrib[i] != 0.0:
+            groups.setdefault(canon, []).append(i)
+    for idxs in groups.values():
+        keep = max(idxs, key=lambda k: contrib[k])
+        for k in idxs:
+            if k != keep:
+                contrib[k] = 0.0
+
     # domain.age > 3650 days is trust only when no other risk evidence fired.
     other_risk = any(c > 0 for c in contrib)
     for i, ev in enumerate(evidence):
-        if ev.signal == "domain.age" and contrib[i] < 0 and other_risk:
+        if canonical_signal(ev.signal) == "domain.age" and contrib[i] < 0 and other_risk:
             contrib[i] = 0.0
     return contrib
 
@@ -230,7 +266,10 @@ def score(
     errored = [
         e
         for e in evidence
-        if e.error is not None and e.tier in DEGRADING_TIERS and e.error not in params.informational_errors
+        if e.error is not None
+        and e.tier in DEGRADING_TIERS
+        and e.error not in params.informational_errors
+        and e.signal not in ctx.enrichment_signals
     ]
     invalid = [e for e in present if e.signal in params.degrading_signals and family_matches(e)]
     reasons = tuple(

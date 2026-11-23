@@ -14,6 +14,30 @@ Outputs
 * ``evals/manifests/items.manifest.jsonl`` public: HMAC ids and domain hashes, no URL, no plain domain;
 * ``data/private/datasets/items.jsonl`` private: the same rows plus the URL (read by train/eval);
 * ``evals/splits.lock`` created on first build; later builds must reproduce its test hash or fail.
+
+What it does (short version):
+    Joins the private phishing rows with the committed legitimate-URL list, assigns every domain to
+    train, val or test, and writes the hashed public manifest, the private cache and the split lock.
+
+When to use it:
+    After new feed rows are collected or legit_urls.csv changes, before training or evaluating.
+    `make fit-thresholds` runs it first.
+
+How to run:
+    uv run python -m evals.datasets.build [--seed N] [--refreeze-test]
+    (or `make fit-thresholds`, which also trains)
+
+Inputs:
+    The files listed above, optional --seed (default evals.common.SEED), env FL_DATA_DIR. The HMAC key
+    data/private/hash.key is created on first use (permissions 0600).
+
+Outputs / side effects:
+    Rewrites evals/manifests/items.manifest.jsonl and data/private/datasets/items.jsonl and creates
+    evals/splits.lock if missing. Prints item counts. No network calls.
+
+Safety notes:
+    --refreeze-test throws away the frozen test split and the lock; use it only with a PR explanation.
+    Never commit data/private/ or print URLs from the private cache.
 """
 
 from __future__ import annotations
@@ -42,6 +66,8 @@ from evals.splits import SplitItem, assign_splits, check_rows, load_lock, make_l
 
 @dataclass(frozen=True, slots=True)
 class Item:
+    """One labelled eval item: id, private URL, label, hashed domain, zero_day and official flags, split."""
+
     item_id: str
     url: str  # private
     label: int
@@ -72,10 +98,12 @@ PUBLIC_FIELDS = (
 
 
 def items_path():  # type: ignore[no-untyped-def]
+    """Path of the private item cache, data/private/datasets/items.jsonl."""
     return private_dir() / "datasets" / "items.jsonl"
 
 
 def collect_items(key: bytes) -> list[Item]:
+    """Gather phishing, legit and extra rows into hashed Items."""
     from falcon_core.signals.brands.registry import default_registry
 
     reg = default_registry()
@@ -132,6 +160,7 @@ def collect_items(key: bytes) -> list[Item]:
 
 
 def build(seed: int = SEED, refreeze: bool = False) -> tuple[list[Item], dict[str, object]]:
+    """Assign splits and write the public manifest, the private cache and the lock."""
     key = get_key(create=True)
     items = collect_items(key)
     existing: dict[str, str] = {}
@@ -159,6 +188,7 @@ def build(seed: int = SEED, refreeze: bool = False) -> tuple[list[Item], dict[st
 
 
 def load_private_items() -> list[Item]:
+    """Read the private item cache back into Items."""
     return [Item(**r) for r in read_jsonl(items_path())]  # type: ignore[arg-type]
 
 
@@ -182,6 +212,7 @@ def verify_private_items(items: list[Item], rows: list[dict[str, object]]) -> No
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the build and print item and zero-day counts."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--refreeze-test", action="store_true", help="discard the existing split and lock (explain in PR)")

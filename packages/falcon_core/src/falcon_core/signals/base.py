@@ -41,6 +41,8 @@ class SignalSpec:
     emits: tuple[str, ...]
     cache_ttl_s: int | None = None
     feature_names: tuple[str, ...] = ()
+    # "enrichment": errors are informational (weight 0) and never set degraded (SCORING §4).
+    criticality: Literal["critical", "enrichment"] = "critical"
 
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
