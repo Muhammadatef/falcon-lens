@@ -9,7 +9,7 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 | zero-day | ≥40 | phishing not on any enabled blocklist at collection, plus Falcon Demo Bank fixtures |
 | messages | ≥150 | Gulf Arabic, MSA, English and Arabizi; real public examples where licensing allows, plus tagged synthetic |
 | emails | ≥40 | fictional `.eml` |
-| injection | ≥50 | local fixtures (`evals/redteam/`); `make redteam` = reference pipeline, `make redteam-shipped` = shipped cascade with a real model (artifact `redteam_shipped_<sha>_<ts>.json`) |
+| injection | ≥50 | local fixtures (`evals/redteam/`); `make redteam` = reference pipeline, `make redteam-shipped` = shipped cascade with a real model (artifact `published/redteam/redteam_shipped_<sha>_<ts>.json`) |
 
 **Splits.** Temporal cut (every test first_seen is later than every train first_seen) and grouping by registrable domain, so no domain appears in two splits. The test split is frozen and its sha256 is in `evals/splits.lock`. All tuning happens on validation.
 

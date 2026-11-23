@@ -317,7 +317,9 @@ def _main_shipped(cases: list[Case], defaults: dict[str, str], args: argparse.Na
     text = json.dumps(art, ensure_ascii=False, indent=2, default=str)
     out_json.write_text(text, encoding="utf-8")
     if args.publish:
-        pub = ROOT / "evals" / "results" / "published"
+        pub = (
+            ROOT / "evals" / "results" / "published" / "redteam"
+        )  # a subdir: readers glob published/*.json for eval artifacts
         pub.mkdir(parents=True, exist_ok=True)
         (pub / f"redteam_shipped_{(sha or 'nosha')[:8]}_{ts}.json").write_text(text, encoding="utf-8")
     print(json.dumps(agg, indent=1))
@@ -341,7 +343,9 @@ def main(argv: list[str] | None = None) -> int:
         default="extended",
         help="shipped pipeline: extended = eval deadlines (model answers); production = shipped",
     )
-    ap.add_argument("--publish", action="store_true", help="shipped pipeline: also write evals/results/published/")
+    ap.add_argument(
+        "--publish", action="store_true", help="shipped pipeline: also write evals/results/published/redteam/"
+    )
     args = ap.parse_args(argv)
     cases, defaults = load_cases(args.cases)
     if args.command == "build-fixtures":

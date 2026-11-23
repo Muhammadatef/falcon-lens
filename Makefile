@@ -71,7 +71,7 @@ eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/result
 redteam: ## prompt-injection / obfuscation red-team suite; exits non-zero if attack success > 0 (FL_LIVE_LLM=1: live model)
 	uv run python -m evals.redteam
 
-redteam-shipped: ## same cases through the shipped cascade, real local model (ROUTE=cloud needs ANTHROPIC_API_KEY; PUBLISH=1 writes evals/results/published/)
+redteam-shipped: ## same cases through the shipped cascade, real local model (ROUTE=cloud needs ANTHROPIC_API_KEY; PUBLISH=1 writes evals/results/published/redteam/)
 	uv run python -m evals.redteam --pipeline shipped --route $(or $(ROUTE),local) $(if $(PUBLISH),--publish,)
 
 redteam-fixtures: ## regenerate services/fixtures/redteam/*.html from evals/redteam/cases.yaml
