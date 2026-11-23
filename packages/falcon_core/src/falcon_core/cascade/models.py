@@ -129,6 +129,9 @@ class SandboxFeatures(BaseModel):
     # features were read before the page finished loading. Informational only (page.truncated, weight 0).
     truncated: bool = False
     partial: bool = False
+    # The browser failed after the target answered HTTP, so the features come from the main document read WITHOUT
+    # JavaScript (the sandbox also sets partial=true). Informational only (page.static_fallback, weight 0).
+    static_fallback: bool = False
 
     @field_validator("visible_text")
     @classmethod

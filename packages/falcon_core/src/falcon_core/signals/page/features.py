@@ -80,6 +80,18 @@ class NetworkSummary(_M):
     truncated: bool = Field(default=False, description="the main document was cut at the cap (still evidence)")
     partial: bool = Field(default=False, description="extracted before DOMContentLoaded/load finished")
     pending_hosts: list[str] = Field(default_factory=list, description="hosts still loading at the nav deadline")
+    attempts: int = Field(
+        default=1, description="browser renders tried (2 = one bounded retry after a transient failure)"
+    )
+    static_fallback: bool = Field(
+        default=False,
+        description="the browser failed after the target answered HTTP; features come from the main document read "
+        "WITHOUT JavaScript (always also partial=true: a half read, never enough to clear a page)",
+    )
+    static_source: Literal["captured", "fetched"] | None = Field(
+        default=None, description="static fallback input: the document the browser already received, or a fresh GET"
+    )
+    fallback_reason: str | None = Field(default=None, description="the browser error the fallback replaced")
 
 
 class JsIndicators(_M):

@@ -6,7 +6,7 @@ import * as m from "motion/react-m";
 import type { Verdict } from "@/lib/contracts";
 import { clip } from "@/lib/defang";
 import { pick } from "@/lib/i18n";
-import { onlyPageNotOpened, pageNotOpened } from "@/lib/page-not-opened";
+import { notOpenedKind, onlyPageNotOpened, pageNotOpened } from "@/lib/page-not-opened";
 import { useDt } from "@/lib/use-dt";
 import { fadeRise, haptics, reduced, stagger, staggerGroup, verdictPlate } from "@/lib/motion";
 import { usePrefs } from "@/lib/prefs";
@@ -213,8 +213,8 @@ function VerdictBody({ state, still }: { state: CheckState; still: boolean }) {
           <m.div className="degraded" variants={item} role="note" data-testid="page-not-opened">
             <Icon name="unplug" size={24} />
             <div>
-              <b>{d("noopen.title")}</b>
-              <p>{d("noopen.body")}</p>
+              <b>{d(notOpenedKind(v.degraded_reasons) === "dns" ? "noopen.dns.title" : "noopen.title")}</b>
+              <p>{d(notOpenedKind(v.degraded_reasons) === "dns" ? "noopen.dns.body" : "noopen.body")}</p>
             </div>
           </m.div>
         ) : null}

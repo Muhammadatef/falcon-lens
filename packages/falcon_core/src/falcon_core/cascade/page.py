@@ -339,7 +339,20 @@ def page_evidence(
         )
 
     # page.truncated (informational, weight 0): judged from a cut-off or half-loaded page, never an error
-    if features.truncated or features.partial:
+    if features.static_fallback:
+        out.append(
+            make_evidence(
+                "page.static_fallback",
+                "page",
+                {"static_fallback": True},
+                tier="T2",
+                source="sandbox",
+                confidence=0.5,
+                en="The page would not fully load, so only its plain HTML was checked",
+                ar="لم تُحمَّل الصفحة بالكامل، فتحققنا من شيفرتها الأساسية فقط",
+            )
+        )
+    if features.truncated or (features.partial and not features.static_fallback):
         out.append(
             make_evidence(
                 "page.truncated",

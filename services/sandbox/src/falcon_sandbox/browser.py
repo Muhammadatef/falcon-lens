@@ -38,6 +38,7 @@ from falcon_core.signals.page.simhash import dom_simhash
 from falcon_core.signals.visual.phash import phash_from_gray32
 
 from .build import (
+    apply_credential_page_rule,
     body_carries_form_data,
     body_field_names,
     build_dynamic_post_target,
@@ -54,17 +55,30 @@ from .policy import (
     MAX_REDIRECTS,
     MAX_TOTAL_BYTES,
     NAV_BUDGET_S,
+    OVERALL_HARD_S,
+    RETRY_MIN_LEFT_S,
     SUBRESOURCE_TIMEOUT_S,
     TOTAL_TIMEOUT_S,
     ByteBudget,
     RequestPolicy,
     classify_fetch_error,
     declared_length,
+    fallback_allowed,
+    is_transient,
     partial_read_allowed,
     proxy_refusal,
 )
 from .profiles import PROFILES
 from .settings import Settings
+from .static import (
+    STATIC_FETCH_MAX_S,
+    STATIC_FETCH_MIN_S,
+    DocCapture,
+    StaticFetchError,
+    fetch_main_document,
+    is_html,
+    static_profile_features,
+)
 
 log = logging.getLogger("falcon.sandbox")
 ASSET_TYPES = frozenset({"image", "stylesheet", "script", "font", "media"})
@@ -95,6 +109,10 @@ def image_phash(data: bytes) -> str | None:
         return phash_from_gray32([[float(v) for v in px[r * 32 : (r + 1) * 32]] for r in range(32)])
     except Exception:  # noqa: BLE001 - untrusted bytes: any decode failure just means no hash
         return None
+
+
+def _document_blocked(r: VisitResult) -> bool:
+    return any(b.resource_type == "document" for b in r.features.network.blocked)
 
 
 @dataclass
@@ -216,52 +234,155 @@ class SandboxBrowser:
             return self._browser
 
     async def visit(self, url: str, profile: str, *, visual: bool = False, keep_artifacts: bool = False) -> VisitResult:
+        """One check's browser work. Inside OVERALL_HARD_S: the render, ONE bounded retry after a transient failure,
+        and, if the browser still failed after the target answered HTTP, a static (no JavaScript) read of the
+        main document. Policy blocks and NXDOMAIN are final: never retried, never read statically."""
         async with self._sem:
             browser = await self._get_browser()
-            ctx: BrowserContext | None = None
             try:
-                ctx = await browser.new_context(
-                    **PROFILES[profile],
-                    **self._proxy_opts(),
-                    accept_downloads=False,
-                    service_workers="block",
-                    ignore_https_errors=False,
-                    permissions=[],
-                )
-                return await asyncio.wait_for(
-                    self._visit(ctx, url, profile, visual, keep_artifacts), TOTAL_TIMEOUT_S + HARD_TIMEOUT_GRACE_S
-                )
-            except TimeoutError:
-                return VisitResult(
-                    ProfileFeatures(
-                        profile=profile,  # type: ignore[arg-type]
-                        requested_url=url[:512],
-                        error="timeout",
-                        timed_out=True,
-                    )
-                )
-            except PlaywrightError as exc:
-                return VisitResult(
-                    ProfileFeatures(
-                        profile=profile,  # type: ignore[arg-type]
-                        requested_url=url[:512],
-                        error=f"browser_error:{str(exc)[:80]}",
-                    )
-                )
+                loop = asyncio.get_running_loop()
+                t0 = loop.time()
+                cap = DocCapture()
+                r = await self._attempt(browser, url, profile, visual, keep_artifacts, TOTAL_TIMEOUT_S, cap)
+                attempts = 1
+                err = r.features.error
+                if keep_artifacts or not err:
+                    return r  # /capture (eval replay) and every success are untouched
+                left = t0 + TOTAL_TIMEOUT_S - loop.time()
+                if is_transient(err) and cap.body is None and not cap.doc_blocked and left >= RETRY_MIN_LEFT_S:
+                    cap = DocCapture()
+                    r = await self._attempt(browser, url, profile, visual, False, left, cap)
+                    attempts = 2
+                    if not r.features.error:
+                        r.features.network.attempts = attempts
+                        return r
+                first_error = r.features.error
+                if fallback_allowed(first_error) and not cap.doc_blocked and not _document_blocked(r):
+                    try:
+                        fb = await self._static_fallback(url, profile, r, cap, attempts, t0)
+                    except Exception:  # noqa: BLE001 - the fallback is best effort; the browser error stands
+                        log.exception("static fallback failed")
+                        fb = None
+                    if fb is not None:
+                        return fb
+                r.features.network.attempts = attempts
+                return r
             finally:
                 self._active -= 1
-                if ctx is not None:
-                    # teardown must not eat the caller's time budget: wait briefly, finish in the background
-                    task: asyncio.Future[Any] = asyncio.ensure_future(asyncio.wait_for(ctx.close(), 5))
-                    self._closing.add(task)
-                    task.add_done_callback(self._closed)
-                    await asyncio.wait({task}, timeout=0.5)
 
-    async def _visit(self, ctx: BrowserContext, url: str, profile: str, visual: bool, keep: bool) -> VisitResult:
+    async def _attempt(
+        self,
+        browser: Browser,
+        url: str,
+        profile: str,
+        visual: bool,
+        keep: bool,
+        total_s: float,
+        cap: DocCapture,
+    ) -> VisitResult:
+        ctx: BrowserContext | None = None
+        try:
+            ctx = await browser.new_context(
+                **PROFILES[profile],
+                **self._proxy_opts(),
+                accept_downloads=False,
+                service_workers="block",
+                ignore_https_errors=False,
+                permissions=[],
+            )
+            return await asyncio.wait_for(
+                self._visit(ctx, url, profile, visual, keep, cap, total_s), total_s + HARD_TIMEOUT_GRACE_S
+            )
+        except TimeoutError:
+            return VisitResult(
+                ProfileFeatures(
+                    profile=profile,  # type: ignore[arg-type]
+                    requested_url=url[:512],
+                    error="timeout",
+                    timed_out=True,
+                )
+            )
+        except PlaywrightError as exc:
+            return VisitResult(
+                ProfileFeatures(
+                    profile=profile,  # type: ignore[arg-type]
+                    requested_url=url[:512],
+                    error=f"browser_error:{str(exc)[:80]}",
+                )
+            )
+        finally:
+            if ctx is not None:
+                # teardown must not eat the caller's time budget: wait briefly, finish in the background
+                task: asyncio.Future[Any] = asyncio.ensure_future(asyncio.wait_for(ctx.close(), 5))
+                self._closing.add(task)
+                task.add_done_callback(self._closed)
+                await asyncio.wait({task}, timeout=0.5)
+
+    async def _static_fallback(
+        self, url: str, profile: str, failed: VisitResult, cap: DocCapture, attempts: int, t0: float
+    ) -> VisitResult | None:
+        """Features from the main document without JavaScript, or None (the browser error then stands)."""
+        policy = RequestPolicy(self.settings.guard, visual=False)
+        reason = failed.features.error
+        body: bytes
+        if cap.body is not None and partial_read_allowed(policy, cap.url):
+            # the browser's route handler already received this document through the proxy, with every hop re-validated
+            body, final_url, status, ctype = cap.body, cap.url, cap.status, cap.content_type
+            hops, truncated, source, requests = list(cap.hops), cap.truncated, "captured", max(1, cap.requests)
+        else:
+            left = t0 + OVERALL_HARD_S - asyncio.get_running_loop().time()
+            if left < STATIC_FETCH_MIN_S or str(reason).startswith(("timeout", "no_response")):
+                # a target that did not answer within the navigation budget will not answer a second GET in the ~2 s
+                # that is left; only failures where it plausibly would (reset, crash, odd navigation) are re-read
+                return None
+            try:
+                doc = await fetch_main_document(self.settings, policy, url, profile, min(STATIC_FETCH_MAX_S, left))
+            except StaticFetchError as exc:
+                log.info("static fetch failed: %s", exc.code)
+                return None
+            if not partial_read_allowed(policy, doc.url):
+                return None
+            body, final_url, status, ctype = doc.body, doc.url, doc.status, doc.content_type
+            hops, truncated, source, requests = doc.hops, doc.truncated, "fetched", doc.requests
+        if not body or not is_html(ctype, body):
+            return None  # nothing readable (empty, a download, an image): that is still a failed visit
+        feats = await asyncio.to_thread(
+            static_profile_features,
+            profile,
+            url,
+            final_url=final_url,
+            status=status,
+            body=body,
+            content_type=ctype,
+            hops=hops,
+            source=source,
+            fallback_reason=reason,
+            attempts=attempts,
+            truncated=truncated,
+            requests=requests,
+        )
+        feats.network.blocked = failed.features.network.blocked
+        feats.network.blocked_total = failed.features.network.blocked_total
+        return VisitResult(feats, redirects=[h.model_dump() for h in feats.redirect_chain])
+
+    async def _visit(
+        self,
+        ctx: BrowserContext,
+        url: str,
+        profile: str,
+        visual: bool,
+        keep: bool,
+        cap: DocCapture | None = None,
+        total_s: float | None = None,
+    ) -> VisitResult:
         loop = asyncio.get_running_loop()
         start = loop.time()
-        deadline = start + TOTAL_TIMEOUT_S
-        nav_deadline = start + min(NAV_BUDGET_S, TOTAL_TIMEOUT_S)
+        cap = cap if cap is not None else DocCapture()
+        full = total_s is None or total_s >= TOTAL_TIMEOUT_S
+        total_s = TOTAL_TIMEOUT_S if total_s is None else total_s
+        deadline = start + total_s
+        # the retry gets what is left of the visit: keep 1.5 s of it for extraction, as the first attempt does
+        nav_deadline = start + min(NAV_BUDGET_S, total_s if full else max(0.8, total_s - 1.5))
         policy = RequestPolicy(self.settings.guard, visual=visual)
         st = _State()
         budget = ByteBudget(MAX_TOTAL_BYTES)  # sub-resources only; the main document has its own caps
@@ -295,7 +416,7 @@ class SandboxBrowser:
             if not d.allow:
                 record_block(req.url, d.reason, req.resource_type)
                 if req.is_navigation_request() and req.frame.parent_frame is None:
-                    st.doc_blocked = True
+                    st.doc_blocked = cap.doc_blocked = True
                     st.nav_fail = st.nav_fail or f"blocked_by_policy:{d.reason}"[:60]
                 if d.reason == "method_not_get":
                     st.non_get_blocked += 1
@@ -406,6 +527,10 @@ class SandboxBrowser:
                     st.truncated = True
                     st.size_cap_hit = True
                 st.doc_bytes = len(body)
+                # kept for the static fallback: this is the final (non-3xx) document, past the proxy-refusal check
+                cap.body, cap.url, cap.status = body, target, resp.status
+                cap.content_type = resp.headers.get("content-type", "")
+                cap.truncated, cap.hops, cap.requests = st.truncated, list(st.hops), st.requests
             elif budget.add(len(body)):
                 st.size_cap_hit = True
                 record_block(req.url, "size_cap", req.resource_type)
@@ -507,6 +632,7 @@ class SandboxBrowser:
                     return
                 d = policy.decide(nxt, "GET", "document")
                 if not d.allow:
+                    cap.doc_blocked = True
                     st.blocked_total += 1
                     st.blocked.append(
                         BlockedRequest(
@@ -574,12 +700,7 @@ class SandboxBrowser:
                 *build_static_post_targets(raw.get("typed", []), raw.get("literals", []), final),
                 *st.posts,
             ][:40]
-            if any(f.cred_form for f in feats.forms):
-                # A page that asks for a password/OTP/card/ID: ANY script POST to another site is treated as
-                # carrying that data, whatever the body analysis says (fail closed).
-                for t in feats.script_post_targets:
-                    if t.cross_origin and not t.carries_form_data:
-                        t.carries_form_data, t.basis = True, "credential_page_rule"
+            apply_credential_page_rule(feats)
             feats.dom_simhash = dom_simhash(raw.get("struct", []))
             fh = host_of(final)
             feats.asset_origins = sorted(h for h in st.assets if not same_site(h, fh))[:30]

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ARCH } from "@/lib/arch-content";
 import { DOCS, DOC_SLUGS, isDocSlug, type DocPage } from "@/lib/docs-content";
 import { DOC_MESSAGES } from "@/lib/i18n-docs";
-import { onlyPageNotOpened, pageNotOpened } from "@/lib/page-not-opened";
+import { notOpenedKind, onlyPageNotOpened, pageNotOpened } from "@/lib/page-not-opened";
 import { fmtThreshold, parseProvenance, parseThresholds } from "@/lib/docs-data";
 
 /** Every string a page holds, flattened. */
@@ -120,6 +120,16 @@ describe("page not opened (degraded verdict wording)", () => {
     expect(pageNotOpened(["rdap_unavailable"])).toBe(false);
     expect(pageNotOpened([])).toBe(false);
     expect(pageNotOpened(null)).toBe(false);
+  });
+  it("tells 'no website answers (DNS)' from 'the page did not load in time'", () => {
+    expect(notOpenedKind(["not_rendered:dns_failure"])).toBe("dns");
+    expect(notOpenedKind(["sandbox_unavailable:dns_failure"])).toBe("dns");
+    expect(notOpenedKind(["sandbox_unavailable:timeout"])).toBe("slow");
+    expect(notOpenedKind(["not_rendered:timeout"])).toBe("slow");
+    expect(notOpenedKind(["static_fallback"])).toBe("slow");
+    expect(notOpenedKind(["partial_render"])).toBe("slow");
+    expect(notOpenedKind(["not_rendered:dns_failure", "sandbox_unavailable:timeout"])).toBe("slow");
+    expect(pageNotOpened(["sandbox_unavailable:egress_blocked"])).toBe(false);
   });
   it("onlyPageNotOpened is true only when every reason is one", () => {
     expect(onlyPageNotOpened(["not_rendered:dns_failure"])).toBe(true);

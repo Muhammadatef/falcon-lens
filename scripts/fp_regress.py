@@ -58,6 +58,20 @@ def set_seed(name: str) -> int | None:
     return None
 
 
+HTTP_429 = [0]  # responses with status 429 seen by this run (a fresh stack with no rate-limit pressure must show 0)
+
+
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Wilson 95% interval of a proportion (small-n friendly; reported next to the bootstrap interval)."""
+    if n == 0:
+        return (0.0, 0.0)
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
+    return (max(0.0, c - h), min(1.0, c + h))
+
+
 def rate(res: list[dict[str, Any]]) -> dict[str, Any]:
     flagged = [int(r["verdict"] in ("suspicious", "dangerous")) for r in res]
     lo, hi = bootstrap_ci(flagged)
@@ -68,7 +82,11 @@ def rate(res: list[dict[str, Any]]) -> dict[str, Any]:
         "false_positive_rate": {
             "value": round(sum(flagged) / max(1, len(flagged)), 4),
             "ci95": [round(lo, 4), round(hi, 4)],
+            "wilson95": [round(x, 4) for x in wilson(sum(flagged), len(flagged))],
         },
+        "false_dangerous": sum(r["verdict"] == "dangerous" for r in res),
+        "static_fallback": sum(bool(r.get("static_fallback")) for r in res),
+        "partial_reads": sum(bool(r.get("partial")) for r in res),
     }
 
 
@@ -91,11 +109,15 @@ def check(url: str, delay: float) -> dict[str, Any]:
     time.sleep(delay)
     with httpx.Client(base_url=BASE, verify=False, timeout=15) as c:  # noqa: S501 - local CA
         r = c.post("/v1/check/url", json={"url": url})
+        if r.status_code == 429:
+            HTTP_429[0] += 1
         r.raise_for_status()
         vid = r.json()["verdict_id"]
         deadline = time.monotonic() + TIMEOUT_S
         while time.monotonic() < deadline:
             g = c.get(f"/v1/verdicts/{vid}", timeout=10)
+            if g.status_code == 429:
+                HTTP_429[0] += 1
             if g.status_code == 200 and g.json().get("final"):
                 d = g.json()
                 risk = sorted((e for e in d.get("evidence", []) if e.get("weight", 0) > 0), key=lambda e: -e["weight"])
@@ -107,6 +129,7 @@ def check(url: str, delay: float) -> dict[str, Any]:
                     "risk_signals": [e["signal"] for e in risk[:3]],
                     "risk_score": d.get("risk_score"),
                     # read before the page finished loading (page.truncated with partial=true)
+                    "static_fallback": any(e.get("signal") == "page.static_fallback" for e in d.get("evidence", [])),
                     "partial": any(
                         e.get("signal") == "page.truncated" and (e.get("observed") or {}).get("partial") is True
                         for e in d.get("evidence", [])
@@ -186,6 +209,10 @@ def main() -> int:
         "errors": errors,
         "degraded_reasons": dict(why),
         "partial_reads": sum(bool(r.get("partial")) for r in res),
+        "static_fallback_reads": sum(bool(r.get("static_fallback")) for r in res),
+        "false_dangerous": counts.get("dangerous", 0),
+        "http_429": HTTP_429[0],
+        "wilson95": [round(x, 4) for x in wilson(sum(flagged), len(flagged))],
         "top_risk_signal_of_flagged": dict(top),
         "by_tier": dict(Counter(str(r["tier"]) for r in res)),
         "items": [
@@ -196,6 +223,7 @@ def main() -> int:
                 "tier": r.get("tier"),
                 "degraded_reasons": r.get("degraded_reasons", []),
                 "partial": bool(r.get("partial", False)),
+                "static_fallback": bool(r.get("static_fallback", False)),
             }
             for r in res
         ],
