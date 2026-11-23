@@ -29,6 +29,10 @@ class CascadeMetrics:
             self.sandbox_timeouts = tm.SANDBOX_TIMEOUTS
             self.degraded = tm.DEGRADED
             self.ssrf_blocked = tm.SSRF_BLOCKED
+            self.hard_rules = tm.HARD_RULE_FIRED
+            self.evidence = tm.EVIDENCE_SEEN
+            self.sandbox_renders = tm.SANDBOX_RENDERS
+            self.degraded_reasons = tm.DEGRADED_REASONS
             return
         r = self.registry = registry
         self.checks = Counter(
@@ -50,9 +54,27 @@ class CascadeMetrics:
         self.sandbox_timeouts = Counter("fl_sandbox_timeouts_total", "Sandbox timeouts", registry=r)
         self.degraded = Counter("fl_degraded_total", "Degraded verdicts", registry=r)
         self.ssrf_blocked = Counter("fl_ssrf_blocked_total", "SSRF guard blocks", ["reason"], registry=r)
+        self.hard_rules = Counter("fl_hard_rule_fired_total", "Hard rules fired", ["rule", "effect"], registry=r)
+        self.evidence = Counter("fl_evidence_total", "Evidence items on final verdicts", ["signal"], registry=r)
+        self.sandbox_renders = Counter("fl_sandbox_renders_total", "Sandbox renders", ["outcome"], registry=r)
+        self.degraded_reasons = Counter("fl_degraded_reasons_total", "Degraded reasons", ["reason"], registry=r)
 
-    def record_final(self, input_type: str, verdict: str, tier: str, route: str, source: str) -> None:
+    def record_result(self, result: object) -> None:
+        """Hard-rule firings and the evidence signals behind one final verdict (an ``ArbiterResult``)."""
+        for fired in getattr(result, "fired_rules", ()):
+            self.hard_rules.labels(str(fired.rule_id), str(fired.effect)).inc()
+        for reason in dict.fromkeys(getattr(result, "degraded_reasons", ())):
+            self.degraded_reasons.labels(str(reason)[:60]).inc()
+        for sig in {e.signal for e in getattr(result, "weighted_evidence", ())}:
+            self.evidence.labels(sig[:64]).inc()
+
+    def record_final(
+        self, input_type: str, verdict: str, tier: str, route: str, source: str, latency_s: float | None = None
+    ) -> None:
+        """Count one finished check; ``latency_s`` feeds ``fl_stage_latency_seconds{stage="total"}``, the SLO stage."""
         self.checks.labels(input_type, verdict, tier, route, metric_source(source)).inc()
+        if latency_s is not None:
+            self.stage_latency.labels("total").observe(latency_s)
 
     def on_ssrf_block(self, reason: object) -> None:
         """Hook for ``security.set_default_on_block`` (reason is a ``BlockReason``)."""

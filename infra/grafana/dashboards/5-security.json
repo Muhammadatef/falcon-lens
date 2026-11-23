@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "editable": false,
   "graphTooltip": 1,
   "refresh": "5s",
@@ -66,6 +66,13 @@
       "url": "/d/fl-sentinel",
       "icon": "dashboard",
       "targetBlank": false
+    },
+    {
+      "title": "Model quality | جودة النموذج",
+      "type": "link",
+      "url": "/d/fl-model-quality",
+      "icon": "dashboard",
+      "targetBlank": false
     }
   ],
   "annotations": {
@@ -78,7 +85,8 @@
     {
       "type": "stat",
       "title": "Data source | مصدر البيانات",
-      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live.",
+      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live. Counters without a source label (LLM, sandbox, security) include replayed traffic while the banner says REPLAY. Thresholds: green = LIVE only, orange = replayed data present (a label, not a fault). No data: no check was recorded at all; the panel then reads LIVE.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -113,6 +121,7 @@
               }
             ]
           },
+          "noValue": "No data",
           "mappings": [
             {
               "type": "value",
@@ -156,7 +165,14 @@
     {
       "type": "stat",
       "title": "SSRF blocked, 1 h | حظر SSRF",
-      "description": "Expected under redteam replay. On live traffic, review the reasons.",
+      "description": "Requests the SSRF guard refused (internal names, metadata addresses, bad DNS). Thresholds: green 0, amber >= 1: expected under red-team replay; review the reasons on live traffic. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: ssrf-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#ssrf-spike",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -186,17 +202,18 @@
                 "value": null
               },
               {
-                "color": "#F5A623",
+                "color": "#E8B339",
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "0 (series appears at the first event)"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -209,7 +226,7 @@
       "id": 2,
       "gridPos": {
         "h": 3,
-        "w": 4,
+        "w": 6,
         "x": 8,
         "y": 0
       }
@@ -217,7 +234,14 @@
     {
       "type": "stat",
       "title": "Injection detected, 1 h | حقن التعليمات",
-      "description": "",
+      "description": "Prompt-injection attempts the detector caught in untrusted text or tool arguments. Thresholds: green 0, amber >= 1 (attempts are blocked; the alert fires above 10 in 5 min). No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: injection-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#injection-spike",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -247,17 +271,18 @@
                 "value": null
               },
               {
-                "color": "#F5A623",
+                "color": "#E8B339",
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "0 (series appears at the first event)"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -270,15 +295,22 @@
       "id": 3,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 12,
+        "w": 6,
+        "x": 14,
         "y": 0
       }
     },
     {
       "type": "stat",
       "title": "Auth failures, 1 h | فشل المصادقة",
-      "description": "",
+      "description": "Rejected credentials (API key, operator key, bearer token). Thresholds: green < 5, amber 5-20, red >= 20: heuristic for brute-force noise. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: error-rate",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#error-rate",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -308,7 +340,7 @@
                 "value": null
               },
               {
-                "color": "#F5A623",
+                "color": "#E8B339",
                 "value": 5
               },
               {
@@ -316,13 +348,14 @@
                 "value": 20
               }
             ]
-          }
+          },
+          "noValue": "0 (series appears at the first event)"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -335,15 +368,91 @@
       "id": 4,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 16,
-        "y": 0
+        "w": 6,
+        "x": 0,
+        "y": 3
       }
     },
     {
       "type": "stat",
-      "title": "Canary leaks | تسرب الكناري",
-      "description": "",
+      "title": "Rate-limited (429), 1 h | تحديد المعدل",
+      "description": "Requests refused by the per-IP and per-key limits. Thresholds: green 0, amber >= 1: a few are normal under load tests. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: error-rate",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#error-rate",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_rate_limited_total[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 1
+              }
+            ]
+          },
+          "noValue": "0 (series appears at the first event)"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 5,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Canary leaks, 1 h | تسرب الكناري",
+      "description": "Canary token seen in model output. Must stay 0. Thresholds: green 0, red >= 1. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: canary-leak",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#canary-leak",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -377,13 +486,14 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "0 (series appears at the first event)"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -393,16 +503,85 @@
         },
         "textMode": "auto"
       },
-      "id": 5,
+      "id": 6,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 20,
-        "y": 0
+        "w": 6,
+        "x": 12,
+        "y": 3
       }
     },
     {
-      "id": 6,
+      "type": "stat",
+      "title": "Forbidden-tool attempts, 1 h | أدوات ممنوعة",
+      "description": "Blocked investigator tool calls outside the evidence chain or the registry. Thresholds: green 0, red >= 1. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: injection-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#injection-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_tool_errors_total{reason=~\"provenance|unknown_tool\"}[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 1
+              }
+            ]
+          },
+          "noValue": "0 (series appears at the first event)"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 7,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      }
+    },
+    {
+      "id": 8,
       "type": "row",
       "title": "Blocked and detected | المحظور والمكتشف",
       "collapsed": false,
@@ -410,14 +589,21 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 6
       },
       "panels": []
     },
     {
       "type": "timeseries",
       "title": "SSRF blocked by reason | حظر SSRF حسب السبب",
-      "description": "",
+      "description": "Guard refusals in 5 min windows by reason. Thresholds: none: composition; above 10 in 5 min fires SSRFSpike. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: ssrf-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#ssrf-spike",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -459,18 +645,82 @@
           "sort": "desc"
         }
       },
-      "id": 7,
+      "id": 9,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 4
+        "y": 7
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "SSRF reasons, 1 h | أسباب الحظر",
+      "description": "Why the guard refused, last hour. Thresholds: none: counts. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: ssrf-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#ssrf-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (reason) (increase(fl_ssrf_blocked_total[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{reason}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "noValue": "No SSRF blocks, the healthy state",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#D4AF37"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 10,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 7
       }
     },
     {
       "type": "timeseries",
       "title": "Injection and canary | الحقن والكناري",
-      "description": "",
+      "description": "Injection detections and canary leaks per 5 min. Thresholds: none: counts; canary must be 0. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: injection-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#injection-spike",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -483,7 +733,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "injection"
+          "legendFormat": "injection detected"
         },
         {
           "refId": "B",
@@ -521,18 +771,76 @@
           "sort": "desc"
         }
       },
-      "id": 8,
+      "id": 11,
       "gridPos": {
-        "h": 8,
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "Injection evidence by type, 1 h | أنواع الحقن",
+      "description": "Injection-family evidence on final verdicts, by signal. Thresholds: none: counts. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: injection-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#injection-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (signal) (increase(fl_evidence_total{signal=~\".*inject.*\"}[1h])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{signal}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "noValue": "No injection evidence, the healthy state",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#D4AF37"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 12,
+      "gridPos": {
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 4
+        "y": 15
       }
     },
     {
       "type": "timeseries",
       "title": "Rate limited by scope | تحديد المعدل",
-      "description": "",
+      "description": "429 responses from the rate limiters by scope. Thresholds: none: counts. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -574,18 +882,19 @@
           "sort": "desc"
         }
       },
-      "id": 9,
+      "id": 13,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 12
+        "y": 22
       }
     },
     {
       "type": "timeseries",
-      "title": "Auth failures | فشل المصادقة",
-      "description": "",
+      "title": "Auth failures and 401/403 | فشل المصادقة",
+      "description": "Failed authentications and unauthorised responses per 5 min. Thresholds: dashed line at 20 (red): see the stat above. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -598,7 +907,92 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "failures"
+          "legendFormat": "auth failures"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(increase(fl_http_requests_total{status=~\"401|403\"}[5m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "HTTP 401/403"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 14,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 22
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Egress denied | الخروج المحظور",
+      "description": "Connections the egress proxy refused (sandbox traffic to blocked destinations). Thresholds: none: counts. No data: the egress proxy has served no request.",
+      "links": [
+        {
+          "title": "Runbook: ssrf-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#ssrf-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(fl_egress_connects_total{result=\"denied\"}[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "denied / min"
         }
       ],
       "fieldConfig": {
@@ -627,18 +1021,19 @@
           "sort": "desc"
         }
       },
-      "id": 10,
+      "id": 15,
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 8,
-        "y": 12
+        "x": 16,
+        "y": 22
       }
     },
     {
       "type": "timeseries",
       "title": "Replay vs live checks | إعادة التشغيل مقابل المباشر | REPLAY-aware",
-      "description": "Redteam replay spikes the panels on this board; compare with live volume. Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "description": "Red-team replay spikes the panels on this board; compare with live volume. Thresholds: none. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check. Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -646,7 +1041,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "label_replace(label_replace(sum by (source) (rate(fl_checks_total[1m])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
+          "expr": "label_replace(label_replace(sum by (source) (rate(fl_checks_total[$__rate_interval])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -721,17 +1116,18 @@
           "sort": "desc"
         }
       },
-      "id": 11,
+      "id": 16,
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 12
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 29
       }
     },
     {
       "type": "logs",
       "title": "Security log lines | سجلات أمنية",
+      "description": "Security-relevant log lines from Loki. Thresholds: none. No data: Loki or the log shipper is down.",
       "datasource": {
         "type": "loki",
         "uid": "loki"
@@ -752,12 +1148,12 @@
         "enableLogDetails": true,
         "sortOrder": "Descending"
       },
-      "id": 12,
+      "id": 17,
       "gridPos": {
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 35
       }
     }
   ]

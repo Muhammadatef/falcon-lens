@@ -25,6 +25,7 @@ REGISTRY = CollectorRegistry()
 # 10 ms .. 20 s: T0 lookups take tens of ms, the sandbox ~6 s, the end-to-end SLO is 8 s.
 STAGE_LATENCY_BUCKETS = (0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 12.0, 20.0)
 AGENT_STEP_BUCKETS = (1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0, 20.0)
+LLM_CALL_BUCKETS = (0.1, 0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 12.0, 20.0, 40.0)
 TIME_TO_INCIDENT_BUCKETS = (1.0, 5.0, 15.0, 30.0, 60.0, 120.0, 300.0, 600.0, 1800.0, 3600.0)
 
 
@@ -55,12 +56,43 @@ DEGRADED = _c("degraded_total", "Verdicts produced in degraded mode")
 LLM_TOKENS = _c("llm_tokens_total", "LLM tokens (input + output)", ("model", "role"))
 LLM_COST = _c("llm_cost_usd_total", "LLM spend in USD", ("model",))
 LLM_FALLBACK = _c("llm_fallback_total", "LLM calls that fell back to the local model", ("role",))
+# Per-call view of the LLM router (additive; the token/cost/fallback counters above stay as they were).
+# outcome: ok | timeout | error | budget (one series per provider call, so a repaired call counts twice).
+LLM_CALLS = _c("llm_calls_total", "Provider calls by role, route and outcome", ("role", "route", "outcome"))
+LLM_CALL_SECONDS = _h("llm_call_seconds", "Provider call wall time", LLM_CALL_BUCKETS, ("role", "route"))
+# status: ok | repaired | fallback (caller template used) | failed. One series per finished request.
+LLM_RESULTS = _c("llm_results_total", "Finished LLM requests by role and result", ("role", "status"))
 ROUTE_AGREEMENT = _g("route_agreement_ratio", "Share of checks where routes agree (rolling)")
 # No shadow sample yet means "no measurement", not "0% agreement": a label-less gauge exports 0 from the start,
 # which kept RouteAgreementDrop firing with FL_SHADOW_RATE=0. NaN compares false in PromQL and plots as no data.
 ROUTE_AGREEMENT.set(float("nan"))
 AGENT_STEPS = _h("agent_steps", "Agent steps per run", AGENT_STEP_BUCKETS)
 CANARY_LEAK = _c("canary_leak_total", "Canary token seen in model output")
+# Cascade detail (additive)
+HARD_RULE_FIRED = _c("hard_rule_fired_total", "Hard rules that fired on a final verdict", ("rule", "effect"))
+EVIDENCE_SEEN = _c("evidence_total", "Evidence items on final verdicts, by signal id", ("signal",))
+# outcome: ok | partial (page rendered with an error note) | timeout | failed
+SANDBOX_RENDERS = _c("sandbox_renders_total", "Sandbox render attempts by outcome", ("outcome",))
+AGENT_TOOL_CALLS = _c("agent_tool_calls_total", "Investigator tool calls by tool and status", ("tool", "status"))
+# state: pending (delivered, not yet acked) | lag (not yet delivered); set by the worker every reclaim cycle
+QUEUE_DEPTH = _g("queue_depth", "Jobs in the check queue by state", ("stream", "state"))
+DEGRADED_REASONS = _c("degraded_reasons_total", "Degraded final verdicts by reason", ("reason",))
+# Sentinel detail (additive; dashboards "Sentinel" and "AI operations")
+SENTINEL_BUCKETS = (0.01, 0.05, 0.25, 1.0, 2.0, 5.0, 10.0, 20.0, 40.0, 80.0, 120.0)
+SENTINEL_NODE_SECONDS = _h("sentinel_node_seconds", "Triage graph node wall time", SENTINEL_BUCKETS, ("node",))
+SENTINEL_LLM_CALLS = _c(
+    "sentinel_llm_calls_total", "Sentinel LLM asks (outcome ok|timeout|budget|invalid)", ("task", "outcome")
+)
+SENTINEL_LLM_SECONDS = _h("sentinel_llm_seconds", "Sentinel LLM ask wall time", SENTINEL_BUCKETS, ("task",))
+SENTINEL_TEXT = _c("sentinel_text_total", "Sentinel texts by generator (llm|template)", ("task", "generated_by"))
+APPROVAL_TURNAROUND = _h(
+    "approval_turnaround_seconds",
+    "Seconds from an action proposal to the operator decision",
+    (30.0, 120.0, 300.0, 900.0, 1800.0, 3600.0, 14400.0, 86400.0),
+    ("decision",),
+)
+INCIDENT_STATUS = _g("incident_status", "Incidents by status", ("status",))
+SENTINEL_REQUEUE_FAILURES = _c("sentinel_requeue_failures_total", "Stuck-incident requeue failures")
 # Security
 INJECTION = _c("injection_detected_total", "Prompt-injection attempts detected")
 SSRF_BLOCKED = _c("ssrf_blocked_total", "Requests blocked by the SSRF guard", ("reason",))
