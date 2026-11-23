@@ -83,6 +83,7 @@ def to_flat(f: RenderFeatures, verdict_id: str | None = None) -> dict[str, Any]:
             error=p.error,
             truncated=p.network.truncated,
             partial=p.network.partial,
+            static_fallback=p.network.static_fallback,
         )
     c = f.cloaking
     out["cloaking"] = {

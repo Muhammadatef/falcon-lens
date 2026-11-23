@@ -28,6 +28,16 @@ TOTAL_TIMEOUT_S = 6.0
 NAV_BUDGET_S = 4.5
 #: One sub-resource may hold the page this long; a hung third-party script must not eat the whole budget.
 SUBRESOURCE_TIMEOUT_S = 2.5
+#: A failed first render is retried ONCE (fresh context) only if at least this much of TOTAL_TIMEOUT_S is left.
+RETRY_MIN_LEFT_S = 2.4
+#: Hard stop of one whole visit (browser attempt(s) + static fallback). The worker waits 7 s (``sandbox_timeout_s``) and
+#: the p95 objective of 8 s end to end is unchanged: retry and fallback only ever spend time INSIDE this ceiling.
+OVERALL_HARD_S = 6.6
+#: Errors a second render can plausibly fix (a reset, a flaky navigation, a hung renderer). Everything else is final:
+#: policy blocks (``blocked_by_policy*``, ``egress_*``), ``dns_failure`` (NXDOMAIN), TLS, size and redirect limits.
+TRANSIENT_ERRORS = ("timeout", "connect_failed", "navigation_failed", "fetch_failed", "no_response", "browser_error")
+#: Errors after which the main document is still worth reading statically if the target answered HTTP.
+FALLBACK_ERRORS = (*TRANSIENT_ERRORS, "extract_failed")
 SAFE_METHODS = frozenset({"GET", "HEAD"})
 LOCAL_SCHEMES = ("data:", "blob:", "about:")
 BLOCKED_ALWAYS = frozenset({"websocket", "eventsource", "manifest"})
@@ -61,6 +71,14 @@ class RequestPolicy:
         except SSRFBlocked as exc:
             return Decision(False, f"ssrf_{exc.reason.value}")
         return Decision(True)
+
+
+def is_transient(error: str | None) -> bool:
+    return bool(error) and error.startswith(TRANSIENT_ERRORS)  # type: ignore[union-attr]
+
+
+def fallback_allowed(error: str | None) -> bool:
+    return bool(error) and error.startswith(FALLBACK_ERRORS)  # type: ignore[union-attr]
 
 
 def partial_read_allowed(policy: RequestPolicy, url: str) -> bool:

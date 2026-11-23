@@ -573,11 +573,17 @@ class Cascade:
 
     @staticmethod
     def _not_rendered_evidence(reason: str, tier: Tier) -> Evidence:
+        if reason == "dns_failure":  # the name does not resolve: no website at all, not a slow page
+            en = (
+                "No website answers at this address (the name does not resolve); address checks found no warning signs."
+            )
+            ar = "لا يوجد موقع يردّ على هذا العنوان (الاسم لا يُحلّ)؛ فحوصات العنوان لم تُظهر أي علامات تحذير."
+        else:
+            en = "The page itself did not load (in time, or at all); the address checks found no warning signs."
+            ar = "لم تُحمَّل الصفحة نفسها (في الوقت المناسب أو إطلاقاً)؛ فحوصات العنوان لم تُظهر أي علامات تحذير."
         return make_evidence(
-            "sandbox.not_rendered", "page", {"reason": reason[:40]}, tier=tier, source="computed",
-            en="We could not open the page itself; the address checks found no warning signs.",
-            ar="تعذّر علينا فتح الصفحة نفسها؛ فحوصات العنوان لم تُظهر أي علامات تحذير.",
-        )  # fmt: skip
+            "sandbox.not_rendered", "page", {"reason": reason[:40]}, tier=tier, source="computed", en=en, ar=ar
+        )
 
     def _t1_risky(self, run: _Run) -> bool:
         """T1 in or above the uncertain band, a hard rule fired, or url./brand./rep./domain. risk evidence."""
@@ -612,6 +618,7 @@ class Cascade:
         """Like `_may_clear_unrendered`, and the part that WAS read must show no risk either."""
         informational = {
             "page.truncated", "page.telemetry_beacon", "page.cloaking_inconclusive", "sandbox.not_rendered",
+            "page.static_fallback",
         }  # fmt: skip
         page_risk = any(e.family == "page" and e.signal not in informational and e.error is None for e in added)
         return not page_risk and self._may_clear_unrendered(run)
@@ -621,7 +628,7 @@ class Cascade:
             raise RuntimeError("T0 did not canonicalise")
         t0 = time.perf_counter()
         added: list[Evidence] = []
-        features_partial = False
+        features_partial = static_read = False
         summary = "Page rendered in the sandbox"
         try:
             with fl_span("tool.sandbox_render", "TOOL", **{"fl.tool": "sandbox_render"}):
@@ -649,8 +656,10 @@ class Cascade:
             else:
                 run.degraded_reasons.append(f"sandbox_unavailable:{reason}"[:80])
         else:
-            features_partial = bool(features.partial)
-            self.d.metrics.sandbox_renders.labels("partial" if features_partial or features.error else "ok").inc()
+            static_read = bool(features.static_fallback)
+            features_partial = bool(features.partial) or static_read
+            outcome = "static_fallback" if static_read else "partial" if features_partial or features.error else "ok"
+            self.d.metrics.sandbox_renders.labels(outcome).inc()
             added.extend(page_evidence(features, run.canonical.registrable, self.d.registry, self.d.favicons))
             final_reg = canonicalize(features.final_url).registrable if features.final_url else ""
             run.meta["fingerprints"] = {
@@ -682,7 +691,7 @@ class Cascade:
         if features_partial and not self._may_clear_partial(run, added):
             # A half-read page is held to the same rule as an unopened one (SCORING section 4): it may end
             # `no_warning_signs` only with page-independent trust and no risk evidence, else degraded.
-            run.degraded_reasons.append("partial_render")
+            run.degraded_reasons.append("static_fallback" if static_read else "partial_render")
         result = self._score(run)
         ms = self._observe("T2", t0)
         hard = ",".join(r.rule_id for r in result.fired_rules)

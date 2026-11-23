@@ -24,7 +24,9 @@ const ar = {
   "act.steps": "خطوات الفحص",
 
   // Degraded because the page could not be opened
-  "noopen.title": "تعذّر فتح الصفحة للتحقق — تعامل معها بحذر",
+  "noopen.dns.title": "لا يوجد موقع يردّ على هذا العنوان — تعامل معه بحذر",
+  "noopen.dns.body": "اسم هذا العنوان لا يقود إلى أي موقع حالياً، فلم نجد صفحة لنفتحها. قد يكون الرابط مكتوباً بشكل خاطئ أو أُغلق الموقع. لا تُدخل فيه أي بيانات، وافتح التطبيق أو الموقع الرسمي للجهة بنفسك.",
+  "noopen.title": "لم تُحمَّل الصفحة في الوقت المناسب للتحقق منها — تعامل معها بحذر",
   "noopen.body": "لم نتمكن من فتح الصفحة نفسها، فلم نتحقق مما فيها. وهذا لا يعني أن الرابط موثوق؛ فلا تُدخل فيه أي بيانات، وافتح التطبيق أو الموقع الرسمي للجهة بنفسك.",
 
   // Technical details (check result)
@@ -100,7 +102,9 @@ const en: Record<DocKey, string> = {
   "act.label": "Investigator activity",
   "act.steps": "Check steps",
 
-  "noopen.title": "We couldn't open this page to check it — treat it with caution",
+  "noopen.dns.title": "No website answers at this address — treat it with caution",
+  "noopen.dns.body": "This address does not lead to any website right now, so there was no page to open. The link may be mistyped or the site may be gone. Do not enter any details there. Open the organisation's official app or website yourself instead.",
+  "noopen.title": "The page did not load in time to check it — treat it with caution",
   "noopen.body": "We could not open the page itself, so we could not check what is on it. That is not a sign the link is fine: do not enter any details there. Open the organisation's official app or website yourself instead.",
 
   "tech.toggle": "Technical details",

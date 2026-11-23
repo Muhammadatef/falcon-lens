@@ -226,8 +226,8 @@ test.describe("degraded because the page could not be opened", () => {
     await registerScenario(request, { match: t, verdictId: id, steps: [{ delayMs: 100, verdict }] });
     await page.goto("/");
     await submitText(page, `https://falcon-demo-bank.test/?c=${t}`);
-    await expect(page.getByTestId("page-not-opened")).toContainText("We couldn't open this page to check it — treat it with caution");
-    await expect(page.getByTestId("page-not-opened")).toContainText("That is not a sign the link is fine: do not enter any details there. Open the organisation's official app or website yourself instead.");
+    await expect(page.getByTestId("page-not-opened")).toContainText("No website answers at this address — treat it with caution");
+    await expect(page.getByTestId("page-not-opened")).toContainText("Do not enter any details there. Open the organisation's official app or website yourself instead.");
     await expect(page.getByTestId("degraded")).toHaveCount(0);
   });
 });

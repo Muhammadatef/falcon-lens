@@ -13,6 +13,7 @@ from falcon_core.signals.page.features import (
     FormFeature,
     JsIndicators,
     PostTarget,
+    ProfileFeatures,
 )
 from falcon_core.signals.page.hosts import host_of, same_site
 
@@ -181,6 +182,15 @@ def page_field_names(raw_forms: Iterable[Mapping[str, Any]]) -> set[str]:
                 if len(v) >= 3:
                     out.add(v)
     return out
+
+
+def apply_credential_page_rule(feats: ProfileFeatures) -> None:
+    """A page that asks for a password/OTP/card/ID: ANY script POST to another site is treated as carrying that
+    data, whatever the body analysis says (fail closed)."""
+    if any(f.cred_form for f in feats.forms):
+        for t in feats.script_post_targets:
+            if t.cross_origin and not t.carries_form_data:
+                t.carries_form_data, t.basis = True, "credential_page_rule"
 
 
 def build_js(raw: Mapping[str, Any]) -> JsIndicators:
