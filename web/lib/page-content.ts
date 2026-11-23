@@ -192,7 +192,7 @@ export const PRIVACY: Record<Lang, PrivacyContent> = {
       ] },
       { title: "الحجب قبل المعالجة", body: ["قبل أي نداء لنموذج ذكاء اصطناعي سحابي نحجب أرقام الهاتف الإماراتية وأرقام الهوية الإماراتية وأرقام البطاقات المصرفية وعناوين البريد الإلكتروني وأرقام الآيبان. أما السجلات التشغيلية فتهرّب فيها محارف التحكم ولا تحمل نصوص الرسائل."] },
       { title: "الوضع السحابي والوضع السيادي", list: [
-        "الوضع السحابي: يُرسل نص محجوب الحقول الحساسة ومعلَّم بوصفه بيانات غير موثوقة إلى واجهة نموذج لغوي. ولا يغادر الجهاز غير ذلك سوى عمليات بحث تحمل أسماء النطاقات فقط.",
+        "الوضع السحابي: يُرسل نص محجوب الحقول الحساسة ومُعلَّم (spotlighted): محاط بحدود ومُوسَّم على أنه غير موثوق قبل أن يراه أي نموذج، إلى واجهة نموذج لغوي. ولا يغادر الجهاز غير ذلك سوى عمليات بحث تحمل أسماء النطاقات فقط.",
         "الوضع السيادي: تذهب كل نداءات النموذج إلى نموذج محلي، فلا يغادر أي محتوى الجهاز. ويمكن تعطيل عمليات البحث الخارجية أيضاً.",
       ] },
       { title: "الاحتفاظ", body: ["سياسة الاحتفاظ مخطَّطة (حفظ الأحكام مدة محدودة ثم تجميعها إحصائياً) لكنها لم تُؤتمت بعد. سجل التدقيق للإضافة فقط. اللقطات المحلية تبقى على الجهاز."] },
@@ -213,7 +213,7 @@ export const PRIVACY: Record<Lang, PrivacyContent> = {
       ] },
       { title: "Redaction before processing", body: ["Before any cloud AI-model call we redact UAE phone numbers, Emirates ID numbers, card numbers, email addresses and IBANs. Operational logs are separate: they escape control characters and carry no message bodies."] },
       { title: "Cloud mode and sovereign mode", list: [
-        "Cloud mode: redacted text, marked as untrusted data, goes to a language-model API. Nothing else leaves the machine except lookups that carry domain names only.",
+        "Cloud mode: redacted, spotlighted text (delimited and datamarked as untrusted before any model sees it) goes to a language-model API. Nothing else leaves the machine except lookups that carry domain names only.",
         "Sovereign mode: every model call goes to a local model, so no content leaves the machine. Outside lookups can be disabled as well.",
       ] },
       { title: "Retention", body: ["A retention policy is planned (verdicts kept for a limited period, then aggregated) but it is not yet automated. The audit log is append-only. Local snapshots stay on the machine."] },
