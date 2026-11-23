@@ -278,6 +278,8 @@ class Worker:
 
     async def _ack(self, entry_id: str) -> None:
         await self.r.xack(keys.JOBS_STREAM, keys.JOBS_GROUP, entry_id)
+        # the entry carries the raw submitted URL: it must not persist once the job is finished
+        await self.r.xdel(keys.JOBS_STREAM, entry_id)
 
     async def _dead(self, entry_id: str, fields: Mapping[str, str], reason: str) -> None:
         dead = {"entry_id": entry_id, "reason": reason[:200], "verdict_id": fields.get("verdict_id", "")}

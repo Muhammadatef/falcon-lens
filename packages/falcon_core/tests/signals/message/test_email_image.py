@@ -165,7 +165,7 @@ def test_image_attachment_qr_becomes_child() -> None:
 
 def test_oversized_and_malformed_emails() -> None:
     big = analyze_email(b"Subject: x\r\n\r\n" + b"A" * (MAX_EMAIL_BYTES + 1))
-    assert get(big, "email.invalid").observed["reason"] == "too_large" and len(big.evidence) == 1
+    assert get(big, "email.limit_exceeded").observed["reason"] == "too_large"
     assert analyze_email(b"").evidence is not None
     for junk in (
         b"\xff\xfe\x00garbage",
@@ -181,10 +181,10 @@ def test_too_many_parts_and_deep_nesting() -> None:
     m = mk()
     for i in range(MAX_PARTS + 5):
         m.add_attachment(b"x", maintype="application", subtype="octet-stream", filename=f"{i}.bin")
-    assert get(analyze_email(m.as_bytes()), "email.invalid").observed["reason"] == "too_many_parts"
+    assert get(analyze_email(m.as_bytes()), "email.limit_exceeded").observed["reason"] == "too_many_parts"
     nested = b"".join(b"Content-Type: multipart/mixed; boundary=b%d\r\n\r\n--b%d\r\n" % (i, i) for i in range(3000))
     res = analyze_email(nested)  # RecursionError or part cap: either way no crash
-    assert any(e.signal == "email.invalid" for e in res.evidence) or isinstance(res.children, list)
+    assert get(res, "email.limit_exceeded")  # fail closed: never a silent pass
 
 
 def test_email_evidence_validates_schema() -> None:

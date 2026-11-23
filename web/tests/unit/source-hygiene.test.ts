@@ -42,7 +42,9 @@ describe("source hygiene (app code, not tests)", () => {
   it("never builds an href or src from verdict data (links are internal constants only)", () => {
     for (const file of files.filter((f) => f.endsWith(".tsx"))) {
       const text = readFileSync(file, "utf8");
-      for (const m of text.matchAll(/\b(href|src)=\{([^}]+)\}/g)) expect(["l.href"], `${file}: ${m[0]}`).toContain(m[2]);
+      // Internal constants only: nav entries, the /docs/<slug> list, and the figure paths in lib/docs-content.ts.
+      const ALLOWED = ["l.href", "`/docs/${slug", "`/docs/${s", "REPO_BLOB + src", "page.figure.src", "f.src", "skipHref"];
+      for (const m of text.matchAll(/\b(href|src)=\{([^}]+)\}/g)) expect(ALLOWED, `${file}: ${m[0]}`).toContain(m[2]);
     }
   });
 });

@@ -9,13 +9,15 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 | zero-day | ≥40 | phishing not on any enabled blocklist at collection, plus Falcon Demo Bank fixtures |
 | messages | ≥150 | Gulf Arabic, MSA, English and Arabizi; real public examples where licensing allows, plus tagged synthetic |
 | emails | ≥40 | fictional `.eml` |
-| injection | ≥50 | local fixtures (`evals/redteam/`) |
+| injection | ≥50 | local fixtures (`evals/redteam/`); `make redteam` = reference pipeline, `make redteam-shipped` = shipped cascade with a real model (artifact `published/redteam/redteam_shipped_<sha>_<ts>.json`) |
 
 **Splits.** Temporal cut (every test first_seen is later than every train first_seen) and grouping by registrable domain, so no domain appears in two splits. The test split is frozen and its sha256 is in `evals/splits.lock`. All tuning happens on validation.
 
 **Post-freeze items.** The test split never grows. An item or domain that first appears after the freeze is assigned only to train or validation (deterministically, whole domains together); a new item on a domain already in test is excluded and counted. The build report and `evals/splits.lock` carry a `post_freeze` count, and `test_sha256` stays byte-identical.
 
 **Metrics.** Bootstrap 95% confidence intervals (1000 resamples) for precision, recall, F1, FPR and PR-AUC; reliability curve and ECE; false `dangerous` on verified-official sites; zero-day recall vs the blocklist-only baseline; ablation by signal family; latency p50/p95 per tier; cost per check; share of checks reaching an LLM; faithfulness; injection attack success rate; flip rate over 3 runs; Arabic clarity (judged by a model other than the generator, calibrated on 20 items the owner rated). Cloud and sovereign routes are reported separately, and real and synthetic data are reported separately.
+
+**Held-out legitimate sets (`heldout_legit*.csv`, `scripts/fp_regress.py`).** Sets 1 and 2 were inspected while the sandbox budget and payload rules were being fixed, so any figure measured on them after those fixes is **post-hoc** (fit to the set it is measured on) and must be labelled so. Set 3 (a fresh seeded Tranco draw, disjoint from sets 1 and 2, `legit_urls.csv` and every split) was used only for a single measurement with the rules frozen; its artifact is the unseen number. Each artifact flags items read only partially (`partial`) and counts them (`partial_reads`).
 
 **Targets** (report the real numbers; never tune on test): recall ≥ 90%, FPR ≤ 2%, zero false-dangerous on official sites, 0% injection success, 100% faithfulness.
 
@@ -29,3 +31,16 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 **Artifact.** `evals/results/<ts>.json` records the dataset hash, git SHA, model ids, thresholds and seeds, alongside an HTML report. Headline numbers go to Prometheus as `fl_eval_metric{name,split,route}`. Copies for publication go in `evals/results/published/`.
 
 **Sentinel evals.** A labelled replay stream with planted campaigns. Metrics: incident precision and recall, time to incident, duplicate rate, false-block rate and summary faithfulness. Rules have unit tests; the graph has a deterministic test with a stubbed LLM.
+
+### Shipped-cascade red-team: how to quote it
+`make redteam-shipped` writes `coverage_caveat` into its artifact. Never quote the harmful count without it: the number is
+"harmful at extended local-model deadlines (model answered N of 113)", and "at production deadlines the model answered M of 113
+(timeouts) with the same harmful cases". The figures live only in `evals/results/published/redteam/` (one artifact per budget);
+copy them from there, never from this page. Eight extra `t3_page` cases (uncertain band, so the T3 investigator runs) are
+reported separately as `summary.t3_uncertain` and are not part of the 113.
+
+Recipe (two runs, the second embeds the first one's coverage in its caveat; extended investigator deadline 300 s, harness only):
+```
+make redteam-shipped BUDGET=production PUBLISH=1
+make redteam-shipped BUDGET=extended PAIRED=evals/results/published/redteam/<production artifact>.json PUBLISH=1
+```

@@ -164,3 +164,9 @@ def test_route_agreement_has_no_value_before_the_first_shadow_sample() -> None:
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)  # noqa: S603
     line = out.stdout.strip()
     assert math.isnan(float(line.split()[-1])), line
+
+
+def test_otel_collector_authenticates_to_phoenix() -> None:
+    cfg = yaml.safe_load((ROOT / "infra" / "otel" / "otel-collector.yml").read_text(encoding="utf-8"))
+    headers = cfg["exporters"]["otlphttp/phoenix"]["headers"]
+    assert headers["authorization"] == "Bearer ${env:PHOENIX_INGEST_KEY}"

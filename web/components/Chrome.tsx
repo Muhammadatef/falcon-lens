@@ -9,16 +9,24 @@ import { translate, type MessageKey } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
 import { BrandMark, Icon } from "./Icon";
 
+/** Header order (v2): Check · AI agents · Results · For authorities · Docs · Privacy. */
 export const NAV_LINKS = [
   { href: "/", key: "nav.check" },
-  { href: "/how-it-works", key: "nav.how" },
-  { href: "/architecture/agents", key: "nav.arch" },
+  { href: "/agents", key: "nav.agents" },
   { href: "/results", key: "nav.results" },
   { href: "/authorities", key: "nav.authorities" },
+  { href: "/docs", key: "nav.docs" },
   { href: "/privacy", key: "nav.privacy" },
-  { href: "/campaigns", key: "nav.board" },
+] as const;
+
+/** Footer only: the live board and the operator board. */
+export const FOOT_LINKS = [
+  { href: "/campaigns", key: "nav.live" },
   { href: "/ops", key: "nav.ops" },
 ] as const;
+
+const isCurrent = (pathname: string, href: string): "page" | "true" | undefined =>
+  pathname === href ? "page" : href !== "/" && pathname.startsWith(`${href}/`) ? "true" : undefined;
 
 export function Header() {
   const { t, lang, theme, setLang, setTheme } = usePrefs();
@@ -53,17 +61,23 @@ export function Header() {
         </Link>
         <nav className="nav" id="site-nav" data-open={open ? "true" : undefined} aria-label={t("nav.label")}>
           {NAV_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} aria-current={pathname === l.href ? "page" : undefined}>
+            <Link key={l.href} href={l.href} aria-current={isCurrent(pathname, l.href)}>
               {t(l.key)}
             </Link>
           ))}
+          <div className="nav-theme">
+            <button className="tool" type="button" data-testid="theme-toggle-menu" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+              <Icon name={theme === "dark" ? "sun" : "moon"} size={20} />
+              <span>{t(theme === "dark" ? "theme.light" : "theme.dark")}</span>
+            </button>
+          </div>
         </nav>
         <div className="top-tools">
           <button className="tool" type="button" data-testid="lang-toggle" lang={lang === "ar" ? "en" : "ar"} onClick={() => setLang(lang === "ar" ? "en" : "ar")}>
             <Icon name="globe" size={20} />
             {t("lang.switch")}
           </button>
-          <button className="tool" type="button" data-testid="theme-toggle" aria-label={t(theme === "dark" ? "theme.light" : "theme.dark")} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+          <button className="tool tool--theme" type="button" data-testid="theme-toggle" aria-label={t(theme === "dark" ? "theme.light" : "theme.dark")} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
             <Icon name={theme === "dark" ? "sun" : "moon"} size={20} />
           </button>
           <button className="tool menu-btn" type="button" data-testid="menu-toggle" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen((v) => !v)}>
@@ -78,12 +92,13 @@ export function Header() {
 
 export function Footer() {
   const { t } = usePrefs();
+  const pathname = usePathname();
   return (
     <footer>
       <div className="wrap">
         <nav className="foot-nav" aria-label={t("foot.nav")}>
-          {NAV_LINKS.map((l) => (
-            <Link key={l.href} href={l.href}>{t(l.key)}</Link>
+          {[...NAV_LINKS, ...FOOT_LINKS].map((l) => (
+            <Link key={l.href} href={l.href} aria-current={isCurrent(pathname, l.href)}>{t(l.key)}</Link>
           ))}
         </nav>
         <p className="foot-brand">{t("foot.1")}</p>

@@ -54,9 +54,16 @@ def build_provider(service: str, exporter: SpanExporter | None = None, version: 
     return provider
 
 
+_installed: TracerProvider | None = None
+
+
 def setup_tracing(service: str, endpoint: str | None = None) -> TracerProvider:
-    """Install the global provider. Exports OTLP/gRPC to ``endpoint`` (default
-    ``OTEL_EXPORTER_OTLP_ENDPOINT``); with no endpoint spans are created but not exported."""
+    """Install the global provider (once per process; later calls return the same provider).
+    Exports OTLP/gRPC to ``endpoint`` (default ``OTEL_EXPORTER_OTLP_ENDPOINT``); with no endpoint
+    spans are created but not exported."""
+    global _installed
+    if _installed is not None:
+        return _installed
     endpoint = endpoint or os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
     exporter: SpanExporter | None = None
     if endpoint and os.environ.get("OTEL_SDK_DISABLED", "").lower() != "true":
@@ -65,6 +72,7 @@ def setup_tracing(service: str, endpoint: str | None = None) -> TracerProvider:
         exporter = OTLPSpanExporter(endpoint=endpoint, insecure=endpoint.startswith("http://"))
     provider = build_provider(service, exporter)
     trace.set_tracer_provider(provider)
+    _installed = provider
     return provider
 
 
@@ -82,6 +90,9 @@ def verdict_context(verdict_id: str) -> Iterator[None]:
         verdict_id_var.reset(token)
 
 
+_CONTROL_FLOW = frozenset({"GraphInterrupt", "NodeInterrupt"})
+
+
 @contextmanager
 def _safe_span(name: str) -> Iterator[trace.Span]:
     """Start a span that never records exception messages (they can echo untrusted text or
@@ -90,7 +101,12 @@ def _safe_span(name: str) -> Iterator[trace.Span]:
         try:
             yield span
         except BaseException as exc:
-            span.set_attribute("error.type", type(exc).__name__)
+            name = type(exc).__name__
+            if name in _CONTROL_FLOW:
+                # A LangGraph human-approval pause is not a failure.
+                span.set_attribute("fl.interrupted", True)
+                raise
+            span.set_attribute("error.type", name)
             span.set_status(Status(StatusCode.ERROR))
             raise
 
@@ -117,6 +133,40 @@ LLM_SPAN_ATTRIBUTES = frozenset(
         "llm.token_count.completion",
         "llm.token_count.total",
         "fl.llm.cost_usd",
+        "fl.llm.route",
+        "fl.latency_ms",
+        "gen_ai.operation.name",
+        "gen_ai.system",
+        "gen_ai.request.model",
+        "gen_ai.usage.input_tokens",
+        "gen_ai.usage.output_tokens",
+        "error.type",
+    }
+)
+
+# Non-LLM spans (cascade tiers, tools, graph nodes) may only carry these. Values are enums,
+# ids, counts and durations: never URLs, page text, prompts or personal data.
+SPAN_ATTRIBUTES = frozenset(
+    {
+        "openinference.span.kind",
+        "verdict_id",
+        "incident_id",
+        "fl.tier",
+        "fl.node",
+        "fl.tool",
+        "fl.tool.status",
+        "fl.input_type",
+        "fl.source",
+        "fl.verdict",
+        "fl.tier_reached",
+        "fl.model_route",
+        "fl.stop_reason",
+        "fl.tool_calls",
+        "fl.latency_ms",
+        "fl.interrupted",
+        "http.request.method",
+        "http.route",
+        "http.response.status_code",
         "error.type",
     }
 )
@@ -136,9 +186,12 @@ def llm_span(
     with _safe_span(f"llm.{role}") as span:
         span.set_attribute("openinference.span.kind", "LLM")
         span.set_attribute("llm.model_name", model)
+        span.set_attribute("gen_ai.request.model", model)
+        span.set_attribute("gen_ai.operation.name", "chat")
         span.set_attribute("fl.llm.role", role)
         if provider:
             span.set_attribute("llm.provider", provider)
+            span.set_attribute("gen_ai.system", provider)
         if vid:
             span.set_attribute("verdict_id", vid)
         yield span
@@ -148,5 +201,45 @@ def set_llm_usage(span: trace.Span, *, input_tokens: int, output_tokens: int, co
     span.set_attribute("llm.token_count.prompt", input_tokens)
     span.set_attribute("llm.token_count.completion", output_tokens)
     span.set_attribute("llm.token_count.total", input_tokens + output_tokens)
+    span.set_attribute("gen_ai.usage.input_tokens", input_tokens)
+    span.set_attribute("gen_ai.usage.output_tokens", output_tokens)
     if cost_usd is not None:
         span.set_attribute("fl.llm.cost_usd", cost_usd)
+
+
+def set_span_attrs(span: trace.Span, **attrs: str | int | float | bool | None) -> None:
+    """Set allow-listed attributes, e.g. ``set_span_attrs(span, **{"fl.tier": "T1"})``.
+    Unknown keys are dropped."""
+    for key, value in attrs.items():
+        if value is not None and (key in SPAN_ATTRIBUTES or key in LLM_SPAN_ATTRIBUTES):
+            span.set_attribute(key, value)
+
+
+@contextmanager
+def fl_span(name: str, kind: str = "CHAIN", **attrs: str | int | float | bool | None) -> Iterator[trace.Span]:
+    """Span for a non-LLM step. ``kind`` is the OpenInference span kind (CHAIN, AGENT, TOOL).
+    verdict_id / incident_id come from the logging contextvars via ``CorrelationProcessor``."""
+    with _safe_span(name) as span:
+        span.set_attribute("openinference.span.kind", kind)
+        set_span_attrs(span, **attrs)
+        yield span
+
+
+# Everything the collector lets through (infra/otel/otel-collector.yml keep_keys, pinned by a test):
+# our own allow-lists plus the structural keys of the SDK-native spans (Anthropic, FastAPI).
+# Deliberately absent: url.*, http.url, prompts, completions, tool arguments/results, exceptions.
+COLLECTOR_ALLOWED_ATTRIBUTES = (
+    LLM_SPAN_ATTRIBUTES
+    | SPAN_ATTRIBUTES
+    | frozenset(
+        {
+            "llm.system",
+            "llm.token_count.prompt_details.cache_read",
+            "llm.token_count.prompt_details.cache_write",
+            "gen_ai.provider.name",
+            "gen_ai.response.model",
+            "gen_ai.request.max_tokens",
+        }
+    )
+)
+COLLECTOR_ALLOWED_RESOURCE = frozenset({"service.name", "service.version", "deployment.environment"})
