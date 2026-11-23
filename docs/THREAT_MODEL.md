@@ -47,7 +47,8 @@
 - Budgets: 6 tool calls, 15 s and 8k output tokens per T3 run.
 
 ## Extension
-MV3, with permissions `activeTab`, `storage` and `declarativeNetRequest`, and host permission only for the API origin. No remote code. Only the URL is sent.
+MV3, with permissions `activeTab`, `storage` and `webNavigation`, and host permission only for the API origin. No remote code. Only the URL is sent.
+- Navigation guard window: the interstitial replaces the page through `tabs.update` on `webNavigation.onBeforeNavigate` and again on `onCommitted`. Chrome gives no way to block a navigation without `declarativeNetRequest` (not requested), so a fast or cached risky document can commit and render briefly before the replacement lands. Measured with the worker deliberately stalled: the risky document commits about 6 ms in and is replaced about 5 ms after the worker is free again, so the exposure is the worker's wake-up or busy time, not a fixed delay. The tab never stays on it (e2e: "committed before the guard runs is still replaced"). The risky page's scripts can run in that window; we never submit anything and the warning page has no input. A cold or busy worker widens it.
 
 ## Residual risks (stated honestly)
 - Docker Desktop on macOS gives VM isolation, but there's no gVisor.

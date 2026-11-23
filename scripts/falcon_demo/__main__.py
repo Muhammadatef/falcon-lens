@@ -1,4 +1,6 @@
-"""Command dispatcher for `python -m falcon_demo <seed|replay|urls|next|prewarm|tunnel|tunnel-stop|reset-state|reset>`.
+"""Command dispatcher for `python -m falcon_demo <command>`.
+
+Commands: seed, replay, scenarios, urls, next, prewarm, tunnel, tunnel-stop, reset-state, reset.
 
 What it does:
     Reads the first argument and hands the rest to seed.main, replay.main or ops.main. Any unknown command
@@ -18,7 +20,7 @@ Inputs / outputs:
 
 import sys
 
-from . import ops, replay, seed
+from . import ops, replay, scenarios, seed
 
 
 def main(argv: list[str]) -> int:
@@ -28,6 +30,8 @@ def main(argv: list[str]) -> int:
         return seed.main(rest)
     if cmd == "replay":
         return replay.main(rest)
+    if cmd == "scenarios":
+        return scenarios.main(rest)
     if cmd in {"urls", "next", "prewarm", "tunnel", "tunnel-stop", "reset-state", "reset"}:
         return ops.main([cmd, *rest])
     print(__doc__, file=sys.stderr)

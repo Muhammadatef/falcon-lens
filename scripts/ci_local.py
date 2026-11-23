@@ -24,6 +24,8 @@ Differences from GitHub (all visible in the logs, none weaken a check)
     - Playwright installs chromium without --with-deps (a Linux-only flag).
     - uncommitted edits are not scanned by trivy (ci-local-pr scans the committed merge tree).
     - trivy scans a `git archive HEAD` snapshot (all tracked files), so parallel jobs' outputs can't race it.
+      The snapshot holds tracked files only, so #60's test-results / playwright-report / node_modules / work /
+      .next --skip-dirs are redundant and were dropped.
     - Tool versions are the ones installed locally; CI pins gitleaks/trivy/uv versions.
 
 Parity: scripts/tests/test_ci_local.py parses ci.yml and fails if any job lacks an entry in JOBS.
