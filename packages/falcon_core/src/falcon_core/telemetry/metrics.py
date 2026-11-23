@@ -56,6 +56,9 @@ LLM_TOKENS = _c("llm_tokens_total", "LLM tokens (input + output)", ("model", "ro
 LLM_COST = _c("llm_cost_usd_total", "LLM spend in USD", ("model",))
 LLM_FALLBACK = _c("llm_fallback_total", "LLM calls that fell back to the local model", ("role",))
 ROUTE_AGREEMENT = _g("route_agreement_ratio", "Share of checks where routes agree (rolling)")
+# No shadow sample yet means "no measurement", not "0% agreement": a label-less gauge exports 0 from the start,
+# which kept RouteAgreementDrop firing with FL_SHADOW_RATE=0. NaN compares false in PromQL and plots as no data.
+ROUTE_AGREEMENT.set(float("nan"))
 AGENT_STEPS = _h("agent_steps", "Agent steps per run", AGENT_STEP_BUCKETS)
 CANARY_LEAK = _c("canary_leak_total", "Canary token seen in model output")
 # Security

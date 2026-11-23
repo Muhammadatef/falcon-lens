@@ -1,15 +1,15 @@
 """Feed health gauges: ``fl_feed_age_seconds{feed}`` and ``fl_feed_enabled{feed}``.
 
-TODO(T-014): switch to the telemetry registry once ``falcon_core.obs`` lands. Until then this uses
-``prometheus_client`` directly on the default registry, so each service's ``/metrics`` already exposes them.
+These are the gauges of the shared telemetry registry (``falcon_core.telemetry.metrics``), the one every
+service renders on ``/metrics``. They used to be declared here on prometheus_client's default registry, which no
+service exposes, so the ``FeedStale`` alert could never fire (audit 2026-11-23).
 """
 
 from __future__ import annotations
 
-from prometheus_client import Gauge
+from falcon_core.telemetry.metrics import FEED_AGE, FEED_ENABLED
 
-FEED_AGE = Gauge("fl_feed_age_seconds", "Seconds since the feed mirror was last refreshed", ["feed"])
-FEED_ENABLED = Gauge("fl_feed_enabled", "1 if the feed is enabled and configured, else 0", ["feed"])
+__all__ = ["FEED_AGE", "FEED_ENABLED", "set_age", "set_enabled"]
 
 
 def set_enabled(feed: str, enabled: bool) -> None:

@@ -12,10 +12,12 @@ An external draft has been waiting for approval for more than 30 min. Notify the
 Multi-window burn on the p95 < 8 s objective. Open the Pipeline dashboard and find the slowest stage. Usual causes: sandbox pool saturation or a slow LLM (fall back to local).
 ## error-rate
 Follow the dashboard links in the alert. For a stale feed, check egress and the feed terms. If fallback is active, check the cloud key and status.
+## service-down
+A scrape target has been down for 2 minutes. Run `docker compose ps` and look for `Restarting` or `unhealthy`, then `docker compose logs --tail 50 <service>`. A restart loop at startup usually means the image is older than the code on `main` (rebuild that service: `docker compose up -d --build <service>`) or a dependency in `.env` is wrong. While the Sentinel is down, checks still work, but no incident is created and the incident board stays empty; it resumes from its checkpoints when it comes back.
 ## sandbox-failure
 See [error-rate](#error-rate): same procedure; use this alert's own dashboard panel for the specifics.
 ## feed-stale
-See [error-rate](#error-rate): same procedure; use this alert's own dashboard panel for the specifics.
+The feed mirror is older than 6 hours, so hard rule H2 (known-bad address, answered at T0) is off: a listed address is still scored, but not floored at `dangerous` by the feed alone. Check that the collector is running (`scripts/collect_loop.sh`) and that `data/private/feeds/` has a recent file. The OpenPhish community feed may be polled at most every 12 hours (its terms; the collector refuses earlier polls), so plan the poll before a demo take. Never fetch a feed in a way its terms forbid.
 ## llm-fallback
 See [error-rate](#error-rate): same procedure; use this alert's own dashboard panel for the specifics.
 ## route-agreement-drop
