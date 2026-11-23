@@ -32,6 +32,7 @@ TOOLS = {
     "list_campaigns",
     "list_incidents",
     "get_incident",
+    "get_incident_trace",
     "submit_report",
 }
 
@@ -82,6 +83,10 @@ def fake_sentinel(incidents: list[dict[str, Any]]) -> FastAPI:
             if i["incident_id"] == iid:
                 return i
         raise HTTPException(404)
+
+    @app.get("/internal/incidents/{iid}/trace")
+    async def trace(iid: str) -> dict[str, Any]:
+        return {"incident_id": iid, "thread_id": iid, "runs": []}
 
     return app
 
@@ -134,6 +139,7 @@ async def test_tool_list_and_schemas(api_app: Any, monkeypatch: pytest.MonkeyPat
     assert by["check_url"].input_schema["properties"]["url"]["maxLength"] == 4096
     assert by["get_verdict"].input_schema["properties"]["verdict_id"]["pattern"].startswith("^vd_")
     assert by["check_url"].annotations and by["check_url"].annotations.read_only_hint is False
+    assert by["get_incident_trace"].annotations and by["get_incident_trace"].annotations.read_only_hint is True
     assert by["list_incidents"].annotations and by["list_incidents"].annotations.read_only_hint is True
     assert by["submit_report"].annotations and by["submit_report"].annotations.read_only_hint is False
     assert {t.name for t in tools} == set(
@@ -153,6 +159,8 @@ async def test_call_list_incidents_and_submit_report(api_app: Any, monkeypatch: 
         one = await c.call_tool("get_incident", {"incident_id": f"inc_{1:026d}"})
         act = (one.structured_content or {})["actions"][0]
         assert act["action_id"] == "act_1" and not {"draft", "args", "approved_by"} & set(act)  # no operator-only data
+        tr = await c.call_tool("get_incident_trace", {"incident_id": f"inc_{1:026d}"})
+        assert not tr.is_error and (tr.structured_content or {})["runs"] == []
         bad = await c.call_tool("get_incident", {"incident_id": "inc_" + "9" * 26})
         assert bad.is_error and "Not found" in bad.content[0].text  # type: ignore[union-attr]
 

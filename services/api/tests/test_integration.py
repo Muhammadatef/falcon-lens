@@ -76,6 +76,31 @@ def fake_sentinel(incidents: list[dict[str, Any]], calls: list[tuple[str, str, s
                 return i
         raise HTTPException(404)
 
+    @app.get("/internal/incidents/{iid}/trace")
+    async def trace(iid: str) -> dict[str, Any]:
+        if not any(i["incident_id"] == iid for i in incidents):
+            raise HTTPException(404)
+        return {
+            "incident_id": iid,
+            "thread_id": iid,
+            "runs": [
+                {
+                    "run_id": "run_1",
+                    "started_at": "2026-11-22T01:00:00Z",
+                    "finished_at": "2026-11-22T01:00:02Z",
+                    "status": "interrupted",
+                    "steps": [],
+                    "interrupt": {
+                        "action_id": "act_1",
+                        "tool": "draft_takedown",
+                        "waiting_since": "2026-11-22T01:00:02Z",
+                        "decision": "approved",
+                        "decided_by": "alice#key:1234",
+                    },
+                }
+            ],
+        }
+
     @app.post("/internal/incidents/{iid}/actions/{aid}/{verb}")
     async def decide(
         iid: str,
@@ -378,6 +403,21 @@ async def test_non_operator_incident_payload_is_stripped(api: httpx.AsyncClient,
             act = inc["actions"][0]
             assert act["action_id"] == "act_1" and act["status"] == "awaiting_approval"
             assert all((k in act) is full for k in ("draft", "args", "approved_by"))
+
+
+async def test_trace_redacts_approver_for_non_operator_and_is_problem_json(api: httpx.AsyncClient, env: Env) -> None:
+    iid = make_incident(1)["incident_id"]
+    for headers, full in ((key(env.read_key), False), (key(OPERATOR_KEY), True)):
+        r = await api.get(f"/v1/incidents/{iid}/trace", headers=headers)
+        assert r.status_code == 200
+        it = r.json()["runs"][0]["interrupt"]
+        assert it["action_id"] == "act_1" and it["tool"] == "draft_takedown"
+        assert all((k in it) is full for k in ("decision", "decided_by"))
+    assert (await api.get(f"/v1/incidents/{iid}/trace")).status_code in (401, 403)
+    missing = await api.get("/v1/incidents/inc_" + "9" * 26 + "/trace", headers=key(env.read_key))
+    assert missing.status_code == 404 and missing.headers["content-type"].startswith("application/problem+json")
+    bad = await api.get("/v1/incidents/not-an-id/trace", headers=key(env.read_key))
+    assert bad.status_code == 422
 
 
 async def test_incident_stream_strips_for_non_operator(

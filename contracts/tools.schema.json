@@ -42,5 +42,5 @@
     "draft_takedown": { "mode": "external_draft", "args": { "incident_id": "string", "recipient_kind": "registrar|host" }, "requires": "operator approval; never sent automatically" },
     "draft_police_report": { "mode": "external_draft", "args": { "incident_id": "string" }, "requires": "operator approval; never sent automatically" }
   },
-  "mcp_tools": ["check_url", "check_message", "check_email", "get_verdict", "list_campaigns", "list_incidents", "get_incident", "submit_report"]
+  "mcp_tools": ["check_url", "check_message", "check_email", "get_verdict", "list_campaigns", "list_incidents", "get_incident", "get_incident_trace", "submit_report"]
 }

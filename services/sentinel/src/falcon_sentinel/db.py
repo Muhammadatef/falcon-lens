@@ -47,6 +47,18 @@ CREATE TRIGGER audit_log_immutable BEFORE UPDATE OR DELETE ON audit_log
 DROP TRIGGER IF EXISTS audit_log_no_truncate ON audit_log;
 CREATE TRIGGER audit_log_no_truncate BEFORE TRUNCATE ON audit_log
   FOR EACH STATEMENT EXECUTE FUNCTION fl_audit_immutable();
+CREATE TABLE IF NOT EXISTS agent_trace_steps (
+  id bigserial PRIMARY KEY,
+  incident_id text NOT NULL, thread_id text NOT NULL, run_id text NOT NULL,
+  seq integer, kind text NOT NULL, at timestamptz NOT NULL, doc jsonb NOT NULL
+);
+CREATE INDEX IF NOT EXISTS agent_trace_steps_inc_idx ON agent_trace_steps (incident_id, id);
+DROP TRIGGER IF EXISTS agent_trace_immutable ON agent_trace_steps;
+CREATE TRIGGER agent_trace_immutable BEFORE UPDATE OR DELETE ON agent_trace_steps
+  FOR EACH ROW EXECUTE FUNCTION fl_audit_immutable();
+DROP TRIGGER IF EXISTS agent_trace_no_truncate ON agent_trace_steps;
+CREATE TRIGGER agent_trace_no_truncate BEFORE TRUNCATE ON agent_trace_steps
+  FOR EACH STATEMENT EXECUTE FUNCTION fl_audit_immutable();
 CREATE TABLE IF NOT EXISTS stix_bundles (
   incident_id text PRIMARY KEY, bundle jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -67,6 +79,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON incidents, incident_actions, sentinel_fe
 GRANT SELECT, INSERT ON audit_log TO {role};
 REVOKE UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON audit_log FROM {role};
 GRANT USAGE, SELECT ON SEQUENCE audit_log_id_seq TO {role};
+GRANT SELECT, INSERT ON agent_trace_steps TO {role};
+REVOKE UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON agent_trace_steps FROM {role};
+GRANT USAGE, SELECT ON SEQUENCE agent_trace_steps_id_seq TO {role};
 """
 ROLE_RE = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
 
@@ -82,6 +97,8 @@ class Repo(Protocol):
     async def query_features(self, since: datetime | None, limit: int) -> list[dict[str, Any]]: ...
     async def audit_append(self, entry: dict[str, Any]) -> int: ...
     async def audit_list(self, incident_id: str | None = None) -> list[dict[str, Any]]: ...
+    async def trace_append(self, row: dict[str, Any]) -> None: ...
+    async def trace_list(self, incident_id: str) -> list[dict[str, Any]]: ...
     async def block_put(self, block: dict[str, Any]) -> None: ...
     async def block_get(self, action_id: str) -> dict[str, Any] | None: ...
     async def block_revert(self, action_id: str, at: datetime) -> None: ...
@@ -100,6 +117,7 @@ class MemoryRepo:
         self.blocks: dict[str, dict[str, Any]] = {}
         self.actions: dict[str, dict[str, Any]] = {}
         self.stix: dict[str, dict[str, Any]] = {}
+        self.trace: list[dict[str, Any]] = []
 
     async def init(self) -> None:
         return None
@@ -137,6 +155,12 @@ class MemoryRepo:
 
     async def audit_list(self, incident_id: str | None = None) -> list[dict[str, Any]]:
         return [a for a in self.audit if incident_id in (None, a.get("incident_id"))]
+
+    async def trace_append(self, row: dict[str, Any]) -> None:
+        self.trace.append(copy.deepcopy(row))
+
+    async def trace_list(self, incident_id: str) -> list[dict[str, Any]]:
+        return [copy.deepcopy(r) for r in self.trace if r["incident_id"] == incident_id]
 
     async def block_put(self, block: dict[str, Any]) -> None:
         self.blocks[block["action_id"]] = {**block, "reverted_at": None}
@@ -293,6 +317,34 @@ class PgRepo:
                 "result",
                 "evidence_ids",
             ]
+            return [dict(zip(cols, r, strict=True)) for r in await cur.fetchall()]
+
+    async def trace_append(self, row: dict[str, Any]) -> None:
+        from psycopg.types.json import Jsonb
+
+        async with self.pool.connection() as c:
+            await c.execute(
+                "INSERT INTO agent_trace_steps (incident_id,thread_id,run_id,seq,kind,at,doc)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    row["incident_id"],
+                    row["thread_id"],
+                    row["run_id"],
+                    row["seq"],
+                    row["kind"],
+                    row["at"],
+                    Jsonb(row["doc"]),
+                ),
+            )
+
+    async def trace_list(self, incident_id: str) -> list[dict[str, Any]]:
+        async with self.pool.connection() as c:
+            cur = await c.execute(
+                "SELECT incident_id,thread_id,run_id,seq,kind,at,doc FROM agent_trace_steps"
+                " WHERE incident_id=%s ORDER BY id",
+                (incident_id,),
+            )
+            cols = ["incident_id", "thread_id", "run_id", "seq", "kind", "at", "doc"]
             return [dict(zip(cols, r, strict=True)) for r in await cur.fetchall()]
 
     async def block_put(self, block: dict[str, Any]) -> None:

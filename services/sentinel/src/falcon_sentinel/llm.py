@@ -94,6 +94,7 @@ async def structured[M: BaseModel](
     system: str,
     user_json: dict[str, Any],
     on_tokens: Callable[[int], None] | None = None,
+    on_attempt: Callable[[int, int, int], None] | None = None,
 ) -> M:
     """complete_json -> pydantic, with one repair retry that feeds the validation error back."""
     schema = model.model_json_schema()
@@ -108,8 +109,11 @@ async def structured[M: BaseModel](
             }
         )
         data = await llm.complete_json(role="sentinel", system=system, user_json=payload, schema=schema)
+        t_in, t_out = estimate_tokens(payload), estimate_tokens(data)
         if on_tokens:
             on_tokens(estimate_tokens(payload, data))
+        if on_attempt:
+            on_attempt(attempt, t_in, t_out)
         try:
             return model.model_validate(data)
         except ValidationError as exc:

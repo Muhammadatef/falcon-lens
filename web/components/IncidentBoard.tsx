@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { traceHref } from "@/lib/agent-trace";
 import { authHeaders, decideAction, loadBoard } from "@/lib/api";
 import { parseIncident, unwrapList, type ActionStatus, type Incident } from "@/lib/contracts";
 import { formatTime, pick, translateMaybe } from "@/lib/i18n";
@@ -183,7 +185,7 @@ export function IncidentBoard({ demo }: { demo: boolean }) {
                 <p className="muted">{t("ops.empty.body")}</p>
               </div>
             ) : (
-              load.items.map((incident) => <IncidentCard key={incident.incident_id} incident={incident} notice={notice} onDecide={decide} />)
+              load.items.map((incident) => <IncidentCard key={incident.incident_id} incident={incident} demo={demo} notice={notice} onDecide={decide} />)
             )}
           </div>
         </section>
@@ -192,10 +194,11 @@ export function IncidentBoard({ demo }: { demo: boolean }) {
   );
 }
 
-function IncidentCard({ incident, notice, onDecide }: { incident: Incident; notice: { actionId: string; text: string } | null; onDecide: (incidentId: string, actionId: string, decision: "approve" | "reject") => void }) {
+function IncidentCard({ incident, demo, notice, onDecide }: { incident: Incident; demo: boolean; notice: { actionId: string; text: string } | null; onDecide: (incidentId: string, actionId: string, decision: "approve" | "reject") => void }) {
   const { t, lang } = usePrefs();
   const open = incident.status === "open" || incident.status === "triaging" || incident.status === "awaiting_approval";
   const title = pick(lang, incident.summary) || translateMaybe(lang, "type", incident.type);
+  const l = { href: traceHref(incident.incident_id, demo) };
   return (
     <article className="card incident" data-testid="incident-card" data-open={open ? "true" : undefined}>
       <div className="inc-head" data-sev={incident.severity}>
@@ -204,6 +207,7 @@ function IncidentCard({ incident, notice, onDecide }: { incident: Incident; noti
         <SourceBadge source={incident.source} />
         <span className="pill">{translateMaybe(lang, "type", incident.type)}</span>
         <span className={incident.status === "awaiting_approval" ? "pill pill--wait pill--live" : "pill"} data-testid="incident-status">{t(`is.${incident.status}`)}</span>
+        <Link className="btn btn--sm" href={l.href} data-testid="trace-link"><Icon name="list" size={20} />{t("tr.link")}</Link>
       </div>
       <div className="inc-grid">
         <div>

@@ -1523,6 +1523,63 @@ paths:
       summary: Reject Action
       tags:
       - operator
+  /v1/incidents/{incident_id}/trace:
+    get:
+      description: Sentinel agent run trace (agent_trace.schema.json). Approver and decision only for
+        operator scope.
+      operationId: get_incident_trace_v1_incidents__incident_id__trace_get
+      parameters:
+      - in: path
+        name: incident_id
+        required: true
+        schema:
+          pattern: ^inc_[0-9A-HJKMNP-TV-Z]{26}$
+          title: Incident Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Get Incident Trace V1 Incidents  Incident Id  Trace Get
+                type: object
+          description: Successful Response
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: Get Incident Trace
+      tags:
+      - incidents
   /v1/intel/stix:
     get:
       description: STIX 2.1 bundle of defanged indicators for one incident or all (optionally by status).

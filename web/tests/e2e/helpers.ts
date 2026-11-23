@@ -37,6 +37,8 @@ export interface Boards {
   campaignEvents?: unknown[];
   incidentEvents?: unknown[];
   requireKey?: string;
+  /** Agent trace snapshots per incident id; each poll gets the next one, the last repeats. */
+  traces?: Record<string, unknown[]>;
 }
 
 /** Registers board data for this browser context (selected by a cookie the mock reads). */
