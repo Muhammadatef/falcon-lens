@@ -115,7 +115,7 @@ test.describe("home: two AI agents (W2-03)", () => {
   test("under reduced motion the radar and lens are static", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    expect(await page.locator(".rg-sweep").first().evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+    expect(await page.locator(".rg-sweepdiv").first().evaluate((el) => getComputedStyle(el).display)).toBe("none");
     expect(await page.locator(".lens-sweep").first().evaluate((el) => getComputedStyle(el).display)).toBe("none");
   });
 

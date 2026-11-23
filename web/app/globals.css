@@ -762,15 +762,14 @@ a.btn--primary { color: var(--fl-brand-ink); }
 .rg-disc { fill: var(--fl-surface-2); }
 .rg-ring { fill: none; stroke: var(--fl-border-strong); stroke-width: 1.5; }
 .rg-axis { stroke: var(--fl-border); stroke-width: 1; stroke-dasharray: 2 6; }
-.rg-wedge { fill: var(--fl-sand); opacity: 0.28; }
-.rg-sweep { transform-origin: 100px 100px; animation: spin 7s linear infinite; }
+.radar-wrap { position: relative; display: block; width: 100%; height: 100%; }
+.rg-sweepdiv { position: absolute; inset: 2%; border-radius: 50%; pointer-events: none; will-change: transform; background: conic-gradient(from 0deg, transparent 0deg 270deg, color-mix(in srgb, var(--fl-sand) 38%, transparent) 359deg, transparent 360deg); animation: spin 7s linear infinite; }
 .rg-node { fill: var(--fl-text-muted); }
 .rg-node--linked { fill: var(--fl-sand); }
 .rg-link { fill: none; stroke: var(--fl-sand); stroke-width: 1.5; opacity: 0.7; }
 .rg-core { fill: var(--fl-sand); }
-.radar-glyph--mini .rg-sweep { animation-duration: 9s; }
-:root[data-theme="light"] .rg-wedge, :root[data-theme="light"] .rg-node--linked, :root[data-theme="light"] .rg-core { fill: var(--fl-sand); }
-@media (prefers-reduced-motion: reduce) { .rg-sweep { animation: none !important; } }
+.radar-glyph--mini + .rg-sweepdiv { animation-duration: 9s; }
+@media (prefers-reduced-motion: reduce) { .rg-sweepdiv { animation: none !important; display: none; } }
 
 /* ticker: a full-bleed tinted band, fixed minimum height so a text change never shifts the page */
 .ticker { padding-block: var(--fl-space-3); background: var(--fl-surface-1); border-block: 1px solid var(--fl-border); min-height: 5.5rem; display: flex; align-items: center; }

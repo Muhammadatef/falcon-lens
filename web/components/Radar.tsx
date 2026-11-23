@@ -13,15 +13,13 @@ const NODES: [number, number, boolean][] = [
 
 export function Radar({ mini = false }: { mini?: boolean }) {
   return (
+    <span className="radar-wrap">
     <svg className={mini ? "radar-glyph radar-glyph--mini" : "radar-glyph"} viewBox="0 0 200 200" aria-hidden="true" focusable="false">
       <circle className="rg-disc" cx="100" cy="100" r="96" />
       <circle className="rg-ring" cx="100" cy="100" r="96" />
       <circle className="rg-ring" cx="100" cy="100" r="64" />
       <circle className="rg-ring" cx="100" cy="100" r="32" />
       <path className="rg-axis" d="M100 4v192M4 100h192" />
-      <g className="rg-sweep">
-        <path className="rg-wedge" d="M100 100 L100 4 A96 96 0 0 1 196 100 Z" />
-      </g>
       {!mini ? (
         <>
           <path className="rg-link" d="M62 58 74 70 66 76 62 58" />
@@ -32,5 +30,8 @@ export function Radar({ mini = false }: { mini?: boolean }) {
       ) : null}
       <circle className="rg-core" cx="100" cy="100" r="5" />
     </svg>
+    {/* the sweep is an HTML layer so it rotates on the compositor (an animated SVG child repaints the page every frame) */}
+    <i className="rg-sweepdiv" aria-hidden="true" />
+    </span>
   );
 }
