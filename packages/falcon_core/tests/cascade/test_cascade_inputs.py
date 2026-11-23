@@ -168,3 +168,29 @@ async def test_qr_with_two_links_worst_wins() -> None:
     final = (await check("image", data, sandbox=sb)).docs[-1]
     assert_valid(final)
     assert final["verdict"] == "dangerous"
+
+
+async def test_official_qr_with_printed_scam_text_stays_degraded() -> None:
+    # TEST FIXTURE, not a real site: Falcon Demo Bank QR next to printed scam wording, generated here.
+    from PIL import Image, ImageDraw, ImageFont
+
+    qr = Image.open(io.BytesIO(_qr_png("http://falcon-demo-bank.test/")))
+    canvas = Image.new("RGB", (500, 760), "white")
+    canvas.paste(qr.resize((400, 400)), (50, 20))
+    draw = ImageDraw.Draw(canvas)
+    font = ImageFont.load_default(size=22)
+    lines = [
+        "TEST FIXTURE - not a real site",
+        "Falcon Demo Bank: account blocked.",
+        "Send your card number and OTP",
+        "to this number within 1 hour",
+        "or your account will be closed.",
+        "Reply now to confirm identity",
+    ]
+    for i, ln in enumerate(lines):
+        draw.text((20, 450 + i * 45), ln, fill="black", font=font)
+    buf = io.BytesIO()
+    canvas.save(buf, "PNG")
+    final = (await check("image", buf.getvalue(), sandbox=_sandbox_for(True))).docs[-1]
+    assert_valid(final)
+    assert final["degraded"] and final["verdict"] == "suspicious"

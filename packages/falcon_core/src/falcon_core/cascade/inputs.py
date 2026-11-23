@@ -121,7 +121,7 @@ def _analyse(
         ev += [from_signal(e) for e in img.evidence]
         children += img.children
         if img.needs_ocr:
-            if any(c.kind == "url" for c in img.children):
+            if any(c.kind == "url" for c in img.children) and not img.extra_content:
                 # Decoded QR links are judged exactly like pasted links. The OCR/vision step is optional here,
                 # so its absence is weight-0 informational evidence and does not degrade the verdict.
                 ev.append(make_evidence(
@@ -131,7 +131,7 @@ def _analyse(
                     ar="لم تتم قراءة النص المحيط؛ تم فحص رابط QR",
                 ))  # fmt: skip
             else:
-                run.degraded_reasons.append("ocr_unavailable")  # no QR link: unread text stays fail-closed
+                run.degraded_reasons.append("ocr_unavailable")  # no QR link, or text around the QR: stays fail-closed
     if body:
         msg = analyze_message(body, reg)
         ev += [from_signal(e) for e in msg.evidence]
