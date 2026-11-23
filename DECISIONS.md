@@ -560,3 +560,4 @@
 - 2026-11-23 (owner decision) Licence is Apache-2.0: LICENSE (official text), NOTICE, license field in all pyproject.toml and package.json files.
 - ci-local (scripts/ci_local.py): docker-build runs native arch (arm64) unless FL_CI_PLATFORM set; images tagged falcon-lens-ci/<svc>:<sha>; playwright install without --with-deps; trivy skips extra local-only dirs; local tool versions not pinned.
 - 2026-11-23 · builder-sandbox · PR 63 review fix: `go()` resets `response` before each goto and discards any response carrying `x-falcon-redirect-stub`, so a chain that ends on a stub (timeout, reset, redirect cap) returns the real error (timeout / connect_failed / too_many_redirects) with no final_url, extract or screenshot.
+- FL_ENV in docker-compose.yml is now required (${FL_ENV:?...}, no default); a deploy that forgets it fails instead of becoming local. .env.example sets FL_ENV=local, CI/ci_local copy it to .env. (fix/compose-fl-env-required)
