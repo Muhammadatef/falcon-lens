@@ -84,7 +84,8 @@ def select_reasons(result: ArbiterResult) -> list[ReasonSlot]:
     for rule in result.fired_rules:
         ids = tuple(i for i in rule.evidence_ids if i in by_id)
         mag = sum(abs(by_id[i].weight) for i in ids)
-        push(1, mag, ReasonSlot("hard_rules", rule.rule_id, ids))
+        key: str = "H5s" if rule.rule_id == "H5" and rule.effect == "floor_suspicious" else rule.rule_id
+        push(1, mag, ReasonSlot("hard_rules", key, ids))
         consumed.update(ids)
 
     groups: dict[str, list[Evidence]] = {}

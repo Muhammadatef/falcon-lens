@@ -6,8 +6,8 @@ draft: false  # thresholds fitted; weights are still the SCORING.md draft values
 fit:
   dataset_hash: "382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1"
   fit_items_hash: "604dd99801e3055d56c8e0499b8b648f94977f5af1641fcb3f675aa7389774b3"
-  git_sha: "4415c0fa498b6b95155b09fdd43c26cff4d623d5"
-  fit_date: "2026-11-22"
+  git_sha: "d977f04791a60a69b21d41b59f0648ea8e45dc4f"
+  fit_date: "2026-11-23"
   seed: 20261122
   n_train: 426
   n_val: 144
@@ -15,6 +15,7 @@ fit:
   dangerous_fpr_target: 0.01
   t3_share_val: 0.0417
   notes: []
+  model_cap_notes: []
 
 bands:
   tau_high: 0.8139
@@ -25,6 +26,14 @@ cascade:
   eps_high: 0.8639
   t2_margin_low: 0.10       # T2 exits if p < tau_low - 0.10
   t2_margin_high: 0.05      # ... or p > tau_high + 0.05
+
+# Fitted on VALIDATION only by `make fit-thresholds` (evals/results/published/fits/model_cap_fit.json):
+# the fitted T1 classifier alone never produces `dangerous`. margin = log-odds the model probability is
+# capped under tau_high; strong_adj = non-url risk evidence (log-odds) needed for `dangerous`
+# without a hard rule.
+model_cap:
+  margin: 0.0
+  strong_adj: 0.0
 
 logit_clip: 8.0
 

@@ -18,7 +18,6 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
-import math
 import time
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
@@ -38,12 +37,11 @@ from falcon_core.scoring.arbiter import (
     ArbiterContext,
     ArbiterResult,
     has_brand_conflict,
-    logit,
-    score,
     t1_should_exit,
     t2_should_exit,
 )
 from falcon_core.scoring.evidence import Evidence
+from falcon_core.scoring.model_cap import score_with_model
 from falcon_core.scoring.params import ScoringParams, load_params
 from falcon_core.scoring.reasons import CLASSIFIER_SIGNAL, ReportingChannels
 from falcon_core.security import (
@@ -64,8 +62,6 @@ from falcon_core.signals.url.textutil import defang
 log = logging.getLogger("falcon.cascade")
 
 Tier = Literal["T0", "T1", "T2", "T3"]
-STRONG_EVIDENCE_ADJ = 2.5  # log-odds of non-classifier risk evidence needed for dangerous without a hard rule
-MODEL_ONLY_MARGIN = 1.5  # log-odds of deterministic risk evidence needed to move from the model cap to dangerous
 
 
 class VerdictSink(Protocol):
@@ -146,11 +142,9 @@ class CascadeDeps:
     # AI wiring (all optional; None = deterministic-only cascade, which is also the fallback on any failure).
     t1_model: Any = None  # scoring.t1_model.T1Model (p_clf); None -> draft p_clf
     investigator: Any = None  # agent.Investigator (T3, uncertain band only)
-    responder: Any = None  # agent.Responder (reasons with template fallback)
     injection: InjectionDetect | None = None
     extractor_timeout_s: float = 7.0
     investigator_timeout_s: float = 16.0
-    responder_timeout_s: float = 7.0
     llm_cooldown_s: float = 60.0
     t0_signals: Mapping[str, tuple[SignalSpec, SignalFn]] | None = None  # None -> REGISTRY (rep.openphish)
     # Overall cap per tier on top of each signal's own timeout_ms (a hung signal never stalls a tier).
@@ -223,33 +217,11 @@ class Cascade:
             extra_degraded_reasons=tuple(dict.fromkeys(run.degraded_reasons)),
             params=self.params,
         )
-        evidence = dedupe(run.evidence)
-        result = score(evidence, self._model_p(run.p_clf), ctx)
-        if (
-            run.p_clf is not None
-            and result.verdict == "dangerous"
-            and not any(r.effect == "floor_dangerous" for r in result.fired_rules)
-            and result.logit_adjustment < STRONG_EVIDENCE_ADJ
-        ):
-            # Fitted model plus weak corroboration (e.g. only a login form, which legitimate sites have) is
-            # not enough to convict: hold the total just under tau_high (suspicious).
-            p = 1.0 / (1.0 + math.exp(-(logit(self.params.tau_high) - result.logit_adjustment - 0.05)))
-            result = score(evidence, p, ctx)
-        return result
-
-    def _model_p(self, p: float | None) -> float | None:
-        """The fitted classifier alone never convicts: its probability is capped below ``tau_high`` by
-        ``MODEL_ONLY_MARGIN`` log-odds, so ``dangerous`` needs a hard rule or at least that much
-        deterministic risk evidence on top (page, brand, domain, reputation, message...)."""
-        if p is None:
-            return None
-        cap = 1.0 / (1.0 + math.exp(-(logit(self.params.tau_high) - MODEL_ONLY_MARGIN)))
-        return min(p, cap)
+        return score_with_model(dedupe(run.evidence), run.p_clf, ctx)
 
     async def _emit(
         self, sink: VerdictSink, run: _Run, result: ArbiterResult, tier: Tier, final: bool
     ) -> dict[str, Any]:
-        reasons = await self._reasons(run, result) if final and run.page_tier else None
         doc = build_verdict(
             result,
             verdict_id=run.verdict_id,
@@ -263,7 +235,6 @@ class Cascade:
             trace=run.trace,
             source=run.source,
             channels=self.d.channels,
-            reasons=reasons,
             model_route=run.route(),
         )
         await self._publish(sink, run, doc)
@@ -282,36 +253,6 @@ class Cascade:
             await sink.emit(doc, run.meta)
         except Exception as exc:
             raise SinkError(f"{type(exc).__name__}") from exc
-
-    async def _reasons(self, run: _Run, result: ArbiterResult) -> list[dict[str, Any]] | None:
-        """Responder reasons (faithfulness-verified) or None for the template reasons. Never raises."""
-        resp = self.d.responder
-        if resp is None or result.degraded or not self.llm_allowed():
-            return None
-        from falcon_core.agent.responder import ResponderInput
-        from falcon_core.contracts.verdict import Reason
-        from falcon_core.scoring.reasons import contract_reasons
-
-        try:
-            template = [Reason.model_validate(r) for r in contract_reasons(result)]
-            inp = ResponderInput(
-                verdict=result.verdict,
-                evidence=[to_contract_model(e) for e in result.weighted_evidence],
-                template_reasons=template,
-                verdict_id=run.verdict_id,
-                degraded=result.degraded,
-            )
-            out = await asyncio.wait_for(resp.respond(inp), self.d.responder_timeout_s)
-        except Exception as exc:  # noqa: BLE001 - the template wording is always available
-            self.d.metrics.tool_errors.labels("responder", type(exc).__name__[:40]).inc()
-            if isinstance(exc, TimeoutError):
-                self.llm_trip()
-            return None
-        if out.status in ("failed", "timeout"):
-            self.llm_trip()
-        if out.route != "none":
-            run.routes.add(out.route)
-        return [r.model_dump(mode="json", exclude_none=True) for r in out.reasons]
 
     def _observe(self, stage: str, t0: float) -> int:
         dt = time.perf_counter() - t0

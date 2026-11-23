@@ -15,6 +15,7 @@ hard_rules:
   H3: "This is a registered official website of the organisation."
   H4: "This page sends what you type to an outside messaging account."
   H5: "This message contains a link we found dangerous."
+  H5s: "This message contains a link we found suspicious."
   H6: "This message asks for a code or an app install while posing as an official body or bank."
 
 reasons:

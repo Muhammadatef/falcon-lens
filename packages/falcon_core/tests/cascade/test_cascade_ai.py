@@ -9,13 +9,12 @@ import pytest
 from cascade_helpers import assert_valid, make_cascade, rules, run
 
 from falcon_core.agent.investigator import InvestigationResult
-from falcon_core.agent.responder import ResponderResult
 from falcon_core.cascade import SandboxFeatures, StubSandboxClient
 from falcon_core.cascade.ai import risk_only
 from falcon_core.cascade.models import SandboxForm
 from falcon_core.cascade.testing import DEMO_LOOKALIKE_URL, DEMO_ZERO_DAY_URL, benign_features, phish_features
 from falcon_core.contracts.evidence import Evidence as ContractEvidence
-from falcon_core.contracts.verdict import Reason, TraceStep
+from falcon_core.contracts.verdict import TraceStep
 from falcon_core.scoring.evidence import Evidence
 
 
@@ -125,10 +124,11 @@ async def test_model_alone_never_produces_dangerous_and_always_has_a_reason() ->
     assert_valid(final)
 
 
-async def test_model_plus_a_login_form_alone_is_not_dangerous() -> None:
+async def test_model_plus_page_risk_evidence_reaches_dangerous() -> None:
+    """L1 D2 (fitted, validation-only): p >= tau_high AND any page risk evidence (here a credential form)."""
     cascade, _ = make_cascade(StubSandboxClient(default=zero_day_features()), t1_model=_Model(0.9995))
     final = (await run(cascade, DEMO_ZERO_DAY_URL)).docs[-1]
-    assert final["verdict"] == "suspicious" and final["reasons"]  # legitimate sites have login forms
+    assert final["verdict"] == "dangerous" and "H1" not in rules(final) and final["reasons"]
 
 
 async def test_model_plus_strong_deterministic_evidence_is_dangerous() -> None:
@@ -216,36 +216,14 @@ async def test_t3_failure_keeps_t2_result(uncertain: None) -> None:
     assert final["tier_reached"] == "T3" and not final["degraded"]
 
 
-class StubResponder:
-    def __init__(self, mode: str) -> None:
-        self.mode = mode
-
-    async def respond(self, inp: Any) -> ResponderResult:
-        if self.mode == "boom":
-            raise RuntimeError("down")
-        ids = [e.id for e in inp.evidence if e.weight > 0][:1]
-        r = Reason(ar="سبب مصاغ", en="Phrased by the responder.", evidence_ids=ids, generated_by="llm")
-        return ResponderResult((r,), "llm", "cloud", "ok")
-
-
-async def test_responder_reasons_are_used_and_cite_existing_evidence() -> None:
-    cascade, _ = make_cascade(StubSandboxClient(default=phish_features()), responder=StubResponder("ok"))
-    final = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]
-    assert_valid(final)
-    assert final["reasons"][0]["generated_by"] == "llm" and final["model_route"] == "cloud"
-
-
-async def test_responder_failure_falls_back_to_template() -> None:
-    cascade, _ = make_cascade(StubSandboxClient(default=phish_features()), responder=StubResponder("boom"))
-    final = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]
-    assert_valid(final)
-    assert {r["generated_by"] for r in final["reasons"]} == {"template"} and final["model_route"] == "none"
-
-
-async def test_responder_not_used_before_the_page_tier() -> None:
-    cascade, _ = make_cascade(StubSandboxClient(default=phish_features()), responder=StubResponder("ok"))
-    sink = await run(cascade, DEMO_LOOKALIKE_URL)
-    assert all(r["generated_by"] != "llm" for d in sink.docs[:-1] for r in d["reasons"])
+async def test_user_facing_reasons_are_always_templates() -> None:
+    """L1 D3: warning (and every) verdict reasons come from evidence-grounded templates, never LLM text."""
+    for feats, url in ((phish_features(), DEMO_LOOKALIKE_URL), (benign_features(), DEMO_ZERO_DAY_URL)):
+        cascade, _ = make_cascade(StubSandboxClient(default=feats), extractor=StubExtractor([CLAIM]))
+        sink = await run(cascade, url)
+        for d in sink.docs:
+            assert {r.get("generated_by") for r in d["reasons"]} <= {"template"}
+            assert_valid(d)
 
 
 async def test_llm_timeout_opens_the_breaker_for_later_checks() -> None:

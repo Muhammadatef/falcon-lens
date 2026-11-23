@@ -21,7 +21,20 @@ def _doc(recall=0.95, fpr=0.01, fd=0):
 def test_same_result_passes_with_llm_metrics_skipped():
     base = gate.make_baseline(_doc())
     fails, skipped = gate.compare(base, _doc())
-    assert fails == [] and len(skipped) == 2
+    assert fails == [] and len([n for n in skipped if not n.startswith("message_")]) == 2
+
+
+def _msg_doc(recall: float, fpr: float):
+    d = _doc()
+    d["splits"]["val"]["message_path"] = {"recall": {"value": recall}, "fpr": {"value": fpr}}
+    return d
+
+
+def test_message_path_regression_fails():
+    base = gate.make_baseline(_msg_doc(0.95, 0.01))
+    assert gate.compare(base, _msg_doc(0.95, 0.01))[0] == []
+    assert gate.compare(base, _msg_doc(0.90, 0.01))[0]
+    assert gate.compare(base, _msg_doc(0.95, 0.05))[0]
 
 
 def test_regressions_fail():
