@@ -40,6 +40,7 @@ from falcon_core.scoring.arbiter import (
     ArbiterContext,
     ArbiterResult,
     has_brand_conflict,
+    t1_risk_evidence,
     t1_should_exit,
     t2_should_exit,
 )
@@ -515,7 +516,9 @@ class Cascade:
         fired = {r.rule_id for r in result.fired_rules}
         conflict = has_brand_conflict(run.evidence)
         exit_now = (
-            t1_should_exit(result.p_clf, conflict, self.params) or bool(fired & {"H2", "H3"}) or run.blocked is not None
+            t1_should_exit(result.p_clf, conflict, self.params, t1_risk_evidence(result, self.params))
+            or bool(fired & {"H2", "H3"})
+            or run.blocked is not None
         )
         why = (
             "not rendered (blocked target)"

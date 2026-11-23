@@ -1,14 +1,30 @@
+import { execFileSync } from "node:child_process";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
  * E2E runs the production build (strict CSP, no dev relaxations) behind a mock gateway
  * that serves /v1 with real SSE. Build first: `pnpm build && pnpm test:e2e`.
- * Odd ports so parallel stacks on the same host do not collide.
  */
-const MOCK_PORT = Number(process.env.MOCK_PORT ?? 43110);
-const APP_PORT = Number(process.env.APP_PORT ?? 43111);
-const CAPS_FALSE_PORT = Number(process.env.APP_PORT_CAPS_FALSE ?? 43112);
-const CAPS_TRUE_PORT = Number(process.env.APP_PORT_CAPS_TRUE ?? 43113);
+/**
+ * Free ports are reserved once per run in the main process and passed to workers via env
+ * (workers re-evaluate this file), so concurrent runs on one host cannot collide.
+ * MOCK_PORT / APP_PORT still override.
+ */
+function freePorts(n: number): number[] {
+  const code = `const s=[];let d=0;const out=[];for(let i=0;i<${n};i++){const x=require("net").createServer();x.listen(0,"127.0.0.1",()=>{out.push(x.address().port);s.push(x);if(++d===${n}){console.log(out.join(","));s.forEach(y=>y.close())}})}`;
+  return execFileSync(process.execPath, ["-e", code], { encoding: "utf8" }).trim().split(",").map(Number);
+}
+if (!process.env.MOCK_PORT || !process.env.APP_PORT || !process.env.APP_PORT_CAPS_FALSE || !process.env.APP_PORT_CAPS_TRUE) {
+  const [m, a, cf, ct] = freePorts(4);
+  process.env.MOCK_PORT ??= String(m);
+  process.env.APP_PORT ??= String(a);
+  process.env.APP_PORT_CAPS_FALSE ??= String(cf);
+  process.env.APP_PORT_CAPS_TRUE ??= String(ct);
+}
+const MOCK_PORT = Number(process.env.MOCK_PORT);
+const APP_PORT = Number(process.env.APP_PORT);
+const CAPS_FALSE_PORT = Number(process.env.APP_PORT_CAPS_FALSE);
+const CAPS_TRUE_PORT = Number(process.env.APP_PORT_CAPS_TRUE);
 /** Set to a running stack's gateway (e.g. https://localhost:8443) to run tests/live through Caddy. */
 const LIVE = process.env.LIVE_BASE_URL;
 
@@ -17,6 +33,8 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 8_000 },
   fullyParallel: true,
+  // Local runs cap workers (browser memory); GitHub CI keeps Playwright's default.
+  ...(process.env.CI ? {} : { workers: Number(process.env.FL_PW_WORKERS ?? 2) }),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],

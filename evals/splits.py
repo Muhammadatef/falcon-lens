@@ -7,7 +7,8 @@
   ``temporal_cut: false``. Legit items carry their collection date, not a real first sighting, so the temporal rule
   is applied to phishing items only;
 * the test split is frozen: ``evals/splits.lock`` holds the sha256 of the test item ids. Rebuilding keeps every
-  already-assigned item in its split, and a new item whose domain is already in test is excluded, never added to test.
+  already-assigned item in its split. After the freeze a new item goes only to train or val (with its domain's split
+  if the domain is already placed); a new item whose domain is already in test is excluded, never added to test.
 
 CLI: ``python -m evals.splits --check`` (reads only the public manifest; needs no private data).
 
@@ -57,15 +58,18 @@ def temporal_feasible(items: Sequence[SplitItem]) -> bool:
 
 
 def _fill_random(
-    groups: list[tuple[str, list[SplitItem]]], rng: random.Random, counts: dict[str, int]
+    groups: list[tuple[str, list[SplitItem]]],
+    rng: random.Random,
+    counts: dict[str, int],
+    allowed: Sequence[str] = SPLITS,
 ) -> dict[str, str]:
-    """Greedy: each group (shuffled) goes to the split with the largest deficit against RATIOS."""
+    """Greedy: each group (shuffled) goes to the allowed split with the largest deficit against RATIOS."""
     groups = sorted(groups, key=lambda g: g[0])
     rng.shuffle(groups)
     out: dict[str, str] = {}
     for _key, members in groups:
         total = sum(counts.values()) + len(members)
-        split = max(SPLITS, key=lambda s: (RATIOS[s] * total - counts[s], s == "train"))
+        split = max(allowed, key=lambda s: (RATIOS[s] * total - counts[s], s == "train"))
         counts[split] += len(members)
         for m in members:
             out[m.item_id] = split
@@ -141,11 +145,13 @@ def assign_splits(
     phish_domains = {i.domain_key for i in fresh if i.label == 1}
     pg = list(_by_domain([i for i in fresh if i.domain_key in phish_domains]).items())
     lg = list(_by_domain([i for i in fresh if i.domain_key not in phish_domains]).items())
+    # once a freeze exists, test never grows: post-freeze items go to train or val only
+    allowed = ("train", "val") if existing else SPLITS
     if temporal:
         assigned.update(_fill_temporal(pg))
     else:
-        assigned.update(_fill_random(pg, rng, {s: counts[s] for s in SPLITS}))
-    assigned.update(_fill_random(lg, rng, {s: counts[s] for s in SPLITS}))
+        assigned.update(_fill_random(pg, rng, dict(counts), allowed))
+    assigned.update(_fill_random(lg, rng, dict(counts), allowed))
     return assigned, temporal
 
 
@@ -167,7 +173,9 @@ def dataset_hash(rows: Sequence[Mapping[str, object]]) -> str:
     return sha256_hex("\n".join(lines))
 
 
-def make_lock(rows: Sequence[Mapping[str, object]], seed: int, temporal_cut: bool) -> dict[str, object]:
+def make_lock(
+    rows: Sequence[Mapping[str, object]], seed: int, temporal_cut: bool, post_freeze: Mapping[str, int] | None = None
+) -> dict[str, object]:
     """Build the splits.lock content for the given manifest rows."""
     counts = {s: sum(1 for r in rows if r["split"] == s) for s in (*SPLITS, EXCLUDED)}
     return {
@@ -176,6 +184,7 @@ def make_lock(rows: Sequence[Mapping[str, object]], seed: int, temporal_cut: boo
         "counts": counts,
         "test_sha256": test_hash(rows),
         "dataset_hash": dataset_hash(rows),
+        "post_freeze": dict(post_freeze or {}),
     }
 
 

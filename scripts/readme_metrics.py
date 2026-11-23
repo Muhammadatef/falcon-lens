@@ -61,11 +61,11 @@ MODEL_KEYS = ("models", "model_ids")
 # One plain sentence per known metric, keyed by the last part of its path. These
 # are fixed explanations of what a metric measures; they never contain a value.
 PLAIN = {
-    "recall": "Of the real scam checks in the set, the share we flagged. Closer to one is better.",
-    "precision": "Of the checks we flagged, the share that really were scams. Closer to one is better.",
+    "recall": "Of the real scam checks in the set, the share we flagged. Higher is better.",
+    "precision": "Of the checks we flagged, the share that really were scams. Higher is better.",
     "fpr": "Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better.",
-    "f1": "A single figure that balances recall and precision. Closer to one is better.",
-    "pr_auc": "How well scams are ranked above genuine checks overall. Closer to one is better.",
+    "f1": "A single figure that balances recall and precision. Higher is better.",
+    "pr_auc": "How well scams are ranked above genuine checks overall. Higher is better.",
     "ece": "How far our stated confidence is from what really happened. Closer to zero is better.",
     "official_false_dangerous": "Verified official sites wrongly marked dangerous. The target is zero.",
     "n": "How many checks are in this set.",

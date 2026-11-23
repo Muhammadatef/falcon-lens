@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
 from typing import Any
+
+from sentinel_core.events import EVENT_SCHEMA_PATH
 
 URL_RE = re.compile(r"(?i)\b(?:https?|hxxps?|ftp)\s*:\s*//|\bwww\s*\.")
 DOMAIN_RE = re.compile(
@@ -39,6 +42,23 @@ def allowed_numbers(view: dict[str, Any]) -> set[str]:
     return nums
 
 
+ARABIC_AND = "\u0648"  # the conjunction «و» ("and"); the only prefix the model has been seen to glue onto a host
+
+
+@lru_cache(maxsize=1)
+def contract_event_types() -> frozenset[str]:
+    """Event type names from contracts/event.schema.json (the contract, not a hand list)."""
+    schema = json.loads(EVENT_SCHEMA_PATH.read_text())
+    return frozenset(str(t).lower() for t in schema["properties"]["type"]["enum"])
+
+
+def allowed_event_types(view: dict[str, Any]) -> set[str]:
+    """Event type names ("domain.observed") look like hosts but are contract vocabulary. Only names that are in
+    the event contract AND appear in this incident's timeline pass."""
+    seen = {str(t["what"]).split(" ", 1)[0].lower() for t in view["timeline"] if t.get("what")}
+    return seen & contract_event_types()
+
+
 def allowed_hosts(view: dict[str, Any]) -> set[str]:
     return {
         i["value_defanged"].replace("[.]", ".").lower() for i in view["indicators"] if i["kind"] in ("domain", "url")
@@ -56,8 +76,11 @@ def vet(text: str, view: dict[str, Any]) -> str | None:
     if URL_RE.search(text) or EMAIL_RE.search(text) or IP_RE.search(text):
         return None
     hosts = allowed_hosts(view)
+    kinds = allowed_event_types(view)
     for m in DOMAIN_RE.finditer(text):
-        if m.group(1).replace("[.]", ".").lower() not in hosts:
+        cand = m.group(1).replace("[.]", ".").lower()
+        # The conjunction «و» glues onto a Latin host with no space: judge the host itself (one «و» only).
+        if cand not in hosts and cand.removeprefix(ARABIC_AND) not in hosts and cand not in kinds:
             return None
     ok_nums = allowed_numbers(view)
     for n in NUM_RE.findall(text):

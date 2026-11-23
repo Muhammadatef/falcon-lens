@@ -7,6 +7,7 @@ from falcon_core.scoring.arbiter import (
     band,
     has_brand_conflict,
     score,
+    t1_risk_evidence,
     t1_should_exit,
     t2_should_exit,
 )
@@ -33,6 +34,7 @@ __all__ = [
     "has_brand_conflict",
     "load_params",
     "score",
+    "t1_risk_evidence",
     "t1_should_exit",
     "t2_should_exit",
     "template_actions",
