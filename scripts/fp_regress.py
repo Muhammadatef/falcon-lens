@@ -167,6 +167,16 @@ def main() -> int:
         "degraded_reasons": dict(why),
         "top_risk_signal_of_flagged": dict(top),
         "by_tier": dict(Counter(str(r["tier"]) for r in res)),
+        "items": [
+            {
+                "domain": r["url"].split("//", 1)[-1].rstrip("/"),
+                "serves_web": web.get(r["url"]),
+                "verdict": r["verdict"],
+                "tier": r.get("tier"),
+                "degraded_reasons": r.get("degraded_reasons", []),
+            }
+            for r in res
+        ],
         "by_serves_web": {
             label: rate([r for r in res if web.get(r["url"]) == flag])
             for flag, label in (("1", "serves_web_page"), ("0", "no_web_host"))

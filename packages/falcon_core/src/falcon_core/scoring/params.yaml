@@ -85,8 +85,6 @@ weights:
   page.cross_origin_post: 3.0
   page.hotlinked_brand_assets: 2.0
   page.cloaking: 2.5
-  page.js_obfuscation: 1.0
-  page.anti_inspection: 1.0
   visual.favicon_match_brand: 1.0
   brand.claimed_not_owned: 3.0
   message.script_match: 2.5

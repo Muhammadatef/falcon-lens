@@ -23,7 +23,7 @@ INFORMATIONAL = {"domain.cert_issuer", "domain.ct_siblings", "message.contains_u
 
 # Weighted in params.yaml but not emitted by any code yet (no sandbox feature produces them): L1 to decide whether to
 # implement or drop. Listed explicitly so a NEW mismatch fails this test instead of silently never scoring.
-NOT_YET_EMITTED = {"page.js_obfuscation", "page.anti_inspection"}
+NOT_YET_EMITTED: set[str] = set()  # js_obfuscation / anti_inspection weights were dropped (L1): nothing emitted them
 # Built with an f-string in cascade/inputs.py (``f"{kind}.link_verdict"``), so the literal scan cannot see them.
 FSTRING_EMITTED = {"message.link_verdict", "email.link_verdict"}
 

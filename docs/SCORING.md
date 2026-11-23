@@ -33,7 +33,6 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | page.cross_origin_post (bot API/webhook/form relay) | page | +3.0 | |
 | page.hotlinked_brand_assets | page | +2.0 | |
 | page.cloaking (mobile-AR vs desktop differ) | page | +2.5 | |
-| page.js_obfuscation / anti_inspection | page | +1.0 | |
 | visual.favicon_match_brand | visual | +1.0 | only risk if domain not owned |
 | brand.claimed_not_owned | brand | +3.0 | see H1 |
 | message.script_match (nearest known scam, sim ≥ θ) | message | +2.5 | |
@@ -53,6 +52,8 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | injection.instruction_like_text | injection | +1.5 | evidence of manipulation, **never obeyed** |
 | registry.verified_official (domain in brand's verified list) | brand | −4.0 | see H3 |
 | domain.age_days > 3650 + no other risk | domain | −1.0 | |
+
+`page.js_obfuscation` and `page.anti_inspection` have no weight until a sandbox feature emits them (dropped from params.yaml, L1 2026-11-23).
 
 Informational evidence with no weight (proposed by builder-signals; fingerprints for the Sentinel, not scored): `domain.cert_issuer` (latest CT cert issuer), `domain.ct_siblings` (other registrable domains on the same certs).
 
