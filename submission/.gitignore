@@ -3,6 +3,10 @@
 *
 !.gitignore
 !README.md
+!PROJECT_CARD.md
+!DEMO_SCRIPT.md
+!FalconLens_ScamShield.pptx
+!FalconLens_ScamShield.pdf
 !build/
 !build/**
 !FalconLens_Project_Description.docx
@@ -10,3 +14,4 @@
 !FalconLens_Cookbook.pdf
 build/cookbook.rendered.md
 build/__pycache__/
+build/.cache/

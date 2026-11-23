@@ -213,3 +213,13 @@ def test_failed_profile_reports_error_and_no_final_url() -> None:
     flat: dict[str, Any] = to_flat(RenderFeatures(url="x", profiles={"desktop_en": failed}), None)
     assert flat["error"] == "egress_blocked" and flat["final_url"] is None
     assert SandboxFeatures.model_validate(flat).error == "egress_blocked"
+
+
+def test_flat_view_carries_truncated_and_partial() -> None:
+    from falcon_core.signals.page.features import NetworkSummary
+
+    p = ProfileFeatures(profile="desktop_en", requested_url="http://x.test/", final_url="http://x.test/")
+    p.network = NetworkSummary(truncated=True, partial=True)
+    flat = to_flat(RenderFeatures(url="http://x.test/", profiles={"desktop_en": p}, elapsed_ms=1))
+    assert flat["truncated"] is True and flat["partial"] is True
+    assert SandboxFeatures.model_validate(flat).truncated is True

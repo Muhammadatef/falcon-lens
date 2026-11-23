@@ -75,7 +75,7 @@ def run_userinfo(ctx: SignalContext) -> list[Evidence]:
                 "userinfo_looks_like_domain": domain_like,
                 "userinfo_brand": brandish,
                 "real_host": defang(c.host_ascii)[:200],
-                "userinfo": defang(ui)[:100],
+                "userinfo_len": len(ui),  # never the text itself (personal data)
             },
             "The address hides its real host behind an '@' (real site: " + defang(c.host_ascii)[:80] + ")",
             "العنوان يخفي الموقع الحقيقي خلف علامة @ (الموقع الفعلي: " + defang(c.host_ascii)[:80] + ")",

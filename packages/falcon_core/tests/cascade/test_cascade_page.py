@@ -201,3 +201,129 @@ def test_invariant_degraded_no_warning_signs_rejected() -> None:
     d["actions"]["caution"] = {"ar": ["x"], "en": ["x"]}
     with pytest.raises(VerdictInvariantError):
         check_invariants(d)
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://falcon-demo-bank.test/", "https://falcon-demo-bank.test/"),
+        ("https://falcon-demo-bank.test", "https://falcon-demo-bank.test"),
+        (
+            "https://falcon-demo-bank.test/a/b?run=1f2e3d4c&lang=ar",
+            "https://falcon-demo-bank.test/a/b?run=1f2e3d4c&lang=ar",
+        ),
+        ("https://falcon-demo-bank.test/x#section", "https://falcon-demo-bank.test/x"),
+        (
+            "http://falcon-demo-bank.test/reset?email=test.user@example.invalid&token=abc123",
+            "http://falcon-demo-bank.test/reset?email=[EMAIL]&token=abc123",
+        ),
+        (
+            "https://falcon-demo-bank.test/login?u=test.user%40example.invalid",
+            "https://falcon-demo-bank.test/login?u=[EMAIL]",
+        ),
+        ("https://falcon-demo-bank.test/u/+971501234567/verify", "https://falcon-demo-bank.test/u/[PHONE]/verify"),
+        ("https://falcon-demo-bank.test?id=784-1990-1234567-1", "https://falcon-demo-bank.test?id=[EMIRATES_ID]"),
+        ("https://falcon-demo-bank.test/pay?card=4111111111111111", "https://falcon-demo-bank.test/pay?card=[CARD]"),
+        (
+            "https://falcon-demo-bank.test/%D8%AA%D8%AD%D9%82%D9%82?v=2.0.1",
+            "https://falcon-demo-bank.test/%D8%AA%D8%AD%D9%82%D9%82?v=2.0.1",
+        ),
+        ("not a url", "not a url"),
+    ],
+)
+def test_display_url_keeps_the_address_and_drops_personal_data(url: str, expected: str) -> None:
+    from falcon_core.cascade.assemble import display_url
+
+    assert display_url(url) == expected
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://test.user@example.invalid:pw@falcon-demo-bank.test/x",
+        "https://user:pw@falcon-demo-bank.test/x",
+        "https://a@b@c:d@falcon-demo-bank.test/x?q=1",
+        "https://test.user%40example.invalid:p%3Aw@falcon-demo-bank.test/x",
+        "https://%D8%B9%D8%B1%D8%A8%D9%8A:pw@falcon-demo-bank.test/x",
+        "https://عربي:pw@falcon-demo-bank.test/x",
+        "https://xn--mgbh0fb:pw@falcon-demo-bank.test",
+        "https://test.user@example.invalid@falcon-demo-bank.test?x=1",
+        "https://user@falcon-demo-bank.test#frag",
+        "https://u:p@falcon-demo-bank.test:8443/x",
+    ],
+)
+def test_display_url_strips_all_userinfo_keeping_the_real_host(url: str) -> None:
+    from falcon_core.cascade.assemble import display_url
+
+    out = display_url(url)
+    authority = out.partition("://")[2].split("/")[0].split("?")[0]
+    assert "@" not in authority
+    assert authority.startswith("falcon-demo-bank.test")
+    for leak in ("test.user", "example.invalid", "pw", "عربي", "xn--mgbh0fb", "%40", "%3A"):
+        assert leak not in out
+
+
+_REAL = "falcon-demo-bank.test"
+_ADVERSARIAL = [
+    f"https://www.{_REAL}%2F@evil.test/login",
+    f"https://www.{_REAL}%2f@evil.test/login",
+    f"https://www.{_REAL}%3F@evil.test/login",
+    f"https://www.{_REAL}%23@evil.test/login",
+    f"https://www.{_REAL}%5C@evil.test/login",
+    f"https://www.{_REAL}\\@evil.test/login",
+    f"https://www.{_REAL}/@evil.test/login",
+    f"https://www.{_REAL}?@evil.test/login",
+    f"https://www.{_REAL}#@evil.test/login",
+    "https://a@b@c@evil.test/x",
+    "https://test.user@example.invalid:pw@evil.test/x",
+    "https://عربي:pw@bücher.test/x",
+    "https://u:p@[2001:db8::1]:8443/x?q=1",
+    "https://u@[::1]/",
+    "https://u:p@evil.test:8443/x",
+    "https://u:p@EVIL.test.:80/x",
+    "https://%75ser%40x:p%3A@evil.test",
+]
+
+
+def _host_of(c: object) -> str:
+    h = c.host  # type: ignore[attr-defined]
+    return f"[{h}]" if ":" in h else h
+
+
+@pytest.mark.parametrize("url", _ADVERSARIAL)
+def test_display_host_is_the_checked_host(url: str) -> None:
+    from falcon_core.cascade.assemble import display_url
+    from falcon_core.signals.url.canonical import canonicalize
+
+    c = canonicalize(url)
+    out = display_url(url)
+    assert out == display_url(c)
+    rest = out.partition("://")[2]
+    assert rest.startswith(_host_of(c))
+    assert "@" not in rest.split("/")[0].split("?")[0]
+
+
+def test_display_host_property_random_combinations() -> None:
+    import random
+
+    from falcon_core.cascade.assemble import display_url
+    from falcon_core.signals.url.canonical import canonicalize
+
+    rng = random.Random(81)
+    ui_parts = ["user", "pw", "a", "%40", "%3A", "%2F", "%5C", "%3F", "%23", "@", ":", "www." + _REAL, "عربي", "x.y"]
+    hosts = ["evil.test", "EVIL.test.", "bücher.test", "[2001:db8::1]", "[::1]", "1.2.3.4", _REAL]
+    ports = ["", ":8443", ":80", ":443", ":99999"]
+    tails = ["", "/", "/x", "/a/b?q=1", "?q=2", "/p#f", "#f"]
+    checked = 0
+    for _ in range(3000):
+        ui = "".join(rng.choice(ui_parts) for _ in range(rng.randint(0, 5)))
+        url = f"{rng.choice(['http', 'https'])}://{ui + '@' if ui else ''}{rng.choice(hosts)}{rng.choice(ports)}{rng.choice(tails)}"
+        c = canonicalize(url)
+        if not c.ok:
+            continue
+        checked += 1
+        out = display_url(url)
+        rest = out.partition("://")[2]
+        assert rest.startswith(_host_of(c)), (url, out)
+        assert "@" not in rest.split("/")[0].split("?")[0], (url, out)
+    assert checked > 1000

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" width="1200" height="440" role="img" aria-labelledby="t d">
 <title id="t">Falcon Lens | عدسة الصقر</title>
-<desc id="d">Falcon Lens is an Arabic-first AI agent that checks suspicious links, messages, emails and images and answers with evidence. The banner maps the product: inputs, answers, surfaces, integrations and proof. The lowest verdict is "no warning signs found"; the product never says "safe".</desc>
+<desc id="d">Falcon Lens is an Arabic-first AI agent that checks suspicious links, messages, emails and images and answers with evidence. The banner maps the product: inputs, answers, surfaces, integrations and proof.</desc>
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
 .m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
@@ -57,7 +57,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <rect x="172" y="364" width="124" height="30" rx="15" fill="#2a1d07" stroke="#8a6416"/><text x="234" y="384" text-anchor="middle" fill="#ffc55c">Suspicious</text>
 <rect x="304" y="364" width="172" height="30" rx="15" fill="#111c3d" stroke="#34488c"/><text x="390" y="384" text-anchor="middle" fill="#a9c0ff">No warning signs found</text>
 </g>
-<text x="40" y="416" class="c">Three verdicts. The lowest one is never the word "safe".</text>
+<text x="40" y="416" class="c">Three verdicts. The lowest is &#8220;No warning signs found&#8221;.</text>
 
 <path d="M496 96V400" stroke="#2a3757" stroke-dasharray="4 6"/>
 <text x="520" y="124" class="m tag">CHECK</text>

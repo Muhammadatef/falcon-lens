@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from cascade_helpers import age_signal, assert_valid, make_cascade, offline_signals, rules, run
 
 from falcon_core.cascade import SandboxFeatures, StubSandboxClient
@@ -79,3 +81,125 @@ async def test_policy_block_codes_always_degrade() -> None:
         )
         final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
         assert final["degraded"] and f"sandbox_unavailable:{code}" in final["degraded_reasons"], code
+
+
+async def test_truncated_page_is_evidence_with_weight_zero_not_an_error() -> None:
+    """A page the sandbox could only read in part (cut at the size cap, or half-loaded) is judged on what
+    was read: the informational ``page.truncated`` evidence carries weight 0 and the check is not degraded."""
+    feats = SandboxFeatures.model_validate(
+        {
+            "final_url": DEMO_BENIGN_URL,
+            "title": "Garden club events",
+            "visible_text": "TEST FIXTURE, not a real site.",
+            "truncated": True,
+            "partial": True,
+            "error": None,
+        }
+    )
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert_valid(final)
+    ev = next(e for e in final["evidence"] if e["signal"] == "page.truncated")
+    assert ev["weight"] == 0 and ev["observed"] == {"truncated": True, "partial": True} and ev["error"] is None
+    assert not final.get("degraded")
+
+
+def _partial(**kw: object) -> SandboxFeatures:
+    return SandboxFeatures.model_validate(
+        {"final_url": DEMO_BENIGN_URL, "title": "Garden club events", "partial": True, "error": None, **kw}
+    )
+
+
+async def test_partial_read_on_unknown_domain_is_degraded_not_cleared() -> None:
+    """Fail closed: a half-read page is held to the same rule as an unopened one (no trust evidence -> degraded)."""
+    cascade, _ = make_cascade(force_t2=True, sandbox=StubSandboxClient(default=_partial()), signals=offline_signals())
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert_valid(final)
+    assert final["degraded"] and "partial_render" in final["degraded_reasons"]
+    assert final["verdict"] != "no_warning_signs"
+
+
+async def test_partial_read_on_established_domain_without_risk_may_clear() -> None:
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=_partial()), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert not final["degraded"], final["degraded_reasons"]
+    assert final["verdict"] == "no_warning_signs"
+    assert any(e["signal"] == "page.truncated" for e in final["evidence"])
+
+
+async def test_partial_read_with_page_risk_is_degraded_even_on_established_domain() -> None:
+    feats = _partial(forms=[{"fields": ["password"], "action_origin": None}])
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert final["degraded"] and "partial_render" in final["degraded_reasons"]
+
+
+async def test_inconclusive_cloaking_comparison_is_visible_evidence_weight_zero() -> None:
+    feats = _partial(cloaking={"detected": False, "diff": False, "inconclusive": True, "reasons": []})
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    ev = next(e for e in final["evidence"] if e["signal"] == "page.cloaking_inconclusive")
+    assert ev["weight"] == 0
+
+
+def _sso(rule_only: bool) -> SandboxFeatures:
+    """A neutral SSO-style page: a password field, and a script POST to another site."""
+    other = "https://sso.identity-provider.test"
+    return SandboxFeatures.model_validate(
+        {
+            "final_url": DEMO_BENIGN_URL,
+            "title": "Garden club sign in",
+            "forms": [{"fields": ["password"], "action_origin": None}],
+            "post_targets": [other],
+            "credential_rule_origins": [other] if rule_only else [],
+        }
+    )
+
+
+async def _final_for(feats: SandboxFeatures, age: int) -> dict[str, Any]:
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(age))
+    )
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert_valid(final)
+    return final  # type: ignore[no-any-return]
+
+
+async def test_credential_page_rule_alone_is_capped_at_suspicious_but_payload_post_is_not() -> None:
+    capped = await _final_for(_sso(True), 9000)
+    post = next(e for e in capped["evidence"] if e["signal"] == "page.cross_origin_post")
+    assert post["observed"]["basis"] == "credential_page_rule" and post["weight"] > 0
+    assert capped["verdict"] != "dangerous"
+    full = await _final_for(_sso(False), 9000)
+    assert full["verdict"] == "dangerous"  # same page, the body carried form data: untouched
+
+
+async def test_credential_page_rule_with_a_young_domain_is_dangerous() -> None:
+    assert (await _final_for(_sso(True), 10))["verdict"] == "dangerous"
+
+
+async def test_credential_page_on_an_old_typosquat_domain_is_dangerous() -> None:
+    other = "https://sso.identity-provider.test"
+    feats = SandboxFeatures.model_validate(
+        {
+            "final_url": DEMO_LOOKALIKE_URL,
+            "title": "Sign in",
+            "forms": [{"fields": ["password"], "action_origin": None}],
+            "post_targets": [other],
+            "credential_rule_origins": [other],
+        }
+    )
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
+    final = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]
+    assert any(e["signal"].startswith("url.") and e["weight"] > 0 for e in final["evidence"])
+    assert final["verdict"] == "dangerous"

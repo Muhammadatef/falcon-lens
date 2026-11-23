@@ -1,74 +1,83 @@
 {
   "available": true,
-  "artifact": "a2f083cf1a77_20261123T085415Z.json",
+  "artifact": "eaba149203c9_20261123T124316Z.json",
   "data": {
     "by_serves_web": {
       "no_web_host": {
         "counts": {
-          "no_warning_signs": 21,
-          "suspicious": 33
+          "no_warning_signs": 31,
+          "suspicious": 34
         },
         "degraded": 32,
         "false_positive_rate": {
           "ci95": [
-            0.4815,
-            0.7407
+            0.4,
+            0.6615
           ],
-          "value": 0.6111
+          "value": 0.5231
         },
-        "n": 54
+        "n": 65
       },
       "serves_web_page": {
         "counts": {
-          "dangerous": 2,
-          "no_warning_signs": 122,
-          "suspicious": 22
+          "dangerous": 1,
+          "no_warning_signs": 115,
+          "suspicious": 19
         },
-        "degraded": 20,
+        "degraded": 15,
         "false_positive_rate": {
           "ci95": [
-            0.1027,
-            0.2329
+            0.0889,
+            0.2074
           ],
-          "value": 0.1644
+          "value": 0.1481
         },
-        "n": 146
+        "n": 135
       }
     },
     "by_tier": {
-      "T1": 139,
-      "T2": 56,
-      "T3": 5
+      "T1": 104,
+      "T2": 85,
+      "T3": 11
     },
     "counts": {
-      "dangerous": 2,
-      "no_warning_signs": 143,
-      "suspicious": 55
+      "dangerous": 1,
+      "no_warning_signs": 146,
+      "suspicious": 53
     },
-    "created_at": "2026-11-23T08:54:15Z",
-    "degraded": 52,
+    "created_at": "2026-11-23T12:43:16Z",
+    "degraded": 47,
     "degraded_reasons": {
-      "not_rendered:dns_failure": 30,
-      "sandbox_unavailable:timeout": 22
+      "not_rendered:dns_failure": 28,
+      "not_rendered:private": 1,
+      "partial_render": 7,
+      "sandbox_unavailable:blocked_by_policy:method_not_get": 1,
+      "sandbox_unavailable:egress_error": 1,
+      "sandbox_unavailable:fetch_failed": 2,
+      "sandbox_unavailable:timeout": 6,
+      "sandbox_unavailable:tls_error": 1
     },
     "errors": 0,
     "false_positive_rate": {
       "ci95": [
-        0.23,
-        0.345
+        0.21,
+        0.33
       ],
       "n_boot": 2000,
-      "value": 0.285
+      "value": 0.27
     },
-    "git_sha": "a2f083cf1a77c8000bd54241efa9281005389a35",
+    "git_sha": "eaba149203c9f5eca339d6e94b72d4745d4fe019",
     "kind": "fp_regress",
     "n": 200,
+    "partial_reads": 18,
     "pool": 200,
-    "seed": 20261124,
-    "set": "heldout_legit_2.csv",
+    "seed": 20261202,
+    "set": "heldout_legit_4.csv",
     "target": 0.02,
     "top_risk_signal_of_flagged": {
-      "page.cross_origin_post": 2,
+      "domain.age_days": 1,
+      "injection.instruction_like_text": 1,
+      "page.cross_origin_post": 4,
       "url.free_host_or_tunnel": 3
     }
   }

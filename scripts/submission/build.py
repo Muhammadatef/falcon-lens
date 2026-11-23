@@ -41,6 +41,22 @@ from submission import content as content_mod  # noqa: E402
 ROOT = Path(__file__).resolve().parents[2]
 MAX_FILE_BYTES = 20 * 1024 * 1024
 ARCHITECTURE_SVG = "docs/assets/architecture.svg"
+DECK = "FalconLens_ScamShield.pptx"
+DECK_PDF = "FalconLens_ScamShield.pdf"
+
+
+def load_builder(root: Path, name: str):  # type: ignore[no-untyped-def]
+    """Import submission/build/<name>.py by path (the directory name `submission` is also this package's name)."""
+    import importlib.util  # noqa: PLC0415
+
+    path = root / "submission" / "build" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"fl_submission_{name}", path)
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def repo_url(root: Path) -> str:
@@ -124,7 +140,7 @@ def checklist(
     lines += ["| video | recorded by the owner | see the shot list in `docs/DEMO.md` | owner |", ""]
 
     lines += ["## Files", "", "| File | Size | Limit | Check |", "|---|---|---|---|"]
-    for name in ("deck.pptx", "description.pdf"):
+    for name in (DECK, DECK_PDF, "description.pdf"):
         path = out / name
         if path.is_file():
             human, ok = size_line(path)
@@ -177,10 +193,10 @@ def checklist(
         "- [ ] Open each link in a private window (not signed in): the repository URL, the demo URL, the video link, every link in the README. Each must load without a login.",
         "- [ ] The repository is public and `make scan` and `make guard` are clean on the submitted commit.",
         "- [ ] Read both descriptions aloud once. Arabic reviewed by a native speaker.",
-        "- [ ] Open `deck.pptx` in PowerPoint or Keynote: Arabic lines read right to left, no text overflows a card.",
-        "- [ ] Replace the placeholder names on the Team slide.",
+        "- [ ] Import `FalconLens_ScamShield.pptx` into Google Slides (Drive, upload, Open with Google Slides) and look at every slide: Arabic reads right to left, no text overflows a card, Readex Pro displays. The PDF is the same deck.",
+        "- [ ] The Team slide: confirm the roles of the second and third member (only the team leader's role was given).",
         "- [ ] No Abu Dhabi Police logo or branding anywhere; the independence line is on every slide header.",
-        "- [ ] The video is the real screen with the owner's own voice (no AI video or voice), follows the shot list in `docs/DEMO.md`, and shows the REPLAY and TEST FIXTURE labels where they apply.",
+        "- [ ] The video is the real screen with the owner's own voice (no AI video or voice), follows `submission/DEMO_SCRIPT.md`, and shows the REPLAY and TEST FIXTURE labels where they apply.",
         "- [ ] Every statistic said in the video or the pitch is in the published eval artifact or has a public source link.",
         "- [ ] File sizes above are within the limits of the submission form.",
         "",
@@ -217,6 +233,15 @@ def main(argv: list[str] | None = None) -> int:
     (out / "tools_used.txt").write_text(tools_used.render(root), encoding="utf-8")
     (out / "repo_url.txt").write_text(url + "\n", encoding="utf-8")
 
+    card_mod = load_builder(root, "project_card")
+    card_text, card_problems, _counts = card_mod.build(root)
+    (out / "PROJECT_CARD.md").write_text(card_text, encoding="utf-8")
+    problems += [f"PROJECT_CARD.md: {error}" for error in card_problems]
+    script_mod = load_builder(root, "demo_script")
+    script_text, script_problems = script_mod.build(root)
+    (out / "DEMO_SCRIPT.md").write_text(script_text, encoding="utf-8")
+    problems += script_problems
+
     sections = content_mod.build(caps, artifact, url)
     problems += [
         f"deck/document wording: {error}" for error in descriptions.wording_errors(content_mod.all_text(sections))
@@ -224,7 +249,7 @@ def main(argv: list[str] | None = None) -> int:
 
     pages: int | None = None
     if not args.text_only:
-        from submission import deck, document  # noqa: PLC0415  (need python-pptx and playwright)
+        from submission import document  # noqa: PLC0415  (need playwright)
 
         png: Path | None = None
         svg = root / ARCHITECTURE_SVG
@@ -236,7 +261,9 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
         mvp = content_mod.mvp_shipped(caps)
-        deck.build(sections, out / "deck.pptx", png, mvp)
+        deck_mod = load_builder(root, "build_deck")
+        if deck_mod.main(["--root", str(root), "--out-dir", str(out)]) != 0:
+            problems.append(f"{DECK}: build_deck.py reported problems (see above)")
         html_path = out / "description.html"
         html_path.write_text(
             document.build_html(sections, texts["en"], texts["ar"], tools_used.names(root), png, mvp, root),
@@ -246,12 +273,12 @@ def main(argv: list[str] | None = None) -> int:
         pages = document.page_count(out / "description.pdf")
         if not document.MIN_PAGES <= pages <= document.MAX_PAGES:
             problems.append(f"description.pdf has {pages} pages, expected {document.MIN_PAGES} to {document.MAX_PAGES}")
-        for name in ("deck.pptx", "description.pdf"):
+        for name in (DECK, DECK_PDF, "description.pdf"):
             human, ok = size_line(out / name)
             if not ok:
                 problems.append(f"{name} is {human}, over the 20 MB limit")
 
-        traceable = check_numbers.traceable_for(artifact)
+        traceable = check_numbers.traceable_for(artifact, root / "evals" / "results" / "published")
         sources, missing = check_numbers.collect_sources(root, out, require_package=True)
         problems += missing
         for name, text in sources:
