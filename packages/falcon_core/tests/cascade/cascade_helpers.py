@@ -65,6 +65,10 @@ def make_cascade(
     kw.setdefault("mirror", loaded_mirror())  # fresh, empty: no hit, not degraded
     # The cascade still uses the draft classifier (T1 model not wired yet), so pin the draft thresholds.
     kw.setdefault("params", load_params(Path(__file__).parents[1] / "scoring" / "params_draft.yaml"))
+    if kw.pop("force_t2", False):  # never exit at T1 on a low p: the sandbox is always consulted
+        import dataclasses
+
+        kw["params"] = dataclasses.replace(kw["params"], eps_low=0.0)
     deps = CascadeDeps(
         registry=default_registry(),
         sandbox=sandbox or StubSandboxClient(error="no_stub"),
@@ -90,3 +94,34 @@ def rules(doc: Mapping[str, Any]) -> set[str]:
 def metric(m: CascadeMetrics, name: str, labels: Mapping[str, str] | None = None) -> float:
     v = m.registry.get_sample_value(name, dict(labels or {}))
     return float(v or 0.0)
+
+
+def age_signal(days: int | None, error: str | None = None) -> tuple[SignalSpec, SignalFn]:
+    """Recorded RDAP stand-in: ``domain.age_days`` with ``days`` (or an error). Network-free."""
+    from falcon_core.signals.base import Evidence as SignalEvidence
+    from falcon_core.signals.base import SignalContext
+
+    spec = SignalSpec(
+        name="domain.age_days",
+        family="domain",
+        tier="T1",
+        input_types=("url",),
+        timeout_ms=500,
+        network="none",
+        emits=("domain.age_days",),
+    )
+
+    async def fn(ctx: SignalContext) -> list[SignalEvidence]:
+        if error is not None:
+            return [SignalEvidence(signal=spec.name, family="domain", observed=None, error=error, confidence=0.0)]
+        return [SignalEvidence(signal=spec.name, family="domain", observed={"age_days": days}, source="rdap")]
+
+    return spec, fn
+
+
+def offline_signals(age: tuple[SignalSpec, SignalFn] | None = None) -> dict[str, tuple[SignalSpec, SignalFn]]:
+    """Network-free T1 signals plus an optional recorded domain-age signal."""
+    sigs = {n: v for n, v in default_t1_signals().items() if v[0].network == "none"}
+    if age is not None:
+        sigs[age[0].name] = age
+    return sigs

@@ -79,6 +79,9 @@ known-first-party = [
 "packages/falcon_core/src/falcon_core/tools/**" = ["E501"]
 "services/sentinel/sentinel_core/**" = ["S311", "S324", "UP047"]
 "scripts/smoke.py" = ["S101", "S501"]
+# Seeded sampling and bootstrap statistics: reproducibility matters, not cryptographic strength.
+"scripts/fp_regress.py" = ["S311"]
+"evals/datasets/build_heldout_legit.py" = ["S311"]
 
 [tool.mypy]
 python_version = "3.12"
