@@ -19,8 +19,10 @@ from falcon_core.signals.message.extract import (
     extract_urls,
     mask_phone,
 )
+from falcon_core.signals.message.intent import scam_intent
 from falcon_core.signals.message.normalize import MAX_MESSAGE_CHARS, normalize
 from falcon_core.signals.message.rules import RuleHit, find_rules
+from falcon_core.signals.message.scripts import script_match_offline
 from falcon_core.signals.url.canonical import canonicalize, psl_split
 from falcon_core.signals.url.textutil import compact, defang
 
@@ -59,6 +61,15 @@ SPEC_CHILDREN = SignalSpec(
     timeout_ms=T1_MS,
     network="none",
     emits=("message.contains_url", "message.contains_phone"),
+)
+SPEC_INTENT = SignalSpec(
+    name="message.scam_intent",
+    family="message",
+    tier="T1",
+    input_types=_IN,
+    timeout_ms=T1_MS,
+    network="none",
+    emits=("message.scam_intent",),
 )
 SPEC_BRAND = SignalSpec(
     name="message.brand_mention",
@@ -180,6 +191,8 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
     res.evidence += _rule_evidence(
         find_rules(text), brand_named=any(e.signal == "message.brand_mention" for e in brand_ev)
     )
+    res.evidence += scam_intent(text)
+    res.evidence += script_match_offline(text)
     phones = extract_phones(text)
     res.children = [*urls, *phones]
     if urls:
@@ -232,3 +245,8 @@ def run_children(ctx: SignalContext) -> list[Evidence]:
 @signal(SPEC_BRAND)
 def run_brand(ctx: SignalContext) -> list[Evidence]:
     return _by_prefix(ctx, ("message.brand_",))
+
+
+@signal(SPEC_INTENT)
+def run_intent(ctx: SignalContext) -> list[Evidence]:
+    return scam_intent((ctx.text or "")[:MAX_MESSAGE_CHARS])

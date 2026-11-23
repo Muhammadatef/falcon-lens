@@ -46,6 +46,7 @@ guard: ## defensive-only guard: no live URLs, no data/private in git
 # until then it says so loudly and does NOT claim a pass.
 eval-gate: ## merge gate: latest eval vs evals/baseline.json (SKIPPED, not a pass, without private data)
 	uv run python -m evals.gate --run
+	@uv run python -m evals.message_text.run | sed 's/^/[report-only, not in baseline] /'
 
 eval-baseline: ## write evals/baseline.json from the latest result (review the diff in the PR)
 	uv run python -m evals.gate --make-baseline
@@ -68,6 +69,7 @@ openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on 
 	uv run python scripts/gen_openapi.py
 eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/results/
 	uv run python -m evals.harness.run
+	uv run python -m evals.message_text.run  # message-text eval, val only, report-only (--publish adds the frozen test split)
 redteam: ## prompt-injection / obfuscation red-team suite; exits non-zero if attack success > 0 (FL_LIVE_LLM=1: live model)
 	uv run python -m evals.redteam
 

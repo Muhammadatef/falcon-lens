@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
-from functools import lru_cache
 
-from falcon_core.signals.message.lexicon import RULES
+from falcon_core.signals.message.lexicon import RULES, Group
 from falcon_core.signals.message.normalize import Normalized, arabizi_fold, normalize
 
 _AR_PREFIX = "وال|بال|فال|كال|لل|ولل|ال|و|ف|ب|ل|ك"
@@ -35,21 +35,28 @@ def _compile(frags: list[str], lang: str) -> re.Pattern[str]:
     return re.compile(rf"(?<![a-z0-9])(?:{body})(?![a-z])")
 
 
-@lru_cache(maxsize=1)
-def _compiled() -> dict[str, list[dict[str, re.Pattern[str]]]]:
-    return {
-        rule: [{lang: _compile(frags, lang) for lang, frags in group.items()} for group in groups]
-        for rule, groups in RULES.items()
-    }
+_CACHE: dict[int, dict[str, list[dict[str, re.Pattern[str]]]]] = {}
 
 
-def find_rules(text: str) -> list[RuleHit]:
-    """Return one RuleHit per rule that fires. Spans are offsets in ``text`` (the original string)."""
+def _compiled(rules: Mapping[str, list[Group]] = RULES) -> dict[str, list[dict[str, re.Pattern[str]]]]:
+    """Compiled patterns for a lexicon (compiled once per lexicon object)."""
+    key = id(rules)
+    if key not in _CACHE:
+        _CACHE[key] = {
+            rule: [{lang: _compile(frags, lang) for lang, frags in group.items()} for group in groups]
+            for rule, groups in rules.items()
+        }
+    return _CACHE[key]
+
+
+def find_rules(text: str, rules: Mapping[str, list[Group]] = RULES) -> list[RuleHit]:
+    """Return one RuleHit per rule that fires. Spans are offsets in ``text`` (the original string).
+    ``rules`` is a lexicon in the ``lexicon.RULES`` format (default: the eleven message rules)."""
     nm: Normalized = normalize(text)
     folded = arabizi_fold(nm.text)
     views = {"ar": nm.text, "en": nm.text, "arz": folded}
     hits: list[RuleHit] = []
-    for rule, groups in _compiled().items():
+    for rule, groups in _compiled(rules).items():
         spans: list[tuple[int, int]] = []
         langs: set[str] = set()
         ok = True

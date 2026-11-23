@@ -36,6 +36,7 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | visual.favicon_match_brand | visual | +1.0 | only risk if domain not owned |
 | brand.claimed_not_owned | brand | +3.0 | see H1 |
 | message.script_match (nearest known scam, sim ≥ θ) | message | +2.5 | |
+| message.scam_intent (fitted text model, p ≥ θ) | message | +4.0 × p | features: OTP/card ask, remote access, authority claim, payment ask, penalty, advance fee, off-platform, callback; weights fitted on train only (`intent_weights.json`) |
 | message.rule.<name> for name ∈ urgency, secrecy, otp_request, remote_access, payment, authority, prize, job, investment, delivery_fee, fine | message | +0.6 each, cap +3.0 | evidence name is literally e.g. `message.rule.otp_request` |
 | message.brand_mention | message | +0.5 | |
 | message.brand_url_mismatch | message | +1.0 | brand named, link to unofficial domain |
