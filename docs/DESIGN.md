@@ -237,3 +237,7 @@ Screenshots of the real app (production build, mocked API): `web/design/app-shot
 - **Demo data** exists only behind `?demo=1`, under a full-width `DEMO DATA` ribbon; anything typed
   in the box still goes to the real API.
 - **No specimen chips** around the hero lens: they needed inline positioning, which the CSP forbids.
+
+## 11. Interactive architecture
+
+One connected diagram (`web/components/arch/ArchDiagram.tsx`) on `/docs/agents` (full) and `/agents` (business). It is HTML buttons in lanes, not an SVG or a library, so it is touch-sized (48 px), RTL-correct by logical properties and CSP-safe (no inline styles; the tooltip is a `role="tooltip"` element shown on hover or focus, dismissed with Esc). Click, Enter or Space opens a side panel (a bottom sheet under 720 px). Connections are dashed lines that flow only when reduced motion is not requested; the selected node highlights its connected nodes. Structure is data (`lib/arch-graph.ts`), words are in `lib/i18n-arch.ts`; unit tests check every node has English and Arabic tooltip and panel text and a repository path that exists. Screenshots: `web/design/app-shots/arch/`.

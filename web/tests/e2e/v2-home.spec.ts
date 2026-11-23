@@ -179,9 +179,16 @@ test.describe("/agents (W2-05)", () => {
     await expect(page.locator(".lane-steps li")).toHaveCount(6);
     await expect(page.getByTestId("agents-docs-link")).toHaveAttribute("href", "/docs/agents");
     await expect(page.getByTestId("handoff")).toBeVisible();
-    const text = await page.locator("main").innerText();
+    // The plain-language lanes carry no pattern or tool names. The clickable overview (agents-arch) is the owner-requested
+    // business diagram and names the tiers; it is covered by tests/e2e/arch.spec.ts.
+    const text = await page.locator("main").evaluate((m) => {
+      const c = m.cloneNode(true) as HTMLElement;
+      c.querySelector('[data-testid="agents-arch"]')?.remove();
+      return c.innerText;
+    });
     for (const banned of ["LangGraph", "T3", "state machine", "StateGraph"]) expect(text).not.toContain(banned);
     expect(text).not.toMatch(/\bsafe\b/i);
+    expect(await page.getByTestId("agents-arch").innerText()).not.toMatch(/\bsafe\b/i);
   });
 
   test("flags false: step 2 and the Sentinel lane say In progress", async ({ page, context, baseURL }) => {

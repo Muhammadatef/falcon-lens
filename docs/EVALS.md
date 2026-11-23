@@ -9,7 +9,7 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 | zero-day | ≥40 | phishing not on any enabled blocklist at collection, plus Falcon Demo Bank fixtures |
 | messages | ≥150 | Gulf Arabic, MSA, English and Arabizi; real public examples where licensing allows, plus tagged synthetic |
 | emails | ≥40 | fictional `.eml` |
-| injection | ≥50 | local fixtures (`evals/redteam/`) |
+| injection | ≥50 | local fixtures (`evals/redteam/`); `make redteam` = reference pipeline, `make redteam-shipped` = shipped cascade with a real model (artifact `published/redteam/redteam_shipped_<sha>_<ts>.json`) |
 
 **Splits.** Temporal cut (every test first_seen is later than every train first_seen) and grouping by registrable domain, so no domain appears in two splits. The test split is frozen and its sha256 is in `evals/splits.lock`. All tuning happens on validation.
 
@@ -31,3 +31,16 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 **Artifact.** `evals/results/<ts>.json` records the dataset hash, git SHA, model ids, thresholds and seeds, alongside an HTML report. Headline numbers go to Prometheus as `fl_eval_metric{name,split,route}`. Copies for publication go in `evals/results/published/`.
 
 **Sentinel evals.** A labelled replay stream with planted campaigns. Metrics: incident precision and recall, time to incident, duplicate rate, false-block rate and summary faithfulness. Rules have unit tests; the graph has a deterministic test with a stubbed LLM.
+
+### Shipped-cascade red-team: how to quote it
+`make redteam-shipped` writes `coverage_caveat` into its artifact. Never quote the harmful count without it: the number is
+"harmful at extended local-model deadlines (model answered N of 113)", and "at production deadlines the model answered M of 113
+(timeouts) with the same harmful cases". The figures live only in `evals/results/published/redteam/` (one artifact per budget);
+copy them from there, never from this page. Eight extra `t3_page` cases (uncertain band, so the T3 investigator runs) are
+reported separately as `summary.t3_uncertain` and are not part of the 113.
+
+Recipe (two runs, the second embeds the first one's coverage in its caveat; extended investigator deadline 300 s, harness only):
+```
+make redteam-shipped BUDGET=production PUBLISH=1
+make redteam-shipped BUDGET=extended PAIRED=evals/results/published/redteam/<production artifact>.json PUBLISH=1
+```

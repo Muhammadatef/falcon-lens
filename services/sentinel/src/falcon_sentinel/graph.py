@@ -28,6 +28,8 @@ from langgraph.types import Command, RetryPolicy, interrupt
 from redis.exceptions import RedisError
 from sentinel_core.events import find_raw_text
 
+from falcon_core.telemetry.logging import incident_id_var
+from falcon_core.telemetry.tracing import fl_span
 from falcon_core.tools.sentinel import (
     ARG_MODELS,
     DRAFT_TOOLS,
@@ -347,7 +349,12 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
 
             await emit("running", {})
             try:
-                out = await fn(state, b)
+                token = incident_id_var.set(iid)
+                try:
+                    with fl_span(f"sentinel.{name}", "CHAIN", **{"fl.node": name}):
+                        out = await fn(state, b)
+                finally:
+                    incident_id_var.reset(token)
                 if count_step:
                     b["steps"] += 1
                 b["elapsed_s"] = round(b["elapsed_s"] + time.monotonic() - t0, 3)
@@ -735,7 +742,12 @@ class TriageRunner:
         run_id = await self.tracer.run_start(iid, trigger, decision)
         tok = CUR_RUN.set(run_id)
         try:
-            out = dict(await self.graph.ainvoke(inp, self._cfg(iid)))
+            token = incident_id_var.set(iid)
+            try:
+                with fl_span("sentinel.triage", "AGENT"):
+                    out = dict(await self.graph.ainvoke(inp, self._cfg(iid)))
+            finally:
+                incident_id_var.reset(token)
         except Exception:
             await self.tracer.run_end(iid, run_id, "failed", None)
             raise

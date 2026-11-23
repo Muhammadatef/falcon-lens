@@ -68,12 +68,20 @@ def strip_special_tokens(text: str) -> str:
     return _SPECIAL_TOKEN_RE.sub("", text).strip()
 
 
+ANTHROPIC_OTEL_OPTION: Any = {"traces": {"enabled": True, "content_mode": "metadata_only"}, "propagation": False}
+
+
 class AnthropicProvider:
     route: Route = "cloud"
 
     def __init__(self, api_key: str, client: Any | None = None) -> None:
         # max_retries=0: the router owns fallback; a retry storm would blow the latency budget.
-        self._client = client or anthropic.AsyncAnthropic(api_key=api_key, max_retries=0)
+        # open_telemetry (anthropic 2.12.0, _types.OpenTelemetryOptions): metadata-only spans and no
+        # traceparent header to Anthropic. Passing the option (even partial) also makes the SDK ignore
+        # ANTHROPIC_OPEN_TELEMETRY_TRACES_CONTENT_MODE=content in the environment.
+        self._client = client or anthropic.AsyncAnthropic(
+            api_key=api_key, max_retries=0, open_telemetry=ANTHROPIC_OTEL_OPTION
+        )
 
     async def complete(self, req: ProviderRequest) -> ProviderResponse:
         system_block: dict[str, Any] = {"type": "text", "text": req.system}
