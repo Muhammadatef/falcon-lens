@@ -1,6 +1,7 @@
 [project]
 name = "falcon-worker"
 version = "0.1.0"
+license = "Apache-2.0"
 description = "Falcon Lens cascade worker"
 requires-python = ">=3.12,<3.13"
 dependencies = [
