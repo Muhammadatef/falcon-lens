@@ -18,7 +18,7 @@ EXTRACT_JS = r"""
     return T(t, 120);
   };
   const desc = (el) => ({
-    type: T(el.getAttribute('type') || (el.tagName === 'TEXTAREA' ? 'textarea' : 'text'), 20).toLowerCase(),
+    type: T(el.tagName === 'SELECT' ? 'select' : (el.getAttribute('type') || (el.tagName === 'TEXTAREA' ? 'textarea' : 'text')), 20).toLowerCase(),
     name: T(el.getAttribute('name')), id: T(el.id),
     autocomplete: T(el.getAttribute('autocomplete'), 40),
     placeholder: T(el.getAttribute('placeholder')), aria: T(el.getAttribute('aria-label')),

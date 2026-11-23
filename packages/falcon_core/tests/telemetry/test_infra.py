@@ -103,3 +103,56 @@ def test_dashboards_use_only_documented_metrics_and_flag_replay() -> None:
             if sourced and p["type"] == "timeseries":
                 assert "source" in exprs and "REPLAY" in exprs, f"{path.name}: {p['title']}"
                 assert "REPLAY" in json.dumps(p["fieldConfig"]["overrides"])
+
+
+def test_service_down_alert_covers_every_falcon_scrape_job() -> None:
+    """A crashed service exports no fl_ metric, so only `up` can report it (audit 2026-11-23: the Sentinel
+    restart-looped on the demo stack and no alert fired)."""
+    rule = next(r for r in _alert_rules() if r["alert"] == "ServiceDown")
+    assert re.search(r"\bup\{", rule["expr"]) and "== 0" in rule["expr"]
+    assert rule["labels"]["severity"] == "critical"
+    prom = yaml.safe_load((ROOT / "infra" / "prometheus" / "prometheus.yml").read_text(encoding="utf-8"))
+    jobs = {j["job_name"]: j for j in prom["scrape_configs"]}
+    pattern = re.search(r'job=~"([^"]+)"', rule["expr"])
+    assert pattern, rule["expr"]
+    covered = set(pattern.group(1).split("|"))
+    assert covered <= set(jobs), covered - set(jobs)
+    targets = {t for name in covered for sc in jobs[name]["static_configs"] for t in sc["targets"]}
+    for service in ("api", "worker", "sentinel", "mcp", "egress-proxy", "gateway"):
+        assert any(t.split(":")[0] == service for t in targets), service
+
+
+def test_feed_stale_threshold_is_the_h2_freshness_window() -> None:
+    from falcon_core.signals.reputation.mirror import FRESH_MAX_AGE_S
+
+    rule = next(r for r in _alert_rules() if r["alert"] == "FeedStale")
+    assert f"> {int(FRESH_MAX_AGE_S)} " in rule["expr"], rule["expr"]
+
+
+def test_feed_gauges_are_on_the_registry_services_expose() -> None:
+    from prometheus_client import generate_latest
+
+    from falcon_core.signals.reputation import metrics as feed_metrics
+    from falcon_core.telemetry.metrics import REGISTRY
+
+    feed_metrics.set_enabled("audit_probe", True)
+    feed_metrics.set_age("audit_probe", 42)
+    text = generate_latest(REGISTRY).decode()
+    assert 'fl_feed_age_seconds{feed="audit_probe"} 42.0' in text
+    assert 'fl_feed_enabled{feed="audit_probe"} 1.0' in text
+
+
+def test_route_agreement_has_no_value_before_the_first_shadow_sample() -> None:
+    """A fresh process must not export 0 (it would read as 0% agreement and fire RouteAgreementDrop)."""
+    import math
+    import subprocess
+    import sys
+
+    code = (
+        "from prometheus_client import generate_latest;"
+        "from falcon_core.telemetry.metrics import REGISTRY;"
+        "print([l for l in generate_latest(REGISTRY).decode().splitlines() if l.startswith('fl_route_agreement_ratio')][0])"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)  # noqa: S603
+    line = out.stdout.strip()
+    assert math.isnan(float(line.split()[-1])), line

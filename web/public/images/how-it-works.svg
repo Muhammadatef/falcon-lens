@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1880" width="720" height="1880" role="img" aria-labelledby="t d">
 <title id="t">How Falcon Lens works, in four steps</title>
-<desc id="d">Step one: you paste or share a suspicious link. Checking messages, emails and pictures is in progress. Step two: we look at the address, checking known scam lists and whether it imitates a real name. Step three: we open the page in a sealed browser, away from your phone, without typing or submitting anything, and compare what the page claims with who really owns the address. Step four: you get a clear answer in Arabic and English: dangerous, suspicious, or no warning signs found, with the reasons and what to do now. Our lowest verdict is "No warning signs found".</desc>
+<desc id="d">Step one: you paste or share a suspicious link. Step two: we look at the address, checking known scam lists and whether it imitates a real name. Step three: we open the page in a sealed browser, away from your phone, without typing or submitting anything, and compare what the page claims with who really owns the address. Step four: you get a clear answer in Arabic and English: dangerous, suspicious, or no warning signs found, with the reasons and what to do now. Our lowest verdict is "No warning signs found".</desc>
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
 .m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
@@ -28,7 +28,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes lit{0%,24%,100%{opacity:0}2%,20%{opacity:1}}
 @keyframes go{0%{offset-distance:0%;opacity:0}1%{opacity:1}6%{offset-distance:100%;opacity:1}7%,100%{offset-distance:100%;opacity:0}}
-@keyframes beam{0%,25%,52%,100%{opacity:0;transform:translateX(0)}28%{opacity:.9;transform:translateX(0)}48%{opacity:.9;transform:translateX(520px)}}
+@keyframes beam{0%,25%,52%,100%{opacity:0;transform:translateX(0)}28%{opacity:.28;transform:translateX(0)}48%{opacity:.28;transform:translateX(520px)}}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
 @supports not (offset-path:path("M0 0H1")){.pk{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}.pk,.beam{display:none}}
@@ -68,13 +68,12 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <circle cx="84" cy="206" r="28" fill="#3fe0c5"/><text x="84" y="216" text-anchor="middle" class="n">1</text>
 <text x="130" y="216" class="t">You paste or share it</text>
 <text x="660" y="264" text-anchor="end" class="a">تلصق أو تشارك ما تشكّ فيه</text>
-<text x="60" y="318" class="b">A link that looks suspicious. Messages,</text>
-<text x="60" y="350" class="b">emails and pictures are in progress.</text>
+<text x="60" y="318" class="b">A link, message, email or picture that</text>
+<text x="60" y="350" class="b">looks suspicious.</text>
 <g>
 <rect class="in" x="60" y="376" width="90" height="46" rx="23"/><rect class="in" x="162" y="376" width="126" height="46" rx="23"/><rect class="in" x="300" y="376" width="100" height="46" rx="23"/><rect class="in" x="412" y="376" width="170" height="46" rx="23"/>
-<g class="k" text-anchor="middle"><text x="105" y="406">Link</text><text x="225" y="406" fill="#8794ae">Message</text><text x="350" y="406" fill="#8794ae">Email</text><text x="497" y="406" fill="#8794ae">Picture or QR</text></g>
+<g class="k" text-anchor="middle"><text x="105" y="406">Link</text><text x="225" y="406" >Message</text><text x="350" y="406">Email</text><text x="497" y="406" >Picture or QR</text></g>
 </g>
-<text x="60" y="452" class="b" fill="#e7d7b6">Link: live. Message, email, picture: in progress.</text>
 </g>
 
 <!-- step 2 -->
@@ -86,10 +85,10 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <text x="60" y="662" class="b">Is it on a list of known scams?</text>
 <text x="60" y="694" class="b">Is it dressed up to look like a real name?</text>
 <rect class="in" x="60" y="720" width="600" height="60" rx="30"/>
+<g clip-path="url(#bar)"><rect class="beam" x="70" y="720" width="14" height="60" fill="#3fe0c5"/></g>
 <circle cx="94" cy="750" r="11" fill="none" stroke="#8794ae" stroke-width="2.4"/><path d="M83 750h22M94 739q-7 11 0 22M94 739q7 11 0 22" fill="none" stroke="#8794ae" stroke-width="1.800"/>
 <text x="120" y="757" class="m" font-size="20" fill="#ffc55c">falcon-demo-bank-pay[.]example</text>
 <text x="640" y="756" text-anchor="end" class="tag">TEST EXAMPLE</text>
-<g clip-path="url(#bar)"><rect class="beam" x="70" y="720" width="14" height="60" fill="#3fe0c5"/></g>
 </g>
 
 <!-- step 3 -->
@@ -103,7 +102,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <rect class="in" x="60" y="1076" width="270" height="96" rx="16"/>
 <rect x="390" y="1076" width="270" height="96" rx="16" fill="#2b0f15" stroke="#8c2630" stroke-width="1.2"/>
 <text x="78" y="1108" class="tag">THE PAGE SAYS</text><text x="78" y="1146" font-size="23" font-weight="600">Falcon Demo Bank</text>
-<text x="408" y="1108" class="tag">THE ADDRESS BELONGS TO</text><text x="408" y="1146" font-size="23" font-weight="600" fill="#ff8589">someone else</text>
+<text x="408" y="1108" class="tag">ADDRESS BELONGS TO</text><text x="408" y="1146" font-size="23" font-weight="600" fill="#ff8589">someone else</text>
 <g class="ne"><circle cx="360" cy="1124" r="24" fill="#d42a38"/><path d="M349 1117h22M349 1131h22M367 1110l-14 28" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
 <text x="60" y="1210" class="b">A bank's name on someone else's address is</text>
 <text x="60" y="1242" class="b">flagged, even when the page is brand new.</text>

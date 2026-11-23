@@ -324,3 +324,35 @@ def test_message_signals_emit_only_declared_names() -> None:
         spec, fn = REGISTRY[name]
         out = run_async(fn(Ctx(text=text)))
         assert {e.signal for e in out} <= set(spec.emits), name
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "بنك الصقر التجريبي: تم ايقاف بطاقتك. اتصل بنا وارسل رمز التحقق فورا",
+        "Falcon Demo Bank: your account is suspended. Reply with the OTP we sent you to reactivate it.",
+        "Falcon Demo Bank security: install AnyDesk so our agent can fix your account.",
+    ],
+)
+def test_h6_named_brand_plus_ask(text: str) -> None:
+    """The usual "BankName: ..." sender line plus a code or remote-access ask is bank impersonation (H6)."""
+    ev = analyze_message(text).evidence
+    assert any(e.signal == "message.brand_mention" for e in ev), text
+    assert {e.signal for e in ev if e.hard_rule == "H6"} <= {"message.rule.otp_request", "message.rule.remote_access"}
+    assert any(e.hard_rule == "H6" for e in ev), text
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Falcon Demo Bank: your verification code is 482913. Do not share this code with anyone.",
+        "Falcon Demo Bank will never ask you for your OTP, PIN or password. Stay alert.",
+        "بنك الصقر التجريبي: رمز التحقق الخاص بك هو 482913. لا تشارك هذا الرمز مع أي شخص.",
+        "بنك الصقر التجريبي لن يطلب منك أبداً رمز التحقق أو الرقم السري. لا تشاركه مع أحد.",
+        "Falcon Demo Bank: use OTP 118822 to complete your purchase of AED 99. Never share your OTP.",
+        "Falcon Demo Bank: AED 250.00 was spent on your card ending 1234 at a supermarket.",
+    ],
+)
+def test_h6_named_brand_code_delivery_or_reminder_is_not_flagged(text: str) -> None:
+    """A genuine code delivery or a "never share your code" reminder names the bank but asks for nothing."""
+    assert not any(e.hard_rule == "H6" for e in analyze_message(text).evidence), text
