@@ -97,3 +97,14 @@ async def test_extractor_adapter_is_used_for_message_text() -> None:
     assert calls == ["message"]
     assert sink.docs[-1]["model_route"] == "local"
     assert_valid(sink.docs[-1])
+
+
+async def test_child_link_verdict_evidence_carries_display_url_not_userinfo_or_pii() -> None:
+    host = DEMO_LOOKALIKE_URL.split("://")[1]
+    text = f"Verify: https://secret.user:pw0rd@{host}?email=test.user@example.invalid".encode()
+    final = (await check("message", text, sandbox=StubSandboxClient(default=phish_features()))).docs[-1]
+    links = [e for e in final["evidence"] if e["signal"] == "message.link_verdict"]
+    assert links
+    blob = str(final)
+    for leak in ("secret.user", "pw0rd", "test.user", "example.invalid"):
+        assert leak not in blob

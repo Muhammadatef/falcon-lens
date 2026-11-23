@@ -22,6 +22,7 @@ from falcon_core.signals.message.extract import (
 from falcon_core.signals.message.normalize import MAX_MESSAGE_CHARS, normalize
 from falcon_core.signals.message.rules import RuleHit, find_rules
 from falcon_core.signals.url.canonical import canonicalize, psl_split
+from falcon_core.signals.url.display import display_url
 from falcon_core.signals.url.textutil import compact, defang
 
 T1_MS = 100
@@ -188,7 +189,7 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
                 signal="message.contains_url",
                 family="message",
                 polarity="neutral",
-                observed={"count": len(urls), "urls": [defang(u.value)[:200] for u in urls[:5]]},
+                observed={"count": len(urls), "urls": [defang(display_url(u.value))[:200] for u in urls[:5]]},
                 display={"en": "Contains links", "ar": "يحتوي على روابط"},
             )
         )

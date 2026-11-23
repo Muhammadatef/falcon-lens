@@ -17,8 +17,10 @@ from falcon_core.scoring.arbiter import ArbiterResult
 from falcon_core.scoring.evidence import is_present, observed_get
 from falcon_core.scoring.reasons import ReportingChannels, verdict_core_fields
 from falcon_core.signals.brands.registry import BrandRegistry
+from falcon_core.signals.url.display import display_url as display_url
 
 Tier = Literal["T0", "T1", "T2", "T3"]
+
 
 BRAND_SIGNALS = frozenset(
     [
