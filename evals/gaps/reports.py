@@ -62,8 +62,8 @@ def call_cost(c: dict[str, Any]) -> float | None:
     return (
         c["input_tokens"] * p["input"]
         + c["output_tokens"] * p["output"]
-        + c["cache_write_tokens"] * p["cache_write_5m"]
-        + c["cache_read_tokens"] * p["cache_read"]
+        + c.get("cache_write_tokens", 0) * p["cache_write_5m"]
+        + c.get("cache_read_tokens", 0) * p["cache_read"]
     ) / 1_000_000
 
 
