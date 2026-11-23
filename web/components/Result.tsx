@@ -114,6 +114,31 @@ function CaseHeader({ state }: { state: CheckState }) {
   );
 }
 
+const SLOW_AFTER_MS = 8000;
+
+/** Appears after a few seconds so a slow check reads as "still working", not as a hang. Announced politely. */
+function SlowNote() {
+  const { t } = usePrefs();
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  return (
+    <div role="status" aria-live="polite" data-testid="slow-note">
+      {slow ? (
+        <div className="slow">
+          <Icon name="clock" size={24} />
+          <div>
+            <b>{t("slow.title")}</b>
+            <p className="muted">{t("slow.body")}</p>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function VerdictBody({ state, still, onCite }: { state: CheckState; still: boolean; onCite: (id: string) => void }) {
   const { t, lang } = usePrefs();
   const v = state.verdict;
@@ -127,7 +152,9 @@ function VerdictBody({ state, still, onCite }: { state: CheckState; still: boole
           {t("p.title")}
         </h3>
         <p className="notice-lead">{t(`p.${p.kind}`)}</p>
-        {p.kind === "rate_limited" && p.retryAfter ? <p data-testid="retry-after">{t("p.retry_in", { n: p.retryAfter })}</p> : null}
+        {p.kind === "rate_limited" && p.retryAfter ? (
+          <p data-testid="retry-after">{p.retryAfter >= 90 ? t("p.retry_in_min", { n: Math.ceil(p.retryAfter / 60) }) : t("p.retry_in", { n: p.retryAfter })} {t("p.retry_hint")}</p>
+        ) : null}
         <p className="muted">{t("p.nolink")}</p>
       </div>
     );
@@ -152,6 +179,7 @@ function VerdictBody({ state, still, onCite }: { state: CheckState; still: boole
           <Icon name="hand" size={24} />
           <span>{t("prov.wait")}</span>
         </p>
+        <SlowNote />
         <div className="sk" />
         <div className="sk" />
         <div className="sk" />

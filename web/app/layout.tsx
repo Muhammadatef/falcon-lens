@@ -3,18 +3,26 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 import { AppShell, Footer, Header } from "@/components/Chrome";
 import type { Lang } from "@/lib/contracts";
+import { metadataBase, pageMetadata } from "@/lib/meta";
+import { serverLang } from "@/lib/server-lang";
 import { PrefsProvider, type Theme } from "@/lib/prefs";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "عدسة الصقر | Falcon Lens",
-  description: "افحص الروابط والرسائل المشبوهة قبل أن تتفاعل معها. Check suspicious links and messages before you act.",
-  applicationName: "Falcon Lens",
-  appleWebApp: { capable: true, title: "عدسة الصقر", statusBarStyle: "black-translucent" },
-  icons: { icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/icons/icon-192.png" },
-  referrer: "no-referrer",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await serverLang();
+  return {
+    ...pageMetadata(lang),
+    metadataBase: metadataBase(),
+    applicationName: "Falcon Lens",
+    appleWebApp: { capable: true, title: "عدسة الصقر", statusBarStyle: "black-translucent" },
+    icons: {
+      icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "48x48" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+      apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    },
+    referrer: "no-referrer",
+    robots: { index: false, follow: false },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

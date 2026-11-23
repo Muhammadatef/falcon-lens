@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1270" width="720" height="1270" role="img" aria-labelledby="t d">
+<title id="t">The two AI helpers in Falcon Lens</title>
+<desc id="d">The Investigator looks closer at unclear cases. It is used only when the fixed rules cannot settle a case, it has a short list of approved tools, web pages cannot give it orders, and it cannot change the score: fixed code decides. The Sentinel watches every check around the clock. It links similar checks to spot a scam campaign early, blocks known-bad links inside the system, and drafts takedown requests and police reports. It sends nothing itself: a person must approve first.</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
+.h1{font-size:36px;font-weight:700}
+.t{font-size:30px;font-weight:600}
+.a{font-size:28px;font-weight:600;fill:#e7d7b6}
+.s{font-size:24px;fill:#3fe0c5}
+.b{font-size:22.500px;fill:#aeb8cc}
+.k{font-size:21px;font-weight:600}
+.k2{font-size:20px;fill:#aeb8cc}
+.tag{font-size:20px;fill:#8794ae;letter-spacing:.06em}
+.card{fill:#0e1626;stroke:#2a3757;stroke-width:1.5}
+.in{fill:#16203a;stroke:#2a3757;stroke-width:1.2}
+.w{fill:none;stroke:#5a6c92;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.glow{fill:#3fe0c5;fill-opacity:.08;stroke:#3fe0c5;stroke-width:2.5;opacity:0}
+.glow.am{fill:#ffc55c;fill-opacity:.1;stroke:#ffc55c}
+.on{animation:lit 12s linear infinite}
+.wait{animation:wait 12s linear infinite}
+.pt{fill:#5a6c92}
+.ping{transform-box:fill-box;transform-origin:center;animation:ping 12s ease-out infinite;opacity:0}
+.sweep{transform-origin:62px 66px;animation:spin 9s linear infinite}
+.look{transform-box:fill-box;transform-origin:center;animation:look 4s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes lit{0%,20%,100%{opacity:0}2%,16%{opacity:1}}
+@keyframes wait{0%,30%,100%{opacity:0}2%,8%,14%,20%,26%{opacity:1}5%,11%,17%,23%{opacity:.3}}
+@keyframes ping{0%,100%{opacity:0;transform:scale(.5)}1%{opacity:.9;transform:scale(.5)}9%{opacity:0;transform:scale(2.8)}}
+@keyframes look{0%,100%{transform:translate(0,0)}50%{transform:translate(5px,-4px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.ping{display:none}}
+</style>
+<defs>
+<pattern id="lat" width="48" height="48" patternUnits="userSpaceOnUse">
+<path d="M24 4l6 14 14 6-14 6-6 14-6-14-14-6 14-6z" fill="none" stroke="#16203a" stroke-width="1"/>
+</pattern>
+<radialGradient id="halo" cx="50%" cy="0%" r="80%">
+<stop offset="0" stop-color="#3fe0c5" stop-opacity=".12"/><stop offset="1" stop-color="#3fe0c5" stop-opacity="0"/>
+</radialGradient>
+<marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0 .8L7 4 0 7.2z" fill="#5a6c92"/>
+</marker>
+</defs>
+
+<rect width="720" height="1270" rx="28" fill="#070b14"/>
+<rect width="720" height="1270" rx="28" fill="url(#lat)" opacity=".55"/>
+<rect width="720" height="520" rx="28" fill="url(#halo)"/>
+
+<!-- header -->
+<g>
+<circle cx="62" cy="66" r="24" fill="#0e1626" stroke="#3fe0c5" stroke-width="3.400"/>
+<path class="sweep" d="M62 66L62 42A24 24 0 0 1 84 56.400z" fill="#3fe0c5" opacity=".22"/>
+<circle cx="62" cy="66" r="8.500" fill="#3fe0c5"/>
+<path d="M34 45q28-19 60 0" fill="none" stroke="#e7d7b6" stroke-width="3.600" stroke-linecap="round"/>
+<path d="M48 89q-3 13-13 20" fill="none" stroke="#e7d7b6" stroke-width="4.600" stroke-linecap="round"/>
+<text x="112" y="62" class="h1">The two AI helpers</text>
+<text x="112" y="104" class="a">المساعدان الذكيان</text>
+</g>
+
+<!-- A: the Investigator -->
+<g>
+<rect class="card" x="32" y="150" width="656" height="480" rx="22"/>
+<circle cx="84" cy="206" r="28" fill="#16203a" stroke="#3fe0c5" stroke-width="2"/>
+<g class="look"><circle cx="81" cy="203" r="10" fill="none" stroke="#3fe0c5" stroke-width="3.200"/><path d="M89 211l9 9" stroke="#3fe0c5" stroke-width="3.600" stroke-linecap="round"/></g>
+<text x="130" y="216" class="t">The Investigator</text>
+<text x="660" y="216" text-anchor="end" class="a">المحقّق</text>
+<text x="60" y="270" class="s">Looks closer at unclear cases</text>
+
+<g class="w" marker-end="url(#a)"><path d="M232 344H258"/><path d="M448 344H474"/></g>
+<rect class="in" x="60" y="296" width="172" height="96" rx="16"/><rect class="glow on" x="60" y="296" width="172" height="96" rx="16"/>
+<rect class="in" x="262" y="296" width="186" height="96" rx="16"/><rect class="glow on" style="animation-delay:2.500s" x="262" y="296" width="186" height="96" rx="16"/>
+<rect x="478" y="296" width="182" height="96" rx="16" fill="#111c3d" stroke="#34488c" stroke-width="1.4"/><rect class="glow on" style="animation-delay:5s" x="478" y="296" width="182" height="96" rx="16"/>
+<g text-anchor="middle">
+<text x="146" y="338" class="k">Unclear case</text><text x="146" y="366" class="k2">rules not sure</text>
+<text x="355" y="338" class="k">Investigator</text><text x="355" y="366" class="k2">gathers evidence</text>
+<text x="569" y="338" class="k">The score</text><text x="569" y="366" class="k2">set by fixed code</text>
+</g>
+
+<g class="b">
+<circle cx="70" cy="438" r="6" fill="#3fe0c5"/><text x="92" y="446">Used only when fixed rules cannot settle a case.</text>
+<circle cx="70" cy="482" r="6" fill="#3fe0c5"/><text x="92" y="490">Works with a short list of approved tools.</text>
+<circle cx="70" cy="526" r="6" fill="#3fe0c5"/><text x="92" y="534">A web page cannot give it orders.</text>
+<path d="M63 563l14 14M77 563l-14 14" stroke="#ff8589" stroke-width="3.400" stroke-linecap="round"/><text x="92" y="578" fill="#f2eee6">It cannot change the score. Fixed code decides.</text>
+</g>
+</g>
+
+<!-- B: the Sentinel -->
+<g>
+<rect class="card" x="32" y="674" width="656" height="480" rx="22"/>
+<circle cx="84" cy="730" r="28" fill="#16203a" stroke="#3fe0c5" stroke-width="2"/>
+<circle cx="84" cy="730" r="13" fill="none" stroke="#3fe0c5" stroke-width="3"/><circle cx="84" cy="730" r="4.500" fill="#3fe0c5"/>
+<circle class="ping" style="animation-delay:1s" cx="84" cy="730" r="13" fill="none" stroke="#3fe0c5" stroke-width="2"/><circle class="ping" style="animation-delay:7s" cx="84" cy="730" r="13" fill="none" stroke="#3fe0c5" stroke-width="2"/>
+<text x="130" y="740" class="t">The Sentinel</text>
+<text x="660" y="740" text-anchor="end" class="a">الحارس</text>
+<text x="60" y="794" class="s">Watches every check, around the clock</text>
+
+<g class="w" marker-end="url(#a)"><path d="M232 868H258"/><path d="M448 868H462"/></g>
+<rect class="in" x="60" y="820" width="172" height="96" rx="16"/><rect class="glow on" style="animation-delay:1s" x="60" y="820" width="172" height="96" rx="16"/>
+<rect class="in" x="262" y="820" width="186" height="96" rx="16"/><rect class="glow on" style="animation-delay:3.500s" x="262" y="820" width="186" height="96" rx="16"/>
+<rect x="466" y="824" width="10" height="88" rx="5" fill="#f4b23a"/>
+<rect x="488" y="820" width="172" height="96" rx="16" fill="#2a1d07" stroke="#8a6416" stroke-width="1.400"/><rect class="glow am wait" style="animation-delay:6s" x="488" y="820" width="172" height="96" rx="16"/>
+<g text-anchor="middle">
+<text x="146" y="862" class="k">Similar scams</text><text x="146" y="890" class="k2">linked together</text>
+<text x="355" y="862" class="k">Takedown</text><text x="355" y="890" class="k2">request drafted</text>
+<text x="574" y="862" class="k" fill="#ffc55c">Waits for</text><text x="574" y="890" class="k" fill="#ffc55c">a person</text>
+</g>
+
+<g class="b">
+<circle cx="70" cy="962" r="6" fill="#3fe0c5"/><text x="92" y="970">Links similar checks to spot a campaign early.</text>
+<circle cx="70" cy="1006" r="6" fill="#3fe0c5"/><text x="92" y="1014">Blocks known-bad links inside our own system.</text>
+<circle cx="70" cy="1050" r="6" fill="#3fe0c5"/><text x="92" y="1058">Drafts takedown requests and police reports.</text>
+<path d="M63 1087l14 14M77 1087l-14 14" stroke="#ff8589" stroke-width="3.400" stroke-linecap="round"/><text x="92" y="1102" fill="#f2eee6">It sends nothing itself. A person must approve.</text>
+</g>
+</g>
+
+<!-- footer -->
+<text x="360" y="1202" text-anchor="middle" class="b">AI assists and explains. It never sets the verdict.</text>
+<text x="360" y="1240" text-anchor="middle" class="tag">THE DESIGN. BUILD STATUS IS IN THE README.</text>
+</svg>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { TIERS } from "@/lib/contracts";
 import { usePrefs } from "@/lib/prefs";
 import { useCheck } from "@/lib/use-check";
@@ -91,6 +92,7 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed }: C
               <Icon name="scale" size={22} />
               <span>{t("how.foot")}</span>
             </p>
+            <p className="how-more"><Link href="/how-it-works">{t("nav.how")}</Link></p>
           </div>
         </section>
       </main>
