@@ -579,8 +579,8 @@ class Cascade:
             )
             ar = "لا يوجد موقع يردّ على هذا العنوان (الاسم لا يُحلّ)؛ فحوصات العنوان لم تُظهر أي علامات تحذير."
         else:
-            en = "The page itself did not load (in time, or at all); the address checks found no warning signs."
-            ar = "لم تُحمَّل الصفحة نفسها (في الوقت المناسب أو إطلاقاً)؛ فحوصات العنوان لم تُظهر أي علامات تحذير."
+            en = "We could not open the page itself; the address checks found no warning signs."
+            ar = "تعذّر علينا فتح الصفحة نفسها؛ فحوصات العنوان لم تُظهر أي علامات تحذير."
         return make_evidence(
             "sandbox.not_rendered", "page", {"reason": reason[:40]}, tier=tier, source="computed", en=en, ar=ar
         )

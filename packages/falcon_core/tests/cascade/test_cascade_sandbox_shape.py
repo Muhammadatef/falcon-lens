@@ -43,7 +43,7 @@ async def test_target_refusal_on_established_clean_domain_is_not_degraded() -> N
     assert_valid(final)
     assert not final["degraded"] and final["verdict"] == "no_warning_signs" and final["tier_reached"] == "T2"
     ev = next(e for e in final["evidence"] if e["signal"] == "sandbox.not_rendered")
-    assert ev["weight"] == 0 and "did not load" in ev["display"]["en"]
+    assert ev["weight"] == 0 and "could not open the page" in ev["display"]["en"]
 
 
 async def test_sandbox_failure_degrades_without_trust_with_risk_or_on_internal_error() -> None:
@@ -242,7 +242,7 @@ async def test_static_fallback_with_credential_form_is_degraded_even_on_establis
 
 
 async def test_dns_and_slow_failures_carry_different_reasons() -> None:
-    for code, needle in (("dns_failure", "No website answers"), ("timeout", "did not load")):
+    for code, needle in (("dns_failure", "No website answers"), ("timeout", "could not open the page")):
         feats = SandboxFeatures.model_validate({"error": code, "final_url": None})
         cascade, _ = make_cascade(
             force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))

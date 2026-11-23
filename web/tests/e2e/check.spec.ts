@@ -110,7 +110,7 @@ test.describe("check page: progressive verdict from the API stream", () => {
 
     await expect(page.getByTestId("verdict-word")).toHaveText("مريب");
     await expect(page.getByTestId("degraded")).toContainText("لم نتمكن من إكمال كل الفحوص");
-    await expect(page.getByTestId("page-not-opened")).toContainText("لم تُحمَّل الصفحة في الوقت المناسب للتحقق منها — تعامل معها بحذر");
+    await expect(page.getByTestId("page-not-opened")).toContainText("تعذّر فتح الصفحة للتحقق — تعامل معها بحذر");
     await expect(page.locator('[data-testid="evidence-row"][data-evidence="ev_sandbox0err"]')).toContainText("تعذّر هذا الفحص");
     await expect(page.getByTestId("impersonated")).toHaveCount(0);
   });

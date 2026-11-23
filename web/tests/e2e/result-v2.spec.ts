@@ -247,10 +247,20 @@ test.describe("the page-not-opened message never sits under a dangerous headline
   test("Arabic wording is exact for a suspicious, not-rendered verdict", async ({ page, request }) => {
     const id = newVerdictId();
     const t = token();
-    const verdict = withId(DEMO_DANGEROUS, id, { verdict: "suspicious", risk_score: 50, impersonated_brand: null, degraded: true, degraded_reasons: ["not_rendered:dns_failure"], reasons: [], tier_reached: "T1" });
+    const verdict = withId(DEMO_DANGEROUS, id, { verdict: "suspicious", risk_score: 50, impersonated_brand: null, degraded: true, degraded_reasons: ["not_rendered:timeout"], reasons: [], tier_reached: "T1" });
     await registerScenario(request, { match: t, verdictId: id, steps: [{ delayMs: 100, verdict }] });
     await page.goto("/");
     await submitText(page, `https://falcon-demo-bank.test/?c=${t}`);
     await expect(page.getByTestId("page-not-opened")).toContainText("لم نتمكن من فتح الصفحة نفسها، فلم نتحقق مما فيها. وهذا لا يعني أن الرابط موثوق؛ فلا تُدخل فيه أي بيانات، وافتح التطبيق أو الموقع الرسمي للجهة بنفسك.");
+  });
+
+  test("Arabic DNS wording is exact and only for a dns_failure reason", async ({ page, request }) => {
+    const id = newVerdictId();
+    const t = token();
+    const verdict = withId(DEMO_DANGEROUS, id, { verdict: "suspicious", risk_score: 50, impersonated_brand: null, degraded: true, degraded_reasons: ["not_rendered:dns_failure"], reasons: [], tier_reached: "T1" });
+    await registerScenario(request, { match: t, verdictId: id, steps: [{ delayMs: 100, verdict }] });
+    await page.goto("/");
+    await submitText(page, `https://falcon-demo-bank.test/?c=${t}`);
+    await expect(page.getByTestId("page-not-opened")).toContainText("اسم هذا العنوان لا يقود إلى أي موقع حالياً، فلم نجد صفحة لنفتحها. قد يكون الرابط مكتوباً بشكل خاطئ أو أُغلق الموقع. لا تُدخل فيه أي بيانات، وافتح التطبيق أو الموقع الرسمي للجهة بنفسك.");
   });
 });
