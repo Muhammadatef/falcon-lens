@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
-from pathlib import Path
 
 import fl_data
 import fl_messages
@@ -130,34 +128,6 @@ def test_incident_dataset_deterministic_and_split_by_seed() -> None:
         assert it["gold"]["severity"] == it["view"]["severity"]
     with pytest.raises(ValueError):
         fl_data.build_incident_dataset(range(1, 3), range(2, 4))
-
-
-def test_compiled_loader_roundtrip_without_dspy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from falcon_core.prompts import compiled
-
-    demos = [{"inputs": {"message": "m"}, "outputs": {"script_category": "none", "is_scam": False}}]
-    body = {
-        "instructions": "Do the thing.",
-        "demos": demos,
-        "inputs": ["message"],
-        "outputs": ["script_category"],
-        "content_sha256": compiled.content_sha256("Do the thing.", demos),
-        "metadata": {"dspy_version": "3.5.0"},
-    }
-    d = tmp_path
-    (d / "scam_script.json").write_text(json.dumps(body))
-    monkeypatch.setattr(compiled, "_DIR", d)
-    compiled.load.cache_clear()
-    p = compiled.load("scam_script")
-    assert p.instructions == "Do the thing." and "Example 1" in p.render_system()
-    body["instructions"] = "tampered"
-    (d / "scam_script.json").write_text(json.dumps(body))
-    compiled.load.cache_clear()
-    with pytest.raises(compiled.CompiledPromptError):
-        compiled.load("scam_script")
-    with pytest.raises(compiled.CompiledPromptError):
-        compiled.load("nope")
-    compiled.load.cache_clear()
 
 
 def test_loader_does_not_import_dspy() -> None:

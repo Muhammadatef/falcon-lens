@@ -1,0 +1,89 @@
+{
+  "kind": "dspy_role_optimisation",
+  "role": "investigator",
+  "router_role": "investigator",
+  "route": "local",
+  "model": "inkling-2-mini-chat",
+  "dspy_version": "3.5.0",
+  "generated_at": "20261123T104152Z",
+  "git_sha": "ffcb601",
+  "seed": {
+    "data": 20261123,
+    "optimizer": 9,
+    "bootstrap_ci": 20261123
+  },
+  "synthetic_data": true,
+  "dataset": "synthetic evidence lists around invented .example hosts; gold = tools whose evidence is missing",
+  "splits": {
+    "train": 16,
+    "val": 12,
+    "train_sha256": "c8f1037033e0395d83ffee6799ff01166b1caf12e70da4b69e0c48ab1b79d556",
+    "val_sha256": "d69683e846f11b7f980c08f304596b66ce5d3813c683a21b41477469a4e23749",
+    "note": "train for optimisation, validation for selection; frozen test split and held-out legit sets never read"
+  },
+  "metric": "production validators (see evals/dspy/roles.py), mean task score in [0,1]; invalid output scores 0",
+  "before_val": {
+    "mean": 0.9417,
+    "ci95": [
+      0.825,
+      1.0
+    ],
+    "valid_rate": 1.0,
+    "n": 12
+  },
+  "after_val": {
+    "mean": 0.9417,
+    "ci95": [
+      0.825,
+      1.0
+    ],
+    "valid_rate": 1.0,
+    "n": 12
+  },
+  "paired_diff": {
+    "mean_diff": 0.0,
+    "ci95": [
+      -0.175,
+      0.175
+    ]
+  },
+  "candidates": {
+    "bootstrap_few_shot": {
+      "mean": 0.9417,
+      "ci95": [
+        0.825,
+        1.0
+      ],
+      "valid_rate": 1.0,
+      "n": 12,
+      "seconds_to_build": 27.3,
+      "demos": 3
+    },
+    "mipro_v2_light": {
+      "mean": 0.75,
+      "ci95": [
+        0.5,
+        1.0
+      ],
+      "valid_rate": 0.75,
+      "n": 12,
+      "seconds_to_build": 528.8,
+      "demos": 0
+    }
+  },
+  "selected": null,
+  "adopted": false,
+  "budget": {
+    "cap_calls": 150,
+    "calls": 74,
+    "input_tokens": 216996,
+    "output_tokens": 8365,
+    "n_train": 16,
+    "n_val": 12,
+    "mipro_trials": 3,
+    "threads": 3
+  },
+  "errors": [],
+  "exported": null,
+  "seconds": 932.0
+}

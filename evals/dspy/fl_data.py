@@ -73,7 +73,10 @@ def incident_items_for_seed(seed: int) -> list[dict[str, Any]]:
         if label is None:
             continue
         view = evidence_view(inc)
-        out.append({"id": f"inc-{seed}-{inc['type']}", "seed": seed, "view": view, "gold": gold_facts(view)})
+        slim = {k: inc[k] for k in ("incident_id", "indicators", "rule_ids", "actions", "severity")}
+        out.append(
+            {"id": f"inc-{seed}-{inc['type']}", "seed": seed, "view": view, "inc": slim, "gold": gold_facts(view)}
+        )
     return out
 
 

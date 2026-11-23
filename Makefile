@@ -37,9 +37,8 @@ unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL
 	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
 	uv run python -m falcon_sentinel.unblock $(ID)
 
-dspy-optimize: ## offline DSPy prompt optimisation (ADR-002). Default LM = Anthropic API; `make dspy-optimize LM=local` = sovereign
-	@[ -n "$$ANTHROPIC_API_KEY$$FL_ENV_FILE" ] || [ "$(LM)" = "local" ] || { echo "dspy-optimize: set ANTHROPIC_API_KEY (or FL_ENV_FILE=<dotenv path>), or run with LM=local" >&2; exit 1; }
-	uv run --group dspy python evals/dspy/optimize.py --lm $(or $(LM),cloud) $(ARGS)
+dspy-optimize: ## offline DSPy prompt optimisation for every LLM role (ADR-002). DSPY_ROUTE=cloud|local; default cloud if ANTHROPIC_API_KEY is already in the environment, else local (Ollama)
+	uv run --group dspy python evals/dspy/optimize.py $(if $(DSPY_ROUTE),--route $(DSPY_ROUTE),) $(ARGS)
 
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py

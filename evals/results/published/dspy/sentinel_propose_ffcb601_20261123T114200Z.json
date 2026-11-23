@@ -1,0 +1,78 @@
+{
+  "kind": "dspy_role_optimisation",
+  "role": "sentinel_propose",
+  "router_role": "sentinel",
+  "route": "local",
+  "model": "inkling-2-mini-chat",
+  "dspy_version": "3.5.0",
+  "generated_at": "20261123T114200Z",
+  "git_sha": "ffcb601",
+  "seed": {
+    "data": 20261123,
+    "optimizer": 9,
+    "bootstrap_ci": 20261123
+  },
+  "synthetic_data": true,
+  "dataset": "Sentinel replay fixtures (synthetic), train seeds 1-12, validation seeds 101-108",
+  "splits": {
+    "train": 8,
+    "val": 8,
+    "train_sha256": "f1489a92ffe2a9b1ee698f7cf8fd8e8aa9f05331ec0a2fbbf212b114d7c19fae",
+    "val_sha256": "d697c72a64d803552a1d638cb4afbba765daeba8aecafa7e14291364c1a2a7c8",
+    "note": "train for optimisation, validation for selection; frozen test split and held-out legit sets never read"
+  },
+  "metric": "production validators (see evals/dspy/roles.py), mean task score in [0,1]; invalid output scores 0",
+  "before_val": {
+    "mean": 0.8631,
+    "ci95": [
+      0.825,
+      0.9125
+    ],
+    "valid_rate": 1.0,
+    "n": 8
+  },
+  "after_val": {
+    "mean": 0.91,
+    "ci95": [
+      0.8981,
+      0.9194
+    ],
+    "valid_rate": 1.0,
+    "n": 8
+  },
+  "paired_diff": {
+    "mean_diff": 0.0469,
+    "ci95": [
+      -0.0087,
+      0.0888
+    ]
+  },
+  "candidates": {
+    "bootstrap_few_shot": {
+      "mean": 0.91,
+      "ci95": [
+        0.8981,
+        0.9194
+      ],
+      "valid_rate": 1.0,
+      "n": 8,
+      "seconds_to_build": 118.2,
+      "demos": 3
+    }
+  },
+  "selected": "bootstrap_few_shot",
+  "adopted": true,
+  "budget": {
+    "cap_calls": 150,
+    "calls": 20,
+    "input_tokens": 91998,
+    "output_tokens": 10209,
+    "n_train": 8,
+    "n_val": 8,
+    "mipro_trials": 3,
+    "threads": 2
+  },
+  "errors": [],
+  "exported": "packages/falcon_core/src/falcon_core/prompts/compiled/sentinel_propose.local.json",
+  "seconds": 678.3
+}

@@ -1,0 +1,89 @@
+{
+  "kind": "dspy_role_optimisation",
+  "role": "extractor",
+  "router_role": "extractor",
+  "route": "local",
+  "model": "inkling-2-mini-chat",
+  "dspy_version": "3.5.0",
+  "generated_at": "20261123T104152Z",
+  "git_sha": "ffcb601",
+  "seed": {
+    "data": 20261123,
+    "optimizer": 9,
+    "bootstrap_ci": 20261123
+  },
+  "synthetic_data": true,
+  "dataset": "synthetic labelled messages (fl_messages templates, Falcon Demo Bank), split by template",
+  "splits": {
+    "train": 16,
+    "val": 12,
+    "train_sha256": "a2d3751689d13e2d3c0aa62eef59a43a271870140fcd3de93efee601a45fd086",
+    "val_sha256": "96f5f7588e65e1dcef108060caaf9ccfadbc9d446c05732ae7a1b261c031d779",
+    "note": "train for optimisation, validation for selection; frozen test split and held-out legit sets never read"
+  },
+  "metric": "production validators (see evals/dspy/roles.py), mean task score in [0,1]; invalid output scores 0",
+  "before_val": {
+    "mean": 0.7194,
+    "ci95": [
+      0.6174,
+      0.8198
+    ],
+    "valid_rate": 1.0,
+    "n": 12
+  },
+  "after_val": {
+    "mean": 0.7694,
+    "ci95": [
+      0.667,
+      0.8684
+    ],
+    "valid_rate": 1.0,
+    "n": 12
+  },
+  "paired_diff": {
+    "mean_diff": 0.05,
+    "ci95": [
+      -0.0292,
+      0.1292
+    ]
+  },
+  "candidates": {
+    "bootstrap_few_shot": {
+      "mean": 0.7694,
+      "ci95": [
+        0.667,
+        0.8684
+      ],
+      "valid_rate": 1.0,
+      "n": 12,
+      "seconds_to_build": 69.9,
+      "demos": 1
+    },
+    "mipro_v2_light": {
+      "mean": 0.7611,
+      "ci95": [
+        0.6632,
+        0.8542
+      ],
+      "valid_rate": 1.0,
+      "n": 12,
+      "seconds_to_build": 275.1,
+      "demos": 1
+    }
+  },
+  "selected": "bootstrap_few_shot",
+  "adopted": true,
+  "budget": {
+    "cap_calls": 150,
+    "calls": 88,
+    "input_tokens": 130436,
+    "output_tokens": 7267,
+    "n_train": 16,
+    "n_val": 12,
+    "mipro_trials": 3,
+    "threads": 3
+  },
+  "errors": [],
+  "exported": "packages/falcon_core/src/falcon_core/prompts/compiled/extractor.local.json",
+  "seconds": 507.2
+}

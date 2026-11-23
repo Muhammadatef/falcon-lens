@@ -172,6 +172,7 @@ class Extractor:
         untrusted = [UntrustedText(_LABELS[inp.kind], inp.text), *inp.extra_texts]
         req: JsonRequest[Extraction] = JsonRequest(
             role="extractor",
+            compiled="extractor",
             task=EXTRACTOR_TASK,
             schema=Extraction,
             context=self._context(),

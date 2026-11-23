@@ -176,6 +176,7 @@ class Investigator:
                 call_cap = min(self.per_call_max_tokens, max(1, tokens_left // 2))
                 req: JsonRequest[Action] = JsonRequest(
                     role="investigator",
+                    compiled="investigator",
                     task=INVESTIGATOR_TASK,
                     schema=Action,
                     context=self._context(case, known, targets, history, self.max_tool_calls - calls),
