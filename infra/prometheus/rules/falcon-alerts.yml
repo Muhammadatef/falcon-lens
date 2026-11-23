@@ -97,18 +97,29 @@ groups:
         annotations:
           summary: "More than 5% of API requests return 5xx"
           runbook_url: docs/RUNBOOK.md#error-rate
+      # A service that is down or crash-looping exports nothing, so none of its own fl_ alerts can fire
+      # (SentinelLag needs the Sentinel's own gauge). `up` is written by Prometheus for every scrape target.
+      - alert: ServiceDown
+        expr: up{job=~"falcon-services|sandbox-via-worker|egress-proxy|gateway"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $labels.instance }} ({{ $labels.job }}) has not answered a scrape for 2 minutes"
+          runbook_url: docs/RUNBOOK.md#service-down
       - alert: SandboxFailure
         expr: sum(increase(fl_sandbox_timeouts_total{data!="synthetic-replay"}[10m])) > 3
         labels: { severity: warning }
         annotations:
           summary: "Sandbox visits are timing out ({{ $value }} in 10 min)"
           runbook_url: docs/RUNBOOK.md#sandbox-failure
+      # 21600 s = the H2 freshness window (SCORING §3: feed age < 6 h). Past it, a feed hit no longer floors a
+      # verdict at T0, so this alert means "rule H2 is off until the next poll", not just "the file is old".
       - alert: FeedStale
-        expr: max by (feed) (fl_feed_age_seconds{data!="synthetic-replay"}) > 3600 and on (feed) fl_feed_enabled{data!="synthetic-replay"} == 1
+        expr: max by (feed) (fl_feed_age_seconds{data!="synthetic-replay"}) > 21600 and on (feed) fl_feed_enabled{data!="synthetic-replay"} == 1
         for: 5m
         labels: { severity: warning }
         annotations:
-          summary: "Feed {{ $labels.feed }} has not refreshed for over 1 hour"
+          summary: "Feed {{ $labels.feed }} is {{ $value | humanizeDuration }} old: hard rule H2 (known-bad) is off until the next poll"
           runbook_url: docs/RUNBOOK.md#feed-stale
       - alert: LLMFallbackActive
         expr: sum by (role) (increase(fl_llm_fallback_total{data!="synthetic-replay"}[10m])) > 0
