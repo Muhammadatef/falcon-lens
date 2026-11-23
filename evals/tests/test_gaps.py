@@ -198,7 +198,18 @@ def test_write_artifact_refuses_a_url(tmp_path: Path, monkeypatch: pytest.Monkey
     assert p.parent == tmp_path / "x" and json.loads(p.read_text())["ok"] == 1
 
 
-REQUIRED = {"scope", "n", "ci_method", "provenance", "model_route", "model_ids", "git_sha", "created_at", "area"}
+REQUIRED = {
+    "system_under_test",
+    "scope",
+    "n",
+    "ci_method",
+    "provenance",
+    "model_route",
+    "model_ids",
+    "git_sha",
+    "created_at",
+    "area",
+}
 
 
 def test_published_gap_artifacts_state_scope_n_ci_provenance_route_model_and_sha() -> None:

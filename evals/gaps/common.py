@@ -17,6 +17,7 @@ from typing import Any
 from evals.common import ROOT, git_sha
 
 PUBLISHED = ROOT / "evals" / "results" / "published"
+SYSTEM_UNDER_TEST = "fc577d7a5d2f59366f35da287a9be106fe6bb03c"  # origin/main when the model runs were taken
 URL_RE = re.compile(r"https?://", re.IGNORECASE)
 
 
@@ -87,6 +88,12 @@ def envelope(
         "area": area,
         "created_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "git_sha": git_sha(),
+        "system_under_test": {
+            "commit": SYSTEM_UNDER_TEST,
+            "note": "the cascade and Sentinel runs behind this artifact were taken on this commit (origin/main when "
+            "the jobs started); main moved on afterwards and the model runs were not repeated. The offline parts "
+            "(no model) were recomputed at git_sha and checked equal on the synthetic split.",
+        },
         "scope": scope,
         "provenance": provenance,  # synthetic | fixture | real | mixed (see body)
         "n": n,
