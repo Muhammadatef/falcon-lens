@@ -104,3 +104,21 @@ def load(published: Path = PUBLISHED) -> Artifact | None:
 def show(value: Any) -> str:
     """Exact JSON text of a value (verbatim; no rounding, no percent conversion)."""
     return value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+
+
+def load_fp_regress(published: Path = PUBLISHED) -> dict[str, Any] | None:
+    """Newest live held-out false-alarm run (`published/fp_regress/*.json`, by `created_at`), or None.
+
+    Only runs that carry a `false_positive_rate` with a `value` and a `ci95` count. The numbers in it
+    are traceable like the main artifact's metrics (check_numbers.traceable_for).
+    """
+    best: dict[str, Any] | None = None
+    for path in sorted((published / "fp_regress").glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        rate = data.get("false_positive_rate") if isinstance(data, dict) else None
+        if not (isinstance(rate, dict) and "value" in rate and "ci95" in rate and "n" in data and "target" in data):
+            continue
+        if best is None or str(data.get("created_at", "")) >= str(best.get("created_at", "")):
+            best = data
+            best["_file"] = path.name
+    return best

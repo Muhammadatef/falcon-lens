@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
 from falcon_core.signals.message.extract import ChildInput, extract_urls
+from falcon_core.signals.url.display import display_url
 from falcon_core.signals.url.textutil import defang
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024  # THREAT_MODEL: image limit 5 MB
@@ -116,7 +117,7 @@ def analyze_image(data: bytes) -> ImageAnalysis:
                 polarity="neutral",
                 observed={
                     "qr_count": len(payloads),
-                    "urls": [defang(u.value)[:200] for u in urls[:5]],
+                    "urls": [defang(display_url(u.value))[:200] for u in urls[:5]],
                 },
                 display={"en": "QR code found in image", "ar": "تم العثور على رمز QR في الصورة"},
             )

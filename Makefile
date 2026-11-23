@@ -83,6 +83,7 @@ submission: ## Build submission/ (form fields, deck, PDF, CHECKLIST) and trace e
 	uv run --with-requirements scripts/submission/requirements.txt python scripts/submission/build.py
 	uv run --with-requirements scripts/submission/requirements.txt python scripts/submission/check_numbers.py
 	uv run python scripts/submission/descriptions.py --check submission/description_en.txt submission/description_ar.txt
+	uv run --no-project --with-requirements submission/build/requirements.txt --with pyyaml python submission/build/build_all.py
 
 # ---- demo tooling (gate G6) ---------------------------------------------------------------------------
 seed: ## Push the corpus through the real API/worker as source=replay (idempotent; FORCE=1 resubmits)

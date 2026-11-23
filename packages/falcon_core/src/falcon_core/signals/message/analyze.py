@@ -8,11 +8,15 @@ Registered signals: ``message.rules`` (emits message.rule.<x>), ``message.childr
 
 from __future__ import annotations
 
+import base64
+import binascii
 import re
+import urllib.parse
 from dataclasses import dataclass, field
 
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
 from falcon_core.signals.brands.registry import BrandRegistry, default_registry
+from falcon_core.signals.limits import HARD_MAX_MESSAGE_CHARS, InputTooLarge
 from falcon_core.signals.message.extract import (
     ChildInput,
     extract_phones,
@@ -22,9 +26,17 @@ from falcon_core.signals.message.extract import (
 from falcon_core.signals.message.normalize import MAX_MESSAGE_CHARS, normalize
 from falcon_core.signals.message.rules import RuleHit, find_rules
 from falcon_core.signals.url.canonical import canonicalize, psl_split
+from falcon_core.signals.url.display import display_url
 from falcon_core.signals.url.textutil import compact, defang
 
 T1_MS = 100
+# Rules and the brand check read the first and last MAX_LINK_SCAN_CHARS // 2 characters in 8 KiB windows (expensive,
+# so bounded for CPU). Link extraction is NOT windowed: it reads the whole input (<= HARD_MAX_MESSAGE_CHARS).
+MAX_LINK_SCAN_CHARS = 65_536
+_DATA_URI = re.compile(
+    r"(?<![a-z0-9+.-])data:([a-z0-9.+/-]{0,80})((?:;[a-z0-9=.+-]{1,40}){0,4}),([^\s\"'<>]{0,65536})", re.I
+)
+_ACTIVE = re.compile(r"<\s*(?:form|script|iframe)\b|javascript:", re.I)
 _IN = ("message", "email", "image")
 
 SPEC_RULES = SignalSpec(
@@ -58,7 +70,13 @@ SPEC_CHILDREN = SignalSpec(
     input_types=_IN,
     timeout_ms=T1_MS,
     network="none",
-    emits=("message.contains_url", "message.contains_phone"),
+    emits=(
+        "message.contains_url",
+        "message.contains_phone",
+        "message.limit_exceeded",
+        "message.data_uri",
+        "message.data_uri_active",
+    ),
 )
 SPEC_BRAND = SignalSpec(
     name="message.brand_mention",
@@ -95,9 +113,82 @@ class MessageAnalysis:
     truncated: bool = False
 
 
-def _rule_evidence(hits: list[RuleHit]) -> list[Evidence]:
+def _rules_over(windows: list[str]) -> list[RuleHit]:
+    """Rule hits of the first window, plus rules that only fire in later windows (padding in front cannot hide them)."""
+    hits = list(find_rules(windows[0]))
+    have = {h.rule for h in hits}
+    for w in windows[1:]:
+        hits += [h for h in find_rules(w) if h.rule not in have and not have.add(h.rule)]  # type: ignore[func-returns-value]
+    return hits
+
+
+def _data_uri_evidence(text: str) -> list[Evidence]:
+    """``data:`` URIs are not links the URL pipeline can fetch: informational (weight 0), and risk only when the
+    payload (inline or base64, read up to 64 KiB) carries a form, script, iframe or ``javascript:``."""
+    found = 0
+    active = False
+    mimes: list[str] = []
+    for m in _DATA_URI.finditer(text):
+        found += 1
+        if found > 20:
+            break
+        mime, params, payload = m.group(1).lower(), m.group(2).lower(), m.group(3)
+        if len(mimes) < 5:
+            mimes.append(mime or "text/plain")
+        try:
+            if ";base64" in params:
+                raw = base64.b64decode(payload + "=" * (-len(payload) % 4), validate=False)
+            else:
+                raw = urllib.parse.unquote_to_bytes(payload)
+        except (binascii.Error, ValueError):
+            raw = b""
+        body = raw.decode("utf-8", "replace")
+        if _ACTIVE.search(body):
+            active = True
+    if not found:
+        return []
+    out = [
+        Evidence(
+            signal="message.data_uri",
+            family="message",
+            polarity="neutral",
+            observed={"count": min(found, 20), "mimes": mimes},
+            display={"en": "Contains an inline data: address", "ar": "يحتوي على عنوان data: مضمّن"},
+        )
+    ]
+    if active:
+        out.append(
+            Evidence(
+                signal="message.data_uri_active",
+                family="message",
+                observed={"count": min(found, 20), "mimes": mimes},
+                display={
+                    "en": "An inline data: address carries a form or script",
+                    "ar": "عنوان data: مضمّن يحمل نموذجا أو شيفرة",
+                },
+            )
+        )
+    return out
+
+
+def limit_exceeded_evidence(family: str, reason: str, size: int) -> Evidence:
+    """Risk evidence: the input was larger than the analysers read. Padding must never lower a verdict
+    (docs/SCORING.md §2: ``<family>.limit_exceeded``)."""
+    return Evidence(
+        signal=f"{family}.limit_exceeded",
+        family=family,
+        observed={"reason": reason, "size": size},
+        display={
+            "en": "Unusually large or deeply nested input; only part of it could be read",
+            "ar": "محتوى كبير أو متداخل بشكل غير معتاد؛ لم نتمكن من قراءته كاملا",
+        },
+    )
+
+
+def _rule_evidence(hits: list[RuleHit], brand_named: bool = False) -> list[Evidence]:
     names = {h.rule for h in hits}
-    h6 = "authority" in names
+    # H6 identity half: an explicit authority/bank claim, or a registered brand named in the message.
+    h6 = "authority" in names or brand_named
     out = []
     for h in hits:
         en, ar = _DISPLAY[h.rule]
@@ -170,13 +261,33 @@ def _brand_evidence(text: str, urls: list[ChildInput], reg: BrandRegistry) -> li
 
 
 def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnalysis:
+    if len(text) > HARD_MAX_MESSAGE_CHARS:
+        raise InputTooLarge(f"message longer than {HARD_MAX_MESSAGE_CHARS} characters")
+    full = text
     truncated = len(text) > MAX_MESSAGE_CHARS
-    text = text[:MAX_MESSAGE_CHARS]
     reg = reg or default_registry()
     res = MessageAnalysis(truncated=truncated)
-    res.evidence += _rule_evidence(find_rules(text))
-    urls = extract_urls(text)
-    phones = extract_phones(text)
+    wide = text
+    if truncated:
+        # Fail closed: rules and brand check read the head and tail windows; links come from the WHOLE text.
+        if len(text) > MAX_LINK_SCAN_CHARS:
+            wide = text[: MAX_LINK_SCAN_CHARS // 2] + "\n" + text[-MAX_LINK_SCAN_CHARS // 2 :]
+        res.evidence.append(limit_exceeded_evidence("message", "too_long", len(text)))
+    windows = [wide[i : i + MAX_MESSAGE_CHARS] for i in range(0, len(wide), MAX_MESSAGE_CHARS)] or [""]
+    text = windows[0]
+    urls = extract_urls(full)
+    phones = extract_phones(full)
+    res.evidence += _data_uri_evidence(full)
+    brand_ev: list[Evidence] = []
+    seen_brand: set[str] = set()
+    for w in windows:  # a brand claim pushed past the first window by padding is still seen
+        for e_ in _brand_evidence(w, urls, reg):
+            if e_.signal not in seen_brand:
+                seen_brand.add(e_.signal)
+                brand_ev.append(e_)
+    res.evidence += _rule_evidence(
+        _rules_over(windows), brand_named=any(e_.signal == "message.brand_mention" for e_ in brand_ev)
+    )
     res.children = [*urls, *phones]
     if urls:
         res.evidence.append(
@@ -184,7 +295,7 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
                 signal="message.contains_url",
                 family="message",
                 polarity="neutral",
-                observed={"count": len(urls), "urls": [defang(u.value)[:200] for u in urls[:5]]},
+                observed={"count": len(urls), "urls": [defang(display_url(u.value))[:200] for u in urls[:5]]},
                 display={"en": "Contains links", "ar": "يحتوي على روابط"},
             )
         )
@@ -201,7 +312,7 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
                 display={"en": "Contains phone numbers", "ar": "يحتوي على أرقام هاتف"},
             )
         )
-    res.evidence += _brand_evidence(text, urls, reg)
+    res.evidence += brand_ev
     return res
 
 
@@ -217,12 +328,12 @@ def _by_prefix(ctx: SignalContext, prefixes: tuple[str, ...]) -> list[Evidence]:
 
 @signal(SPEC_RULES)
 def run_rules(ctx: SignalContext) -> list[Evidence]:
-    return _rule_evidence(find_rules((ctx.text or "")[:MAX_MESSAGE_CHARS]))
+    return [e for e in analyze_message(ctx.text or "", _reg(ctx)).evidence if e.signal.startswith("message.rule.")]
 
 
 @signal(SPEC_CHILDREN)
 def run_children(ctx: SignalContext) -> list[Evidence]:
-    return _by_prefix(ctx, ("message.contains_",))
+    return _by_prefix(ctx, ("message.contains_", "message.limit_exceeded", "message.data_uri"))
 
 
 @signal(SPEC_BRAND)

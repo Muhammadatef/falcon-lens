@@ -567,3 +567,8 @@ def test_text_only_build_writes_fields_and_checklist(tmp_path: Path) -> None:
         assert descriptions.check((tmp_path / f"description_{lang}.txt").read_text(encoding="utf-8")) == []
     checklist = (tmp_path / "CHECKLIST.md").read_text(encoding="utf-8")
     assert "private window" in checklist and "description_en" in checklist and "20 MB" in checklist
+
+
+def test_sentinel_agent_is_gated_on_a_behavioural_test() -> None:
+    assert capabilities.SENTINEL_RUNS in capabilities.BY_ID["sentinel_agent"].probes
+    assert capabilities.SENTINEL_RUNS.startswith("test:services/sentinel/tests/test_llm_fallback.py::")

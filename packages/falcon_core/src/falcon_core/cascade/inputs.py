@@ -16,12 +16,13 @@ import time
 from typing import TYPE_CHECKING, Any, Literal
 
 from falcon_core.cascade.ai import AgentExtractorAdapter, injection_evidence, risk_only
-from falcon_core.cascade.assemble import TraceStep
+from falcon_core.cascade.assemble import TraceStep, display_url
 from falcon_core.cascade.evidence import dedupe, from_signal, make_evidence
 from falcon_core.cascade.ids import new_verdict_id
 from falcon_core.scoring.evidence import Evidence
 from falcon_core.signals.email.analyze import analyze_email
 from falcon_core.signals.image.analyze import analyze_image
+from falcon_core.signals.limits import InputTooLarge
 from falcon_core.signals.message.analyze import analyze_message
 from falcon_core.signals.message.extract import ChildInput
 from falcon_core.signals.url.canonical import canonicalize
@@ -91,7 +92,7 @@ async def run_input(
             await _extract(cascade, run, input_type, body)
         run.page_tier = True
         return await cascade._emit(sink, run, cascade._score(run), tier, final=True)
-    except SinkError:
+    except (SinkError, InputTooLarge):  # too large: the caller answers 413, no verdict (never a lower label)
         raise
     except Exception as exc:  # noqa: BLE001 - still end with one final verdict
         if run.final_emitted:
@@ -162,7 +163,7 @@ async def _judge_children(
                 run.degraded_reasons.append("child_check_degraded")
             observed: dict[str, Any] = {
                 "verdict": doc["verdict"],
-                "url": defang(url)[:200],
+                "url": defang(display_url(url))[:200],
                 "child_degraded": bool(doc["degraded"]),
             }
             return make_evidence(f"{family}.link_verdict", family, observed, tier="T2", source="computed")

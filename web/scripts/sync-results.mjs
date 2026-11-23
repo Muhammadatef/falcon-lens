@@ -25,10 +25,28 @@ if (existsSync(published)) {
   console.log("sync-results: no published artifacts here; keeping the committed copy");
 }
 
+// Live held-out false-alarm measurement: the newest evals/results/published/fp_regress/*.json (by created_at)
+// that carries the per-web-host split. Only the summary is bundled (not the 200 per-domain items).
+const fpDir = join(published, "fp_regress");
+if (existsSync(fpDir)) {
+  const cands = readdirSync(fpDir)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => ({ f, d: JSON.parse(readFileSync(join(fpDir, f), "utf8")) }))
+    .filter(({ d }) => d && d.by_serves_web && d.false_positive_rate)
+    .sort((a, b) => String(a.d.created_at).localeCompare(String(b.d.created_at)));
+  const best = cands.at(-1);
+  if (best) {
+    const summary = { ...best.d };
+    delete summary.items;
+    writeFileSync(join(web, "lib", "fp-regress.generated.json"), JSON.stringify({ available: true, artifact: best.f, data: summary }, null, 2) + "\n");
+    console.log("sync-results: fp_regress", best.f);
+  }
+}
+
 const assets = join(repo, "docs", "assets");
 if (existsSync(assets)) {
   mkdirSync(join(web, "public", "images"), { recursive: true });
-  for (const name of ["how-it-works.svg", "ai-agents.svg"]) {
+  for (const name of ["how-it-works.svg", "ai-agents.svg", "architecture.svg", "investigator.svg", "sentinel.svg", "agent-investigator-steps.svg", "agent-sentinel-steps.svg"]) {
     if (existsSync(join(assets, name))) copyFileSync(join(assets, name), join(web, "public", "images", name));
   }
 }
@@ -41,7 +59,7 @@ const PY = `
 import json, sys
 sys.path.insert(0, "scripts/submission")
 import capabilities as c
-want = ["message_check", "email_check", "image_check", "injection_defence", "investigator"]
+want = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix"]
 out = {}
 for cap in c.CAPABILITIES:
     if cap.id in want:
@@ -51,7 +69,14 @@ print(json.dumps(out))
 `;
 if (existsSync(join(repo, "scripts", "submission", "capabilities.py"))) {
   try {
-    const flags = JSON.parse(execFileSync("python3", ["-c", PY], { cwd: repo, encoding: "utf8" }));
+    // `test:` probes run pytest, so they need the repo's uv environment; plain python3 would report them false.
+    let out;
+    try {
+      out = execFileSync("uv", ["run", "--quiet", "python", "-c", PY], { cwd: repo, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 600_000 });
+    } catch {
+      out = execFileSync("python3", ["-c", PY], { cwd: repo, encoding: "utf8", timeout: 600_000 });
+    }
+    const flags = JSON.parse(out.trim().split("\n").at(-1));
     writeFileSync(join(web, "lib", "capabilities.generated.json"), JSON.stringify(flags, null, 2) + "\n");
     console.log("sync-results: capabilities", JSON.stringify(flags));
   } catch (error) {

@@ -1,0 +1,1776 @@
+{
+  "by_serves_web": {
+    "no_web_host": {
+      "counts": {
+        "no_warning_signs": 31,
+        "suspicious": 34
+      },
+      "degraded": 32,
+      "false_positive_rate": {
+        "ci95": [
+          0.4,
+          0.6615
+        ],
+        "value": 0.5231
+      },
+      "n": 65
+    },
+    "serves_web_page": {
+      "counts": {
+        "dangerous": 1,
+        "no_warning_signs": 115,
+        "suspicious": 19
+      },
+      "degraded": 15,
+      "false_positive_rate": {
+        "ci95": [
+          0.0889,
+          0.2074
+        ],
+        "value": 0.1481
+      },
+      "n": 135
+    }
+  },
+  "by_tier": {
+    "T1": 104,
+    "T2": 85,
+    "T3": 11
+  },
+  "counts": {
+    "dangerous": 1,
+    "no_warning_signs": 146,
+    "suspicious": 53
+  },
+  "created_at": "2026-11-23T12:43:16Z",
+  "degraded": 47,
+  "degraded_reasons": {
+    "not_rendered:dns_failure": 28,
+    "not_rendered:private": 1,
+    "partial_render": 7,
+    "sandbox_unavailable:blocked_by_policy:method_not_get": 1,
+    "sandbox_unavailable:egress_error": 1,
+    "sandbox_unavailable:fetch_failed": 2,
+    "sandbox_unavailable:timeout": 6,
+    "sandbox_unavailable:tls_error": 1
+  },
+  "errors": 0,
+  "false_positive_rate": {
+    "ci95": [
+      0.21,
+      0.33
+    ],
+    "n_boot": 2000,
+    "value": 0.27
+  },
+  "git_sha": "eaba149203c9f5eca339d6e94b72d4745d4fe019",
+  "items": [
+    {
+      "degraded_reasons": [],
+      "domain": "amazonaws.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "aws.dev",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "cdninstagram.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "gvt2.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "nic.ru",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "azurewebsites.net",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "ksyuncdn.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "licdn.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "tiktokcdn-us.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "grammarly.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "plex.direct",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "nexthink.cloud",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "userapi.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "issuu.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "ibyteimg.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "gandi-ns.fr",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "foxnews.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "teamviewer.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "smaato.net",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "palmplaystore.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "cookielaw.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "asus.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:timeout"
+      ],
+      "domain": "ddns.net",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "google.co.uk",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "netflix.net",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:tls_error"
+      ],
+      "domain": "herokuapp.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "cootlogix.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "pikabu.ru",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "amazon.com.au",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "n-tv.de",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "nationalgeographic.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "letterboxd.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "as.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "terra.com.br",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "4dex.io",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "gvt1-cn.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T3",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "mi-img.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "it.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "partial_render"
+      ],
+      "domain": "aftonbladet.se",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "stackexchange.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "msauth.net",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "warnerbros.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "divar.ir",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "cardgames.io",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "onrender.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "action.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "qianxun.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "tokyomotion.net",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "workdaysuv.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "partial_render"
+      ],
+      "domain": "vkontakte.ru",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "acm.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "ss.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:private"
+      ],
+      "domain": "medu.ir",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "animanch.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:timeout"
+      ],
+      "domain": "darkero.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "tappx.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "site777.jp",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "partial_render"
+      ],
+      "domain": "thscore99.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "ind.xxx",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "partial_render"
+      ],
+      "domain": "xn--18-3qi3cza3b2a2dxc4b9a.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "threads.net",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "your-server.de",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T3",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "exelator.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "euronews.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "smartthings.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "1password.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "kaspi.kz",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "elegantthemes.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "ltwebstatic.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "toasttab.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "livechatinc.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "expressen.se",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "iponweb.net",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "ahrefs.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:fetch_failed"
+      ],
+      "domain": "playhop.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "cursorvm.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "web.dev",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "xserver.jp",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "oaistatic.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:timeout"
+      ],
+      "domain": "kgslb.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "weatherbug.net",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "brightspace.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "so.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "verkada.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "partial_render"
+      ],
+      "domain": "gdz-raketa.ru",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "dangerous"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "fbpigeon.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "powerapps.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "netscape.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "hihonor.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "otm-r.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "5movierulz.ventures",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:timeout"
+      ],
+      "domain": "filmyzilla67.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "coe.int",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "yimg.jp",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "siteimproveanalytics.io",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "accenture.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "acoustic-adm.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "githubcopilot.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "steamcontent.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "captcha-delivery.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "tmall.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "uribl.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "firwinds.site",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "google.com.au",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "amp-endpoint1.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "dssott.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "incognia.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "pinduoduo.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "qpic.cn",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "indiegogo.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "bitrixphone.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "thehindu.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "libsyn.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "idealo.de",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "v-videoapp.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "ntppool.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "gotowebinar.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:blocked_by_policy:method_not_get"
+      ],
+      "domain": "kinopoisk.ru",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "glassdoor.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "partial_render"
+      ],
+      "domain": "x5.ru",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "faqs.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:egress_error"
+      ],
+      "domain": "opera-mini.net",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "sexwabs.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "my.gov.ir",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "sfr.fr",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "mktoresp.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "federalregister.gov",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "tradingeconomics.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "awsdns-13.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "awsdns-62.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "vatican.va",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "comodoca.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "hereapi.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:fetch_failed"
+      ],
+      "domain": "usembassy.gov",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "ftstatic.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "awsdns-43.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "hadronid.net",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "fastlydns.net",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "forticloud.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "rokt.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "feedly.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "pananames.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "dnsv2.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "boe.es",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "ts.net",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "hubapi.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "cian.ru",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "artstation.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "gitee.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "indiatoday.in",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "gamma.app",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "todoist.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "google.co.za",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "pchome.com.tw",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "gitea.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "kit.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "blender.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:timeout"
+      ],
+      "domain": "filmyfly.church",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "sandbox_unavailable:timeout"
+      ],
+      "domain": "filmyfly.broker",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "blacktoon425.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "trusteer.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "5movierulz.directory",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "distmed.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "similarweb.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "coloros.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "amazon.se",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "zyxel.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "arin.net",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "uidapi.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "queniukw.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "picsart.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "buffer.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "beyondtrustcloud.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "unicode.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "opencode.ai",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "termly.io",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "nationalacademies.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T3",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "hyperliquid.xyz",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "partial_render"
+      ],
+      "domain": "kompas.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "kia.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "nabu.casa",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "u-tokyo.ac.jp",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "supabase.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "wampserver.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "tinkercad.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "libreoffice.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "srmdata.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "siemens.de",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "gentoo.org",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "dns.eu",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "bigolive.tv",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "akasripcn.net",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "app.google",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "gldn.net",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "collider.com",
+      "partial": true,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "kidswebservices.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "jc-gs.com",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "bradesco.com.br",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T2",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [],
+      "domain": "marksandspencer.com",
+      "partial": false,
+      "serves_web": "1",
+      "tier": "T1",
+      "verdict": "no_warning_signs"
+    },
+    {
+      "degraded_reasons": [
+        "not_rendered:dns_failure"
+      ],
+      "domain": "chinanews.com.cn",
+      "partial": false,
+      "serves_web": "0",
+      "tier": "T1",
+      "verdict": "suspicious"
+    }
+  ],
+  "kind": "fp_regress",
+  "n": 200,
+  "partial_reads": 18,
+  "pool": 200,
+  "seed": 20261202,
+  "set": "heldout_legit_4.csv",
+  "target": 0.02,
+  "top_risk_signal_of_flagged": {
+    "domain.age_days": 1,
+    "injection.instruction_like_text": 1,
+    "page.cross_origin_post": 4,
+    "url.free_host_or_tunnel": 3
+  }
+}

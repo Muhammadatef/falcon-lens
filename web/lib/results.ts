@@ -86,3 +86,22 @@ export function formatCi(row: MetricRow, lang: Lang): string {
   if (row.lo === null || row.hi === null) return "";
   return `${formatMetric(row.key, row.lo, lang)} – ${formatMetric(row.key, row.hi, lang)}`;
 }
+
+/** The three numbers shown on Home and at the top of Results: test split only, never typed. */
+export interface Headline {
+  recall: MetricRow;
+  fpr: MetricRow;
+  official: number;
+  n: number;
+  artifact: string;
+}
+
+/** `null` when the artifact is unavailable or any of the four fields is missing (then no number renders at all). */
+export function headline(view: ResultsView | null): Headline | null {
+  const test = view?.splits.find((s) => s.split === "test");
+  if (!view || !test) return null;
+  const recall = test.rows.find((r) => r.key === "recall");
+  const fpr = test.rows.find((r) => r.key === "fpr");
+  if (!recall || !fpr || test.officialFalseDangerous === null) return null;
+  return { recall, fpr, official: test.officialFalseDangerous, n: test.n, artifact: view.artifact };
+}

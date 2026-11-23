@@ -103,6 +103,19 @@ def has_signal(doc: Mapping[str, Any], signal: str) -> bool:
     return any(e.get("signal") == signal for e in doc.get("evidence", []))
 
 
+def allowlist_hint(doc: Mapping[str, Any]) -> str:
+    """What to do when a fixture host was refused as an internal name: the running stack's allowlist is stale.
+
+    `.env` overrides the compose default of FL_SSRF_ALLOW_HOSTS, so an `.env` copied before a fixture host was
+    added keeps blocking it (seen on the demo stack: the injection, cloak and bot-relay hosts were missing)."""
+    if "not_rendered:internal_name" not in (doc.get("degraded_reasons") or []):
+        return ""
+    return (
+        "; FL_SSRF_ALLOW_HOSTS in .env is missing this fixture host: copy that line from .env.example, "
+        "then `docker compose up -d worker sandbox egress-proxy`"
+    )
+
+
 def fresh(url: str) -> str:
     """Add a throwaway query so an earlier cached verdict for the same URL is not returned."""
     return f"{url}{'&' if '?' in url else '?'}run={secrets.token_hex(4)}"
@@ -215,7 +228,7 @@ def s5_official(r: Runner) -> tuple[dict[str, Any], str]:
 def s6_injection(r: Runner) -> tuple[dict[str, Any], str]:
     d = r.url(fresh("http://falcon-demo-bank-injection.test/"))
     expect(d["verdict"] != "no_warning_signs", "injected page was cleared")
-    expect(not d.get("degraded"), f"page not rendered: {d.get('degraded_reasons')}")
+    expect(not d.get("degraded"), f"page not rendered: {d.get('degraded_reasons')}{allowlist_hint(d)}")
     expect(has_signal(d, "injection.instruction_like_text"), "injection evidence missing")
     return d, "instruction-like text counted as risk evidence"
 
@@ -249,7 +262,12 @@ def sentinel_scene(
 ) -> tuple[dict[str, Any], str]:
     """Short replay, then the planted campaign incident of this run must show executed + awaiting-approval actions."""
     if not healthy():
-        raise Scenario("sentinel container is not healthy")
+        # A FAIL, not a SKIP: the Sentinel is one of the two agents the demo shows, and a restart-looping
+        # container must never let `make demo` exit 0 (audit 2026-11-23).
+        raise CheckFailed(
+            "sentinel container is not healthy: `docker compose ps sentinel`, then "
+            "`docker compose up -d --build sentinel` (see docs/RUNBOOK.md#service-down)"
+        )
     op = r.env.get("FL_OPERATOR_KEY")
     if not op:
         raise Scenario("FL_OPERATOR_KEY not set")
@@ -290,7 +308,7 @@ def run_all(r: Runner, *, sentinel: bool = True, healthy: Callable[[], bool] = s
         except Scenario as exc:
             rows.append(Row(name, SKIPPED, note=str(exc)))
         except (CheckFailed, httpx.HTTPError, KeyError, subprocess.CalledProcessError) as exc:
-            rows.append(Row(name, FAIL, note=f"{type(exc).__name__}: {exc}"[:200]))
+            rows.append(Row(name, FAIL, note=f"{type(exc).__name__}: {exc}"[:320]))
     return rows
 
 
