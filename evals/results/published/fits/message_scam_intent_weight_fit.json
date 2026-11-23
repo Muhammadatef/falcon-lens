@@ -2,7 +2,7 @@
  "kind": "message_scam_intent_weight_fit",
  "label": "synthetic, single-author, pending audit",
  "procedure": "maximise val recall s.t. val legit FPR <= 2%; ties to the smallest weight (as L1 D2 model_cap fit)",
- "git_sha": "d065e909c507636f75211cb3f3523bed7343ba46-dirty",
+ "git_sha": "93134f4a6149bc4a72761469ae293cc423661b1e",
  "dataset_hash": "036de1048cd68797338115ca65a840508aebf4dfa193b2bac8fe17f304ddf7a7",
  "n_val_scam": 26,
  "n_val_legit": 15,
