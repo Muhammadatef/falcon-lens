@@ -95,9 +95,10 @@ class MessageAnalysis:
     truncated: bool = False
 
 
-def _rule_evidence(hits: list[RuleHit]) -> list[Evidence]:
+def _rule_evidence(hits: list[RuleHit], brand_named: bool = False) -> list[Evidence]:
     names = {h.rule for h in hits}
-    h6 = "authority" in names
+    # H6 identity half: an explicit authority/bank claim, or a registered brand named in the message.
+    h6 = "authority" in names or brand_named
     out = []
     for h in hits:
         en, ar = _DISPLAY[h.rule]
@@ -174,8 +175,11 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
     text = text[:MAX_MESSAGE_CHARS]
     reg = reg or default_registry()
     res = MessageAnalysis(truncated=truncated)
-    res.evidence += _rule_evidence(find_rules(text))
     urls = extract_urls(text)
+    brand_ev = _brand_evidence(text, urls, reg)
+    res.evidence += _rule_evidence(
+        find_rules(text), brand_named=any(e.signal == "message.brand_mention" for e in brand_ev)
+    )
     phones = extract_phones(text)
     res.children = [*urls, *phones]
     if urls:
@@ -201,7 +205,7 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
                 display={"en": "Contains phone numbers", "ar": "يحتوي على أرقام هاتف"},
             )
         )
-    res.evidence += _brand_evidence(text, urls, reg)
+    res.evidence += brand_ev
     return res
 
 

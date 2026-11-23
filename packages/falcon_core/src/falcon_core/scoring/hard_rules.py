@@ -27,8 +27,17 @@ InputType = Literal["url", "message", "email", "image"]
 FEED_SIGNALS: frozenset[str] = frozenset(["rep.openphish", "rep.gsb", "rep.urlhaus"])
 BOT_TARGET_KINDS: frozenset[str] = frozenset(["bot_api", "messaging_bot", "webhook", "webhook_relay", "form_relay"])
 LINK_VERDICT_SIGNALS: frozenset[str] = frozenset(["message.link_verdict", "email.link_verdict"])
+# "authority/bank impersonation" for H6 (SCORING §3). ``message.brand_mention`` counts: a message that names a
+# registered brand (the usual "BankName: ..." sender line) AND asks for a one-time code or a remote-access
+# install is posing as that brand; no bank asks for either by message. The ask rules are narrow (a code
+# *delivery* or a "never share your code" reminder does not fire them), so a named brand alone never fires H6.
 IMPERSONATION_SIGNALS: frozenset[str] = frozenset(
-    ["message.rule.authority", "email.display_name_impersonation", "brand.claimed_not_owned"]
+    [
+        "message.rule.authority",
+        "message.brand_mention",
+        "email.display_name_impersonation",
+        "brand.claimed_not_owned",
+    ]
 )
 
 

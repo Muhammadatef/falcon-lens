@@ -25,6 +25,7 @@ OFFICIAL: Spec = (
 BOT_POST: Spec = ("page.cross_origin_post", {"bot": True, "target_kind": "bot_api"}, {})
 OTP: Spec = ("message.rule.otp_request", True, {})
 AUTHORITY: Spec = ("message.rule.authority", True, {})
+BRAND_NAMED: Spec = ("message.brand_mention", {"brands": ["falcon_demo_bank"], "demo": True}, {})
 
 
 # (case id, rule, evidence specs, input_type, expected fired?)
@@ -159,6 +160,16 @@ CASES: list[tuple[str, str, list[Spec], str, bool]] = [
         True,
     ),
     ("h6_otp_without_impersonation", "H6", [OTP], "message", False),
+    # A registered brand named in the message is the "bank impersonation" half (audit 2026-11-23).
+    ("h6_otp_plus_named_brand", "H6", [OTP, BRAND_NAMED], "message", True),
+    (
+        "h6_remote_access_plus_named_brand",
+        "H6",
+        [("message.rule.remote_access", True, {}), BRAND_NAMED],
+        "message",
+        True,
+    ),
+    ("h6_named_brand_without_ask", "H6", [BRAND_NAMED, ("message.rule.urgency", True, {})], "message", False),
     (
         "h6_authority_without_ask",
         "H6",
