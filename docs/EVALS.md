@@ -29,3 +29,10 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 **Artifact.** `evals/results/<ts>.json` records the dataset hash, git SHA, model ids, thresholds and seeds, alongside an HTML report. Headline numbers go to Prometheus as `fl_eval_metric{name,split,route}`. Copies for publication go in `evals/results/published/`.
 
 **Sentinel evals.** A labelled replay stream with planted campaigns. Metrics: incident precision and recall, time to incident, duplicate rate, false-block rate and summary faithfulness. Rules have unit tests; the graph has a deterministic test with a stubbed LLM.
+
+### Shipped-cascade red-team: how to quote it
+`make redteam-shipped` writes `coverage_caveat` into its artifact. Never quote the harmful count without it: the number is
+"harmful at extended local-model deadlines (model answered N of 113)", and "at production deadlines the model answered M of 113
+(timeouts) with the same harmful cases". The figures live only in `evals/results/published/redteam/` (one artifact per budget);
+copy them from there, never from this page. Eight extra `t3_page` cases (uncertain band, so the T3 investigator runs) are
+reported separately as `summary.t3_uncertain` and are not part of the 113.
