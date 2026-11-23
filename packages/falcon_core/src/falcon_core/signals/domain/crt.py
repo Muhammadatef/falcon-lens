@@ -40,6 +40,7 @@ SPEC = SignalSpec(
     emits=("domain.cert_age_days", "domain.cert_issuer", "domain.ct_siblings"),
     cache_ttl_s=CRT_TTL_S,
     feature_names=("cert_age_days",),
+    criticality="enrichment",  # third-party crt.sh: 502/backoff must not degrade a verdict
 )
 
 _sem: asyncio.Semaphore | None = None

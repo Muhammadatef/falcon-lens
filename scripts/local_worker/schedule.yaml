@@ -1,0 +1,24 @@
+# Recurring jobs. They run only when the queue is empty. Edit freely; the daemon re-reads this file every tick.
+# Strings in `params` may use {ts} (UTC timestamp, e.g. 20261123T101500Z).
+jobs:
+  - name: sovereign-eval
+    every_hours: 6
+    kind: eval_sovereign
+    priority: 8
+  - name: synthetic-batch
+    every_hours: 3
+    kind: synthetic_messages
+    input: evals/specs/synthetic_messages_v2.json
+    params: {task_id: "auto-{ts}"}
+    priority: 7
+  - name: arabic-review
+    every_hours: 12
+    kind: arabic_review
+    input:
+      - packages/falcon_core/src/falcon_core/i18n/ar.yaml
+      - web/lib/i18n.ts
+    priority: 9
+  - name: dspy-optimize
+    every_hours: 24
+    kind: dspy_local
+    priority: 9

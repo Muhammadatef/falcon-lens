@@ -149,6 +149,8 @@ def test_invalid_input_sets_degraded(signal: str) -> None:
         ("rep.urlhaus", "feed_disabled", "urlhaus"),
         ("rep.openphish", "feed_disabled", "openphish"),
         ("domain.age", "rdap_unsupported_tld", "rdap"),
+        ("domain.age", "rdap_not_found", "rdap"),
+        ("domain.age", "rdap_no_registration_date", "rdap"),
     ],
 )
 def test_informational_errors_do_not_degrade(signal: str, error: str, source: str) -> None:

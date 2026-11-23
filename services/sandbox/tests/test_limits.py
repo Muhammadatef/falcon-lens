@@ -123,12 +123,33 @@ def test_classify_fetch_error(msg: str, code: str) -> None:
 
 def test_proxy_refusal_is_an_error_not_a_blank_page() -> None:
     assert proxy_refusal(405, {}, 0, via_proxy=True) == "egress_blocked"
-    assert proxy_refusal(403, {"Connection": "close"}, 0, via_proxy=True) == "egress_blocked"
     assert proxy_refusal(502, {}, 0, via_proxy=True) == "egress_error"
     # a real page that happens to be 403 has a body / content type; fixtures bypass the proxy
     assert proxy_refusal(403, {"content-type": "text/html"}, 0, via_proxy=True) is None
     assert proxy_refusal(403, {}, 120, via_proxy=True) is None
     assert proxy_refusal(405, {}, 0, via_proxy=False) is None
+
+
+def test_proxy_denial_is_blocked_by_policy_with_reason() -> None:
+    h = {"X-Falcon-Block-Reason": "private_ip", "Connection": "close"}
+    assert proxy_refusal(403, h, 0, via_proxy=True) == "blocked_by_policy:private_ip"
+    assert proxy_refusal(403, {"x-falcon-block-reason": "metadata"}, 0, via_proxy=True) == "blocked_by_policy:metadata"
+
+
+@pytest.mark.parametrize("value", ["", "  ", "Bad Reason!", "a" * 80, "x\u00e9", "a;b"])
+def test_unparseable_block_reason_fails_closed(value: str) -> None:
+    assert proxy_refusal(403, {"X-Falcon-Block-Reason": value}, 0, via_proxy=True) == "blocked_by_policy"
+
+
+def test_target_empty_403_is_http_403_empty() -> None:
+    assert proxy_refusal(403, {"Connection": "close"}, 0, via_proxy=True) == "http_403_empty"
+    assert proxy_refusal(403, {"Server": "AkamaiGHost"}, 0, via_proxy=True) == "http_403_empty"
+
+
+def test_other_target_errors_keep_their_codes() -> None:
+    assert proxy_refusal(404, {}, 0, via_proxy=True) is None
+    assert proxy_refusal(500, {}, 0, via_proxy=True) is None
+    assert proxy_refusal(429, {}, 0, via_proxy=True) is None
 
 
 # ---- total timeout ------------------------------------------------------------------------------

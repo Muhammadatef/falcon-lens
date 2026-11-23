@@ -47,6 +47,8 @@ def headline(doc: dict[str, Any]) -> dict[str, Any]:
         "recall": v["overall"]["recall"]["value"],
         "fpr": v["overall"]["fpr"]["value"],
         "official_false_dangerous": v["verified_official"]["false_dangerous"],
+        "message_recall": v.get("message_path", {}).get("recall", {}).get("value"),
+        "message_fpr": v.get("message_path", {}).get("fpr", {}).get("value"),
         "injection_attack_success_rate": doc.get("injection_attack_success_rate"),
         "faithfulness": doc.get("faithfulness"),
     }
@@ -78,6 +80,12 @@ def compare(baseline: dict[str, Any], doc: dict[str, Any]) -> tuple[list[str], l
         fails.append("fpr undefined")
     elif cur["fpr"] - baseline["fpr"] > FPR_RISE + 1e-12:
         fails.append(f"fpr rose {cur['fpr'] - baseline['fpr']:.4f} (> {FPR_RISE})")
+    for key, worse, tol in (("message_recall", -1, RECALL_DROP), ("message_fpr", 1, FPR_RISE)):
+        b, c = baseline.get(key), cur.get(key)
+        if b is None or c is None:
+            skipped.append(f"{key}: not in the baseline or the result (rerun `make eval-baseline`)")
+        elif worse * (c - b) > tol + 1e-12:
+            fails.append(f"{key} moved {c - b:+.4f} (tolerance {tol})")
     if cur["official_false_dangerous"] > 0:
         fails.append(f"{cur['official_false_dangerous']} false dangerous on verified-official sites")
     checks: tuple[tuple[str, Callable[[float], bool]], ...] = (

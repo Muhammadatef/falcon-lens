@@ -45,7 +45,7 @@ test.describe("campaign board", () => {
     await page.goto("/campaigns?demo=1");
     await expect(page.getByTestId("demo-ribbon")).toContainText("DEMO DATA");
     await expect(page.getByTestId("campaign-card")).toHaveCount(3);
-    await expect(page.getByTestId("source-badge").first()).toContainText("synthetic");
+    await expect(page.getByTestId("source-badge").first()).toContainText("اصطناعية");
   });
 });
 

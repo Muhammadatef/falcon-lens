@@ -56,10 +56,13 @@ def h1_brand_mismatch(
     registrable_domain: str | None,
     verified_domains: Mapping[str, frozenset[str]] | None,
 ) -> FiredRule | None:
+    # H1 never depends on an LLM: only deterministic claims (page title/text brand tokens, favicon, hotlinked
+    # assets, form context) count. An extractor claim still adds log-odds weight (risk only) but cannot fire
+    # the rule, and a prompt-injected extractor can neither remove nor replace a deterministic claim.
     claims = [
         e
         for e in _by_signal(present, "brand.claimed_not_owned")
-        if confidence_of(e) >= params.h1_brand_claim_min_confidence
+        if confidence_of(e) >= params.h1_brand_claim_min_confidence and not untrusted_origin(e)
     ]
     if registrable_domain and verified_domains:
         # Double-check "not owned" against the registry when the caller supplies it.
@@ -133,15 +136,22 @@ def h4_exfil_to_bot(present: Sequence[Evidence]) -> FiredRule | None:
     return FiredRule("H4", "floor_dangerous", tuple(dict.fromkeys(ids)))
 
 
+def _link_verdict(e: Evidence) -> str | None:
+    v = e.observed if isinstance(e.observed, str) else observed_get(e, "verdict")
+    return v if isinstance(v, str) else None
+
+
 def h5_message_dangerous_link(present: Sequence[Evidence]) -> FiredRule | None:
-    links = [
-        e
-        for e in _by_signal(present, *LINK_VERDICT_SIGNALS)
-        if e.observed == "dangerous" or observed_get(e, "verdict") == "dangerous"
-    ]
-    if not links:
-        return None
-    return FiredRule("H5", "floor_dangerous", tuple(e.id for e in links))
+    """A message/email is at least as severe as its worst child link: dangerous child -> dangerous (floor),
+    suspicious child -> at least suspicious. Cites the child verdict evidence."""
+    links = _by_signal(present, *LINK_VERDICT_SIGNALS)
+    bad = [e for e in links if _link_verdict(e) == "dangerous"]
+    if bad:
+        return FiredRule("H5", "floor_dangerous", tuple(e.id for e in bad))
+    warn = [e for e in links if _link_verdict(e) == "suspicious"]
+    if warn:
+        return FiredRule("H5", "floor_suspicious", tuple(e.id for e in warn))
+    return None
 
 
 def h6_otp_remote_access(present: Sequence[Evidence]) -> FiredRule | None:

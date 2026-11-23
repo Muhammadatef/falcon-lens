@@ -1,0 +1,46 @@
+{
+  "chosen": {
+    "fpr_form": 0.011904761904761904,
+    "fpr_url_only": 0.0,
+    "margin": 0.0,
+    "n_legit": 84,
+    "n_phishing": 60,
+    "notes": [],
+    "recall_form": 0.9666666666666667,
+    "recall_url_only": 0.0,
+    "strong_adj": 0.0
+  },
+  "constraints": {
+    "credential_form_dangerous_fpr_max": 0.02,
+    "url_only_dangerous_fpr_max": 0.01
+  },
+  "dataset_hash": "382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1",
+  "fitted_on": "validation only",
+  "git_sha": "d977f04791a60a69b21d41b59f0648ea8e45dc4f",
+  "grid": {
+    "margin": [
+      0.0,
+      0.5,
+      1.0,
+      1.5,
+      2.0,
+      2.5,
+      3.0
+    ],
+    "strong_adj": [
+      0.0,
+      0.5,
+      1.0,
+      1.5,
+      2.0,
+      2.5,
+      3.0,
+      3.5,
+      4.0,
+      4.5,
+      5.0
+    ]
+  },
+  "seed": 20261122,
+  "split": "val"
+}
