@@ -68,7 +68,15 @@ STRONG_EVIDENCE_ADJ = 2.5  # log-odds of non-classifier risk evidence needed for
 MODEL_ONLY_MARGIN = 1.5  # log-odds of deterministic risk evidence needed to move from the model cap to dangerous
 
 # Sandbox failures meaning "could not open the page" (bot blocking, slow site), not a platform fault.
-SOFT_RENDER_FAILURES: frozenset[str] = frozenset(["render_failed", "timeout", "dns_failure", "http_502"])
+# ``egress_blocked`` is the sandbox's heuristic for an empty 403 (a site refusing headless browsers looks the
+# same as a proxy refusal); target-policy decisions (SSRF guard at T0, ``blocked_by_policy`` redirect hops,
+# sandbox HTTP 400 ``blocked``) are NOT in this set and always degrade.
+SOFT_RENDER_FAILURES: frozenset[str] = frozenset(
+    [
+        "render_failed", "timeout", "dns_failure", "http_502", "egress_blocked", "egress_error",
+        "connect_failed", "tls_error", "fetch_failed", "no_response", "extract_failed",
+    ]
+)  # fmt: skip
 
 
 class VerdictSink(Protocol):
@@ -621,8 +629,8 @@ class Cascade:
             )
             if features.error and not features.final_url:
                 err = features.error.lower()
-                blocked = err.startswith(("ssrf", "blocked", "egress"))
-                raise SandboxError("blocked_target" if blocked else "render_failed")
+                known = SOFT_RENDER_FAILURES | {"blocked_by_policy", "too_many_redirects", "size_cap"}
+                raise SandboxError(err if err in known else "render_failed")
         except (TimeoutError, SandboxError) as exc:
             reason = "timeout" if isinstance(exc, TimeoutError) else exc.reason
             if reason == "timeout":

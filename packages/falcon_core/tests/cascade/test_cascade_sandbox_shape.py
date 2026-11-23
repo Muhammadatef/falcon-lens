@@ -50,3 +50,14 @@ async def test_sandbox_failure_degrades_with_risk_evidence_or_internal_error() -
     cascade, _ = make_cascade(StubSandboxClient(error="unreachable:ConnectError"))
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]  # not a soft render failure
     assert final["degraded"] and final["verdict"] != "no_warning_signs"
+
+
+async def test_headless_refusal_is_soft_but_policy_block_degrades() -> None:
+    soft = SandboxFeatures.model_validate({"error": "egress_blocked", "final_url": None})
+    cascade, _ = make_cascade(StubSandboxClient(default=soft))
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert not final["degraded"] and final["verdict"] == "no_warning_signs"
+    hard = SandboxFeatures.model_validate({"error": "blocked_by_policy", "final_url": None})
+    cascade, _ = make_cascade(StubSandboxClient(default=hard))
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert final["degraded"] and "sandbox_unavailable:blocked_by_policy" in final["degraded_reasons"]
