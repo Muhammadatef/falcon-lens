@@ -1,6 +1,6 @@
 {
   "available": true,
-  "artifact": "9725895a5537_20261123T032418Z.json",
+  "artifact": "a2f083cf1a77_20261123T085415Z.json",
   "data": {
     "by_serves_web": {
       "no_web_host": {
@@ -20,48 +20,47 @@
       },
       "serves_web_page": {
         "counts": {
-          "dangerous": 1,
-          "no_warning_signs": 109,
-          "suspicious": 36
+          "dangerous": 2,
+          "no_warning_signs": 122,
+          "suspicious": 22
         },
-        "degraded": 35,
+        "degraded": 20,
         "false_positive_rate": {
           "ci95": [
-            0.1781,
-            0.3288
+            0.1027,
+            0.2329
           ],
-          "value": 0.2534
+          "value": 0.1644
         },
         "n": 146
       }
     },
     "by_tier": {
       "T1": 139,
-      "T2": 58,
-      "T3": 3
+      "T2": 56,
+      "T3": 5
     },
     "counts": {
-      "dangerous": 1,
-      "no_warning_signs": 130,
-      "suspicious": 69
+      "dangerous": 2,
+      "no_warning_signs": 143,
+      "suspicious": 55
     },
-    "created_at": "2026-11-23T03:24:18Z",
-    "degraded": 67,
+    "created_at": "2026-11-23T08:54:15Z",
+    "degraded": 52,
     "degraded_reasons": {
       "not_rendered:dns_failure": 30,
-      "sandbox_unavailable:blocked_by_policy": 30,
-      "sandbox_unavailable:timeout": 7
+      "sandbox_unavailable:timeout": 22
     },
     "errors": 0,
     "false_positive_rate": {
       "ci95": [
-        0.29,
-        0.415
+        0.23,
+        0.345
       ],
       "n_boot": 2000,
-      "value": 0.35
+      "value": 0.285
     },
-    "git_sha": "9725895a5537af1bf4df3f54baf64129e20e7437",
+    "git_sha": "a2f083cf1a77c8000bd54241efa9281005389a35",
     "kind": "fp_regress",
     "n": 200,
     "pool": 200,
@@ -69,7 +68,7 @@
     "set": "heldout_legit_2.csv",
     "target": 0.02,
     "top_risk_signal_of_flagged": {
-      "page.cross_origin_post": 1,
+      "page.cross_origin_post": 2,
       "url.free_host_or_tunnel": 3
     }
   }
