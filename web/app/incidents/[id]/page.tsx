@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./trace.css";
 import { notFound } from "next/navigation";
 import { IncidentTrace } from "@/components/IncidentTrace";
 import { INCIDENT_ID_RE } from "@/lib/contracts";

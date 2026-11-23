@@ -57,6 +57,7 @@ class StepRec:
     tools: list[dict[str, Any]] = field(default_factory=list)
     llm: dict[str, Any] | None = None
     fallback: bool = False
+    rule_fallback: bool = False
 
     def use_llm(self, route: str, model: str) -> dict[str, Any]:
         if self.llm is None:
@@ -156,6 +157,11 @@ def summarise_step(node: str, out: dict[str, Any], rec: StepRec, status: str, pe
         return (
             f"The {what_en} was written by the model and checked against the evidence.",
             f"كتب النموذج {what_ar} وجرى التحقق منه مقابل الأدلة.",
+        )
+    if node == "propose" and rec.rule_fallback:
+        return (
+            "No valid model proposal: a rule-based takedown draft was queued. It needs human approval.",
+            "لا مقترح صالحاً من النموذج، فأُضيفت مسودة بلاغ وفق القواعد. تحتاج موافقة بشرية.",
         )
     if node == "propose":
         n, r = len(out.get("proposals", [])), len(out.get("rejected", []))

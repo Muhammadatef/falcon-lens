@@ -43,14 +43,15 @@ from redis.exceptions import RedisError
 from sentinel_core.incidents import Sentinel
 
 from falcon_core.config import get_settings
+from falcon_core.llm import LLMRouter, RouterConfig
 from falcon_core.service import create_app, run
 from falcon_core.tools.sentinel import ToolContext
 
 from .consumer import Consumer
 from .db import IncidentCache, PgRepo
 from .graph import ApprovalError, Deps, TriageRunner, set_default_runner
-from .llm import LLMClient, OpenAICompatLLM, StubLLM
-from .metrics import SentinelMetrics
+from .llm import LLMClient, RouterLLM, StubLLM
+from .metrics import REQUEUE_FAILURES, SentinelMetrics
 from .trace import assemble_trace
 
 log = logging.getLogger("falcon.sentinel")
@@ -68,10 +69,12 @@ def official_domains() -> list[str]:
 
 
 def make_llm() -> LLMClient:
-    """The triage LLM client: stub if FL_SENTINEL_LLM=stub, otherwise the local OpenAI-compatible server."""
-    if os.environ.get("FL_SENTINEL_LLM", "ollama") == "stub":
+    """Triage LLM client. FL_SENTINEL_LLM=stub -> stub. Otherwise every call goes through falcon_core's router:
+    Anthropic when ANTHROPIC_API_KEY is set and FL_SOVEREIGN_MODE is off (cloud default), else the local model;
+    PII redaction and the canary run inside the router for both routes."""
+    if os.environ.get("FL_SENTINEL_LLM", "auto") == "stub":
         return StubLLM()
-    return OpenAICompatLLM(settings.ollama_base_url, os.environ.get("FL_SENTINEL_MODEL", "inkling-2-mini-chat"))
+    return RouterLLM(LLMRouter(RouterConfig.from_env()))
 
 
 class Runtime:
@@ -96,6 +99,7 @@ async def retry_stuck_loop(runner: TriageRunner) -> None:
             await runner.resume_unfinished()
         except Exception:  # noqa: BLE001
             log.exception("retry of stuck incidents failed")
+            REQUEUE_FAILURES.inc()
 
 
 async def triage_loop(consumer: Consumer, runner: TriageRunner, queue: asyncio.Queue[str]) -> None:
@@ -170,7 +174,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             on_incidents,
         )
         await consumer.setup()
-        await runner.resume_unfinished()
+        try:
+            await runner.resume_unfinished()
+        except Exception:  # noqa: BLE001 - a stuck incident must never stop the service; retry_stuck_loop continues
+            log.exception("startup requeue of stuck incidents failed")
+            REQUEUE_FAILURES.inc()
         tasks = [
             asyncio.create_task(consume_loop(consumer)),
             asyncio.create_task(triage_loop(consumer, runner, queue)),

@@ -37,8 +37,10 @@ class StubExtractor:
         self.evidence = list(evidence)
         self.boom = boom
         self.last_route = "none"
+        self.calls = 0
 
     async def extract(self, features: SandboxFeatures, verdict_id: str) -> list[Evidence]:
+        self.calls += 1
         if self.boom:
             raise RuntimeError("provider down")
         return list(self.evidence)
@@ -75,6 +77,13 @@ async def test_llm_brand_claim_alone_does_not_fire_h1() -> None:
     with_llm = await final_of(DEMO_ZERO_DAY_URL, sandbox, extractor=StubExtractor([CLAIM]))
     assert "H1" not in rules(with_llm)  # the extractor cannot create a hard rule
     assert with_llm["risk_score"] >= base["risk_score"]  # but it may raise risk
+
+
+async def test_t2_calls_the_extractor() -> None:
+    # Capability probe `test:` target (scripts/submission/capabilities.py): CascadeDeps accepts and uses an extractor.
+    ex = StubExtractor([])
+    await final_of(DEMO_ZERO_DAY_URL, StubSandboxClient(default=zero_day_features()), extractor=ex)
+    assert ex.calls == 1
 
 
 async def test_deterministic_h1_survives_hostile_extractor_output() -> None:

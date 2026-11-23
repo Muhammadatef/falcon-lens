@@ -17,6 +17,7 @@ export interface TraceTool {
   status: "ok" | "error";
   evidence_ids: string[];
   duration_ms: number;
+  origin?: "model" | "rule_fallback";
 }
 export interface TraceLlm {
   route: LlmRoute;
@@ -37,6 +38,7 @@ export interface TraceStep {
   summary_ar: string;
   tools: TraceTool[];
   llm: TraceLlm | null;
+  generated_by?: "llm" | "template" | "rule" | null;
   budget: { steps_used: number; tokens_used: number; elapsed_ms: number };
   error_code: string | null;
 }
@@ -79,6 +81,7 @@ function parseTool(raw: unknown): TraceTool | null {
     status: raw.status === "error" ? "error" : "ok",
     evidence_ids: Array.isArray(raw.evidence_ids) ? raw.evidence_ids.filter((x): x is string => typeof x === "string").slice(0, 20) : [],
     duration_ms: nat(raw.duration_ms),
+    ...(raw.origin === "rule_fallback" || raw.origin === "model" ? { origin: raw.origin } : {}),
   };
 }
 
@@ -105,6 +108,7 @@ function parseStep(raw: unknown): TraceStep | null {
     summary_ar: str(raw.summary_ar),
     tools: (Array.isArray(raw.tools) ? raw.tools : []).map(parseTool).filter((t): t is TraceTool => t !== null),
     llm: parseLlm(raw.llm),
+    generated_by: raw.generated_by === "llm" || raw.generated_by === "template" || raw.generated_by === "rule" ? raw.generated_by : null,
     budget: { steps_used: nat(b.steps_used), tokens_used: nat(b.tokens_used), elapsed_ms: nat(b.elapsed_ms) },
     error_code: typeof raw.error_code === "string" ? raw.error_code : null,
   };

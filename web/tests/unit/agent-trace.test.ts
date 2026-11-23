@@ -4,7 +4,7 @@ import Ajv2020 from "ajv/dist/2020";
 import addFormats from "ajv-formats";
 import { describe, expect, it } from "vitest";
 import { NODES, flatSteps, liveRun, parseAgentTrace } from "@/lib/agent-trace";
-import { DEMO_TRACE } from "@/lib/demo";
+import { DEMO_TRACE } from "@/lib/demo-trace";
 
 const schema = JSON.parse(readFileSync(fileURLToPath(new URL("../../../contracts/agent_trace.schema.json", import.meta.url)), "utf8"));
 const ajv = new Ajv2020({ strict: false, allErrors: true });

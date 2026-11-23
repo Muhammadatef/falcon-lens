@@ -1,4 +1,5 @@
-import { DEMO_INCIDENT, DEMO_TRACE } from "../../lib/demo";
+import { DEMO_INCIDENT } from "../../lib/demo";
+import { DEMO_TRACE } from "../../lib/demo-trace";
 import { XSS } from "../fixtures";
 import { expect, newIncidentId, setPrefs, test, useBoards } from "./helpers";
 
@@ -74,6 +75,22 @@ test.describe("incident agent trace page", () => {
     await expect(page.getByTestId("trace-timeline")).toContainText(XSS.img);
     await expect(page.locator("main img, main script, main svg[onload], main a:not([data-testid='trace-back'])")).toHaveCount(0);
     expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
+  });
+
+  test("a rule-based fallback draft is shown as its own labelled chip, with generated_by on LLM nodes", async ({ page, context, request, baseURL }) => {
+    const id = newIncidentId();
+    const trace = traceOf(id, (s) => {
+      s[2]!.generated_by = "llm";
+      s[3]!.generated_by = "template";
+      s[4]!.generated_by = "rule";
+      s[4]!.tools = [{ name: "draft_takedown", mode: "external_draft", status: "ok", evidence_ids: [], duration_ms: 0, origin: "rule_fallback" }];
+    });
+    await useBoards(context, request, baseURL!, { incidents: [incident(id)], traces: { [id]: [trace] } });
+    await setPrefs(context, baseURL!, { lang: "en" });
+    await page.goto(`/incidents/${id}`);
+    await expect(page.locator('[data-testid="trace-tool"][data-origin="rule_fallback"]')).toContainText("rule-based draft, needs human approval");
+    const by = await page.getByTestId("step-generated").evaluateAll((els) => els.map((e) => e.getAttribute("data-by")));
+    expect(by).toEqual(["llm", "template", "rule"]);
   });
 
   test("reduced motion switches the entrance animation off", async ({ page, context, request, baseURL }) => {

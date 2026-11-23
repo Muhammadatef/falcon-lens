@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { traceHref } from "@/lib/agent-trace";
+import { trT } from "@/lib/i18n-trace";
 import { authHeaders, decideAction, loadBoard } from "@/lib/api";
 import { parseIncident, unwrapList, type ActionStatus, type Incident } from "@/lib/contracts";
 import { formatTime, pick, translateMaybe } from "@/lib/i18n";
@@ -207,7 +208,7 @@ function IncidentCard({ incident, demo, notice, onDecide }: { incident: Incident
         <SourceBadge source={incident.source} />
         <span className="pill">{translateMaybe(lang, "type", incident.type)}</span>
         <span className={incident.status === "awaiting_approval" ? "pill pill--wait pill--live" : "pill"} data-testid="incident-status">{t(`is.${incident.status}`)}</span>
-        <Link className="btn btn--sm" href={l.href} data-testid="trace-link"><Icon name="list" size={20} />{t("tr.link")}</Link>
+        <Link className="btn btn--sm" href={l.href} data-testid="trace-link"><Icon name="list" size={20} />{trT(lang, "tr.link")}</Link>
       </div>
       <div className="inc-grid">
         <div>
