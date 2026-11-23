@@ -1,6 +1,7 @@
 [project]
 name = "falcon-sandbox"
 version = "0.1.0"
+license = "Apache-2.0"
 description = "Falcon Lens sandbox browser service (features only)"
 requires-python = ">=3.12,<3.13"
 dependencies = ["falcon-core", "playwright==1.65.2", "pillow>=11.0", "httpx>=0.28"]
