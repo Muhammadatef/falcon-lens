@@ -31,6 +31,11 @@ class LLMOutputError(Exception):
     """Model output was not valid after the repair retry."""
 
 
+class LLMUnavailable(LLMOutputError):
+    """The model could not be reached or answered with an error (HTTP, connection, timeout).
+    A subclass of LLMOutputError so every node falls back to the template path; it is never retried."""
+
+
 class BudgetExceeded(Exception):
     pass
 
@@ -107,7 +112,13 @@ async def structured[M: BaseModel](
                 "repair": f"Previous output was invalid: {last_err[:300]}. Return only valid JSON matching the schema.",
             }
         )
-        data = await llm.complete_json(role="sentinel", system=system, user_json=payload, schema=schema)
+        try:
+            data = await llm.complete_json(role="sentinel", system=system, user_json=payload, schema=schema)
+        except LLMUnavailable:
+            raise
+        except LLMOutputError as exc:  # unparseable text: one repair retry like a schema failure
+            last_err = str(exc)
+            continue
         if on_tokens:
             on_tokens(estimate_tokens(payload, data))
         try:
@@ -120,8 +131,33 @@ async def structured[M: BaseModel](
 # ------------------------------------------------------------------ OpenAI-compatible adapter
 
 
+def parse_json_text(content: str) -> dict[str, Any]:
+    """Model text -> JSON object. Strips end tokens and code fences; tolerates prose around one object."""
+    text = clean_text(content)
+    try:
+        out = json.loads(text)
+    except json.JSONDecodeError as exc:
+        lo, hi = text.find("{"), text.rfind("}")
+        if lo < 0 or hi <= lo:
+            raise LLMOutputError(f"not json: {exc}") from exc
+        try:
+            out = json.loads(text[lo : hi + 1])
+        except json.JSONDecodeError as exc2:
+            raise LLMOutputError(f"not json: {exc2}") from exc2
+    if not isinstance(out, dict):
+        raise LLMOutputError("json root is not an object")
+    return out
+
+
+def _structured_unsupported(resp: httpx.Response) -> bool:
+    return resp.status_code in (400, 422, 501) and "structured" in resp.text.lower()
+
+
 class OpenAICompatLLM:
-    """Ollama exposes /v1/chat/completions; any OpenAI-compatible server works."""
+    """Ollama exposes /v1/chat/completions; any OpenAI-compatible server works.
+
+    response_format (json mode) is sent only when `structured` is True (FL_LOCAL_STRUCTURED, default off: the
+    local inkling model answers 501 to it). If a server rejects it anyway, retry once without and remember."""
 
     route = "local"
 
@@ -131,8 +167,54 @@ class OpenAICompatLLM:
         model: str = "inkling-2-mini-chat",
         timeout: float = 30.0,
         client: httpx.AsyncClient | None = None,
+        structured: bool = False,
     ) -> None:
         self.url = base_url.rstrip("/") + "/v1/chat/completions"
+        self.model = model
+        self.structured = structured
+        self._client = client or httpx.AsyncClient(timeout=timeout)
+
+    async def complete_json(
+        self, *, role: str, system: str, user_json: dict[str, Any], schema: dict[str, Any]
+    ) -> dict[str, Any]:
+        sys_prompt = f"{system}\nReturn ONLY a JSON object matching this JSON Schema:\n{json.dumps(schema)}"
+        body: dict[str, Any] = {
+            "model": self.model,
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": json.dumps(user_json, ensure_ascii=False)},
+            ],
+        }
+        try:
+            if self.structured:
+                resp = await self._client.post(self.url, json={**body, "response_format": {"type": "json_object"}})
+                if _structured_unsupported(resp):
+                    self.structured = False  # remember for the process
+                    resp = await self._client.post(self.url, json=body)
+            else:
+                resp = await self._client.post(self.url, json=body)
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"]
+        except (httpx.HTTPError, OSError, KeyError, IndexError, TypeError, ValueError) as exc:
+            raise LLMUnavailable(f"{type(exc).__name__}: {exc}"[:200]) from exc
+        return parse_json_text(str(content))
+
+
+class AnthropicLLM:
+    """Cloud route: Anthropic Messages API over httpx. Same contract; errors map to LLMUnavailable."""
+
+    route = "cloud"
+    url = "https://api.anthropic.com/v1/messages"
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "claude-sonnet-5-5",
+        timeout: float = 30.0,
+        client: httpx.AsyncClient | None = None,
+    ) -> None:
+        self._key = api_key
         self.model = model
         self._client = client or httpx.AsyncClient(timeout=timeout)
 
@@ -140,27 +222,23 @@ class OpenAICompatLLM:
         self, *, role: str, system: str, user_json: dict[str, Any], schema: dict[str, Any]
     ) -> dict[str, Any]:
         sys_prompt = f"{system}\nReturn ONLY a JSON object matching this JSON Schema:\n{json.dumps(schema)}"
-        resp = await self._client.post(
-            self.url,
-            json={
-                "model": self.model,
-                "temperature": 0,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": sys_prompt},
-                    {"role": "user", "content": json.dumps(user_json, ensure_ascii=False)},
-                ],
-            },
-        )
-        resp.raise_for_status()
-        content = resp.json()["choices"][0]["message"]["content"]
         try:
-            out = json.loads(clean_text(content))
-        except json.JSONDecodeError as exc:
-            raise LLMOutputError(f"not json: {exc}") from exc
-        if not isinstance(out, dict):
-            raise LLMOutputError("json root is not an object")
-        return out
+            resp = await self._client.post(
+                self.url,
+                headers={"x-api-key": self._key, "anthropic-version": "2023-06-01"},
+                json={
+                    "model": self.model,
+                    "max_tokens": 1500,
+                    "temperature": 0,
+                    "system": sys_prompt,
+                    "messages": [{"role": "user", "content": json.dumps(user_json, ensure_ascii=False)}],
+                },
+            )
+            resp.raise_for_status()
+            content = "".join(b.get("text", "") for b in resp.json()["content"] if b.get("type") == "text")
+        except (httpx.HTTPError, OSError, KeyError, IndexError, TypeError, ValueError, AttributeError) as exc:
+            raise LLMUnavailable(type(exc).__name__) from exc
+        return parse_json_text(content)
 
 
 # ------------------------------------------------------------------ deterministic stub

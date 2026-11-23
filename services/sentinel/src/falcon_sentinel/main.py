@@ -49,8 +49,8 @@ from falcon_core.tools.sentinel import ToolContext
 from .consumer import Consumer
 from .db import IncidentCache, PgRepo
 from .graph import ApprovalError, Deps, TriageRunner, set_default_runner
-from .llm import LLMClient, OpenAICompatLLM, StubLLM
-from .metrics import SentinelMetrics
+from .llm import AnthropicLLM, LLMClient, OpenAICompatLLM, StubLLM
+from .metrics import REQUEUE_FAILURES, SentinelMetrics
 
 log = logging.getLogger("falcon.sentinel")
 settings = get_settings()
@@ -67,10 +67,20 @@ def official_domains() -> list[str]:
 
 
 def make_llm() -> LLMClient:
-    """The triage LLM client: stub if FL_SENTINEL_LLM=stub, otherwise the local OpenAI-compatible server."""
-    if os.environ.get("FL_SENTINEL_LLM", "ollama") == "stub":
+    """Triage LLM client. FL_SENTINEL_LLM=stub -> stub. Otherwise the Anthropic API when ANTHROPIC_API_KEY is set
+    and sovereign mode is off (cloud default), else the local OpenAI-compatible server. Local json mode is opt-in
+    (FL_LOCAL_STRUCTURED=true) because the local model answers 501 to response_format."""
+    choice = os.environ.get("FL_SENTINEL_LLM", "auto")
+    if choice == "stub":
         return StubLLM()
-    return OpenAICompatLLM(settings.ollama_base_url, os.environ.get("FL_SENTINEL_MODEL", "inkling-2-mini-chat"))
+    key = settings.anthropic_api_key.get_secret_value() if settings.anthropic_api_key else ""
+    if choice in ("auto", "anthropic") and key and not settings.fl_sovereign_mode:
+        return AnthropicLLM(key, os.environ.get("FL_CLOUD_MODEL_SENTINEL", "claude-sonnet-5-5"))
+    return OpenAICompatLLM(
+        settings.ollama_base_url,
+        os.environ.get("FL_SENTINEL_MODEL", os.environ.get("FL_LOCAL_MODEL", "inkling-2-mini-chat")),
+        structured=os.environ.get("FL_LOCAL_STRUCTURED", "false").lower() in ("1", "true", "yes"),
+    )
 
 
 class Runtime:
@@ -95,6 +105,7 @@ async def retry_stuck_loop(runner: TriageRunner) -> None:
             await runner.resume_unfinished()
         except Exception:  # noqa: BLE001
             log.exception("retry of stuck incidents failed")
+            REQUEUE_FAILURES.inc()
 
 
 async def triage_loop(consumer: Consumer, runner: TriageRunner, queue: asyncio.Queue[str]) -> None:
@@ -169,7 +180,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             on_incidents,
         )
         await consumer.setup()
-        await runner.resume_unfinished()
+        try:
+            await runner.resume_unfinished()
+        except Exception:  # noqa: BLE001 - a stuck incident must never stop the service; retry_stuck_loop continues
+            log.exception("startup requeue of stuck incidents failed")
+            REQUEUE_FAILURES.inc()
         tasks = [
             asyncio.create_task(consume_loop(consumer)),
             asyncio.create_task(triage_loop(consumer, runner, queue)),

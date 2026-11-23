@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -46,7 +47,10 @@ from .llm import (
     SummaryOut,
     structured,
 )
+from .metrics import REQUEUE_FAILURES
 from .textsafe import vet
+
+log = logging.getLogger(__name__)
 
 MAX_STEPS = 8
 MAX_TOKENS = 20_000
@@ -398,6 +402,9 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             ("update_campaign_board", {"incident_id": iid}),
             ("export_stix", {"incident_id": iid}),
         ]
+        if "propose" in degraded and any(i["kind"] == "domain" for i in inc["indicators"]):
+            # LLM unavailable: still queue the takedown draft (rules, not the model, decide); it waits for approval
+            det.append(("draft_takedown", {"incident_id": iid, "recipient_kind": "registrar"}))
         if inc["severity"] in ("high", "critical"):
             det.append(("raise_alert", {"incident_id": iid, "severity": inc["severity"]}))
         for tool, args in det:
@@ -605,8 +612,12 @@ class TriageRunner:
         resumed = []
         for inc in self.deps.tools.incidents.all():
             if inc["status"] == "triaging":
-                await self.run(inc["incident_id"])
-                resumed.append(inc["incident_id"])
+                try:
+                    await self.run(inc["incident_id"])
+                    resumed.append(inc["incident_id"])
+                except Exception:  # noqa: BLE001 - one bad incident must not stop the others or startup
+                    log.exception("requeue failed", extra={"incident_id": inc["incident_id"]})
+                    REQUEUE_FAILURES.inc()
         return resumed
 
 
