@@ -6,7 +6,7 @@ Usage: FL_GATEWAY_URL=https://localhost:8443 python scripts/fp_regress.py [--set
 
 Samples ``--n`` domains (``--n 0`` = the whole set) from a HELD-OUT legitimate set in evals/datasets (seeded Tranco
 samples built by build_heldout_legit.py, never used for tuning), submits ``https://<domain>/`` through the normal
-pipeline and writes a result artifact (default evals/results/published/fp_regress_<sha>_<UTC>.json) with the head
+pipeline and writes a result artifact (default evals/results/published/fp_regress/<sha>_<UTC>.json) with the head
 commit sha, set, seed, n, verdict counts, degraded reasons and the false-positive rate with a bootstrap 95% CI.
 Prints counts only, never the URLs.
 
@@ -181,7 +181,8 @@ def main() -> int:
         / "evals"
         / "results"
         / "published"
-        / (f"fp_regress_{sha[:12]}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}.json")
+        / "fp_regress"
+        / (f"{sha[:12]}_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}.json")
     )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n")
