@@ -87,6 +87,25 @@ class Endpoints:
         )
 
 
+# Per-key limits seeded by the API (services/api app.py): sandbox 30/min, mcp-service 120/min.
+SANDBOX_KEY_PER_MIN = 30
+SERVICE_KEY_PER_MIN = 120
+PACE_FRACTION = 0.8  # stay below the limit so the demo itself never sees a 429
+
+
+def pick_key(env: Mapping[str, str]) -> tuple[str | None, int]:
+    """(API key, per-minute limit) for demo traffic: the MCP service key when set, else the sandbox key."""
+    svc = env.get("FL_MCP_SERVICE_KEY")
+    if svc:
+        return svc, SERVICE_KEY_PER_MIN
+    return env.get("FL_SANDBOX_API_KEY"), SANDBOX_KEY_PER_MIN
+
+
+def paced_rate(rate: float, per_min: int) -> float:
+    """Checks per second, clamped to PACE_FRACTION of the key limit (so throttled stays 0)."""
+    return min(rate, per_min * PACE_FRACTION / 60)
+
+
 class ApiError(RuntimeError):
     """The API was unreachable or answered with an error status."""
 

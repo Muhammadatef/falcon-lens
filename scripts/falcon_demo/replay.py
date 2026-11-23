@@ -17,8 +17,9 @@ How to run:
     PYTHONPATH=scripts uv run python -m falcon_demo replay --rate 2/s --duration 10m [--no-campaign] [--seed 7]
 
 Inputs:
-    Options above; .env values FL_RATE_LIMIT_PER_IP_PER_MIN (a warning is printed if the rate exceeds it,
-    the API then answers 429 for the surplus), FL_SANDBOX_API_KEY, FL_DEMO_REDIS_URL, ports.
+    Options above; .env values FL_MCP_SERVICE_KEY (120/min) or FL_SANDBOX_API_KEY (30/min); the rate is paced to 80% of
+    that key's limit so nothing is throttled (a note is printed when the rate is lowered),
+    FL_DEMO_REDIS_URL, ports.
 
 Outputs / side effects:
     Sends checks to the local API and adds events to the Redis stream `fl:events`. All of it is labelled
@@ -44,7 +45,7 @@ from typing import Any
 
 from sentinel_core.fixtures import generate  # noqa: E402  (corpus.py put services/sentinel on sys.path)
 
-from .common import SOURCE, ApiClient, ApiError, EventSink, Sleep, Throttled
+from .common import SOURCE, ApiClient, ApiError, EventSink, Sleep, Throttled, paced_rate, pick_key
 from .corpus import make_ulid
 
 CLASS_WEIGHTS = (("dangerous", 0.35), ("suspicious", 0.2), ("no_warning_signs", 0.45))
@@ -238,15 +239,17 @@ def main(argv: list[str]) -> int:
         print(f"replay: {exc}", file=sys.stderr)
         return 2
     env = load_env()
-    limit = int(env.get("FL_RATE_LIMIT_PER_IP_PER_MIN") or 30)
-    if rate * 60 > limit:
+    api_key, key_limit = pick_key(env)
+    paced = paced_rate(rate, key_limit)
+    if paced < rate:
         print(
-            f"warn: {rate * 60:.0f} checks/min exceeds FL_RATE_LIMIT_PER_IP_PER_MIN={limit}; the API will answer 429 "
-            "for the surplus. Raise it in .env (demo) and `make up` again.",
+            f"note: {rate * 60:.0f} checks/min exceeds the key limit of {key_limit}/min; pacing to "
+            f"{paced * 60:.0f}/min so no check is throttled. The planted campaign is unaffected.",
             file=sys.stderr,
         )
+        rate = paced
     ep = Endpoints.from_env(env)
-    client = ApiClient(ep.gateway, env.get("FL_SANDBOX_API_KEY"))
+    client = ApiClient(ep.gateway, api_key)
     if not client.healthy():
         print(f"replay: API not reachable at {ep.gateway}. Start the stack first (make up).", file=sys.stderr)
         return 1
