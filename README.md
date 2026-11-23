@@ -92,7 +92,7 @@ Falcon Lens is independent. It uses no police logos and does not imply endorseme
 
    | Result | In Arabic | What it means |
    |---|---|---|
-   | Dangerous | خطير | We found strong signs of a scam. Do not open it. |
+   | Dangerous | خطِر | We found strong signs of a scam. Do not open it. |
    | Suspicious | مشبوه | Something does not add up, or we could not finish every check. Treat it with care. |
    | No warning signs found | لم نجد علامات تحذير | We looked and found nothing wrong. Stay careful all the same. |
 
