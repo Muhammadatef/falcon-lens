@@ -7,7 +7,7 @@ import type { Page } from "@playwright/test";
 import { DEMO_DANGEROUS, DEMO_NWS } from "../../lib/demo";
 import { XSS, dangerousStream, nwsStream, withId, xssVerdict } from "../fixtures";
 import { badgeWord, onAllOnStack, onDefaultStack } from "./flags";
-import { ALL_ON_URL, expect, newVerdictId, registerScenario, setPrefs, submitText, test, token } from "./helpers";
+import { forceCaps, expect, newVerdictId, registerScenario, setPrefs, submitText, test, token } from "./helpers";
 
 const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const axe = async (page: Page) =>
@@ -158,9 +158,9 @@ test.describe("activity card badges follow the capability flags (default stack: 
 });
 
 test.describe("activity card badges with every flag true", () => {
-  test.use({ baseURL: ALL_ON_URL });
-  test("T3 skipped reads 'Not needed' with no badge; the Sentinel line follows its flag", async ({ page, request, context }) => {
-    await setPrefs(context, ALL_ON_URL, { lang: "ar" });
+  test("T3 skipped reads 'Not needed' with no badge; the Sentinel line follows its flag", async ({ page, request, context, baseURL }) => {
+    await forceCaps(context, baseURL!, "true");
+    await setPrefs(context, baseURL!, { lang: "ar" });
     await run(page, request, "nws");
     await expect(page.getByTestId("act-step-T3")).toHaveAttribute("data-status", "skipped");
     await expect(page.getByTestId("act-step-T3")).toContainText("لم تكن لازمة");
@@ -173,7 +173,7 @@ test.describe("reduced motion", () => {
   test("the hand-off dot does not animate", async ({ page, request }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await run(page, request, "danger");
-    expect(await page.locator(".handoff").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+    expect(await page.locator(".act-handoff").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
     await expect(page.getByTestId("verdict-word")).toBeVisible();
   });
 });
@@ -203,3 +203,18 @@ for (const lang of ["ar", "en"] as const) {
     });
   }
 }
+
+test.describe("degraded because the page could not be opened", () => {
+  test("a plain 'treat it with caution' message, not an implied finding of risk", async ({ page, request, context, baseURL }) => {
+    await setPrefs(context, baseURL!, { lang: "en" });
+    const id = newVerdictId();
+    const t = token();
+    const verdict = withId(DEMO_DANGEROUS, id, { verdict: "suspicious", risk_score: 50, impersonated_brand: null, degraded: true, degraded_reasons: ["not_rendered:dns_failure"], reasons: [], tier_reached: "T1" });
+    await registerScenario(request, { match: t, verdictId: id, steps: [{ delayMs: 100, verdict }] });
+    await page.goto("/");
+    await submitText(page, `https://falcon-demo-bank.test/?c=${t}`);
+    await expect(page.getByTestId("page-not-opened")).toContainText("We couldn't open this page to check it — treat it with caution");
+    await expect(page.getByTestId("page-not-opened")).toContainText("does not mean we found a danger");
+    await expect(page.getByTestId("degraded")).toHaveCount(0);
+  });
+});

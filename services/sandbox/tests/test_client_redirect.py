@@ -95,7 +95,7 @@ async def test_client_redirect_renders_final_page(base: str, sandbox: SandboxBro
 
 async def test_client_redirect_to_private_host_is_blocked(base: str, sandbox: SandboxBrowser) -> None:
     out = await sandbox.visit(f"{base}/client-redirect-private.html", "desktop_en")
-    assert out.features.error == "blocked_by_policy"
+    assert out.features.error == "blocked_by_policy:ssrf_private"
 
 
 async def test_interrupted_navigation_is_not_a_failure(
@@ -111,4 +111,4 @@ async def test_interrupted_navigation_to_blocked_host_fails_closed(
     base: str, sandbox: SandboxBrowser, interrupted_goto: None
 ) -> None:
     out = await sandbox.visit(f"{base}/client-redirect-private.html", "desktop_en")
-    assert out.features.error == "blocked_by_policy"
+    assert out.features.error == "blocked_by_policy:ssrf_private"

@@ -5,7 +5,7 @@
 import results from "../../lib/results.generated.json";
 import { fmtThreshold } from "../../lib/docs-data";
 import { badgeWord, onAllOnStack, onDefaultStack } from "./flags";
-import { ALL_ON_URL, expect, setPrefs, test } from "./helpers";
+import { forceCaps, expect, setPrefs, test } from "./helpers";
 
 const SLUGS = ["architecture", "agents", "cascade", "arbiter", "security", "evals", "integration", "privacy"] as const;
 const ROUTES = ["/docs", ...SLUGS.map((s) => `/docs/${s}`), "/authorities", "/privacy"];
@@ -138,9 +138,9 @@ test.describe("capability badges on docs follow the flags (default stack: bundle
 });
 
 test.describe("capability badges on docs with every flag true", () => {
-  test.use({ baseURL: ALL_ON_URL });
-  test("security card, T3 and the surfaces read Live (surfaces once the flags are listed in lib/capabilities.ts)", async ({ page, context }) => {
-    await setPrefs(context, ALL_ON_URL, { lang: "en" });
+  test("security card, T3 and the surfaces read Live (surfaces once the flags are listed in lib/capabilities.ts)", async ({ page, context, baseURL }) => {
+    await forceCaps(context, baseURL!, "true");
+    await setPrefs(context, baseURL!, { lang: "en" });
     await page.goto("/docs");
     await expect(page.getByTestId("docs-cards").locator("li").nth(4).getByTestId("cap-badge")).toContainText("Live");
     await page.goto("/docs/cascade");
@@ -150,8 +150,9 @@ test.describe("capability badges on docs with every flag true", () => {
     for (const [i, id] of ["rest_api", "mcp", "stix"].entries()) await expect(rows.nth(i).getByTestId("cap-badge")).toContainText(badgeWord(onAllOnStack(id), "en"));
   });
 
-  test("authorities interface flags follow the flags", async ({ page, context }) => {
-    await setPrefs(context, ALL_ON_URL, { lang: "en" });
+  test("authorities interface flags follow the flags", async ({ page, context, baseURL }) => {
+    await forceCaps(context, baseURL!, "true");
+    await setPrefs(context, baseURL!, { lang: "en" });
     await page.goto("/authorities");
     const badges = page.getByTestId("ifaces").getByTestId("cap-badge");
     await expect(badges).toHaveCount(3);

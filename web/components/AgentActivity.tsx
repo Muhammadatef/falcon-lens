@@ -48,7 +48,7 @@ export function AgentActivity({ state, investigatorLive, sentinelLive }: { state
         <span>{d("act.sentinel")}</span>
         <CapBadge live={sentinelLive} lang={lang} />
       </p>
-      {final ? <span className="handoff" aria-hidden="true" /> : null}
+      {final ? <span className="act-handoff" aria-hidden="true" /> : null}
     </div>
   );
 }

@@ -5,8 +5,6 @@ import type { StreamStep } from "../../lib/demo";
 
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const ulidLike = (prefix: string) => prefix + Array.from(randomBytes(26), (b) => CROCKFORD[b % 32]).join("");
-/** Base URL of the second mock stack whose /v1/meta reports every capability flag true (see playwright.config.ts). */
-export const ALL_ON_URL = `http://127.0.0.1:${process.env.ON_MOCK_PORT ?? 43112}`;
 export const newVerdictId = () => ulidLike("vd_");
 export const newIncidentId = () => ulidLike("inc_");
 export const token = () => `t${randomBytes(6).toString("hex")}`;
@@ -100,3 +98,8 @@ export const test = base.extend<{ guard: Guard }>({
 });
 
 export { expect };
+
+/** Routes this browser context to the app instance whose /v1/meta reports every capability flag true / false (mock gateway cookie `mock_caps`). */
+export async function forceCaps(context: BrowserContext, baseURL: string, mode: "true" | "false") {
+  await context.addCookies([{ name: "mock_caps", value: mode, url: baseURL }]);
+}

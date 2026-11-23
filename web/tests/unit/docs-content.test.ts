@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ARCH } from "@/lib/arch-content";
 import { DOCS, DOC_SLUGS, isDocSlug, type DocPage } from "@/lib/docs-content";
 import { DOC_MESSAGES } from "@/lib/i18n-docs";
+import { onlyPageNotOpened, pageNotOpened } from "@/lib/page-not-opened";
 import { fmtThreshold, parseProvenance, parseThresholds } from "@/lib/docs-data";
 
 /** Every string a page holds, flattened. */
@@ -108,5 +109,21 @@ describe("docs data comes only from the artifact", () => {
     expect(t).toEqual({ tauLow: 0.1234, tauHigh: 0.9, epsLow: 0.01, epsHigh: 0.5, fitSource: "elsewhere" });
     expect(fmtThreshold(t.tauLow)).toBe("0.1234");
     expect(parseProvenance(fixture({}))).toMatchObject({ artifact: "20990101T000000Z.json", gitSha: "def", scope: "a scope" });
+  });
+});
+
+describe("page not opened (degraded verdict wording)", () => {
+  it("recognises the worker's page-not-opened reasons", () => {
+    expect(pageNotOpened(["not_rendered:timeout"])).toBe(true);
+    expect(pageNotOpened(["sandbox_timeout", "rdap_unavailable"])).toBe(true);
+    expect(pageNotOpened(["dns_failure"])).toBe(true);
+    expect(pageNotOpened(["rdap_unavailable"])).toBe(false);
+    expect(pageNotOpened([])).toBe(false);
+    expect(pageNotOpened(null)).toBe(false);
+  });
+  it("onlyPageNotOpened is true only when every reason is one", () => {
+    expect(onlyPageNotOpened(["not_rendered:dns_failure"])).toBe(true);
+    expect(onlyPageNotOpened(["sandbox_timeout", "rdap_unavailable"])).toBe(false);
+    expect(onlyPageNotOpened([])).toBe(false);
   });
 });

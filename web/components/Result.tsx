@@ -6,6 +6,8 @@ import * as m from "motion/react-m";
 import type { Verdict } from "@/lib/contracts";
 import { clip } from "@/lib/defang";
 import { pick } from "@/lib/i18n";
+import { onlyPageNotOpened, pageNotOpened } from "@/lib/page-not-opened";
+import { useDt } from "@/lib/use-dt";
 import { fadeRise, haptics, reduced, stagger, staggerGroup, verdictPlate } from "@/lib/motion";
 import { usePrefs } from "@/lib/prefs";
 import { lensStateFor, type CheckState } from "@/lib/verdict-stream";
@@ -135,6 +137,7 @@ function SlowNote() {
 
 function VerdictBody({ state, still }: { state: CheckState; still: boolean }) {
   const { t, lang } = usePrefs();
+  const d = useDt();
   const v = state.verdict;
 
   if (state.phase === "failed" && state.problem) {
@@ -206,7 +209,16 @@ function VerdictBody({ state, still }: { state: CheckState; still: boolean }) {
       </m.div>
 
       <m.div className="vbody" variants={group} initial="hidden" animate="visible">
-        {v.degraded ? (
+        {v.degraded && pageNotOpened(v.degraded_reasons) ? (
+          <m.div className="degraded" variants={item} role="note" data-testid="page-not-opened">
+            <Icon name="unplug" size={24} />
+            <div>
+              <b>{d("noopen.title")}</b>
+              <p>{d("noopen.body")}</p>
+            </div>
+          </m.div>
+        ) : null}
+        {v.degraded && !onlyPageNotOpened(v.degraded_reasons) ? (
           <m.div className="degraded" variants={item} role="note" data-testid="degraded">
             <Icon name="unplug" size={24} />
             <div>

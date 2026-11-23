@@ -31,6 +31,7 @@ from falcon_core.cascade.testing import (
     DEMO_LOOKALIKE_URL,
     DEMO_OFFICIAL_URL,
     FIXTURE_POLICY,
+    PriorT1Model,
     SlowSandbox,
     benign_features,
     official_features,
@@ -75,6 +76,7 @@ class Rig:
             metrics=self.metrics,
             cache=RedisVerdictCache(self.r, self.store),
             guard_policy=FIXTURE_POLICY,
+            t1_model=PriorT1Model(),
             resolver=stub_resolver,
             signal_cache=RedisCache(self.r),
             mirror=FeedMirror(RedisCache(self.r)),  # the production hash-only mirror, on fakeredis

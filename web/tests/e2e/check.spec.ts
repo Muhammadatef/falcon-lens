@@ -110,6 +110,7 @@ test.describe("check page: progressive verdict from the API stream", () => {
 
     await expect(page.getByTestId("verdict-word")).toHaveText("مريب");
     await expect(page.getByTestId("degraded")).toContainText("لم نتمكن من إكمال كل الفحوص");
+    await expect(page.getByTestId("page-not-opened")).toContainText("تعذّر فتح الصفحة للتحقق — تعامل معها بحذر");
     await expect(page.locator('[data-testid="evidence-row"][data-evidence="ev_sandbox0err"]')).toContainText("تعذّر هذا الفحص");
     await expect(page.getByTestId("impersonated")).toHaveCount(0);
   });
@@ -126,7 +127,7 @@ test.describe("check page: progressive verdict from the API stream", () => {
     await expect(page.getByTestId("verdict-word")).toHaveText("مريب");
     await expect(page.getByTestId("verdict-card")).toHaveAttribute("data-verdict", "suspicious");
     await expect(page.getByTestId("degraded")).toContainText("لم نتمكن من إكمال كل الفحوص");
-    await expect(page.locator("body")).not.toContainText("لم نجد علامات تحذير");
+    await expect(page.getByTestId("result")).not.toContainText("لم نجد علامات تحذير");
 
     const id2 = newVerdictId();
     const t2 = token();
@@ -365,8 +366,14 @@ test.describe("language, theme, layout, motion", () => {
     await page.getByTestId("lang-toggle").click();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
-    await expect(page.locator("h1")).toHaveText("Received a suspicious link or message? Check it here.");
-    await page.getByTestId("theme-toggle").click();
+    await expect(page.locator("h1")).toHaveText("Two AI agents between you and the scam.");
+    // On a phone the theme switch lives inside the menu.
+    if (await page.getByTestId("menu-toggle").isVisible()) {
+      await page.getByTestId("menu-toggle").click();
+      await page.getByTestId("theme-toggle-menu").click();
+    } else {
+      await page.getByTestId("theme-toggle").click();
+    }
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");

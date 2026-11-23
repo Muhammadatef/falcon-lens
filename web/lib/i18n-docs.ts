@@ -23,6 +23,10 @@ const ar = {
   "act.label": "نشاط المحقّق",
   "act.steps": "خطوات الفحص",
 
+  // Degraded because the page could not be opened
+  "noopen.title": "تعذّر فتح الصفحة للتحقق — تعامل معها بحذر",
+  "noopen.body": "لم نتمكن من فتح الصفحة نفسها، فلا نعرف ما فيها. وهذا لا يعني أننا وجدنا فيها خطراً.",
+
   // Technical details (check result)
   "tech.toggle": "تفاصيل تقنية",
   "tech.summary": "الأدلة والقواعد ودرجة الخطورة والتوقيتات، للمراجعين التقنيين.",
@@ -95,6 +99,9 @@ const en: Record<DocKey, string> = {
   "act.sentinel": "The Sentinel compares this check with others to spot campaigns early.",
   "act.label": "Investigator activity",
   "act.steps": "Check steps",
+
+  "noopen.title": "We couldn't open this page to check it — treat it with caution",
+  "noopen.body": "We could not open the page itself, so we don't know what is on it. This does not mean we found a danger.",
 
   "tech.toggle": "Technical details",
   "tech.summary": "Evidence, rules, risk score and timings, for technical reviewers.",
