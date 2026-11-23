@@ -80,7 +80,10 @@ async def test_crt_failure_alone_never_degrades() -> None:
     assert any(e["signal"] == "domain.cert_age_days" and e["error"] for e in final["evidence"])
 
 
-URL = _refang("hxxps://x.com/")
+# Must genuinely reach T2 so the sandbox-error paths are exercised (a confident T1 exit never renders). The tests
+# assert `tier_reached == "T2"`, so a model refit that moves this URL fails loudly instead of silently skipping them.
+URL = _refang("hxxps://www.tripadvisor.com/")
+URL_CONFIDENT = _refang("hxxps://x.com/")  # confident legit at T1 with the current model
 
 
 @pytest.mark.parametrize(
@@ -91,6 +94,7 @@ async def test_unrendered_page_without_established_domain_is_never_no_warning_si
     cascade = _cascade(StubSandboxClient(error="http_403_empty"), age)
     final = (await run(cascade, URL)).docs[-1]
     assert_valid(final)
+    assert final["tier_reached"] == "T2"
     assert final["verdict"] != "no_warning_signs" and final["degraded"]
     assert "sandbox_unavailable:http_403_empty" in final["degraded_reasons"]
 
@@ -111,4 +115,20 @@ async def test_policy_blocks_sandbox_own_errors_and_unknown_codes_degrade_even_o
 ) -> None:
     cascade = _cascade(StubSandboxClient(error=code), age_signal(OLD))
     final = (await run(cascade, URL)).docs[-1]
+    assert final["tier_reached"] == "T2", code
     assert final["verdict"] != "no_warning_signs" and final["degraded"], code
+
+
+@pytest.mark.parametrize(
+    "age", [age_signal(3), age_signal(None, error="rdap_timeout")], ids=["3-days-old", "age-error"]
+)
+async def test_t1_low_exit_requires_no_risk_evidence(age: tuple[object, object]) -> None:
+    """A very confident legit URL (p_clf < eps_low) still continues to T2 when the domain is young or its age is unknown."""
+    final = (await run(_cascade(StubSandboxClient(error="http_403_empty"), age), URL_CONFIDENT)).docs[-1]
+    assert final["tier_reached"] == "T2"
+    assert final["verdict"] != "no_warning_signs"
+
+
+async def test_t1_low_exit_still_allowed_on_established_domain() -> None:
+    final = (await run(_cascade(StubSandboxClient(error="http_403_empty"), age_signal(OLD)), URL_CONFIDENT)).docs[-1]
+    assert final["tier_reached"] == "T1" and final["verdict"] == "no_warning_signs"

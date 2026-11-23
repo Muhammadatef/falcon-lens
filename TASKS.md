@@ -274,6 +274,16 @@ L1 also needs to paste the build-prompt §11 `fl_` metric list into docs/OBSERVA
   of that stratum; `--task ../x` exits non-zero and writes nothing; `make test` and `pytest scripts/tests` pass.
 - eval impact: must land before synthetic batch `qwen-msg-003`; accepted batches report subtype × language counts.
 
+### T-030 Refit model_cap on observed credential forms · builder-evals · P1 · `feat/evals-modelcap-observed` · depends_on: T-021
+- scope: `fit_model_cap` injects a credential form on EVERY validation legit item (synthetic worst case). Refit with credential
+  forms actually observed on val legit pages via sandbox renders (T-021 snapshots); keep D2 objective and constraints.
+- acceptance: fit reports observed-form legit dangerous rate and cred-form phishing recall with CIs; `make eval-gate` passes.
+
+### T-031 T1 high p_clf on young-domain and deep-link legit URLs · builder-evals · P2 · `feat/evals-t1-hardneg` · depends_on: T-030
+- scope: val shows 3 legit items with p_clf 0.8 / 0.78 / 0.54 (young-domain and deep-link hard negatives). Add features or
+  hard-negative weighting for the T1 model; measure on val only.
+- acceptance: hard-negative false-warning rate per category in the eval artifact does not worsen; test untouched.
+
 ---
 ## Backlog — Phases 3–6 (cards written when the phase opens)
 - P3 (G3 Mon 22:00): message pipeline (normalise AR/Arabizi, rule features, embeddings + pgvector kNN, H5/H6) ·
