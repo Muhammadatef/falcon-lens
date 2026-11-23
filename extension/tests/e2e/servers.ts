@@ -1,16 +1,17 @@
 /**
  * Local servers for the extension e2e tests. Both bind to 127.0.0.1 only.
  *
- *  - Mock API (port 8765): the subset of contracts/openapi.yaml the extension calls.
- *  - Fixture site (port 8766): answers for every *.test host (Chromium is started with
+ *  - Mock API (API_PORT): the subset of contracts/openapi.yaml the extension calls.
+ *  - Fixture site (SITE_PORT): answers for every *.test host (Chromium is started with
  *    --host-resolver-rules so *.test resolves to 127.0.0.1). Pages carry the label
  *    "TEST FIXTURE, not a real site", use only the invented brand "Falcon Demo Bank", and contain
  *    no form that posts anywhere.
  */
 import { createServer, type IncomingMessage, type Server } from "node:http";
 
-export const API_PORT = 8765;
-export const SITE_PORT = 8766;
+// Chosen per run by global-setup.ts (free ports), so parallel runs never collide.
+export const API_PORT = Number(process.env.FL_E2E_API_PORT ?? 8765);
+export const SITE_PORT = Number(process.env.FL_E2E_SITE_PORT ?? 8766);
 
 export const XSS_REASON = '<img src=x onerror="window.__xss=1"><script>window.__xss=1</script>';
 
