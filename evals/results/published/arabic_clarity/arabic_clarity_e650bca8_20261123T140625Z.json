@@ -1,0 +1,91 @@
+{
+  "area": "arabic_clarity",
+  "automated_checks": {
+    "digits_present": false,
+    "each_action_sentence_within_budget": {
+      "ci95": [
+        0.9671,
+        1.0
+      ],
+      "k": 113,
+      "n": 113,
+      "value": 1.0
+    },
+    "forbidden_words_present": [],
+    "latin_letters_present": [],
+    "links_present": false,
+    "phone_budget": {
+      "basis": "assumption, see DECISIONS.md",
+      "chars_per_line": 45,
+      "max_chars": 90,
+      "max_lines": 2
+    },
+    "reading_level_proxy": {
+      "letters_per_word": {
+        "ci95": [
+          4.244813,
+          4.630705
+        ],
+        "mean": 4.435685,
+        "n": 241
+      },
+      "note": "proxies only: shorter sentences and shorter words usually read easier; they do not measure comprehension",
+      "share_long_words_7plus_letters": 0.0788,
+      "words_per_sentence": {
+        "ci95": [
+          6.935484,
+          8.645161
+        ],
+        "mean": 7.774194,
+        "n": 31
+      }
+    },
+    "reason_chars": {
+      "max": 75,
+      "mean": {
+        "ci95": [
+          39.5325,
+          49.033333
+        ],
+        "mean": 44.266667,
+        "n": 30
+      },
+      "min": 23
+    },
+    "reason_within_budget": {
+      "ci95": [
+        0.8865,
+        1.0
+      ],
+      "k": 30,
+      "n": 30,
+      "value": 1.0
+    }
+  },
+  "ci_method": "Wilson 95% for proportions; percentile bootstrap (2000, seed 20261122) for means",
+  "created_at": "2026-11-23T14:06:25Z",
+  "git_sha": "e650bca85c42c872b7206e00a500313893f56b0d",
+  "human_rating": {
+    "rating_scale": "clarity 1 (unclear) to 5 (very clear); would you know what to do: yes/no",
+    "sheet": "evals/results/published/arabic_clarity/rating_sheet.csv",
+    "status": "pending_human_rating"
+  },
+  "items": 30,
+  "model_ids": {
+    "llm": "none (template-only text, L1 decision D3)"
+  },
+  "model_route": "none",
+  "n": {
+    "items": 30
+  },
+  "not_evaluated_yet": {
+    "reason": "comprehension and clarity need a native-speaker rating; none is recorded in this artifact",
+    "status": "not_evaluated"
+  },
+  "notes": [],
+  "pairing_note": "label/reason pairing is illustrative (by rule effect or signal polarity), not an observed verdict",
+  "provenance": "shipped Arabic catalog templates (not model output)",
+  "schema_version": 1,
+  "scope": "Arabic verdict text: 30-item native-speaker rating sheet + automated phone-fit and reading-level checks",
+  "what_is_rated": "verdict label + one reason + the 'what to do now' actions, as the shipped catalog renders them (template-only text)"
+}

@@ -1,0 +1,314 @@
+{
+  "area": "synthetic_split",
+  "ci_method": "Wilson 95% for proportions; percentile bootstrap (2000, seed 20261122) for means",
+  "consistency_with_main_artifact": {
+    "artifact": "20261123T111023Z.json",
+    "note": "the real-item rows below re-score the same frozen split with the same shipped model; they must reproduce the headline",
+    "test": {
+      "fpr_matches_main_artifact": true,
+      "recall_matches_main_artifact": true
+    },
+    "val": {
+      "fpr_matches_main_artifact": true,
+      "recall_matches_main_artifact": true
+    }
+  },
+  "created_at": "2026-11-23T14:06:23Z",
+  "git_sha": "e650bca85c42c872b7206e00a500313893f56b0d",
+  "manifest_counts_by_kind_split_label": {
+    "real": {
+      "excluded": {
+        "phishing": 4
+      },
+      "test": {
+        "legit": 80,
+        "phishing": 60
+      },
+      "train": {
+        "legit": 284,
+        "phishing": 360
+      },
+      "val": {
+        "legit": 104,
+        "phishing": 142
+      }
+    }
+  },
+  "manifest_totals": {
+    "real": 1034,
+    "synthetic": 0
+  },
+  "model_ids": {
+    "llm": "none",
+    "t1": "t1_hgb (fitted artifact as shipped)"
+  },
+  "model_route": "none",
+  "n": {
+    "real_test": 140,
+    "real_val": 246,
+    "synthetic_messages": 14,
+    "synthetic_urls": 36
+  },
+  "notes": [
+    "Real URLs are never written to an artifact; only counts and rates."
+  ],
+  "provenance": "real (manifest items) and synthetic (Falcon Demo Bank fixtures), reported side by side",
+  "provenance_table": [
+    {
+      "published_metric_family": "main eval, val and test (URL, T1 + arbiter)",
+      "real": {
+        "test_n": 140,
+        "val_n": 246
+      },
+      "synthetic": {
+        "n": 0,
+        "note": "the frozen manifest holds zero synthetic items by design"
+      },
+      "where": "evals/results/published/<timestamp>.json (unchanged)"
+    },
+    {
+      "note": "mixed provenance by construction: real item, synthetic wrapper; it is not a synthetic-only metric",
+      "published_metric_family": "message_path (real URL items wrapped in 4 synthetic message templates)",
+      "real": {
+        "labels_and_urls": "real URL items",
+        "n_test": 560,
+        "n_val": 984
+      },
+      "synthetic": {
+        "message_text": "templates are synthetic and labelled so in the artifact"
+      }
+    },
+    {
+      "published_metric_family": "fp_regress (held-out legit domains through the running stack)",
+      "real": {
+        "artifact": "fp_regress_cf54d06bf2b1_20261123T022301Z.json",
+        "n": 200,
+        "set": "heldout_legit_2.csv"
+      },
+      "synthetic": {
+        "n": 0
+      }
+    },
+    {
+      "published_metric_family": "model_cap_fit (fits)",
+      "real": {
+        "n_legit": 104,
+        "n_phishing": 142,
+        "split": "val"
+      },
+      "synthetic": {
+        "n": 0
+      }
+    },
+    {
+      "published_metric_family": "red-team (PR #84 and the harness reference run)",
+      "real": {
+        "n": 0
+      },
+      "synthetic": {
+        "n": "all cases",
+        "note": "invented Falcon Demo Bank fixtures; reported by PR #84, not duplicated here"
+      }
+    }
+  ],
+  "real_items_scored": {
+    "test": {
+      "fpr_dangerous": {
+        "ci95": [
+          0.0,
+          0.0458
+        ],
+        "k": 0,
+        "n": 80,
+        "value": 0.0
+      },
+      "fpr_warning": {
+        "ci95": [
+          0.0,
+          0.0458
+        ],
+        "k": 0,
+        "n": 80,
+        "value": 0.0
+      },
+      "n": 140,
+      "n_legit": 80,
+      "n_phishing": 60,
+      "operating_point": "warning = suspicious or dangerous; offline T1 + arbiter on the URL only (no page tier, no LLM)",
+      "precision_warning": {
+        "ci95": [
+          0.9369,
+          1.0
+        ],
+        "k": 57,
+        "n": 57,
+        "value": 1.0
+      },
+      "recall_dangerous": {
+        "ci95": [
+          0.0,
+          0.0602
+        ],
+        "k": 0,
+        "n": 60,
+        "value": 0.0
+      },
+      "recall_warning": {
+        "ci95": [
+          0.863,
+          0.9829
+        ],
+        "k": 57,
+        "n": 60,
+        "value": 0.95
+      },
+      "verdict_counts": {
+        "no_warning_signs": 83,
+        "suspicious": 57
+      }
+    },
+    "val": {
+      "fpr_dangerous": {
+        "ci95": [
+          0.0,
+          0.0356
+        ],
+        "k": 0,
+        "n": 104,
+        "value": 0.0
+      },
+      "fpr_warning": {
+        "ci95": [
+          0.0053,
+          0.0674
+        ],
+        "k": 2,
+        "n": 104,
+        "value": 0.019230769230769232
+      },
+      "n": 246,
+      "n_legit": 104,
+      "n_phishing": 142,
+      "operating_point": "warning = suspicious or dangerous; offline T1 + arbiter on the URL only (no page tier, no LLM)",
+      "precision_warning": {
+        "ci95": [
+          0.9494,
+          0.9961
+        ],
+        "k": 138,
+        "n": 140,
+        "value": 0.9857142857142858
+      },
+      "recall_dangerous": {
+        "ci95": [
+          0.0,
+          0.0263
+        ],
+        "k": 0,
+        "n": 142,
+        "value": 0.0
+      },
+      "recall_warning": {
+        "ci95": [
+          0.9298,
+          0.989
+        ],
+        "k": 138,
+        "n": 142,
+        "value": 0.971830985915493
+      },
+      "verdict_counts": {
+        "no_warning_signs": 106,
+        "suspicious": 140
+      }
+    }
+  },
+  "schema_version": 1,
+  "scope": "real vs synthetic split of the offline metrics (URL T1 + arbiter, message text); no LLM, no page tier",
+  "separation_rule": "real and synthetic numbers are never pooled; no model or threshold was fitted or tuned on any of these items",
+  "synthetic_messages_scored": {
+    "fpr_warning": {
+      "ci95": [
+        0.0,
+        0.4899
+      ],
+      "k": 0,
+      "n": 4,
+      "value": 0.0
+    },
+    "model_used": "none (deterministic message signals only)",
+    "n": 14,
+    "n_legit": 4,
+    "n_phishing": 10,
+    "recall_warning": {
+      "ci95": [
+        0.1078,
+        0.6032
+      ],
+      "k": 3,
+      "n": 10,
+      "value": 0.3
+    },
+    "scope": "offline message-text signals + arbiter (H5 floor needs a link), synthetic messages written for this suite"
+  },
+  "synthetic_url_items_scored": {
+    "caveat": "The .test top-level domain itself raises the URL-only prior, so benign .test fixtures are flagged more often than benign real sites; read this FPR as an upper-bound artifact of reserved hosts, not as a field FPR.",
+    "fpr_dangerous": {
+      "ci95": [
+        0.0,
+        0.2281
+      ],
+      "k": 0,
+      "n": 13,
+      "value": 0.0
+    },
+    "fpr_warning": {
+      "ci95": [
+        0.2914,
+        0.7679
+      ],
+      "k": 7,
+      "n": 13,
+      "value": 0.5384615384615384
+    },
+    "kinds": {
+      "benign_fixtures_including_official": 13,
+      "lookalike_or_generic_phishing_fixtures": 23
+    },
+    "n": 36,
+    "n_legit": 13,
+    "n_phishing": 23,
+    "operating_point": "warning = suspicious or dangerous; offline T1 + arbiter on the URL only (no page tier, no LLM)",
+    "precision_warning": {
+      "ci95": [
+        0.5789,
+        0.8778
+      ],
+      "k": 22,
+      "n": 29,
+      "value": 0.7586206896551724
+    },
+    "recall_dangerous": {
+      "ci95": [
+        0.0,
+        0.1431
+      ],
+      "k": 0,
+      "n": 23,
+      "value": 0.0
+    },
+    "recall_warning": {
+      "ci95": [
+        0.7901,
+        0.9923
+      ],
+      "k": 22,
+      "n": 23,
+      "value": 0.9565217391304348
+    },
+    "verdict_counts": {
+      "no_warning_signs": 7,
+      "suspicious": 29
+    }
+  }
+}

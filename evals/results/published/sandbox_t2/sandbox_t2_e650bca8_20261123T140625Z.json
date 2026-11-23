@@ -1,0 +1,477 @@
+{
+  "area": "sandbox_t2",
+  "ci_method": "Wilson 95% for proportions; percentile bootstrap (2000, seed 20261122) for means",
+  "created_at": "2026-11-23T14:06:25Z",
+  "git_sha": "e650bca85c42c872b7206e00a500313893f56b0d",
+  "model_ids": {
+    "llm": "none"
+  },
+  "model_route": "none (deterministic T2 signals; model not involved in these figures)",
+  "n": {
+    "fp_regress_latest_n": 200
+  },
+  "notes": [],
+  "phishing_side_t2_recall": {
+    "reason": "needs labelled phishing page snapshots; data/private holds only unlabelled screenshots (no page DOM, no labels), and live visits to phishing pages are out of scope (defensive-only rules)",
+    "status": "not_evaluated"
+  },
+  "private_snapshot_inventory": {
+    "files_by_extension": {
+      ".png": 58
+    },
+    "labelled_phishing_dom_snapshots": 0,
+    "note": "only unlabelled screenshots are present; none were used"
+  },
+  "provenance": "real (held-out legit domains, recorded fp_regress runs) and synthetic (fixtures), kept apart",
+  "real_site_render_health_held_out_legit": {
+    "artifacts": [
+      {
+        "artifact": "377a04d53570_20261123T024324Z.json",
+        "by_tier_all_items": {
+          "T1": 139,
+          "T2": 57,
+          "T3": 4
+        },
+        "degraded_reasons_all_items": {
+          "not_rendered:dns_failure": 30,
+          "sandbox_unavailable:render_failed": 29,
+          "sandbox_unavailable:timeout": 9
+        },
+        "false_positive_rate_all_items": {
+          "ci95": [
+            0.295,
+            0.42
+          ],
+          "n_boot": 2000,
+          "value": 0.355
+        },
+        "git_sha": "377a04d53570ac09bc1fe3bbeb8e652a90afeff2",
+        "n": 200,
+        "no_web_host_items": 54,
+        "serves_web_pages": 146,
+        "t2_attempted_all_items": 61,
+        "t2_degraded_of_attempted": {
+          "ci95": [
+            0.4975,
+            0.7339
+          ],
+          "k": 38,
+          "n": 61,
+          "value": 0.6229508196721312
+        },
+        "t2_degraded_of_web": {
+          "ci95": [
+            0.1838,
+            0.3224
+          ],
+          "k": 36,
+          "n": 146,
+          "value": 0.2465753424657534
+        },
+        "t2_degraded_reasons_of_attempted": {
+          "sandbox_unavailable:render_failed": 29,
+          "sandbox_unavailable:timeout": 9
+        },
+        "t2_reached_of_web": {
+          "ci95": [
+            0.3086,
+            0.4645
+          ],
+          "k": 56,
+          "n": 146,
+          "value": 0.3835616438356164
+        },
+        "t2_render_clean_of_attempted": {
+          "ci95": [
+            0.2661,
+            0.5025
+          ],
+          "k": 23,
+          "n": 61,
+          "value": 0.3770491803278688
+        },
+        "t2_render_clean_of_web": {
+          "ci95": [
+            0.0905,
+            0.2021
+          ],
+          "k": 20,
+          "n": 146,
+          "value": 0.136986301369863
+        },
+        "tier_attempt_note": "attempted = verdict ended at T2 or T3; T1 exits never opened a page"
+      },
+      {
+        "artifact": "9725895a5537_20261123T032418Z.json",
+        "by_tier_all_items": {
+          "T1": 139,
+          "T2": 58,
+          "T3": 3
+        },
+        "degraded_reasons_all_items": {
+          "not_rendered:dns_failure": 30,
+          "sandbox_unavailable:blocked_by_policy": 30,
+          "sandbox_unavailable:timeout": 7
+        },
+        "false_positive_rate_all_items": {
+          "ci95": [
+            0.29,
+            0.415
+          ],
+          "n_boot": 2000,
+          "value": 0.35
+        },
+        "git_sha": "9725895a5537af1bf4df3f54baf64129e20e7437",
+        "n": 200,
+        "no_web_host_items": 54,
+        "serves_web_pages": 146,
+        "t2_attempted_all_items": 61,
+        "t2_degraded_of_attempted": {
+          "ci95": [
+            0.4812,
+            0.7193
+          ],
+          "k": 37,
+          "n": 61,
+          "value": 0.6065573770491803
+        },
+        "t2_degraded_of_web": {
+          "ci95": [
+            0.1777,
+            0.3151
+          ],
+          "k": 35,
+          "n": 146,
+          "value": 0.23972602739726026
+        },
+        "t2_degraded_reasons_of_attempted": {
+          "sandbox_unavailable:blocked_by_policy": 30,
+          "sandbox_unavailable:timeout": 7
+        },
+        "t2_reached_of_web": {
+          "ci95": [
+            0.3086,
+            0.4645
+          ],
+          "k": 56,
+          "n": 146,
+          "value": 0.3835616438356164
+        },
+        "t2_render_clean_of_attempted": {
+          "ci95": [
+            0.2807,
+            0.5188
+          ],
+          "k": 24,
+          "n": 61,
+          "value": 0.39344262295081966
+        },
+        "t2_render_clean_of_web": {
+          "ci95": [
+            0.096,
+            0.2099
+          ],
+          "k": 21,
+          "n": 146,
+          "value": 0.14383561643835616
+        },
+        "tier_attempt_note": "attempted = verdict ended at T2 or T3; T1 exits never opened a page"
+      },
+      {
+        "artifact": "a2f083cf1a77_20261123T085415Z.json",
+        "by_tier_all_items": {
+          "T1": 139,
+          "T2": 56,
+          "T3": 5
+        },
+        "degraded_reasons_all_items": {
+          "not_rendered:dns_failure": 30,
+          "sandbox_unavailable:timeout": 22
+        },
+        "false_positive_rate_all_items": {
+          "ci95": [
+            0.23,
+            0.345
+          ],
+          "n_boot": 2000,
+          "value": 0.285
+        },
+        "git_sha": "a2f083cf1a77c8000bd54241efa9281005389a35",
+        "n": 200,
+        "no_web_host_items": 54,
+        "serves_web_pages": 146,
+        "t2_attempted_all_items": 61,
+        "t2_degraded_of_attempted": {
+          "ci95": [
+            0.2517,
+            0.4861
+          ],
+          "k": 22,
+          "n": 61,
+          "value": 0.36065573770491804
+        },
+        "t2_degraded_of_web": {
+          "ci95": [
+            0.0905,
+            0.2021
+          ],
+          "k": 20,
+          "n": 146,
+          "value": 0.136986301369863
+        },
+        "t2_degraded_reasons_of_attempted": {
+          "sandbox_unavailable:timeout": 22
+        },
+        "t2_reached_of_web": {
+          "ci95": [
+            0.3086,
+            0.4645
+          ],
+          "k": 56,
+          "n": 146,
+          "value": 0.3835616438356164
+        },
+        "t2_render_clean_of_attempted": {
+          "ci95": [
+            0.5139,
+            0.7483
+          ],
+          "k": 39,
+          "n": 61,
+          "value": 0.639344262295082
+        },
+        "t2_render_clean_of_web": {
+          "ci95": [
+            0.1838,
+            0.3224
+          ],
+          "k": 36,
+          "n": 146,
+          "value": 0.2465753424657534
+        },
+        "tier_attempt_note": "attempted = verdict ended at T2 or T3; T1 exits never opened a page"
+      }
+    ],
+    "artifacts_without_per_item_rows_skipped": [
+      "fp_regress_548e8b31f4e6_20261123T020303Z.json",
+      "fp_regress_cf54d06bf2b1_20261123T022301Z.json"
+    ],
+    "headline": {
+      "artifact": "a2f083cf1a77_20261123T085415Z.json",
+      "by_tier_all_items": {
+        "T1": 139,
+        "T2": 56,
+        "T3": 5
+      },
+      "degraded_reasons_all_items": {
+        "not_rendered:dns_failure": 30,
+        "sandbox_unavailable:timeout": 22
+      },
+      "false_positive_rate_all_items": {
+        "ci95": [
+          0.23,
+          0.345
+        ],
+        "n_boot": 2000,
+        "value": 0.285
+      },
+      "git_sha": "a2f083cf1a77c8000bd54241efa9281005389a35",
+      "n": 200,
+      "no_web_host_items": 54,
+      "serves_web_pages": 146,
+      "t2_attempted_all_items": 61,
+      "t2_degraded_of_attempted": {
+        "ci95": [
+          0.2517,
+          0.4861
+        ],
+        "k": 22,
+        "n": 61,
+        "value": 0.36065573770491804
+      },
+      "t2_degraded_of_web": {
+        "ci95": [
+          0.0905,
+          0.2021
+        ],
+        "k": 20,
+        "n": 146,
+        "value": 0.136986301369863
+      },
+      "t2_degraded_reasons_of_attempted": {
+        "sandbox_unavailable:timeout": 22
+      },
+      "t2_reached_of_web": {
+        "ci95": [
+          0.3086,
+          0.4645
+        ],
+        "k": 56,
+        "n": 146,
+        "value": 0.3835616438356164
+      },
+      "t2_render_clean_of_attempted": {
+        "ci95": [
+          0.5139,
+          0.7483
+        ],
+        "k": 39,
+        "n": 61,
+        "value": 0.639344262295082
+      },
+      "t2_render_clean_of_web": {
+        "ci95": [
+          0.1838,
+          0.3224
+        ],
+        "k": 36,
+        "n": 146,
+        "value": 0.2465753424657534
+      },
+      "tier_attempt_note": "attempted = verdict ended at T2 or T3; T1 exits never opened a page"
+    },
+    "read_with": "degraded = the page could not be fully checked (timeout, DNS, blocked, render failure); it is a coverage gap, not a detection result",
+    "what": "live running stack (real Playwright sandbox) on 200 held-out legitimate domains; render success and degraded rates only"
+  },
+  "schema_version": 1,
+  "scope": "T2 sealed-browser layer: real-site render health on held-out legit domains (recorded runs) + T2 contribution on fixtures",
+  "t2_contribution_on_fixtures_offline_renderer": {
+    "cloud_all": {
+      "benign_fixtures": 5,
+      "benign_warned_after_T1": {
+        "ci95": [
+          0.2307,
+          0.8824
+        ],
+        "k": 3,
+        "n": 5,
+        "value": 0.6
+      },
+      "benign_warned_after_T2": {
+        "ci95": [
+          0.2307,
+          0.8824
+        ],
+        "k": 3,
+        "n": 5,
+        "value": 0.6
+      },
+      "dangerous_after_T1": {
+        "ci95": [
+          0.0,
+          0.4345
+        ],
+        "k": 0,
+        "n": 5,
+        "value": 0.0
+      },
+      "dangerous_after_T2": {
+        "ci95": [
+          0.3755,
+          0.9638
+        ],
+        "k": 4,
+        "n": 5,
+        "value": 0.8
+      },
+      "label_changed_by_T2": {
+        "ci95": [
+          0.1682,
+          0.6873
+        ],
+        "k": 4,
+        "n": 10,
+        "value": 0.4
+      },
+      "pages": 10,
+      "phishing_fixtures": 5,
+      "recall_warning_after_T1": {
+        "ci95": [
+          0.5655,
+          1.0
+        ],
+        "k": 5,
+        "n": 5,
+        "value": 1.0
+      },
+      "recall_warning_after_T2": {
+        "ci95": [
+          0.5655,
+          1.0
+        ],
+        "k": 5,
+        "n": 5,
+        "value": 1.0
+      }
+    },
+    "new_noai": {
+      "benign_fixtures": 9,
+      "benign_warned_after_T1": {
+        "ci95": [
+          0.1888,
+          0.7334
+        ],
+        "k": 4,
+        "n": 9,
+        "value": 0.4444444444444444
+      },
+      "benign_warned_after_T2": {
+        "ci95": [
+          0.1888,
+          0.7334
+        ],
+        "k": 4,
+        "n": 9,
+        "value": 0.4444444444444444
+      },
+      "dangerous_after_T1": {
+        "ci95": [
+          0.0,
+          0.1759
+        ],
+        "k": 0,
+        "n": 18,
+        "value": 0.0
+      },
+      "dangerous_after_T2": {
+        "ci95": [
+          0.4375,
+          0.8372
+        ],
+        "k": 12,
+        "n": 18,
+        "value": 0.6666666666666666
+      },
+      "label_changed_by_T2": {
+        "ci95": [
+          0.3074,
+          0.6601
+        ],
+        "k": 13,
+        "n": 27,
+        "value": 0.48148148148148145
+      },
+      "pages": 27,
+      "phishing_fixtures": 18,
+      "recall_warning_after_T1": {
+        "ci95": [
+          0.7424,
+          0.9901
+        ],
+        "k": 17,
+        "n": 18,
+        "value": 0.9444444444444444
+      },
+      "recall_warning_after_T2": {
+        "ci95": [
+          0.8241,
+          1.0
+        ],
+        "k": 18,
+        "n": 18,
+        "value": 1.0
+      }
+    },
+    "provenance": "synthetic fixtures; fixture-backed renderer (html to SandboxFeatures), NOT the Playwright sandbox"
+  }
+}

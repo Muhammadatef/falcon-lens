@@ -1,0 +1,863 @@
+{
+  "ai_layers_contribution_local": {
+    "completed_ai_on_runs_compared": 30,
+    "label_differs_from_ai_off": {
+      "ci95": [
+        0.0,
+        0.1135
+      ],
+      "k": 0,
+      "n": 30,
+      "value": 0.0
+    },
+    "llm_calls_answered": {
+      "ci95": [
+        0.5212,
+        0.8334
+      ],
+      "k": 21,
+      "n": 30,
+      "value": 0.7
+    },
+    "reading": "the model only adds risk-side evidence next to the deterministic evidence; zero differences mean the arbiter reached the same score with and without the AI layers on these fixtures",
+    "score_abs_diff": {
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "mean": 0.0,
+      "n": 30
+    },
+    "score_differs_from_ai_off": {
+      "ci95": [
+        0.0,
+        0.1135
+      ],
+      "k": 0,
+      "n": 30,
+      "value": 0.0
+    }
+  },
+  "ai_layers_on": {
+    "items": 12,
+    "items_with_all_three_runs_completed": 9,
+    "label_agreement_all_three_identical": {
+      "ci95": [
+        0.4677,
+        0.9111
+      ],
+      "k": 9,
+      "n": 12,
+      "value": 0.75
+    },
+    "label_agreement_among_items_with_three_completed_runs": {
+      "ci95": [
+        0.7008,
+        1.0
+      ],
+      "k": 9,
+      "n": 9,
+      "value": 1.0
+    },
+    "pairwise_label_agreement": {
+      "ci95": [
+        0.8794,
+        1.0
+      ],
+      "k": 28,
+      "n": 28,
+      "value": 1.0
+    },
+    "per_item": [
+      {
+        "failure_modes": [],
+        "item_id": "msg-bank-otp-ar",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          1,
+          1,
+          1
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          60.0,
+          60.0,
+          60.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "suspicious",
+          "suspicious",
+          "suspicious"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-bank-otp-en",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          1,
+          1,
+          1
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          60.0,
+          60.0,
+          60.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "suspicious",
+          "suspicious",
+          "suspicious"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-benign-ar",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          1,
+          1,
+          1
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          10.0,
+          10.0,
+          10.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-benign-lunch",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          1,
+          1,
+          1
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          10.0,
+          10.0,
+          10.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-delivery-en",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          1,
+          1,
+          1
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          27.0,
+          27.0,
+          27.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-prize-en",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          1,
+          1,
+          1
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          17.0,
+          17.0,
+          17.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [
+          "TimeoutError: "
+        ],
+        "item_id": "pg-benign-events",
+        "kind": "page",
+        "label_stable": false,
+        "llm_calls_per_run": [
+          5,
+          5,
+          3
+        ],
+        "runs_failed": 2,
+        "runs_ok": 1,
+        "score_range": 0.0,
+        "scores": [
+          79.0
+        ],
+        "tiers": [
+          "T3"
+        ],
+        "verdicts": [
+          "suspicious"
+        ]
+      },
+      {
+        "failure_modes": [
+          "TimeoutError: "
+        ],
+        "item_id": "pg-benign-recipe",
+        "kind": "page",
+        "label_stable": false,
+        "llm_calls_per_run": [
+          4,
+          5,
+          2
+        ],
+        "runs_failed": 3,
+        "runs_ok": 0,
+        "score_range": null,
+        "scores": [],
+        "tiers": [],
+        "verdicts": []
+      },
+      {
+        "failure_modes": [
+          "TimeoutError: "
+        ],
+        "item_id": "pg-generic-login",
+        "kind": "page",
+        "label_stable": false,
+        "llm_calls_per_run": [
+          5,
+          5,
+          4
+        ],
+        "runs_failed": 1,
+        "runs_ok": 2,
+        "score_range": 0.0,
+        "scores": [
+          79.0,
+          79.0
+        ],
+        "tiers": [
+          "T3",
+          "T3"
+        ],
+        "verdicts": [
+          "suspicious",
+          "suspicious"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-look-verify-ar",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          1,
+          1,
+          1
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          100.0,
+          100.0,
+          100.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "dangerous",
+          "dangerous",
+          "dangerous"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-look-verify-en",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          1,
+          1,
+          1
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          100.0,
+          100.0,
+          100.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "dangerous",
+          "dangerous",
+          "dangerous"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-official-login",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          5.0,
+          5.0,
+          5.0
+        ],
+        "tiers": [
+          "T1",
+          "T1",
+          "T1"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      }
+    ],
+    "runs_failed": 6,
+    "runs_total": 36,
+    "score_variance_by_final_tier": {
+      "T1": {
+        "items": 1,
+        "max_within_item_sd": 0.0,
+        "mean_within_item_sd": 0.0,
+        "mean_within_item_variance": 0.0
+      },
+      "T2": {
+        "items": 8,
+        "max_within_item_sd": 0.0,
+        "mean_within_item_sd": 0.0,
+        "mean_within_item_variance": 0.0
+      },
+      "T3": {
+        "items": 1,
+        "max_within_item_sd": 0.0,
+        "mean_within_item_sd": 0.0,
+        "mean_within_item_variance": 0.0
+      }
+    },
+    "warning_vs_none_agreement_all_three": {
+      "ci95": [
+        0.4677,
+        0.9111
+      ],
+      "k": 9,
+      "n": 12,
+      "value": 0.75
+    }
+  },
+  "area": "stability",
+  "caveat": "fixture-backed renderer, stub DNS, no network signals; the local model shares the GPU with other jobs, so timeouts are possible and are counted, not hidden.",
+  "ci_method": "Wilson 95% for proportions; percentile bootstrap (2000, seed 20261122) for means",
+  "created_at": "2026-11-23T14:06:25Z",
+  "definition": "3 repeats of the shipped cascade on the same 12 synthetic fixture inputs, extractor + investigator on; a run that crashed or timed out counts as a failed run and makes that item 'not stable'.",
+  "deterministic_control_ai_off": {
+    "items": 12,
+    "items_with_all_three_runs_completed": 12,
+    "label_agreement_all_three_identical": {
+      "ci95": [
+        0.7575,
+        1.0
+      ],
+      "k": 12,
+      "n": 12,
+      "value": 1.0
+    },
+    "label_agreement_among_items_with_three_completed_runs": {
+      "ci95": [
+        0.7575,
+        1.0
+      ],
+      "k": 12,
+      "n": 12,
+      "value": 1.0
+    },
+    "pairwise_label_agreement": {
+      "ci95": [
+        0.9036,
+        1.0
+      ],
+      "k": 36,
+      "n": 36,
+      "value": 1.0
+    },
+    "per_item": [
+      {
+        "failure_modes": [],
+        "item_id": "msg-bank-otp-ar",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          60.0,
+          60.0,
+          60.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "suspicious",
+          "suspicious",
+          "suspicious"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-bank-otp-en",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          60.0,
+          60.0,
+          60.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "suspicious",
+          "suspicious",
+          "suspicious"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-benign-ar",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          10.0,
+          10.0,
+          10.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-benign-lunch",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          10.0,
+          10.0,
+          10.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-delivery-en",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          27.0,
+          27.0,
+          27.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "msg-prize-en",
+        "kind": "message",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          17.0,
+          17.0,
+          17.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-benign-events",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          79.0,
+          79.0,
+          79.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "suspicious",
+          "suspicious",
+          "suspicious"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-benign-recipe",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          51.0,
+          51.0,
+          51.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-generic-login",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          79.0,
+          79.0,
+          79.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "suspicious",
+          "suspicious",
+          "suspicious"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-look-verify-ar",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          100.0,
+          100.0,
+          100.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "dangerous",
+          "dangerous",
+          "dangerous"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-look-verify-en",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          100.0,
+          100.0,
+          100.0
+        ],
+        "tiers": [
+          "T2",
+          "T2",
+          "T2"
+        ],
+        "verdicts": [
+          "dangerous",
+          "dangerous",
+          "dangerous"
+        ]
+      },
+      {
+        "failure_modes": [],
+        "item_id": "pg-official-login",
+        "kind": "page",
+        "label_stable": true,
+        "llm_calls_per_run": [
+          0,
+          0,
+          0
+        ],
+        "runs_failed": 0,
+        "runs_ok": 3,
+        "score_range": 0.0,
+        "scores": [
+          5.0,
+          5.0,
+          5.0
+        ],
+        "tiers": [
+          "T1",
+          "T1",
+          "T1"
+        ],
+        "verdicts": [
+          "no_warning_signs",
+          "no_warning_signs",
+          "no_warning_signs"
+        ]
+      }
+    ],
+    "runs_failed": 0,
+    "runs_total": 36,
+    "score_variance_by_final_tier": {
+      "T1": {
+        "items": 1,
+        "max_within_item_sd": 0.0,
+        "mean_within_item_sd": 0.0,
+        "mean_within_item_variance": 0.0
+      },
+      "T2": {
+        "items": 11,
+        "max_within_item_sd": 0.0,
+        "mean_within_item_sd": 0.0,
+        "mean_within_item_variance": 0.0
+      }
+    },
+    "warning_vs_none_agreement_all_three": {
+      "ci95": [
+        0.7575,
+        1.0
+      ],
+      "k": 12,
+      "n": 12,
+      "value": 1.0
+    }
+  },
+  "git_sha": "e650bca85c42c872b7206e00a500313893f56b0d",
+  "model_ids": {
+    "local": "inkling-2-mini-chat",
+    "t1": "t1_hgb fitted"
+  },
+  "model_route": "local",
+  "n": {
+    "items": 12,
+    "runs_per_item": 3
+  },
+  "notes": [],
+  "provenance": "synthetic fixtures (Falcon Demo Bank, .test hosts), offline substitutes for sandbox and network",
+  "schema_version": 1,
+  "scope": "repeat-run stability of the shipped cascade, local (sovereign) route, 12 fixtures x 3 runs"
+}
