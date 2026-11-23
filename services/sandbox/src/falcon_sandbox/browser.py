@@ -392,6 +392,14 @@ class SandboxBrowser:
                         await route.abort("failed")
                     return
             if main_nav:
+                if len(body) > MAIN_DOC_HARD_BYTES:
+                    # No Content-Length (chunked) and still huge: Playwright's route.fetch cannot stream, so the time
+                    # budget is what bounds the read; whatever arrives past the hard ceiling is refused, not judged.
+                    st.size_cap_hit = True
+                    st.nav_fail = "size_cap"
+                    with contextlib.suppress(PlaywrightError):
+                        await route.abort("blockedbyclient")
+                    return
                 if len(body) > MAIN_DOC_MAX_BYTES:
                     # cut, don't fail: the part we have is still evidence (truncated=true, weight 0)
                     body = body[:MAIN_DOC_MAX_BYTES]
@@ -560,7 +568,8 @@ class SandboxBrowser:
             feats.js = build_js(raw.get("js", {}))
             names = page_field_names(raw.get("forms", []))
             for tgt, keys in zip(st.posts, st.post_keys, strict=False):
-                tgt.carries_form_data = tgt.carries_form_data or body_carries_form_data(keys, names)
+                if not tgt.carries_form_data and body_carries_form_data(keys, names):
+                    tgt.carries_form_data, tgt.basis = True, "payload"
             feats.script_post_targets = [
                 *build_static_post_targets(raw.get("typed", []), raw.get("literals", []), final),
                 *st.posts,
@@ -569,8 +578,8 @@ class SandboxBrowser:
                 # A page that asks for a password/OTP/card/ID: ANY script POST to another site is treated as
                 # carrying that data, whatever the body analysis says (fail closed).
                 for t in feats.script_post_targets:
-                    if t.cross_origin:
-                        t.carries_form_data = True
+                    if t.cross_origin and not t.carries_form_data:
+                        t.carries_form_data, t.basis = True, "credential_page_rule"
             feats.dom_simhash = dom_simhash(raw.get("struct", []))
             fh = host_of(final)
             feats.asset_origins = sorted(h for h in st.assets if not same_site(h, fh))[:30]

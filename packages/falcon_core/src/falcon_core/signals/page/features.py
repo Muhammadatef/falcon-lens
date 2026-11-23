@@ -50,6 +50,11 @@ class PostTarget(_M):
         description="the request carries the page's form-field values (or goes to a known relay); "
         "False = telemetry-style beacon with no form data",
     )
+    basis: Literal["payload", "relay", "credential_page_rule"] | None = Field(
+        default=None,
+        description="why it carries form data: payload analysis, a known relay, or ONLY the credential-page rule "
+        "(any cross-site script POST on a page with a password/OTP/card/ID input)",
+    )
 
 
 class BlockedRequest(_M):

@@ -99,6 +99,7 @@ def build_static_post_targets(
                 exfil=cls.exfil,
                 exfil_category=cls.category,
                 carries_form_data=cls.exfil or body,
+                basis="relay" if cls.exfil else "payload" if body else None,
             )
         )
 
@@ -125,6 +126,7 @@ def build_dynamic_post_target(url: str, resource_type: str, page_url: str) -> Po
         exfil=cls.exfil,
         exfil_category=cls.category,
         carries_form_data=cls.exfil,  # refined once the page's own field names are known
+        basis="relay" if cls.exfil else None,
     )
 
 
