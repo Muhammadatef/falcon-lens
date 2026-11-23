@@ -73,11 +73,24 @@ test.describe("dangerous result: everything a resident needs is visible without 
     await expect(page.getByTestId("tech-details").locator('a[href="/docs/cascade"]')).toBeVisible();
   });
 
-  test("the order on a phone: plate, why, caution/now, acted, report, technical details, activity", async ({ page, request }) => {
+  test("reading order: plate, why, caution/now, acted, report, technical details (strict one column on a phone; now and acted may share a row on desktop)", async ({ page, request, isMobile }) => {
+    // Reduced motion: the reasons and actions rise in with a stagger, and a transform in flight would skew the measured tops.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await run(page, request, "danger");
+    await page.waitForTimeout(500);
     const y = async (sel: string) => (await page.locator(sel).first().boundingBox())!.y;
-    const order = [await y('[data-testid="verdict-plate"]'), await y('[data-testid="reasons"]'), await y('[data-testid="act-now"]'), await y('[data-testid="act-acted"]'), await y('[data-testid="act-report"]'), await y('[data-testid="tech-details"]')];
-    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    const ids = ["verdict-plate", "reasons", "act-now", "act-acted", "act-report", "tech-details"];
+    const order = [];
+    for (const id of ids) order.push(await y(`[data-testid="${id}"]`));
+    if (isMobile) {
+      // Phone: one column, strictly top to bottom (spec 3.2).
+      for (let i = 1; i < order.length; i++) expect(order[i]!, `${ids[i]} below ${ids[i - 1]}`).toBeGreaterThan(order[i - 1]!);
+    } else {
+      // Desktop: the two action cards sit side by side (spec 3.2: the verdict column is unchanged, activity is the side column).
+      for (let i = 1; i < order.length; i++) expect(order[i]!, `${ids[i]} not above ${ids[i - 1]}`).toBeGreaterThanOrEqual(order[i - 1]! - 1);
+      expect(order[4]!, "report below the action cards").toBeGreaterThan(order[3]!);
+      expect(order[5]!, "technical details below the report").toBeGreaterThan(order[4]!);
+    }
   });
 
   test("Technical details toggles from the keyboard with Enter and Space", async ({ page, request }) => {
