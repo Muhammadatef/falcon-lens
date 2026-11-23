@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Fit the arbiter weight of ``message.scam_intent`` on VAL only (same procedure as the L1 D2 model-cap fit).
 
 Objective: maximise VAL recall on scam messages subject to VAL legitimate false-alarm rate <= 2%; ties go to the
