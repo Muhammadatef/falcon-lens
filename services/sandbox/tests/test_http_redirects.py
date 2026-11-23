@@ -11,6 +11,7 @@ from __future__ import annotations
 import functools
 import http.server
 import threading
+import time
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
@@ -37,6 +38,9 @@ REDIRECTS = {
     "/to-scheme": (302, "file:///etc/passwd"),
     "/to-port": (302, "http://127.0.0.1:22/"),
     "/loop": (302, "/loop"),
+    "/to-slow": (302, "/slow"),
+    "/to-reset": (302, "/reset"),
+    **{f"/cap{i}": (302, f"/cap{i + 1}") for i in range(30)},
 }
 
 
@@ -51,6 +55,12 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Location", f"{self.cross}/login")
             self.send_header("Content-Length", "0")
             self.end_headers()
+            return
+        if self.path == "/slow":
+            time.sleep(9)  # longer than the sandbox visit budget
+            return
+        if self.path == "/reset":
+            self.connection.close()
             return
         if self.path in REDIRECTS:
             status, loc = REDIRECTS[self.path]
@@ -137,3 +147,19 @@ async def test_redirect_loop_is_capped(base: str, sandbox: SandboxBrowser) -> No
     out = await sandbox.visit(f"{base}/loop", "desktop_en")
     assert out.features.error == "too_many_redirects"
     assert out.features.final_url is None
+
+
+@pytest.mark.parametrize(
+    ("path", "error_prefix"),
+    [("/to-slow", "timeout"), ("/to-reset", "connect_failed"), ("/cap0", "too_many_redirects")],
+)
+async def test_chain_ending_on_failure_never_returns_the_stub(
+    base: str, sandbox: SandboxBrowser, path: str, error_prefix: str
+) -> None:
+    out = await sandbox.visit(f"{base}{path}", "desktop_en")
+    f = out.features
+    assert f.error is not None and f.error.startswith(error_prefix), f.error
+    assert f.final_url is None and f.status is None
+    assert f.title == "" and f.visible_text == "" and f.forms == []
+    assert f.dom_simhash is None and f.screenshot_phash is None
+    assert out.screenshot is None and out.dom is None

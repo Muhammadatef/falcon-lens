@@ -400,8 +400,11 @@ class SandboxBrowser:
         async def go(target: str) -> None:
             nonlocal response, nav_error
             nav_error = None
+            response = None  # a timeout/failure must never leave the previous hop's response behind
             try:
-                response = await page.goto(target, wait_until="domcontentloaded", timeout=remaining_ms())
+                got = await page.goto(target, wait_until="domcontentloaded", timeout=remaining_ms())
+                # fail closed: the inert redirect stub is never a page (only the next goto's result is)
+                response = None if got is not None and STUB_HEADER in got.headers else got
             except PlaywrightTimeout:
                 feats.timed_out = True
             except PlaywrightError as exc:
