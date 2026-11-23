@@ -79,3 +79,24 @@ async def test_policy_block_codes_always_degrade() -> None:
         )
         final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
         assert final["degraded"] and f"sandbox_unavailable:{code}" in final["degraded_reasons"], code
+
+
+async def test_truncated_page_is_evidence_with_weight_zero_not_an_error() -> None:
+    """A page the sandbox could only read in part (cut at the size cap, or half-loaded) is judged on what
+    was read: the informational ``page.truncated`` evidence carries weight 0 and the check is not degraded."""
+    feats = SandboxFeatures.model_validate(
+        {
+            "final_url": DEMO_BENIGN_URL,
+            "title": "Falcon Demo Bank",
+            "visible_text": "TEST FIXTURE, not a real site.",
+            "truncated": True,
+            "partial": True,
+            "error": None,
+        }
+    )
+    cascade, _ = make_cascade(force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals())
+    final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
+    assert_valid(final)
+    ev = next(e for e in final["evidence"] if e["signal"] == "page.truncated")
+    assert ev["weight"] == 0 and ev["observed"] == {"truncated": True, "partial": True} and ev["error"] is None
+    assert not final.get("degraded")

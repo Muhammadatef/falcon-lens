@@ -16,7 +16,7 @@ How to run:
 
 Inputs:
     Env FL_SANDBOX_TOKEN (the key; if empty the service answers 503), FL_SANDBOX_PROXY (egress proxy for all
-    browser traffic), FL_SNAPSHOT_DIR (default /data/snapshots), FL_SANDBOX_CONCURRENCY (default 3),
+    browser traffic), FL_SNAPSHOT_DIR (default /data/snapshots), FL_SANDBOX_CONCURRENCY (default 6),
     FL_SANDBOX_RECYCLE_AFTER (default 150 visits per browser), and FL_SSRF_ALLOW_HOSTS (only honoured when
     FL_ENV is local, demo or ci).
 

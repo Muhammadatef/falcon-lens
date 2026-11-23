@@ -72,6 +72,8 @@ def to_flat(f: RenderFeatures, verdict_id: str | None = None) -> dict[str, Any]:
             screenshot_phash=p.screenshot_phash,
             dom_simhash=p.dom_simhash,
             error=p.error,
+            truncated=p.network.truncated,
+            partial=p.network.partial,
         )
     c = f.cloaking
     out["cloaking"] = {

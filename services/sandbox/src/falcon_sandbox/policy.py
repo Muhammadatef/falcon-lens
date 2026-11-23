@@ -14,8 +14,20 @@ from dataclasses import dataclass
 from falcon_core.security import GuardPolicy, SSRFBlocked, validate_url
 
 MAX_REDIRECTS = 10
+#: Cap on everything EXCEPT the main document (scripts, styles, images, frames), summed over the visit.
+#: Once it is spent, further sub-resources are refused; the visit carries on (not an error).
 MAX_TOTAL_BYTES = 5 * 1024 * 1024
+#: The main document alone: kept up to this size, anything beyond is cut (``truncated``), not failed.
+MAIN_DOC_MAX_BYTES = 8 * 1024 * 1024
+#: A main document that DECLARES more than this (Content-Length) is refused unread: ``size_cap``.
+MAIN_DOC_HARD_BYTES = 32 * 1024 * 1024
+#: Wall-clock budget of one visit including extraction and hashing (docs/ARCHITECTURE.md: 6 s). The worker waits 7 s
+#: (``sandbox_timeout_s``) and the p95 objective is 8 s end to end (RUNBOOK latency-burn).
 TOTAL_TIMEOUT_S = 6.0
+#: Navigation (redirect hops + reaching DOMContentLoaded) gets this much; the rest is reserved for extraction.
+NAV_BUDGET_S = 4.5
+#: One sub-resource may hold the page this long; a hung third-party script must not eat the whole budget.
+SUBRESOURCE_TIMEOUT_S = 2.5
 SAFE_METHODS = frozenset({"GET", "HEAD"})
 LOCAL_SCHEMES = ("data:", "blob:", "about:")
 BLOCKED_ALWAYS = frozenset({"websocket", "eventsource", "manifest"})
@@ -61,6 +73,10 @@ class ByteBudget:
     def add(self, n: int) -> bool:
         self.total += max(0, n)
         return self.total > self.cap
+
+    @property
+    def exhausted(self) -> bool:
+        return self.total >= self.cap
 
     def would_exceed(self, n: int) -> bool:
         """Would adding ``n`` bytes pass the cap? Used BEFORE a body is read."""

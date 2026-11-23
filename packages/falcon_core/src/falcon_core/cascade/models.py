@@ -121,6 +121,10 @@ class SandboxFeatures(BaseModel):
     exfil_targets: list[dict[str, Any]] = Field(default_factory=list)
     # Set by the sandbox when the visit failed (then there is no page to judge).
     error: str | None = None
+    # The page WAS judged, but from less than all of it: the main document was cut at the size cap, or the
+    # features were read before the page finished loading. Informational only (page.truncated, weight 0).
+    truncated: bool = False
+    partial: bool = False
 
     @field_validator("visible_text")
     @classmethod

@@ -318,6 +318,21 @@ def page_evidence(
             )
         )
 
+    # page.truncated (informational, weight 0): judged from a cut-off or half-loaded page, never an error
+    if features.truncated or features.partial:
+        out.append(
+            make_evidence(
+                "page.truncated",
+                "page",
+                {"truncated": features.truncated, "partial": features.partial},
+                tier="T2",
+                source="sandbox",
+                confidence=0.5,
+                en="Only part of the page could be read",
+                ar="قرأنا جزءًا من الصفحة فقط",
+            )
+        )
+
     # page.cloaking
     if features.cloaking.get("detected") is True:
         obs = {str(k)[:40]: v for k, v in list(features.cloaking.items())[:10] if isinstance(v, bool | int | float)}
