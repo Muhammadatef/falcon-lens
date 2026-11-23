@@ -19,7 +19,7 @@ def test_readme_block_is_current() -> None:
 
 def test_unshipped_tools_are_not_listed() -> None:
     block = rs.render().lower()
-    for name in ("dspy", "scikit", "langchain_core", "adp", "abu dhabi"):
+    for name in ("dspy", "langchain_core", "adp", "abu dhabi"):
         assert name not in block
 
 
@@ -27,6 +27,23 @@ def test_never_claims_safe_and_has_licence_badge() -> None:
     block = rs.render()
     assert "License" in block
     assert "safe" not in block.lower()
+
+
+def test_every_runtime_dep_is_badged_or_minor() -> None:
+    block = rs.render().lower()
+    aliases = {"prometheus-client": "prometheus", "mcp": "model context protocol", "psycopg": "psycopg"}
+    missing = []
+    for dep in sorted(rs.runtime_deps()):
+        if dep in rs.MINOR_LIBS:
+            continue
+        keys = {dep, dep.replace("-", " "), aliases.get(dep, dep)}
+        if not any(k in block for k in keys):
+            missing.append(dep)
+    assert not missing, f"runtime deps neither badged nor in MINOR_LIBS: {missing}"
+
+
+def test_scikit_learn_badged() -> None:
+    assert "scikit-learn" in rs.render().lower()
 
 
 def test_apply_requires_markers() -> None:

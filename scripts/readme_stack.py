@@ -18,6 +18,7 @@ from __future__ import annotations
 import importlib.util
 import re
 import sys
+import tomllib
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -83,6 +84,51 @@ GROUPS = [
     "Infrastructure",
     "Licence",
 ]
+
+
+# Runtime deps badged from the pyprojects even if tools_used misses them: dist -> (label, group, logo, colour)
+EXTRA_DEPS = {
+    "scikit-learn": ("scikit-learn (HistGradientBoosting)", "Detection", "scikitlearn", "F7931E"),
+}
+# Runtime deps in service/package pyprojects with no badge of their own (helpers, internal packages).
+MINOR_LIBS = {
+    "falcon-core",
+    "hatchling",
+    "src",
+    "httpcore",
+    "joblib",
+    "jsonschema",
+    "pyyaml",
+    "python-multipart",
+    "python-ulid",
+    "pydantic-settings",
+    "tldextract",
+    "argon2-cffi",
+    "numpy",
+    "pillow",
+    "asyncpg",
+    "langchain-core",
+    "zxing-cpp",
+    "httpx",
+    "langgraph-checkpoint-postgres",  # shown as the LangGraph Postgres checkpointer badge
+    "opentelemetry-exporter-otlp-proto-grpc",  # covered by the OpenTelemetry badges
+}
+
+
+def runtime_deps(root: Path = ROOT) -> set[str]:
+    """Normalised runtime dependency names of every service and package pyproject."""
+    out: set[str] = set()
+    for path in sorted([*root.glob("services/*/pyproject.toml"), *root.glob("packages/*/pyproject.toml")]):
+        for dep in tomllib.loads(path.read_text(encoding="utf-8")).get("project", {}).get("dependencies", []):
+            m = re.match(r"[A-Za-z0-9_.-]+", dep)
+            if m:
+                out.add(m.group(0).lower().replace("_", "-"))
+    return out
+
+
+def _lock_version(root: Path, name: str) -> str:
+    lock = tomllib.loads((root / "uv.lock").read_text(encoding="utf-8"))
+    return next((p.get("version", "") for p in lock.get("package", []) if p["name"] == name), "")
 
 
 def _load_tools() -> Any:
@@ -151,6 +197,10 @@ def render() -> str:
             group, logo, color = KNOWN.get(key, ("Backend", "", "555555"))
             label = LABELS.get(item, item)
             rows[group].append(_badge(label, versions.get(item, ""), color, logo or None))
+    deps = runtime_deps(ROOT)
+    for dep, (label, group, logo, color) in EXTRA_DEPS.items():
+        if dep in deps:
+            rows[group].append(_badge(label, _lock_version(ROOT, dep), color, logo))
     for label, msg in _models():
         rows["AI agent stack"].append(_badge(label, msg, "D97757" if "Claude" in label else "000000", None))
     makefile = ROOT / "Makefile"
