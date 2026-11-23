@@ -7,7 +7,7 @@ Everything is synthetic (labelled so in the artifact). Numbers are computed here
 
 Usage:
   uv run python -m evals.message_text.run                 # val only (development)
-  uv run python -m evals.message_text.run --publish       # val + test, writes evals/results/published/message_text_<sha>_<ts>.json
+  uv run python -m evals.message_text.run --publish       # val + test, writes evals/results/published/message_text/message_text_<sha>_<ts>.json
 Test is read only with --publish and only when splits.lock exists and verifies.
 """
 
@@ -29,7 +29,9 @@ from falcon_core.scoring.model_cap import score_with_model
 from falcon_core.scoring.params import load_params
 from falcon_core.signals.message.analyze import analyze_message
 
-PUBLISHED = RESULTS_DIR / "published"
+PUBLISHED = (
+    RESULTS_DIR / "published" / "message_text"
+)  # a subdirectory: readme_metrics and the web results page take the newest top-level *.json
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> dict[str, float | None]:
