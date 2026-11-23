@@ -8,6 +8,7 @@ That holds for CONNECT tunnels and for plain-HTTP absolute-form requests.
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass, field
 
@@ -24,12 +25,22 @@ from falcon_core.security import (
 ALLOWED_PORTS = frozenset({80, 443})
 
 
+ALLOWLIST_ENVS = frozenset({"local", "demo", "ci"})
+log = logging.getLogger("falcon.egress")
+
+
 def policy_from_env() -> GuardPolicy:
     """Production policy. ``FL_EGRESS_ALLOW_HOSTS`` (comma-separated exact host
     names) is only for the internal "Falcon Demo Bank" fixture network. It is
-    empty by default, and listing a host still never opens metadata or loopback."""
+    empty by default and, fail closed, honoured only when ``FL_ENV`` is local,
+    demo or ci (same rule as the worker and the sandbox); any other or missing
+    value ignores it with a logged warning. Listing a host still never opens
+    metadata or loopback."""
     raw = os.environ.get("FL_EGRESS_ALLOW_HOSTS", "")
     hosts = frozenset(h.strip().lower().rstrip(".") for h in raw.split(",") if h.strip())
+    if hosts and os.environ.get("FL_ENV") not in ALLOWLIST_ENVS:
+        log.warning("FL_EGRESS_ALLOW_HOSTS ignored outside local/demo/ci (FL_ENV=%r)", os.environ.get("FL_ENV"))
+        hosts = frozenset()
     return GuardPolicy(allowed_ports=ALLOWED_PORTS, allow_hosts=hosts)
 
 

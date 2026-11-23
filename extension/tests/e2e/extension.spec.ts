@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { API_PORT, SITE_PORT, XSS_REASON, startApi, startSite, type ApiCall } from "./servers";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const EXT = join(here, "..", "..", "dist-e2e");
+const EXT = process.env.FL_E2E_OUT ?? join(here, "..", "..", "dist-e2e");
 const SHOTS = join(here, "..", "..", "docs", "screenshots");
 const site = (host: string, path = "/"): string => `http://${host}:${SITE_PORT}${path}`;
 
@@ -33,12 +33,14 @@ const test = base.extend<Fixtures>({
     const calls: ApiCall[] = [];
     const api: Server = await startApi(calls);
     await use(calls);
+    api.closeAllConnections();
     await new Promise((r) => api.close(r));
   },
   hits: async ({}, use) => {
     const hits: string[] = [];
     const srv: Server = await startSite(hits);
     await use(hits);
+    srv.closeAllConnections();
     await new Promise((r) => srv.close(r));
   },
   context: async ({ calls, hits }, use) => {
@@ -93,11 +95,13 @@ test("lookalike navigation shows the warning before any input, then upgrades to 
   await page.goto(PLAIN);
   await expect(page.locator("#demo-input")).toBeVisible();
 
-  const committed: string[] = [];
-  page.on("framenavigated", (f) => f === page.mainFrame() && committed.push(f.url()));
+  const committed: { url: string; at: number }[] = [];
+  page.on("framenavigated", (f) => f === page.mainFrame() && committed.push({ url: f.url(), at: performance.now() }));
   await page.goto(LOOKALIKE).catch(() => undefined); // the navigation is replaced by the warning page
   await expect(page).toHaveURL(new RegExp(`^chrome-extension://${extensionId}/warning\\.html`));
-  expect(committed).not.toContain(LOOKALIKE); // the lookalike document never rendered in the tab
+  // The guard may lose the first race on a fast link (see the bounded-replacement test below),
+  // so the property here is the end state: the tab shows the warning, never the risky document.
+  expect(committed.at(-1)!.url).toMatch(/warning\.html/);
 
   // Before any input: the tab shows the extension page, and there is nothing to type into.
   await expect(page.locator("#go-back")).toBeVisible();
@@ -144,6 +148,40 @@ test("lookalike navigation shows the warning before any input, then upgrades to 
   await page.locator("#go-back").click();
   await expect(page).toHaveURL(PLAIN);
   await expect(page.locator("#demo-input")).toBeVisible();
+});
+
+/**
+ * Guaranteed property of the navigation guard (measured; see docs/THREAT_MODEL.md, Extension):
+ * a risky document can commit before chrome.tabs.update lands (a cached page on a fast link
+ * commits in under 1 ms), but the tab never stays on it. onBeforeNavigate and onCommitted each
+ * replace it with the warning page, so the exposure equals the time the service worker takes to
+ * receive the event. Here the worker is busied for STALL_MS to provoke the race on purpose.
+ */
+const REPLACE_BOUND_MS = 500; // measured about 5 ms; generous for shared CI runners
+const STALL_MS = 400;
+
+test("a risky page that commits before the guard runs is still replaced, within a bound", async ({ context, extensionId }) => {
+  const [sw] = context.serviceWorkers();
+  const page = await context.newPage();
+  await page.goto(PLAIN);
+  const committed: { url: string; at: number }[] = [];
+  page.on("framenavigated", (f) => f === page.mainFrame() && committed.push({ url: f.url(), at: performance.now() }));
+  await sw!.evaluate((ms) => {
+    setTimeout(() => {
+      const t = Date.now();
+      while (Date.now() - t < ms);
+    }, 0);
+  }, STALL_MS);
+  const t0 = performance.now();
+  await page.goto(LOOKALIKE).catch(() => undefined);
+  await expect(page).toHaveURL(new RegExp(`^chrome-extension://${extensionId}/warning\\.html`));
+  const risky = committed.find((c) => c.url === LOOKALIKE);
+  const warning = committed.find((c) => c.url.startsWith(`chrome-extension://${extensionId}/warning.html`));
+  expect(risky, "the race was provoked: the risky document committed first").toBeDefined();
+  expect(warning).toBeDefined();
+  // Replaced as soon as the worker is free again: stall plus bounded handling time, never kept.
+  expect(warning!.at - t0).toBeLessThan(STALL_MS + REPLACE_BOUND_MS);
+  expect(committed.at(-1)!.url).toMatch(/warning\.html/);
 });
 
 test("continue anyway records the choice for the host and is not asked again", async ({ context, extensionId, calls }) => {

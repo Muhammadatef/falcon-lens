@@ -161,7 +161,7 @@ def _models() -> list[tuple[str, str]]:
         m = re.search(rf'"claude-{family}-(\d+)-(\d+)"', text)
         if m:
             out.append((f"Claude {family.title()}", f"{m.group(1)}.{m.group(2)}"))
-    llm = ROOT / "services/sentinel/src/falcon_sentinel/llm.py"
+    llm = ROOT / "packages/falcon_core/src/falcon_core/llm/config.py"
     if re.search(r'"inkling-2-mini', llm.read_text(encoding="utf-8") if llm.is_file() else ""):
         out.append(("Inkling 2 Mini (local)", "via Ollama"))
     return out
