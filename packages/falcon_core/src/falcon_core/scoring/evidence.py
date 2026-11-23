@@ -63,6 +63,19 @@ PREFIX_FAMILY: dict[str, str] = {
 }
 
 
+# The T1 signals emit ``domain.age_days`` / ``domain.cert_age_days`` (SCORING §2 names); the T3 investigator
+# tools historically emit ``domain.age`` / ``domain.cert_age``. The arbiter scores one canonical name, so both
+# spellings carry the same weight (SIGNAL_ALIASES maps the emitted name to the canonical scoring name).
+SIGNAL_ALIASES: dict[str, str] = {
+    "domain.age_days": "domain.age",
+    "domain.cert_age_days": "domain.cert_age",
+}
+
+
+def canonical_signal(name: str) -> str:
+    return SIGNAL_ALIASES.get(name, name)
+
+
 @dataclass(frozen=True, slots=True)
 class Evidence:
     id: str

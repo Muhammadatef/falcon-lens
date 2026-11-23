@@ -65,6 +65,10 @@ def make_cascade(
     kw.setdefault("mirror", loaded_mirror())  # fresh, empty: no hit, not degraded
     # The cascade still uses the draft classifier (T1 model not wired yet), so pin the draft thresholds.
     kw.setdefault("params", load_params(Path(__file__).parents[1] / "scoring" / "params_draft.yaml"))
+    if kw.pop("force_t2", False):  # never exit at T1 on a low p: the sandbox is always consulted
+        import dataclasses
+
+        kw["params"] = dataclasses.replace(kw["params"], eps_low=0.0)
     deps = CascadeDeps(
         registry=default_registry(),
         sandbox=sandbox or StubSandboxClient(error="no_stub"),

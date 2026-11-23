@@ -23,8 +23,10 @@ from typing import Literal
 
 from falcon_core.scoring import hard_rules
 from falcon_core.scoring.evidence import (
+    SIGNAL_ALIASES,
     Evidence,
     Polarity,
+    canonical_signal,
     confidence_of,
     family_matches,
     is_present,
@@ -115,7 +117,8 @@ def band(p: float, params: ScoringParams | None = None) -> Verdict:
 
 
 def _base_weight(ev: Evidence, params: ScoringParams) -> float:
-    if ev.signal == "domain.age":
+    sig = canonical_signal(ev.signal)
+    if sig == "domain.age":
         age = observed_number(ev, "age_days")
         if age is None or age < 0:
             return 0.0
@@ -123,10 +126,10 @@ def _base_weight(ev: Evidence, params: ScoringParams) -> float:
             return params.domain_age_lt7
         if age < 30:
             return params.domain_age_lt30
-        if age > 3650:
+        if age > OLD_DOMAIN_DAYS:
             return params.domain_age_gt3650
         return 0.0
-    if ev.signal == "domain.cert_age":
+    if sig == "domain.cert_age":
         age = observed_number(ev, "age_days")
         if age is not None and 0 <= age < 7:
             return params.cert_age_lt7
@@ -184,10 +187,23 @@ def _contributions(evidence: Sequence[Evidence], params: ScoringParams, h3_holds
             contrib[i] = min(contrib[i], max(0.0, budget))
             budget -= contrib[i]
 
+    # The same domain fact can arrive twice (T1 signal and T3 tool, or both spellings): count it once, keeping the
+    # largest contribution so the result does not depend on evidence order and risk is never hidden by trust.
+    groups: dict[str, list[int]] = {}
+    for i, ev in enumerate(evidence):
+        canon = canonical_signal(ev.signal)
+        if canon in SIGNAL_ALIASES.values() and contrib[i] != 0.0:
+            groups.setdefault(canon, []).append(i)
+    for idxs in groups.values():
+        keep = max(idxs, key=lambda k: contrib[k])
+        for k in idxs:
+            if k != keep:
+                contrib[k] = 0.0
+
     # domain.age > 3650 days is trust only when no other risk evidence fired.
     other_risk = any(c > 0 for c in contrib)
     for i, ev in enumerate(evidence):
-        if ev.signal == "domain.age" and contrib[i] < 0 and other_risk:
+        if canonical_signal(ev.signal) == "domain.age" and contrib[i] < 0 and other_risk:
             contrib[i] = 0.0
     return contrib
 

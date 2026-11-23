@@ -21,7 +21,7 @@ import yaml
 
 from falcon_core.i18n import LANGS, Catalog, Lang, load_catalog
 from falcon_core.scoring.arbiter import ArbiterResult, Verdict
-from falcon_core.scoring.evidence import Evidence, to_contract
+from falcon_core.scoring.evidence import Evidence, canonical_signal, to_contract
 
 MAX_REASONS = 3
 CLASSIFIER_SIGNAL = "url.classifier"  # informational evidence the cascade adds when the fitted T1 model fired
@@ -47,7 +47,7 @@ class TemplateReason:
 def template_key(ev: Evidence) -> str:
     if ev.signal.startswith("rep."):
         return "rep.feed_hit"
-    if ev.signal == "domain.age":
+    if canonical_signal(ev.signal) == "domain.age":
         return "domain.age.new" if ev.weight > 0 else "domain.age.old"
     return ev.signal
 
@@ -271,7 +271,7 @@ def all_template_keys(signals: Sequence[str]) -> list[str]:
     for s in signals:
         if s.startswith("rep."):
             keys.append("rep.feed_hit")
-        elif s == "domain.age":
+        elif canonical_signal(s) == "domain.age":
             keys += ["domain.age.new", "domain.age.old"]
         else:
             keys.append(s)

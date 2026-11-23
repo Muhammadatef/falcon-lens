@@ -34,7 +34,9 @@ async def test_sandbox_exfil_targets_trigger_h4_on_phish_fixture() -> None:
 
 async def test_target_refusal_on_established_clean_domain_is_not_degraded() -> None:
     feats = SandboxFeatures.model_validate({"error": "tls_error", "final_url": None})
-    cascade, _ = make_cascade(StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000)))
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
     assert_valid(final)
     assert not final["degraded"] and final["verdict"] == "no_warning_signs" and final["tier_reached"] == "T2"
@@ -44,19 +46,27 @@ async def test_target_refusal_on_established_clean_domain_is_not_degraded() -> N
 
 async def test_sandbox_failure_degrades_without_trust_with_risk_or_on_internal_error() -> None:
     feats = SandboxFeatures.model_validate({"error": "x", "final_url": None})  # unknown code: fail closed
-    cascade, _ = make_cascade(StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000)))
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+    )
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
     assert final["degraded"] and "sandbox_unavailable:x" in final["degraded_reasons"]
     soft = SandboxFeatures.model_validate({"error": "timeout", "final_url": None})
-    cascade, _ = make_cascade(StubSandboxClient(default=soft), signals=offline_signals(age_signal(9000)))
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(default=soft), signals=offline_signals(age_signal(9000))
+    )
     final = (await run(cascade, DEMO_LOOKALIKE_URL)).docs[-1]  # url.* risk evidence present
     assert final["degraded"]
     cascade, _ = make_cascade(
-        StubSandboxClient(error="unreachable:ConnectError"), signals=offline_signals(age_signal(9000))
+        force_t2=True,
+        sandbox=StubSandboxClient(error="unreachable:ConnectError"),
+        signals=offline_signals(age_signal(9000)),
     )
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
     assert final["degraded"] and final["verdict"] != "no_warning_signs"
-    cascade, _ = make_cascade(StubSandboxClient(error="timeout"))  # no domain-age evidence: no page-independent trust
+    cascade, _ = make_cascade(
+        force_t2=True, sandbox=StubSandboxClient(error="timeout")
+    )  # no domain-age evidence: no page-independent trust
     final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
     assert final["degraded"] and final["verdict"] != "no_warning_signs"
 
@@ -64,6 +74,8 @@ async def test_sandbox_failure_degrades_without_trust_with_risk_or_on_internal_e
 async def test_policy_block_codes_always_degrade() -> None:
     for code in ("blocked_by_policy", "egress_blocked", "too_many_redirects", "size_cap"):
         feats = SandboxFeatures.model_validate({"error": code, "final_url": None})
-        cascade, _ = make_cascade(StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000)))
+        cascade, _ = make_cascade(
+            force_t2=True, sandbox=StubSandboxClient(default=feats), signals=offline_signals(age_signal(9000))
+        )
         final = (await run(cascade, DEMO_BENIGN_URL)).docs[-1]
         assert final["degraded"] and f"sandbox_unavailable:{code}" in final["degraded_reasons"], code
