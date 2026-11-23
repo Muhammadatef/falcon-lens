@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "editable": false,
   "graphTooltip": 1,
   "refresh": "5s",
@@ -66,6 +66,13 @@
       "url": "/d/fl-sentinel",
       "icon": "dashboard",
       "targetBlank": false
+    },
+    {
+      "title": "Model quality | جودة النموذج",
+      "type": "link",
+      "url": "/d/fl-model-quality",
+      "icon": "dashboard",
+      "targetBlank": false
     }
   ],
   "annotations": {
@@ -78,7 +85,8 @@
     {
       "type": "stat",
       "title": "Data source | مصدر البيانات",
-      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live.",
+      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live. Counters without a source label (LLM, sandbox, security) include replayed traffic while the banner says REPLAY. Thresholds: green = LIVE only, orange = replayed data present (a label, not a fault). No data: no check was recorded at all; the panel then reads LIVE.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -113,6 +121,7 @@
               }
             ]
           },
+          "noValue": "No data",
           "mappings": [
             {
               "type": "value",
@@ -156,7 +165,14 @@
     {
       "type": "stat",
       "title": "Event lag | تأخر الأحداث",
-      "description": "Alert SentinelLag above 60 s.",
+      "description": "Age of the oldest unprocessed bus event. Thresholds: green < 30 s, amber 30-60 s, red >= 60 s (SentinelLag fires above 60 s). No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [
+        {
+          "title": "Runbook: sentinel-lag",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#sentinel-lag",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -186,7 +202,7 @@
                 "value": null
               },
               {
-                "color": "#F5A623",
+                "color": "#E8B339",
                 "value": 30
               },
               {
@@ -194,13 +210,14 @@
                 "value": 60
               }
             ]
-          }
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -213,7 +230,7 @@
       "id": 2,
       "gridPos": {
         "h": 3,
-        "w": 4,
+        "w": 6,
         "x": 8,
         "y": 0
       }
@@ -221,7 +238,14 @@
     {
       "type": "stat",
       "title": "Dead letters, 1 h | رسائل ميتة",
-      "description": "",
+      "description": "Events moved to the dead-letter stream. Thresholds: green 0, red >= 1. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [
+        {
+          "title": "Runbook: sentinel-dlq",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#sentinel-dlq",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -255,13 +279,14 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -274,15 +299,22 @@
       "id": 3,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 12,
+        "w": 6,
+        "x": 14,
         "y": 0
       }
     },
     {
       "type": "stat",
       "title": "Approvals pending | بانتظار الموافقة",
-      "description": "",
+      "description": "External drafts awaiting a human. Thresholds: green 0, amber >= 1 (ApprovalsWaiting after 30 min). No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [
+        {
+          "title": "Runbook: approvals-waiting",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#approvals-waiting",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -290,7 +322,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(fl_approvals_pending)",
+          "expr": "max(fl_approvals_pending)",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -312,17 +344,18 @@
                 "value": null
               },
               {
-                "color": "#F5A623",
+                "color": "#E8B339",
                 "value": 1
               }
             ]
-          }
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -335,15 +368,157 @@
       "id": 4,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 16,
-        "y": 0
+        "w": 6,
+        "x": 0,
+        "y": 3
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Open incidents | الحوادث المفتوحة",
+      "description": "Incidents open, triaging or awaiting approval. Thresholds: green 0, amber >= 1, red >= 5: heuristic. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [
+        {
+          "title": "Runbook: campaign-surge",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#campaign-surge",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(fl_incident_open)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 1
+              },
+              {
+                "color": "#E5484D",
+                "value": 5
+              }
+            ]
+          },
+          "noValue": "No data"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 5,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Avg triage time | متوسط زمن الفرز",
+      "description": "Mean wall time of one triage run (sum of its graph nodes). Thresholds: green < 60 s, amber 60-120 s, red >= 120 s: the per-incident time budget is 120 s. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(fl_sentinel_node_seconds_sum[15m])) / (sum(rate(fl_sentinel_node_seconds_count{node=\"enrich\"}[15m])) > 0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 60
+              },
+              {
+                "color": "#E5484D",
+                "value": 120
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 6,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 3
       }
     },
     {
       "type": "stat",
       "title": "Blocks reverted, 24 h | حظر مُلغى",
-      "description": "",
+      "description": "Blocks an operator undid (a proxy for wrong blocks). Thresholds: none: counts; a rise means false blocks. No data: nothing of this kind happened in this range, which is the healthy state; the series appears at the first event.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -373,13 +548,14 @@
                 "value": null
               }
             ]
-          }
+          },
+          "noValue": "0 (series appears at the first revert)"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -389,16 +565,16 @@
         },
         "textMode": "auto"
       },
-      "id": 5,
+      "id": 7,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 20,
-        "y": 0
+        "w": 6,
+        "x": 18,
+        "y": 3
       }
     },
     {
-      "id": 6,
+      "id": 8,
       "type": "row",
       "title": "Incidents | الحوادث",
       "collapsed": false,
@@ -406,14 +582,21 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 6
       },
       "panels": []
     },
     {
       "type": "timeseries",
       "title": "Incidents opened by type | الحوادث حسب النوع | REPLAY-aware",
-      "description": " Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "description": "Incidents created per 5 min by type, severity and source. Thresholds: none: counts; a new high severity fires NewHighIncident. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down). Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "links": [
+        {
+          "title": "Runbook: campaign-surge",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#campaign-surge",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -496,18 +679,19 @@
           "sort": "desc"
         }
       },
-      "id": 7,
+      "id": 9,
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
-        "y": 4
+        "y": 7
       }
     },
     {
       "type": "timeseries",
-      "title": "Open incidents by severity | الحوادث المفتوحة",
-      "description": "",
+      "title": "Open incidents by severity | المفتوحة حسب الخطورة",
+      "description": "Open incidents by severity. Thresholds: none: composition. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -549,18 +733,130 @@
           "sort": "desc"
         }
       },
-      "id": 8,
+      "id": 10,
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 4
+        "w": 8,
+        "x": 8,
+        "y": 7
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Incidents by status | الحوادث حسب الحالة",
+      "description": "Incidents by lifecycle status (open, triaging, awaiting_approval, mitigated, closed). Thresholds: none: composition. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (status) (fl_incident_status)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 11,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 7
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "Incidents by rule, 24 h | الحوادث حسب القاعدة",
+      "description": "Rule firings that created or changed an incident. Thresholds: none: counts; R1 is the campaign-surge rule. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [
+        {
+          "title": "Runbook: campaign-surge",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#campaign-surge",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (rule) (increase(fl_rule_fired_total[24h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{rule}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "noValue": "the Sentinel has not processed events in this range (no incidents yet, or the service is down)",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#D4AF37"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 12,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 15
       }
     },
     {
       "type": "timeseries",
       "title": "Time to incident p50 / p95 | الزمن حتى الحادثة",
-      "description": "",
+      "description": "Seconds from the triggering event to the incident (live source only). Thresholds: dashed line at 60 s: amber above, an incident older than a minute is late for a demo. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -596,7 +892,27 @@
             "stacking": {
               "mode": "none",
               "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
             }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 60
+              },
+              {
+                "color": "#E5484D",
+                "value": 300
+              }
+            ]
           }
         },
         "overrides": []
@@ -611,18 +927,19 @@
           "sort": "desc"
         }
       },
-      "id": 9,
+      "id": 13,
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 0,
-        "y": 12
+        "x": 8,
+        "y": 15
       }
     },
     {
       "type": "timeseries",
       "title": "Rules fired | القواعد المفعّلة",
-      "description": "",
+      "description": "Rule firings per 5 min. Thresholds: none: counts. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -664,18 +981,171 @@
           "sort": "desc"
         }
       },
-      "id": 10,
+      "id": 14,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      }
+    },
+    {
+      "id": 15,
+      "type": "row",
+      "title": "Approvals and actions | الموافقات والإجراءات",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Approval turnaround p50 / p95 | زمن الموافقة",
+      "description": "Seconds from a draft being proposed to the operator's decision. Thresholds: dashed line at 1800 s (30 min): the ApprovalsWaiting alert. No data: no operator decision was made in the window.",
+      "links": [
+        {
+          "title": "Runbook: approvals-waiting",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#approvals-waiting",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le, decision) (rate(fl_approval_turnaround_seconds_bucket[1h])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p50 {{decision}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, decision) (rate(fl_approval_turnaround_seconds_bucket[1h])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p95 {{decision}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 1800
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 16,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 23
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Approved vs rejected | الموافقة والرفض",
+      "description": "Operator decisions per hour. Thresholds: none: counts. No data: no operator decision was made in the window.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (decision) (increase(fl_approval_turnaround_seconds_count[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{decision}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 17,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 12
+        "y": 23
       }
     },
     {
       "type": "timeseries",
       "title": "Actions by mode | الإجراءات",
-      "description": "",
+      "description": "Executed Sentinel tool calls. External drafts are never sent without approval. Thresholds: none: counts. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -717,18 +1187,228 @@
           "sort": "desc"
         }
       },
-      "id": 11,
+      "id": 18,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 12
+        "y": 23
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Executed vs awaiting approval | منفذ مقابل منتظر",
+      "description": "Actions executed in the last hour against drafts waiting for a human now. Thresholds: none: compare the two. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_sentinel_actions_total[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "executed (1 h)"
+        },
+        {
+          "refId": "B",
+          "expr": "max(fl_approvals_pending)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "awaiting approval"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 19,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 30
+      }
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": "LangGraph and summaries | مخطط الحارس",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Graph node duration p50 / p95 | زمن العقد",
+      "description": "Wall time of each triage node: enrich, compare, assess, summarise, propose, act (act is timed when it finishes, after approval). Thresholds: dashed line at 120 s: the per-incident budget. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le, node) (rate(fl_sentinel_node_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p50 {{node}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, node) (rate(fl_sentinel_node_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p95 {{node}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 120
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 21,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Template vs LLM text | قالب أم نموذج",
+      "description": "Severity reasons and summaries written by the model (llm) or by the deterministic template (the model failed or the verifier rejected it). Thresholds: none: composition; template text only, less specific than model text. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (task, generated_by) (increase(fl_sentinel_text_total[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{task}} · {{generated_by}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 22,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 38
       }
     },
     {
       "type": "timeseries",
       "title": "New campaign domains | نطاقات حملات جديدة | REPLAY-aware",
-      "description": " Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "description": "Domains attributed to a brand campaign. REPLAY rows are replayed events. Thresholds: none: counts. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down). Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -811,18 +1491,25 @@
           "sort": "desc"
         }
       },
-      "id": 12,
+      "id": 23,
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 46
       }
     },
     {
       "type": "timeseries",
       "title": "Event lag and approvals | التأخر والموافقات",
-      "description": "",
+      "description": "Bus lag in seconds and drafts waiting. Thresholds: none: see the stats above for the alert levels. No data: the Sentinel has not processed events in this range (no incidents yet, or the service is down).",
+      "links": [
+        {
+          "title": "Runbook: sentinel-lag",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#sentinel-lag",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -839,7 +1526,7 @@
         },
         {
           "refId": "B",
-          "expr": "sum(fl_approvals_pending)",
+          "expr": "max(fl_approvals_pending)",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -873,17 +1560,18 @@
           "sort": "desc"
         }
       },
-      "id": 13,
+      "id": 24,
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 46
       }
     },
     {
       "type": "logs",
       "title": "Sentinel logs | سجلات الحارس",
+      "description": "Sentinel logs from Loki. Thresholds: none. No data: Loki or the log shipper is down.",
       "datasource": {
         "type": "loki",
         "uid": "loki"
@@ -904,12 +1592,12 @@
         "enableLogDetails": true,
         "sortOrder": "Descending"
       },
-      "id": 14,
+      "id": 25,
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 53
       }
     }
   ]

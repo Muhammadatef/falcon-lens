@@ -1,11 +1,16 @@
 {
   "available": true,
-  "artifact": "20261123T111023Z.json",
+  "artifact": "20261123T122549Z.json",
   "data": {
-    "created_at": "2026-11-23T11:10:23Z",
+    "created_at": "2026-11-23T12:25:49Z",
     "dataset_hash": "3467e9f6b9f930c23a3a001f7126330bd0d129b32e01f40678e003b03bb07ac2",
-    "git_sha": "e9854b561d3c454b5322a5d44b0788fad339468d-dirty",
+    "git_sha": "fc577d7a5d2f59366f35da287a9be106fe6bb03c-dirty",
     "metrics": {
+      "test.accuracy": 0.978571,
+      "test.accuracy_ci95": [
+        0.95,
+        1
+      ],
       "test.ece": 0.101203,
       "test.ece_ci95": [
         0.086972,
@@ -54,6 +59,16 @@
         0.888889,
         1
       ],
+      "test.roc_auc": 0.995417,
+      "test.roc_auc_ci95": [
+        0.983348,
+        1
+      ],
+      "val.accuracy": 0.97561,
+      "val.accuracy_ci95": [
+        0.955285,
+        0.99187
+      ],
       "val.ece": 0.130744,
       "val.ece_ci95": [
         0.11339,
@@ -101,6 +116,11 @@
       "val.recall_ci95": [
         0.940732,
         0.993197
+      ],
+      "val.roc_auc": 0.981751,
+      "val.roc_auc_ci95": [
+        0.962073,
+        0.995888
       ]
     },
     "model_ids": {

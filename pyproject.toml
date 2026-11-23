@@ -77,6 +77,7 @@ known-first-party = [
 "**/fixtures.py" = ["S311"]
 "scripts/falcon_demo/**" = ["S311", "S603", "S607"]
 "services/sentinel/**" = ["E501"]  # bilingual strings and SQL read better unwrapped
+"infra/grafana/gen_dashboards.py" = ["E501"]  # long bilingual descriptions read better unwrapped
 "packages/falcon_core/src/falcon_core/tools/**" = ["E501"]
 "services/sentinel/sentinel_core/**" = ["S311", "S324", "UP047"]
 "scripts/smoke.py" = ["S101", "S501"]

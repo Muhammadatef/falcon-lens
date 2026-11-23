@@ -1,0 +1,4538 @@
+{
+  "uid": "fl-model-quality",
+  "title": "Model quality | جودة النموذج",
+  "tags": [
+    "falcon-lens",
+    "quality",
+    "evals"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 3,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "5s",
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m"
+    ]
+  },
+  "style": "dark",
+  "links": [
+    {
+      "title": "Command overview | مركز القيادة",
+      "type": "link",
+      "url": "/d/fl-command-overview",
+      "icon": "dashboard",
+      "targetBlank": false
+    },
+    {
+      "title": "Detection quality | جودة الكشف",
+      "type": "link",
+      "url": "/d/fl-detection-quality",
+      "icon": "dashboard",
+      "targetBlank": false
+    },
+    {
+      "title": "Pipeline performance | أداء المسار",
+      "type": "link",
+      "url": "/d/fl-pipeline",
+      "icon": "dashboard",
+      "targetBlank": false
+    },
+    {
+      "title": "AI operations | عمليات الذكاء الاصطناعي",
+      "type": "link",
+      "url": "/d/fl-ai-ops",
+      "icon": "dashboard",
+      "targetBlank": false
+    },
+    {
+      "title": "Security | الأمن",
+      "type": "link",
+      "url": "/d/fl-security",
+      "icon": "dashboard",
+      "targetBlank": false
+    },
+    {
+      "title": "Sentinel | الحارس",
+      "type": "link",
+      "url": "/d/fl-sentinel",
+      "icon": "dashboard",
+      "targetBlank": false
+    },
+    {
+      "title": "Model quality | جودة النموذج",
+      "type": "link",
+      "url": "/d/fl-model-quality",
+      "icon": "dashboard",
+      "targetBlank": false
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Data source | مصدر البيانات",
+      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live. Counters without a source label (LLM, sandbox, security) include replayed traffic while the banner says REPLAY. Thresholds: green = LIVE only, orange = replayed data present (a label, not a fault). No data: no check was recorded at all; the panel then reads LIVE.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "clamp_max(sum(increase(fl_checks_total{source=\"replay\"}[5m])), 1) or vector(0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#F5A623",
+                "value": 1
+              }
+            ]
+          },
+          "noValue": "No data",
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "REPLAY DATA ACTIVE | بيانات إعادة تشغيل",
+                  "color": "#F5A623",
+                  "index": 0
+                },
+                "0": {
+                  "text": "LIVE | مباشر",
+                  "color": "#3FB68B",
+                  "index": 1
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value"
+      },
+      "id": 1,
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "text",
+      "title": "Where these numbers come from | مصدر الأرقام",
+      "options": {
+        "mode": "markdown",
+        "content": "Every tile reads the eval gauges (metric family `eval`), served by the **evals-exporter** from the published artifacts in `evals/results/published/` (read-only). Tiles show the **latest** artifact per source: value, bootstrap 95% CI, n and provenance (real or synthetic). No value is typed here; if an artifact is missing the tile says so. Offline scores are not live accuracy."
+      },
+      "transparent": true,
+      "id": 2,
+      "gridPos": {
+        "h": 3,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "type": "row",
+      "title": "Latest artifacts | آخر الأدلة المنشورة",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "panels": []
+    },
+    {
+      "type": "table",
+      "title": "Artifacts | الملفات المنشورة",
+      "description": "Every published artifact: source, name, date, git sha, provenance and dataset hash prefix. Sources: main (T1 + arbiter), fp_regress (held-out real sites), redteam, message_text, dspy, fits. Thresholds: none: metadata. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_artifact_info",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "service": true
+            },
+            "indexByName": {
+              "source": 0,
+              "artifact": 1,
+              "created_at": 2,
+              "git_sha": 3,
+              "provenance": 4,
+              "dataset_hash": 5
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "created_at",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "id": 4,
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      }
+    },
+    {
+      "id": 5,
+      "type": "row",
+      "title": "Validation | التحقق: URL model + arbiter (real)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 11
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Recall | الاستدعاء · val",
+      "description": "Share of phishing items that received a warning (suspicious or dangerous). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green >= 90%, red below: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E5484D",
+                "value": null
+              },
+              {
+                "color": "#3FB68B",
+                "value": 0.9
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 6,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 12
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Precision | الدقة · val",
+      "description": "Share of warnings that were phishing. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no precision target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"precision\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"precision\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"precision\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"precision\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 7,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 12
+      }
+    },
+    {
+      "type": "stat",
+      "title": "F1 | مقياس F1 · val",
+      "description": "Harmonic mean of precision and recall. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no F1 target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"f1\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"f1\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"f1\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"f1\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 8,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 12
+      }
+    },
+    {
+      "type": "stat",
+      "title": "False-alarm rate FPR | الإنذار الكاذب · val",
+      "description": "Share of legitimate items that received a warning. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.02
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 9,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 12
+      }
+    },
+    {
+      "type": "stat",
+      "title": "ROC-AUC | المساحة تحت ROC · val",
+      "description": "Ranking quality of the calibrated probability across all cut points. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"roc_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"roc_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"roc_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"roc_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 10,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 18
+      }
+    },
+    {
+      "type": "stat",
+      "title": "PR-AUC | المساحة تحت PR · val",
+      "description": "Average precision: ranking quality that weighs the rare class. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no PR-AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"pr_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"pr_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"pr_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"pr_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 11,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 18
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Accuracy | الدقة الكلية · val",
+      "description": "Correct calls at the warning operating point. Read with FPR and recall: classes are imbalanced. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no accuracy target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"accuracy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"accuracy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"accuracy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"accuracy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 12,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 18
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Calibration error ECE | خطأ المعايرة · val",
+      "description": "Expected calibration error of the probability (lower is better). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no ECE target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"ece\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"ece\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"ece\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"ece\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 13,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 18
+      }
+    },
+    {
+      "id": 14,
+      "type": "row",
+      "title": "Test | الاختبار: URL model + arbiter (real)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Recall | الاستدعاء · test",
+      "description": "Share of phishing items that received a warning (suspicious or dangerous). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green >= 90%, red below: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E5484D",
+                "value": null
+              },
+              {
+                "color": "#3FB68B",
+                "value": 0.9
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 15,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 25
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Precision | الدقة · test",
+      "description": "Share of warnings that were phishing. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no precision target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"precision\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"precision\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"precision\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"precision\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 16,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 25
+      }
+    },
+    {
+      "type": "stat",
+      "title": "F1 | مقياس F1 · test",
+      "description": "Harmonic mean of precision and recall. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no F1 target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"f1\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"f1\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"f1\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"f1\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 17,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 25
+      }
+    },
+    {
+      "type": "stat",
+      "title": "False-alarm rate FPR | الإنذار الكاذب · test",
+      "description": "Share of legitimate items that received a warning. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.02
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 18,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 25
+      }
+    },
+    {
+      "type": "stat",
+      "title": "ROC-AUC | المساحة تحت ROC · test",
+      "description": "Ranking quality of the calibrated probability across all cut points. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"roc_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"roc_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"roc_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"roc_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 19,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 31
+      }
+    },
+    {
+      "type": "stat",
+      "title": "PR-AUC | المساحة تحت PR · test",
+      "description": "Average precision: ranking quality that weighs the rare class. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no PR-AUC target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"pr_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"pr_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"pr_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"pr_auc\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 20,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 31
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Accuracy | الدقة الكلية · test",
+      "description": "Correct calls at the warning operating point. Read with FPR and recall: classes are imbalanced. Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no accuracy target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"accuracy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"accuracy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"accuracy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"accuracy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 21,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 31
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Calibration error ECE | خطأ المعايرة · test",
+      "description": "Expected calibration error of the probability (lower is better). Offline T1 + arbiter on real URLs (OpenPhish community feed plus a curated legitimate list); not a field estimate (see the artifact's data_notes). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: docs/EVALS.md sets no ECE target. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"ece\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"ece\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"ece\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"ece\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 22,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 31
+      }
+    },
+    {
+      "id": 23,
+      "type": "row",
+      "title": "Held-out real sites | مواقع حقيقية خارج العينة",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "False-alarm rate, sites that serve web | الإنذار الكاذب (مواقع تعمل)",
+      "description": "Share of held-out real legitimate sites that serve a web page (serves-web) which received a warning, through the running stack. Real sites, live pipeline. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md; this run is a regression check, not tuned on. No data: no fp_regress artifact is published yet (run make regress-legit LIVE=1 and publish).",
+      "links": [
+        {
+          "title": "Runbook: fp-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#fp-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"fp_regress\",split=\"heldout\",metric=\"false_alarm_rate_serves_web\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"fp_regress\",split=\"heldout\",metric=\"false_alarm_rate_serves_web\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"fp_regress\",split=\"heldout\",metric=\"false_alarm_rate_serves_web\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"fp_regress\",split=\"heldout\",metric=\"false_alarm_rate_serves_web\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.02
+              }
+            ]
+          },
+          "noValue": "No data: no fp_regress artifact is published yet (run make regress-legit LIVE=1 and publish)"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 24,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 38
+      }
+    },
+    {
+      "type": "stat",
+      "title": "False-alarm rate, all held-out sites | الإنذار الكاذب (الكل)",
+      "description": "Share of all held-out legitimate sites with a warning, including hosts that serve no web page (DNS-only names that degrade). Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: green <= 2%, red above: the target in docs/EVALS.md. No data: no fp_regress artifact is published yet.",
+      "links": [
+        {
+          "title": "Runbook: fp-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#fp-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"fp_regress\",split=\"heldout\",metric=\"false_alarm_rate\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"fp_regress\",split=\"heldout\",metric=\"false_alarm_rate\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"fp_regress\",split=\"heldout\",metric=\"false_alarm_rate\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"fp_regress\",split=\"heldout\",metric=\"false_alarm_rate\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.02
+              }
+            ]
+          },
+          "noValue": "No data: no fp_regress artifact is published yet"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 25,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 38
+      }
+    },
+    {
+      "type": "table",
+      "title": "Held-out runs over time | تشغيلات سابقة",
+      "description": "Every published fp_regress run (serves-web false-alarm rate with CI and n), newest by artifact name. Thresholds: none: history, compare runs. No data: no fp_regress artifact is published yet.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"fp_regress\",metric=\"false_alarm_rate_serves_web\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"fp_regress\",metric=\"false_alarm_rate_serves_web\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"fp_regress\",metric=\"false_alarm_rate_serves_web\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"fp_regress\",metric=\"false_alarm_rate_serves_web\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "service": true,
+              "source": true,
+              "split": true,
+              "metric": true
+            },
+            "renameByName": {
+              "Value #A": "rate",
+              "Value #B": "CI low",
+              "Value #C": "CI high",
+              "Value #D": "n"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "rate"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CI low"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CI high"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "id": 26,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 38
+      }
+    },
+    {
+      "id": 27,
+      "type": "row",
+      "title": "Red team and messages | الفريق الأحمر والرسائل",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Red-team harmful rate | معدل نجاح الهجوم",
+      "description": "Share of synthetic injection cases where the attack changed the outcome (target 0%, docs/EVALS.md). Synthetic fixtures (Falcon Demo Bank), reference pipeline. Legend under the value = source artifact name and provenance label; CI = Wilson 95% interval computed by the exporter from k/n in the artifact (the artifact stores no interval). n = items evaluated. Thresholds: green 0%, red above: the target is zero injection success. No data: no red-team artifact is published yet (evals/results/published/redteam/ is empty).",
+      "links": [
+        {
+          "title": "Runbook: injection-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#injection-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"redteam\",split=\"all\",metric=\"harmful_rate\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"redteam\",split=\"all\",metric=\"harmful_rate\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"redteam\",split=\"all\",metric=\"harmful_rate\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"redteam\",split=\"all\",metric=\"harmful_rate\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.0001
+              }
+            ]
+          },
+          "noValue": "No data: no red-team artifact is published yet (evals/results/published/redteam/ is empty)"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 28,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 44
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "Red-team harmful rate by category | حسب الفئة",
+      "description": "Harmful rate per case kind (page, message, email, url, image) from the latest red-team artifact; synthetic. Thresholds: green 0%, red above. No data: no red-team artifact is published yet.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"redteam\",metric=~\"harmful_rate\\\\..+\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{metric}} ({{provenance}})",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "noValue": "No red-team artifact is published yet",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 0.0001
+              }
+            ]
+          },
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 29,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 44
+      }
+    },
+    {
+      "type": "table",
+      "title": "DSPy before / after | قبل وبعد DSPy",
+      "description": "Prompt-optimisation results exactly as stored in the dspy artifact (labels carry provenance). Thresholds: none: metadata and values as published. No data: no dspy artifact is published yet.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"dspy\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "service": true,
+              "source": true
+            },
+            "renameByName": {
+              "Value": "value"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "id": 30,
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 44
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Message-text recall | استدعاء الرسائل · val · SYNTHETIC, pending audit",
+      "description": "Share of phishing messages (URLs wrapped in synthetic English/Arabic templates) that received a warning. SYNTHETIC templates built from real URLs; pending native-speaker audit. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: the message set is synthetic and pending audit, so no target is applied. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"message_path.recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"message_path.recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"message_path.recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"message_path.recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 31,
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 49
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Message-text FPR | الإنذار الكاذب للرسائل · val · SYNTHETIC, pending audit",
+      "description": "Share of legitimate messages that received a warning. SYNTHETIC templates built from real URLs; pending native-speaker audit. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: synthetic and pending audit, no target is applied. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"val\",metric=\"message_path.fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"val\",metric=\"message_path.fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"val\",metric=\"message_path.fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"val\",metric=\"message_path.fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 32,
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 49
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Message-text recall | استدعاء الرسائل · test · SYNTHETIC",
+      "description": "Same as val, on the test split. SYNTHETIC templates, pending audit. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: synthetic and pending audit. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"message_path.recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"message_path.recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"message_path.recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"message_path.recall\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 33,
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 54
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Message-text FPR | الإنذار الكاذب للرسائل · test · SYNTHETIC",
+      "description": "Same as val, on the test split. SYNTHETIC templates, pending audit. Legend under the value = source artifact name and provenance label; CI = bootstrap 95% interval stored in the artifact. n = items evaluated. Thresholds: none: synthetic and pending audit. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [
+        {
+          "title": "Runbook: eval-regression",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#eval-regression",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\",split=\"test\",metric=\"message_path.fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{artifact}} · {{provenance}}",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\",split=\"test\",metric=\"message_path.fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI low",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\",split=\"test\",metric=\"message_path.fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "95% CI high",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\",split=\"test\",metric=\"message_path.fpr\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "n",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 3,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8A94A6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "justifyMode": "center",
+        "text": {
+          "valueSize": 22,
+          "titleSize": 12
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 34,
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 54
+      }
+    },
+    {
+      "id": 35,
+      "type": "row",
+      "title": "All headline metrics with CI | كل المقاييس",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 59
+      },
+      "panels": []
+    },
+    {
+      "type": "table",
+      "title": "Latest main artifact | آخر ملف رئيسي",
+      "description": "Every metric of the latest main artifact with bootstrap 95% CI, n and provenance. message_path.* rows are synthetic. Thresholds: none: reference table. No data: the evals-exporter is not running (obs profile) or evals/results/published has no matching artifact.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "fl_eval_metric{source=\"main\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "fl_eval_ci_low{source=\"main\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "C",
+          "expr": "fl_eval_ci_high{source=\"main\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "refId": "D",
+          "expr": "fl_eval_n{source=\"main\"} * on (source, artifact) group_left () fl_eval_artifact_latest",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "instance": true,
+              "service": true,
+              "source": true
+            },
+            "renameByName": {
+              "Value #A": "value",
+              "Value #B": "CI low",
+              "Value #C": "CI high",
+              "Value #D": "n"
+            },
+            "indexByName": {
+              "split": 0,
+              "metric": 1,
+              "value": 2,
+              "CI low": 3,
+              "CI high": 4,
+              "n": 5,
+              "provenance": 6,
+              "artifact": 7
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "split"
+              },
+              {
+                "field": "metric"
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "id": 36,
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 60
+      }
+    }
+  ]
+}

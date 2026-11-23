@@ -1,0 +1,90 @@
+# promtool unit tests for EvalRegression: promtool test rules infra/prometheus/tests/eval-regression.test.yml
+# (scripts/tests/test_prometheus_rules.py runs it with promtool, or through the prom/prometheus image).
+rule_files:
+  - ../rules/falcon-alerts.yml
+evaluation_interval: 1m
+
+tests:
+  # Artifact A was newest for 35 min, then B was published with recall 0.90 (down 0.07): the alert fires.
+  - interval: 1m
+    input_series:
+      - series: 'fl_eval_metric{source="main",split="val",metric="recall",artifact="A"}'
+        values: '0.97x120'
+      - series: 'fl_eval_metric{source="main",split="val",metric="recall",artifact="B"}'
+        values: '_x35 0.90x85'
+      - series: 'fl_eval_artifact_latest{source="main",artifact="A"}'
+        values: '1x35 _x85'
+      - series: 'fl_eval_artifact_latest{source="main",artifact="B"}'
+        values: '_x35 1x85'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: EvalRegression
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              source: main
+              split: val
+              metric: recall
+            exp_annotations:
+              summary: "Eval metric recall (val, main) changed by -0.07 against the previous artifact"
+              runbook_url: docs/RUNBOOK.md#eval-regression
+
+  # B is better (0.99 vs 0.97): quiet.
+  - interval: 1m
+    input_series:
+      - series: 'fl_eval_metric{source="main",split="val",metric="recall",artifact="A"}'
+        values: '0.97x120'
+      - series: 'fl_eval_metric{source="main",split="val",metric="recall",artifact="B"}'
+        values: '_x35 0.99x85'
+      - series: 'fl_eval_artifact_latest{source="main",artifact="A"}'
+        values: '1x35 _x85'
+      - series: 'fl_eval_artifact_latest{source="main",artifact="B"}'
+        values: '_x35 1x85'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: EvalRegression
+        exp_alerts: []
+
+  # A drop inside the 0.02 tolerance (0.97 -> 0.96): quiet.
+  - interval: 1m
+    input_series:
+      - series: 'fl_eval_metric{source="main",split="val",metric="f1",artifact="A"}'
+        values: '0.97x120'
+      - series: 'fl_eval_metric{source="main",split="val",metric="f1",artifact="B"}'
+        values: '_x35 0.96x85'
+      - series: 'fl_eval_artifact_latest{source="main",artifact="A"}'
+        values: '1x35 _x85'
+      - series: 'fl_eval_artifact_latest{source="main",artifact="B"}'
+        values: '_x35 1x85'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: EvalRegression
+        exp_alerts: []
+
+  # No new artifact: the same newest artifact all along stays quiet.
+  - interval: 1m
+    input_series:
+      - series: 'fl_eval_metric{source="main",split="test",metric="roc_auc",artifact="A"}'
+        values: '0.5x120'
+      - series: 'fl_eval_artifact_latest{source="main",artifact="A"}'
+        values: '1x120'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: EvalRegression
+        exp_alerts: []
+
+  # Other sources (fp_regress) never trip it.
+  - interval: 1m
+    input_series:
+      - series: 'fl_eval_metric{source="fp_regress",split="heldout",metric="recall",artifact="A"}'
+        values: '0.97x120'
+      - series: 'fl_eval_metric{source="fp_regress",split="heldout",metric="recall",artifact="B"}'
+        values: '_x35 0.10x85'
+      - series: 'fl_eval_artifact_latest{source="fp_regress",artifact="A"}'
+        values: '1x35 _x85'
+      - series: 'fl_eval_artifact_latest{source="fp_regress",artifact="B"}'
+        values: '_x35 1x85'
+    alert_rule_test:
+      - eval_time: 90m
+        alertname: EvalRegression
+        exp_alerts: []

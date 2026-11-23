@@ -58,6 +58,12 @@ async def test_lookalike_is_dangerous_via_h1_at_t2() -> None:
     assert sandbox.calls == [canonicalize(DEMO_LOOKALIKE_URL).url]
     labels = {"input_type": "url", "verdict": "dangerous", "tier": "T2", "route": "none"}
     assert metric(m, "fl_checks_total", {**labels, "source": "live"}) == 1
+    # dashboard metrics: the SLO stage, the hard rule, the render outcome and the evidence behind the final verdict
+    assert metric(m, "fl_stage_latency_seconds_count", {"stage": "total"}) == 1
+    assert metric(m, "fl_hard_rule_fired_total", {"rule": "H1", "effect": "floor_dangerous"}) >= 1
+    assert metric(m, "fl_sandbox_renders_total", {"outcome": "ok"}) == 1
+    evidence_total = [s.value for f in m.registry.collect() if f.name == "fl_evidence" for s in f.samples]
+    assert sum(evidence_total) > 0
 
 
 async def test_zero_day_without_url_cues_still_h1() -> None:
@@ -389,6 +395,7 @@ async def test_t2_sandbox_failure_degrades() -> None:
     assert final["degraded"] is True and final["verdict"] != "no_warning_signs"
     assert any(r.startswith("sandbox_unavailable") for r in final["degraded_reasons"])
     assert metric(m, "fl_tool_errors_total", {"tool": "sandbox", "reason": "timeout"}) == 1
+    assert metric(m, "fl_sandbox_renders_total", {"outcome": "timeout"}) == 1
 
 
 async def test_t2_sandbox_timeout_is_enforced() -> None:
