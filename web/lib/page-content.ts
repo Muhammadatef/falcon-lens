@@ -1,5 +1,5 @@
 /**
- * Copy for the judge-facing pages (How it works, Authorities, Privacy). Plain text only:
+ * Copy for the judge-facing pages (Authorities, Privacy; the agents page copy lives in lib/i18n.ts). Plain text only:
  * everything is rendered as React text nodes. Statements here mirror docs/INTEGRATION.md and
  * docs/PRIVACY.md; they describe what the shipped code does or "could" do and carry no numbers
  * (numbers live only in the published evaluation artifact, see lib/results.ts).
@@ -16,23 +16,6 @@ export interface Row {
   name: string;
   entry: string;
   detail: string;
-}
-
-export interface HowContent {
-  title: string;
-  lead: string;
-  stepsTitle: string;
-  steps: { title: string; text: string }[];
-  figureAlt: string;
-  layersTitle: string;
-  layersLead: string;
-  agentsTitle: string;
-  agentsLead: string;
-  agentsAlt: string;
-  investigator: { title: string; role: string; list: string[] };
-  sentinel: { title: string; role: string; list: string[] };
-  principle: string;
-  cta: string;
 }
 
 export interface AuthContent {
@@ -55,87 +38,6 @@ export interface PrivacyContent {
   sections: Section[];
   note: string;
 }
-
-export const HOW: Record<Lang, HowContent> = {
-  ar: {
-    title: "كيف تعمل عدسة الصقر",
-    lead: "من لحظة وصول رسالة مشبوهة إلى حكم واضح مدعوم بالأدلة، في أربع خطوات يمكن لأي شخص متابعتها.",
-    stepsTitle: "أربع خطوات",
-    steps: [
-      { title: "تقدّم ما تشتبه به", text: "تلصق رابطاً مشبوهاً أو تشاركه من هاتفك مباشرة. فحص الرسائل والبريد الإلكتروني والصور يظهر حالته أدناه. لا نطلب منك أي بيانات شخصية أو مصرفية أو رقم هوية." },
-      { title: "نفحص العنوان", text: "نطابق العنوان مع القوائم المعروفة للبلاغات، ونتحقق مما إذا كان ينتحل اسماً معروفاً، وكم مضى على تسجيل النطاق." },
-      { title: "نزور الصفحة في بيئة معزولة", text: "نفتح الصفحة في متصفح مغلق بعيداً عن هاتفك، دون كتابة أي شيء أو إرسال أي نموذج، ونقارن ما تدّعيه الصفحة بالجهة المالكة للعنوان فعلاً." },
-      { title: "تحصل على حكم واضح", text: "الحكم أحد ثلاثة: خطِر، أو مريب، أو لم نجد علامات تحذير. يرافقه الأسباب والأدلة وما ينبغي فعله الآن. لا تصف عدسة الصقر أي رابط بأنه مأمون أبداً." },
-    ],
-    figureAlt: "رسم توضيحي للخطوات الأربع: تقديم الرابط، فحص العنوان، زيارة معزولة للصفحة، ثم حكم واضح بالعربية والإنجليزية.",
-    layersTitle: "طبقات الفحص",
-    layersLead: "تبدأ العدسة بالأسرع والأقل كلفة، ولا تنتقل إلى الطبقة الأعمق إلا عند الحاجة. وإذا حسمت قاعدة قاطعة النتيجة مبكراً توقف الفحص عندها.",
-    agentsTitle: "المساعدان الذكيان",
-    agentsLead: "يعمل في النظام وكيلان من الذكاء الاصطناعي، لكلٍّ منهما دور محدد وحدود واضحة. ولا يحدد أيٌّ منهما الدرجة النهائية.",
-    agentsAlt: "رسم توضيحي للمساعدين: المحقّق الذي يتعمق في الحالات الغامضة، والحارس الذي يراقب الفحوص على مدار الساعة ويربط الحملات المتشابهة.",
-    investigator: {
-      title: "المحقّق",
-      role: "يتعمق في الحالات غير الواضحة",
-      list: [
-        "يُستدعى فقط حين لا تستطيع القواعد الثابتة حسم الحالة.",
-        "يعمل بقائمة قصيرة من الأدوات المعتمدة.",
-        "صُمّم بحيث لا يغيّر نص الصفحة الدرجة. تقييم مقاومة الحقن: انظر صفحة النتائج.",
-        "لا يغيّر الدرجة. الدرجة يحددها محكّم حتمي من الأدلة.",
-      ],
-    },
-    sentinel: {
-      title: "الحارس",
-      role: "يراقب الفحوص على مدار الساعة",
-      list: [
-        "يربط الفحوص المتشابهة ليكشف الحملة مبكراً.",
-        "يحظر المؤشرات المعروفة داخل نظامنا فقط، وبشكل قابل للتراجع.",
-        "يعدّ مسودات طلبات الإزالة وبلاغات الشرطة.",
-        "لا يرسل شيئاً إلى الخارج بنفسه. لا بد من موافقة شخص مسؤول.",
-      ],
-    },
-    principle: "الذكاء الاصطناعي يساعد ويشرح، ولا يحدد الحكم. الحكم يصدره محكّم حتمي من الأدلة، ويمكن تتبّع كل سبب إلى دليل محدد.",
-    cta: "جرّب الفحص الآن",
-  },
-  en: {
-    title: "How Falcon Lens works",
-    lead: "From a suspicious message arriving to a clear, evidence-backed verdict, in four steps that anyone can follow.",
-    stepsTitle: "Four steps",
-    steps: [
-      { title: "You submit what looks suspicious", text: "Paste a suspicious link, or share it straight from your phone. The status of message, email and image checking is shown below. We never ask for personal, banking or ID details." },
-      { title: "We examine the address", text: "We match the address against known report lists and check whether it imitates a known name and how recently the domain was registered." },
-      { title: "We visit the page in isolation", text: "We open the page in a sealed browser away from your phone, typing nothing and submitting no form, and compare what the page claims with who actually owns the address." },
-      { title: "You get a clear verdict", text: "One of three: dangerous, suspicious, or no warning signs found, with the reasons, the evidence and what to do now. Falcon Lens never describes a link as trustworthy." },
-    ],
-    figureAlt: "Illustration of the four steps: submit the link, examine the address, isolated page visit, then a clear verdict in Arabic and English.",
-    layersTitle: "The checking layers",
-    layersLead: "The lens starts with the fastest, cheapest check and goes deeper only when it must. If a decisive rule settles the case early, checking stops there.",
-    agentsTitle: "The two AI agents",
-    agentsLead: "Two AI agents work inside the system, each with a defined role and clear limits. Neither of them sets the final score.",
-    agentsAlt: "Illustration of the two agents: the Investigator, which looks closer at unclear cases, and the Sentinel, which watches every check around the clock and links similar scams.",
-    investigator: {
-      title: "The Investigator",
-      role: "Looks closer at unclear cases",
-      list: [
-        "Called only when the fixed rules cannot settle a case.",
-        "Works with a short list of approved tools.",
-        "Designed so that page text cannot change the score. Injection-resistance evaluation: see Results.",
-        "It cannot change the score. A deterministic arbiter sets it from the evidence.",
-      ],
-    },
-    sentinel: {
-      title: "The Sentinel",
-      role: "Watches every check, around the clock",
-      list: [
-        "Links similar checks to spot a campaign early.",
-        "Blocks known indicators inside our own system only, and reversibly.",
-        "Drafts takedown requests and police reports.",
-        "It sends nothing outside by itself. A responsible person must approve.",
-      ],
-    },
-    principle: "AI assists and explains. It never sets the verdict. A deterministic arbiter issues it from the evidence, and every reason traces back to a specific piece of evidence.",
-    cta: "Try a check now",
-  },
-};
 
 export const AUTH: Record<Lang, AuthContent> = {
   ar: {

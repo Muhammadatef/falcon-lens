@@ -1,17 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import { TIERS, type InputType } from "@/lib/contracts";
+import type { InputType } from "@/lib/contracts";
 import { usePrefs } from "@/lib/prefs";
 import { useCheck } from "@/lib/use-check";
 import { lensStateFor } from "@/lib/verdict-stream";
 import { CheckBox } from "./CheckBox";
 import { DemoRibbon } from "./Chrome";
-import { Icon, type IconName } from "./Icon";
+import { AgentChip } from "./AgentChip";
+import { HomeSections } from "./HomeSections";
+import { Icon } from "./Icon";
 import { Lens } from "./Lens";
+import { Radar } from "./Radar";
 import { Result } from "./Result";
-
-const HOW_ICONS: Record<(typeof TIERS)[number], IconName> = { T0: "list", T1: "url", T2: "box", T3: "spark" };
+import { SentinelTicker } from "./SentinelTicker";
 
 export interface CheckExperienceProps {
   demo: boolean;
@@ -20,10 +21,11 @@ export interface CheckExperienceProps {
   shareFailed: boolean;
   pendingKinds: readonly InputType[];
   investigatorLive: boolean;
+  sentinelLive: boolean;
 }
 
-export function CheckExperience({ demo, initialId, initialText, shareFailed, pendingKinds, investigatorLive }: CheckExperienceProps) {
-  const { t } = usePrefs();
+export function CheckExperience({ demo, initialId, initialText, shareFailed, pendingKinds, investigatorLive, sentinelLive }: CheckExperienceProps) {
+  const { t, lang } = usePrefs();
   const { state, start, playDemo, reset } = useCheck(initialId);
   const busy = state.phase === "submitting" || state.phase === "waiting" || state.phase === "streaming";
   const showResult = state.phase !== "idle";
@@ -36,9 +38,10 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed, pen
         <div className="hero wrap">
           <div className="hero-grid">
             <div>
-              <span className="eyebrow">{t("hero.eyebrow")}</span>
-              <h1>{t("hero.title")}</h1>
-              <p className="hero-sub">{t("hero.sub")}</p>
+              <span className="eyebrow">{t("home.eyebrow")}</span>
+              <h1>{t("home.title")}</h1>
+              <p className="hero-sub hero-sub--full">{t(sentinelLive ? "home.sub" : "home.sub.phone")}</p>
+              <p className="hero-sub hero-sub--phone">{t("home.sub.phone")}</p>
 
               {shareFailed ? (
                 <p className="paste-error" role="alert" data-testid="share-failed">
@@ -63,41 +66,27 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed, pen
                 <Icon name="hand" size={20} />
                 <span>{t("promise")}</span>
               </p>
+
+              <div className="agent-chips" data-testid="agent-chips">
+                <AgentChip agent="inv" lang={lang} aiLive={investigatorLive} sentinelLive={sentinelLive} variant="chip" />
+                <AgentChip agent="sen" lang={lang} aiLive={investigatorLive} sentinelLive={sentinelLive} variant="chip" />
+              </div>
             </div>
-            <div className="lens-stage" data-state={lensStateFor(state.phase)}>
-              <Lens state={lensStateFor(state.phase)} verdict={finalVerdict} tiers={state.tiers} />
+            <div className="duo">
+              <div className="lens-stage" data-state={lensStateFor(state.phase)}>
+                <Lens state={lensStateFor(state.phase)} verdict={finalVerdict} tiers={state.tiers} />
+              </div>
+              <div className="duo-radar" aria-hidden="true"><Radar /></div>
+              <AgentChip agent="inv" lang={lang} aiLive={investigatorLive} sentinelLive={sentinelLive} variant="tag" />
+              <AgentChip agent="sen" lang={lang} aiLive={investigatorLive} sentinelLive={sentinelLive} variant="tag" />
             </div>
           </div>
         </div>
 
         {showResult ? <Result state={state} onReset={reset} /> : null}
 
-        <section id="how" aria-labelledby="how-title">
-          <div className="wrap">
-            <div className="sec-head">
-              <h2 id="how-title">{t("how.title")}</h2>
-            </div>
-            <p className="sec-sub">{t("how.sub")}</p>
-            <div className="how-grid">
-              {TIERS.map((tier) => (
-                <div className="card how-card" key={tier}>
-                  <span className="code">{tier}</span>
-                  <h3>
-                    <Icon name={HOW_ICONS[tier]} size={22} />
-                    {t(`tier.${tier}`)}
-                  </h3>
-                  <p>{t(`how.${tier}`)}</p>
-                  {tier === "T3" ? <p><span className="cap" data-live={investigatorLive ? "true" : "false"}><i aria-hidden="true" />{t(investigatorLive ? "cap.live" : "cap.progress")}</span></p> : null}
-                </div>
-              ))}
-            </div>
-            <p className="how-foot">
-              <Icon name="scale" size={22} />
-              <span>{t("how.foot")}</span>
-            </p>
-            <p className="how-more"><Link href="/how-it-works">{t("nav.how")}</Link></p>
-          </div>
-        </section>
+        <SentinelTicker demo={demo} sentinelLive={sentinelLive} />
+        <HomeSections investigatorLive={investigatorLive} sentinelLive={sentinelLive} />
       </main>
     </>
   );

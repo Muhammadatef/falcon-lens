@@ -7,6 +7,7 @@ import { looksLikeSingleUrl, refang } from "@/lib/defang";
 import type { MessageKey } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
 import type { CheckInputPreview } from "@/lib/verdict-stream";
+import { CapBadge } from "./CapBadge";
 import { Icon } from "./Icon";
 
 const KINDS: readonly InputType[] = ["url", "message", "email", "image"];
@@ -57,7 +58,7 @@ export function buildInput(kind: InputType, text: string, file: File | null): { 
 }
 
 export function CheckBox({ busy, initialText = "", pending = [], onSubmit }: CheckBoxProps) {
-  const { t } = usePrefs();
+  const { t, lang } = usePrefs();
   const [kind, setKind] = useState<InputType>(initialText && !looksLikeSingleUrl(initialText) ? "message" : "url");
   const [text, setText] = useState(initialText);
   const [file, setFile] = useState<File | null>(null);
@@ -101,6 +102,7 @@ export function CheckBox({ busy, initialText = "", pending = [], onSubmit }: Che
           <button key={k} type="button" aria-pressed={kind === k} data-testid={`kind-${k}`} onClick={() => choose(k)}>
             <Icon name={k} size={18} />
             {t(`kind.${k}`)}
+            {pending.includes(k) ? <CapBadge live={false} lang={lang} /> : null}
           </button>
         ))}
       </div>

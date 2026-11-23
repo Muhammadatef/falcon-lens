@@ -7,6 +7,8 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const MOCK_PORT = Number(process.env.MOCK_PORT ?? 43110);
 const APP_PORT = Number(process.env.APP_PORT ?? 43111);
+const CAPS_FALSE_PORT = Number(process.env.APP_PORT_CAPS_FALSE ?? 43112);
+const CAPS_TRUE_PORT = Number(process.env.APP_PORT_CAPS_TRUE ?? 43113);
 /** Set to a running stack's gateway (e.g. https://localhost:8443) to run tests/live through Caddy. */
 const LIVE = process.env.LIVE_BASE_URL;
 
@@ -39,10 +41,18 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 60_000,
     },
+    // Same build, but /v1/meta reports every capability false / true (cookie `mock_caps`, routed by the mock gateway).
+    ...([["false", CAPS_FALSE_PORT], ["true", CAPS_TRUE_PORT]] as const).map(([mode, port]) => ({
+      command: "node .next/standalone/server.js",
+      url: `http://127.0.0.1:${port}/api/health`,
+      env: { PORT: String(port), HOSTNAME: "127.0.0.1", NODE_ENV: "production", FL_API_INTERNAL_URL: `http://127.0.0.1:${MOCK_PORT}/__caps/${mode}` },
+      reuseExistingServer: false,
+      timeout: 60_000,
+    })),
     {
       command: "node tests/mock/gateway.mjs",
       url: `http://127.0.0.1:${MOCK_PORT}/api/health`,
-      env: { MOCK_PORT: String(MOCK_PORT), APP_PORT: String(APP_PORT) },
+      env: { MOCK_PORT: String(MOCK_PORT), APP_PORT: String(APP_PORT), APP_PORT_CAPS_FALSE: String(CAPS_FALSE_PORT), APP_PORT_CAPS_TRUE: String(CAPS_TRUE_PORT) },
       reuseExistingServer: false,
       timeout: 60_000,
     },

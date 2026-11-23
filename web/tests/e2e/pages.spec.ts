@@ -10,7 +10,7 @@ import results from "../../lib/results.generated.json";
 import { formatMetric } from "../../lib/results";
 import { expect, setPrefs, test } from "./helpers";
 
-const PAGES = ["/", "/how-it-works", "/architecture/agents", "/results", "/authorities", "/privacy", "/campaigns", "/ops", "/this-page-does-not-exist"];
+const PAGES = ["/", "/agents", "/results", "/authorities", "/privacy", "/campaigns", "/ops", "/this-page-does-not-exist"];
 const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 async function axe(page: Page) {
@@ -67,7 +67,7 @@ test.describe("chrome", () => {
       await expect(toggle).toHaveAttribute("aria-expanded", "false");
       await page.keyboard.press("Enter");
     }
-    for (const [href, path] of [["/how-it-works", /how-it-works/], ["/results", /results/], ["/authorities", /authorities/], ["/privacy", /privacy/]] as const) {
+    for (const [href, path] of [["/agents", /agents/], ["/results", /results/], ["/authorities", /authorities/], ["/privacy", /privacy/]] as const) {
       await page.goto("/");
       if (await toggle.isVisible()) await toggle.click();
       await page.locator(`header nav a[href="${href}"]`).click();
@@ -78,15 +78,15 @@ test.describe("chrome", () => {
 
   test("title, description and Open Graph follow the language and carry no external assets", async ({ page, context, baseURL }) => {
     await setPrefs(context, baseURL!, { lang: "en" });
-    await page.goto("/how-it-works");
-    await expect(page).toHaveTitle("How Falcon Lens works · Falcon Lens | عدسة الصقر");
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /in four steps|four steps/);
+    await page.goto("/agents");
+    await expect(page).toHaveTitle("How the AI agents protect you · Falcon Lens | عدسة الصقر");
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /Two AI agents, two jobs/);
     await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute("content", "en_GB");
     const og = await page.locator('meta[property="og:image"]').getAttribute("content");
     expect(new URL(og!).pathname).toBe("/og/falcon-lens-og.png");
     await setPrefs(context, baseURL!, { lang: "ar" });
-    await page.goto("/how-it-works");
-    await expect(page).toHaveTitle(/^كيف تعمل عدسة الصقر · عدسة الصقر \| Falcon Lens$/);
+    await page.goto("/agents");
+    await expect(page).toHaveTitle(/^كيف يحميك الوكيلان الذكيان · عدسة الصقر \| Falcon Lens$/);
     await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute("content", "ar_AE");
     for (const href of ["/favicon.ico", "/icons/apple-touch-icon.png", "/og/falcon-lens-og.png", "/images/how-it-works.svg", "/images/ai-agents.svg"]) {
       const res = await page.request.get(href);
@@ -96,42 +96,9 @@ test.describe("chrome", () => {
 });
 
 test.describe("judge-facing content", () => {
-  test("how it works: four steps, four layers, two agents, both figures load", async ({ page }) => {
-    await page.goto("/how-it-works");
-    await expect(page.locator(".steps4 li")).toHaveCount(4);
-    await expect(page.locator(".how-card")).toHaveCount(4);
-    await expect(page.locator(".agent")).toHaveCount(2);
-    await page.locator(".figure img").first().scrollIntoViewIfNeeded();
-    for (const img of await page.locator(".figure img").all()) {
-      await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
-    }
-  });
-
-  test("architecture: both agents, patterns, layers, rejected alternatives; diagram under reduced motion", async ({ page, context, baseURL }) => {
-    await setPrefs(context, baseURL!, { lang: "en" });
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/architecture/agents");
-    await expect(page.getByTestId("investigator")).toContainText("state machine");
-    await expect(page.getByTestId("sentinel")).toContainText("LangGraph StateGraph");
-    await expect(page.getByTestId("investigator").locator(".flow-node")).toHaveCount(9);
-    await expect(page.getByTestId("sentinel").locator(".flow-node")).toHaveCount(9);
-    await expect(page.getByTestId("sentinel")).toContainText("interrupt()");
-    await expect(page.getByTestId("loop-diagram")).toBeVisible();
-    await expect(page.getByText("A pure classifier").first()).toBeVisible();
-    expect(await page.locator(".loop-dot").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
-  });
-
   test("capability badges come from the single flag source, and copy does not overclaim", async ({ page, context, baseURL }) => {
     await setPrefs(context, baseURL!, { lang: "en" });
     const flags = capabilities as Record<string, boolean>;
-    await page.goto("/how-it-works");
-    const badges = page.getByTestId("input-kinds").getByTestId("cap-badge");
-    await expect(badges).toHaveCount(4);
-    await expect(badges.nth(0)).toContainText("Live");
-    for (const [i, id] of ["message_check", "email_check", "image_check"].entries()) {
-      await expect(badges.nth(i + 1)).toContainText(flags[id] ? "Live" : "In progress (PR #47)");
-    }
-    await expect(page.locator("main")).not.toContainText("cannot give it orders");
     await page.goto("/privacy");
     const body = await page.locator("main").innerText();
     expect(body).not.toMatch(/30 days/);
@@ -187,7 +154,7 @@ test.describe("keyboard and zoom", () => {
 
   test("at 200% zoom (narrow CSS width) nothing overflows", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 640 });
-    for (const path of ["/", "/results", "/authorities", "/how-it-works"]) {
+    for (const path of ["/", "/results", "/authorities", "/agents"]) {
       await page.goto(path);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, path).toBeLessThanOrEqual(0);

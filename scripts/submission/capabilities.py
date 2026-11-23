@@ -66,6 +66,8 @@ T3_WIRED = f"test:{WORKER_AI}"
 T3_RUNS = f"test:{CASCADE_AI}::test_t3_investigator_runs_in_uncertain_band"
 EXTRACTOR_WIRED = f"test:{WORKER_AI}"
 EXTRACTOR_RUNS = f"test:{CASCADE_AI}::test_t2_calls_the_extractor"
+# Behavioural: a replayed (planted) campaign reaches the human-approval interrupt with a bilingual, evidence-cited summary.
+SENTINEL_RUNS = "test:services/sentinel/tests/test_graph.py::test_planted_campaign_end_to_end_with_stub_llm"
 ROUTER_WIRED = r"grep:services/worker/src/**/*.py::falcon_core\.llm"
 
 CAPABILITIES: tuple[Capability, ...] = (
@@ -157,7 +159,7 @@ CAPABILITIES: tuple[Capability, ...] = (
     Capability(
         "sentinel_agent",
         "Sentinel agent (incidents, internal blocking, takedown drafts held for approval)",
-        ("make:replay", "path:services/sentinel/src/falcon_sentinel/graph.py"),
+        ("make:replay", "path:services/sentinel/src/falcon_sentinel/graph.py", SENTINEL_RUNS),
         "Sentinel scene",
     ),
     Capability(
