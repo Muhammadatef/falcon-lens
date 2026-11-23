@@ -5,6 +5,24 @@ computed yet (sandbox tier, LLM tiers, injection, faithfulness, cloud and sovere
 ``{"status": "not_evaluated", "reason": ...}``, never as a number.
 
 Usage: ``python -m evals.harness.run [--splits val,test] [--publish] [--boot 1000] [--seed N]``
+
+When to use it:
+    After `make fit-thresholds` or any scoring change, to see how detection quality moved. Needs the
+    private data on this machine (it cannot run in CI).
+
+How to run:
+    make eval                  (direct: uv run python -m evals.harness.run)
+    uv run python -m evals.harness.run --publish      (also write the URL-free published summary)
+
+Inputs:
+    The hashed manifest, the private item cache, the frozen split lock and the fitted model. Options:
+    --splits, --boot (bootstrap rounds), --seed, --out-dir, --publish.
+
+Outputs / side effects:
+    Writes <timestamp>.json, latest.json, <timestamp>.html, latest.html and latest.prom into
+    evals/results/ (or --out-dir), and with --publish a URL-free <timestamp>.json under
+    evals/results/published/. It refuses to write any file that would contain a URL. No network calls.
+    scripts/readme_metrics.py later copies published numbers into README.md.
 """
 
 from __future__ import annotations
@@ -25,6 +43,7 @@ import numpy as np
 from evals.common import ITEMS_MANIFEST, PARAMS_YAML, RESULTS_DIR, SEED, git_sha, read_jsonl
 from evals.datasets.build import CacheMismatch, Item, load_private_items, verify_private_items
 from evals.harness import metrics as M
+from evals.harness.message_path import evaluate_message_path
 from evals.harness.report import render_html, render_prom
 from evals.splits import check_rows, load_lock
 from evals.train.fit import HGB_PARAMS, apply_platt, fit_platt
@@ -48,6 +67,7 @@ NOT_EVALUATED_GLOBAL = {
 
 
 def not_evaluated(reason: str) -> dict[str, str]:
+    """The placeholder written instead of a number when something cannot be measured yet."""
     return {"status": "not_evaluated", "reason": reason}
 
 
@@ -58,6 +78,7 @@ def _pct(vals: Sequence[float], q: float) -> float | None:
 def score_items(
     items: Sequence[Item], model: T1Model, params: ScoringParams, with_registry: bool = True
 ) -> dict[str, Any]:
+    """Score items through the T1 classifier and arbiter; returns the per-item results as a dict."""
     p_clf = model.p_clf_many([i.url for i in items])
     t0 = time.perf_counter()
     scored = [score_url(i.url, pc, params, with_registry) for i, pc in zip(items, p_clf, strict=True)]
@@ -95,6 +116,7 @@ def _headline(y: np.ndarray, warn: np.ndarray, p: np.ndarray, n_boot: int, seed:
 def evaluate_split(
     name: str, items: list[Item], model: T1Model, params: ScoringParams, n_boot: int, seed: int
 ) -> dict[str, Any]:
+    """Compute all metrics and breakdowns for one split."""
     r = score_items(items, model, params)
     y, p = r["y"], r["p"]
     verdict = np.array(r["verdict"])
@@ -159,6 +181,8 @@ def evaluate_split(
         m = (cats == c) & (y == 0)
         by_cat[str(c)] = {"n": int(m.sum()), "false_warning_rate": round(float(warn[m].mean()), 4)}
     out["legit_by_category"] = by_cat
+    out["credential_form_pages"] = credential_form_pages(items, r["p_clf"], params, n_boot, seed + 300)
+    out["message_path"] = evaluate_message_path(items, r["p_clf"], params, n_boot, seed + 200)
     lat = r["latency_ms"]
     out["latency_ms"] = {
         "T0_mirror": not_evaluated("local mirror tier is not wired into the offline harness"),
@@ -184,6 +208,32 @@ def evaluate_split(
         "note": "T1 and the arbiter do not use an LLM, so the numbers above hold for both routes",
     }
     return out
+
+
+def credential_form_pages(
+    items: Sequence[Item], p_clf: Sequence[float], params: ScoringParams, n_boot: int, seed: int
+) -> dict[str, Any]:
+    """`dangerous`-band recall for phishing pages that show a password form (T2 evidence `page.cred_form`), and the
+    legit `dangerous` rate when every legit page is assumed to show one (worst case). SYNTHETIC scenario: the
+    credential form is added to every item; no page was fetched."""
+    from falcon_core.cascade.evidence import make_evidence
+
+    form = make_evidence("page.cred_form", "page", {"present": True}, tier="T2", source="computed")
+    y = np.array([i.label for i in items])
+    dang = np.array(
+        [
+            score_url(i.url, float(pc), params, extra_evidence=[form]).result.verdict == "dangerous"
+            for i, pc in zip(items, p_clf, strict=True)
+        ]
+    )
+    return {
+        "kind": "synthetic_scenario",
+        "note": "page.cred_form added to every item; the model-cap rule applies (params.model_cap)",
+        "dangerous_recall": M.with_ci(lambda yy, ww: M.recall(yy, ww.astype(bool)), y, dang, n_boot, seed),
+        "legit_dangerous_rate": M.with_ci(lambda yy, ww: M.fpr(yy, ww.astype(bool)), y, dang, n_boot, seed + 1),
+        "dangerous_phishing": f"{int(dang[y == 1].sum())}/{int((y == 1).sum())}",
+        "dangerous_legit": f"{int(dang[y == 0].sum())}/{int((y == 0).sum())}",
+    }
 
 
 def ablation(train: list[Item], val: list[Item], seed: int) -> dict[str, Any]:
@@ -219,6 +269,7 @@ def ablation(train: list[Item], val: list[Item], seed: int) -> dict[str, Any]:
 
 
 def run_eval(splits: Sequence[str], n_boot: int, seed: int) -> dict[str, Any]:
+    """Evaluate the requested splits and return the full artifact dict."""
     rows = read_jsonl(ITEMS_MANIFEST)
     lock = load_lock()
     errs = check_rows(rows, lock)
@@ -287,6 +338,7 @@ _URL_RE = re.compile(r"(?i)\b(?:https?|hxxps?|ftp)://|\bwww\.")
 
 
 def assert_url_free(doc: dict[str, Any]) -> None:
+    """Abort if the artifact contains anything that looks like a URL."""
     text = json.dumps(doc)
     if _URL_RE.search(text):
         raise SystemExit("published artifact would contain a URL; refusing")
@@ -300,6 +352,11 @@ def publish_doc(doc: dict[str, Any]) -> dict[str, Any]:
             m = s["overall"][name]
             metrics[f"{split}.{name}"] = m["value"]
             metrics[f"{split}.{name}_ci95"] = [m["ci_low"], m["ci_high"]]
+        mp = s["message_path"]
+        for name in ("recall", "fpr", "dangerous_recall"):
+            metrics[f"{split}.message_path.{name}"] = mp[name]["value"]
+            metrics[f"{split}.message_path.{name}_ci95"] = [mp[name]["ci_low"], mp[name]["ci_high"]]
+        metrics[f"{split}.message_path.n"] = mp["n_messages"]
         metrics[f"{split}.official_false_dangerous"] = s["verified_official"]["false_dangerous"]
         metrics[f"{split}.n"] = s["overall"]["n"]
     keys = ("schema_version", "created_at", "git_sha", "dataset_hash", "temporal_cut", "seeds", "model_ids")
@@ -313,6 +370,7 @@ def publish_doc(doc: dict[str, Any]) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the evaluation and write the result files (see module docstring)."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--splits", default="val,test")
     ap.add_argument("--boot", type=int, default=N_BOOT)

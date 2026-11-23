@@ -1,7 +1,9 @@
-"""AI wiring for the worker: LLM router, quarantined extractor (T2), investigator (T3), responder, T1 model.
+"""AI wiring for the worker: LLM router, quarantined extractor (T2), investigator (T3), T1 model.
+
+User-facing reasons are always evidence-grounded templates (L1 D3); no responder is wired.
 
 Every piece is optional and fails soft: a missing provider, model artifact or detector leaves the deterministic
-cascade intact (the router itself falls back cloud -> local -> none, and the responder to template reasons).
+cascade intact (the router itself falls back cloud -> local -> none,).
 ``FL_AI_ENABLED=false`` turns the LLM agents off (evals, offline demos); ``FL_T1_MODEL_ENABLED=false`` keeps
 the draft p_clf.
 """
@@ -13,7 +15,7 @@ import os
 from collections.abc import Mapping
 from typing import Any
 
-from falcon_core.agent import Extractor, Investigator, Responder
+from falcon_core.agent import Extractor, Investigator
 from falcon_core.cascade.ai import AgentExtractorAdapter, load_injection_detector, signal_backend
 from falcon_core.cascade.engine import SignalCtx
 from falcon_core.cascade.ports import SandboxClient
@@ -73,11 +75,10 @@ def build_ai(
         brand_ids = frozenset(b.brand_id for b in registry.brands)
         owned = {b.brand_id: frozenset(b.verified_domains) for b in registry.brands}
         out["extractor"] = AgentExtractorAdapter(Extractor(router, brand_ids=brand_ids, verified_domains=owned))
-        out["responder"] = Responder(router)
         backends = tool_backends(http, cache, mirror, registry, sandbox)
         out["investigator"] = Investigator(router, ToolRegistry(backends, brand_ids=brand_ids))
     except Exception as exc:  # noqa: BLE001 - never block the worker on the optional AI parts
         log.error("AI agents not started, deterministic cascade only: %s", f"{type(exc).__name__}: {exc}"[:200])
-        for k in ("extractor", "responder", "investigator"):
+        for k in ("extractor", "investigator"):
             out.pop(k, None)
     return out

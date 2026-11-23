@@ -1,4 +1,9 @@
-"""HTML report and Prometheus textfile rendered from an eval artifact dict (no numbers are typed here)."""
+"""HTML report and Prometheus textfile rendered from an eval artifact dict (no numbers are typed here).
+
+When to use it:
+    As a library, imported by run.py after the numbers are computed. No files are written here and no
+    network is used; it only turns a result dict into HTML text and Prometheus text.
+"""
 
 from __future__ import annotations
 
@@ -42,6 +47,7 @@ def render_prom(doc: dict[str, Any]) -> str:
 
 
 def render_html(doc: dict[str, Any]) -> str:
+    """Render the eval artifact as a standalone HTML page."""
     e = html.escape
     parts = [
         "<!doctype html><meta charset=utf-8><title>Falcon Lens eval</title>",

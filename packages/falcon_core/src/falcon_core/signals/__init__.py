@@ -8,6 +8,7 @@ from falcon_core.signals import reputation as _reputation  # noqa: F401
 from falcon_core.signals import message as _message  # noqa: F401
 from falcon_core.signals import image as _image  # noqa: F401
 from falcon_core.signals import email as _email  # noqa: F401
+from falcon_core.signals import injection as _injection  # noqa: F401  (registers injection.*)
 
 # isort: on
 from falcon_core.signals.base import REGISTRY, Evidence, SignalContext, SignalSpec

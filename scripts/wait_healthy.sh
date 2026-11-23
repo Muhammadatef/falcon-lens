@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
-# Wait until every container of the falcon project (selected profiles) is running and healthy.
-# Usage: scripts/wait_healthy.sh [timeout_seconds]   (default 300)
+# wait_healthy.sh - block until every container of the stack is running and healthy.
+#
+# What it does:
+#   Every 3 seconds it lists the containers of the selected compose profiles with `docker compose ps`,
+#   inspects their state and health, and exits 0 once all are running and healthy. If the timeout passes it
+#   prints which services are not ready and exits 1.
+#
+# When to use it:
+#   Right after `docker compose up -d`. `make up`, `make demo` and scripts/smoke.sh call it for you.
+#
+# How to run:
+#   scripts/wait_healthy.sh [timeout_seconds]              (default 300; no make target)
+#   FL_PROFILES="core obs tools" scripts/wait_healthy.sh 600
+#
+# Inputs:
+#   Optional first argument (timeout) and env FL_PROFILES (default "core obs"). Needs Docker.
+#
+# Outputs / side effects:
+#   Read-only: prints progress and the final status; it never starts or stops containers.
 set -euo pipefail
 
 TIMEOUT="${1:-300}"

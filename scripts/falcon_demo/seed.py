@@ -1,4 +1,29 @@
-"""`make seed`: push the corpus through the real API and worker with source=replay. Idempotent."""
+"""`make seed`: push the corpus through the real API and worker with source=replay. Idempotent.
+
+What it does:
+    Builds the seed corpus (see corpus.py), submits each item to the running API at a gentle rate, and
+    publishes hash-only phishing events to Redis. It remembers what it already sent in
+    data/private/seed_state.json, so running it twice does not duplicate work.
+
+When to use it:
+    Once after `make up`, so the dashboards and the app are not empty. `make demo` calls it for you.
+
+How to run:
+    make seed                      (add FORCE=1 to resubmit everything)
+    PYTHONPATH=scripts uv run python -m falcon_demo seed [--groups a,b] [--force] [--rate 0.4]
+        [--legit-limit 60] [--phish-limit 50] [--wait 0]
+
+Inputs:
+    Options above, .env (ports, FL_SANDBOX_API_KEY, FL_DEMO_REDIS_URL) and the corpus files.
+
+Outputs / side effects:
+    HTTP checks to the local gateway, Redis stream `fl:events` entries, and the state file
+    data/private/seed_state.json (gitignored). Prints a summary; exits 1 if any item failed or the API is
+    not reachable. `make demo-reset` deletes the state file.
+
+Safety notes:
+    Only reserved/test domains and hashes are sent; the allow-list in corpus.py blocks everything else.
+"""
 
 from __future__ import annotations
 
@@ -19,6 +44,8 @@ STATE_PATH = PRIVATE_DIR / "seed_state.json"
 
 @dataclass
 class Summary:
+    """Counters and messages collected while seeding; `render` prints them."""
+
     submitted: Counter[str] = field(default_factory=Counter)
     skipped: Counter[str] = field(default_factory=Counter)
     failed: Counter[str] = field(default_factory=Counter)
@@ -28,6 +55,7 @@ class Summary:
     errors: list[str] = field(default_factory=list)
 
     def render(self) -> str:
+        """The summary text printed at the end of a seed run."""
         lines = ["seed summary (source=replay)"]
         groups = sorted(set(self.submitted) | set(self.skipped) | set(self.failed))
         for g in groups:
@@ -48,6 +76,7 @@ class Summary:
 
 
 def load_state(path: Path = STATE_PATH) -> dict[str, str]:
+    """Read the record of already-seeded items from data/private/seed_state.json."""
     try:
         raw = json.loads(path.read_text())
     except (OSError, ValueError):
@@ -56,11 +85,13 @@ def load_state(path: Path = STATE_PATH) -> dict[str, str]:
 
 
 def save_state(state: dict[str, str], path: Path = STATE_PATH) -> None:
+    """Write the record of already-seeded items."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(state, sort_keys=True))
 
 
 def progress_bar(done: int, total: int, width: int = 30) -> str:
+    """Text progress bar such as [####....] 12/40."""
     n = total or 1
     fill = int(width * done / n)
     return f"[{'#' * fill}{'.' * (width - fill)}] {done}/{total}"
@@ -136,6 +167,7 @@ def _submit(client: ApiClient, item: Item, wait: float, sleep: Sleep) -> dict[st
 
 
 def main(argv: list[str]) -> int:
+    """Parse options, build the corpus and seed it; 1 if the API is down or an item failed."""
     import argparse
 
     from .common import Endpoints, default_sink, load_env

@@ -60,12 +60,14 @@ Informational evidence with no weight (proposed by builder-signals; fingerprints
 ## 3. Hard rules
 | Id | Condition | Effect |
 |---|---|---|
-| **H1 brand-mismatch (zero-day)** | claimed brand X (text/title/logo/favicon ≥ θ) AND page.cred_form or payment request AND registrable domain ∉ X.verified_domains | verdict = `dangerous`, p ≥ 0.95 |
+| **H1 brand-mismatch (zero-day)** | claimed brand X from DETERMINISTIC signals (page title/visible-text brand tokens, favicon, hotlinked brand assets; never an LLM claim) with confidence ≥ θ AND page.cred_form or payment request AND registrable domain ∉ X.verified_domains | verdict = `dangerous`, p ≥ 0.95 |
 | H2 known-bad | fresh feed hit (feed age < 6h) on the exact URL or host | `dangerous` |
 | H3 verified-official | registrable domain ∈ a brand's verified list AND no open-redirect abuse AND no feed hit | verdict capped at `no_warning_signs` (never `dangerous`). Open redirects are judged on their target. |
 | H4 exfil-to-bot | form or script posts credentials to a messaging-bot API or webhook relay | `dangerous` |
-| H5 message-with-dangerous-link | message/email contains a URL whose verdict is `dangerous` | message verdict ≥ `dangerous` |
+| H5 message-with-dangerous-link | message/email contains a URL whose verdict is `dangerous` (or `suspicious`) | message verdict ≥ the worst child link verdict: `dangerous` child → `dangerous`, `suspicious` child → ≥ `suspicious`; cites the child verdict evidence |
 | H6 OTP/remote-access ask | message requests an OTP or a remote-access app install AND authority/bank impersonation | ≥ `suspicious` |
+
+**Model cap (L1 D2, fitted on validation only).** The fitted T1 classifier alone never produces `dangerous`: its probability is capped `model_cap.margin` log-odds under `tau_high`, and `dangerous` without a floor rule needs `model_cap.strong_adj` log-odds of non-`url`, non-LLM risk evidence (and more than zero). Both values live in `params.yaml` (`model_cap`) and are fitted by `make fit-thresholds` (artifact `evals/results/published/fits/model_cap_fit.json`); the shipped fit chose margin 0 and strong_adj 0, i.e. "p ≥ tau_high AND any page/domain risk evidence". A model-driven warning cites a `url.classifier` evidence item so every warning has a reason. User-facing reasons are always evidence-grounded templates (the LLM never writes them).
 
 Hard rules are evidence too: the triggering evidence carries `hard_rule: H1`, so the reasons can cite it.
 

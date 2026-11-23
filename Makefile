@@ -4,10 +4,11 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
+.PHONY: regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
 
-help:
-	@echo "Targets: up down smoke test test-web eval eval-gate redteam seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard"
+help: ## List every make target with a one-line description (this list)
+	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
+	@grep -hE '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
 	@echo "Parallel stacks: COMPOSE_PROJECT_NAME=x FL_GATEWAY_PORT=.. FL_PROMETHEUS_PORT=.. FL_GRAFANA_PORT=.. make up"
 
 up: ## Start core + obs, wait until every service is healthy
@@ -19,11 +20,11 @@ up: ## Start core + obs, wait until every service is healthy
 down: ## Stop everything (data volumes are kept; use 'docker compose down -v' to wipe)
 	docker compose --profile core --profile obs --profile tools --profile stretch down --remove-orphans
 
-lint:
+lint: ## ruff check + ruff format --check over the whole repo (writes nothing)
 	uv run ruff check .
 	uv run ruff format --check .
 
-typecheck:
+typecheck: ## mypy over the typed packages (configured in pyproject.toml)
 	uv run mypy
 
 test: lint typecheck ## ruff + mypy (falcon_core) + pytest
@@ -38,10 +39,11 @@ unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL
 
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py
+	python3 scripts/check_env_example.py
 
 # Merge gate for detection quality. Becomes real when builder-evals lands evals/baseline.json:
 # until then it says so loudly and does NOT claim a pass.
-eval-gate:
+eval-gate: ## merge gate: latest eval vs evals/baseline.json (SKIPPED, not a pass, without private data)
 	uv run python -m evals.gate --run
 
 eval-baseline: ## write evals/baseline.json from the latest result (review the diff in the PR)
@@ -51,19 +53,8 @@ fit-thresholds: ## train T1 + calibrate + fit bands on train/val only; writes pa
 	uv run python -m evals.datasets.build
 	uv run python -m evals.train.fit
 
-scan: ## gitleaks, pip-audit, pnpm audit, trivy, syft (a missing tool only warns locally)
-	@rc=0; \
-	if command -v gitleaks >/dev/null; then gitleaks git --config .gitleaks.toml --no-banner . || rc=1; \
-	else echo "WARN: gitleaks not installed (brew install gitleaks); skipped" >&2; fi; \
-	uv export --frozen --no-dev --all-packages --no-emit-workspace --no-hashes -o /tmp/falcon-requirements.txt >/dev/null \
-	  && uvx pip-audit -r /tmp/falcon-requirements.txt --no-deps --disable-pip || rc=1; \
-	if command -v pnpm >/dev/null; then (cd web && pnpm audit --prod) || rc=1; \
-	else echo "WARN: pnpm not installed; skipped pnpm audit" >&2; fi; \
-	if command -v trivy >/dev/null; then trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --exit-code 1 --skip-dirs web/node_modules --skip-dirs .venv . || rc=1; \
-	else echo "WARN: trivy not installed (brew install trivy); skipped" >&2; fi; \
-	if command -v syft >/dev/null; then mkdir -p evals/results && syft dir:. -q -o cyclonedx-json=evals/results/sbom.cdx.json; \
-	else echo "WARN: syft not installed (brew install syft); SBOM skipped" >&2; fi; \
-	exit $$rc
+scan: ## gitleaks, pip-audit, pnpm audit, trivy, semgrep, compose/image hardening, syft (missing tools warn locally)
+	@scripts/scan.sh
 
 smoke: ## T-015 assertions against the running stack (starts it if needed). FL_SMOKE_FAKE_WORKER=1 uses a test double (NOT a G1 pass)
 	@scripts/smoke.sh
@@ -76,8 +67,14 @@ openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on 
 	uv run python scripts/gen_openapi.py
 eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/results/
 	uv run python -m evals.harness.run
-redteam:
-	$(NYI)
+redteam: ## prompt-injection / obfuscation red-team suite; exits non-zero if attack success > 0 (FL_LIVE_LLM=1: live model)
+	uv run python -m evals.redteam
+
+redteam-fixtures: ## regenerate services/fixtures/redteam/*.html from evals/redteam/cases.yaml
+	uv run python -m evals.redteam build-fixtures
+
+xss: ## Playwright XSS check of the verdict UI with red-team strings (needs FL_WEB_URL; stub until the web app lands)
+	uv run --with playwright==1.65.2 python -m evals.redteam.xss_check
 submission: ## Build submission/ (form fields, deck, PDF, CHECKLIST) and trace every number. SUBMISSION_STRICT=1 fails when the MVP is not shipped
 	uv run --with-requirements scripts/submission/requirements.txt python scripts/submission/build.py
 	uv run --with-requirements scripts/submission/requirements.txt python scripts/submission/check_numbers.py
@@ -111,4 +108,28 @@ tunnel-stop: ## Stop the tunnel started by `make tunnel` (other cloudflared proc
 demo-reset: ## Reset Postgres+Redis volumes and seed state (names resolved from `docker compose config`), then `make demo`; YES=1 skips the prompt
 	@YES=$(YES) $(DEMO) reset
 	$(MAKE) demo
+
+# ---- local worker (Ollama only, no hosted models): docs/LOCAL_WORKER.md
+LW_LABEL := ae.falconlens.localworker
+LW_PLIST := $(HOME)/Library/LaunchAgents/$(LW_LABEL).plist
+
+.PHONY: local-worker-install local-worker-uninstall local-worker-status local-worker-enqueue local-worker-run
+local-worker-run: ## run the local worker in the foreground (Ctrl-C to stop)
+	uv run python -m scripts.local_worker run
+local-worker-install: ## render + load the launchd agent (macOS): runs 24/7, survives reboots
+	@mkdir -p work/queue "$(HOME)/Library/LaunchAgents"
+	@sed -e "s|@REPO@|$(CURDIR)|g" -e "s|@UV@|$$(command -v uv)|g" -e "s|@HOME@|$(HOME)|g" infra/local_worker/$(LW_LABEL).plist > "$(LW_PLIST)"
+	@plutil -lint "$(LW_PLIST)"
+	-@launchctl bootout gui/$$(id -u)/$(LW_LABEL) 2>/dev/null
+	launchctl bootstrap gui/$$(id -u) "$(LW_PLIST)"
+	@echo "installed $(LW_LABEL); check with: make local-worker-status"
+local-worker-uninstall: ## stop and unload the launchd agent, then delete its plist
+	-launchctl bootout gui/$$(id -u)/$(LW_LABEL)
+	@test -n "$(LW_PLIST)" && rm -f "$(LW_PLIST)"
+local-worker-status: ## queue counts, heartbeat, last results
+	@uv run python -m scripts.local_worker status
+	@launchctl print gui/$$(id -u)/$(LW_LABEL) 2>/dev/null | grep -E "state|pid" | head -3 || echo "launchd: agent not loaded"
+local-worker-enqueue: ## make local-worker-enqueue KIND=summarize INPUT=path [PARAMS='{"k":1}']
+	@test -n "$(KIND)" || { echo "usage: make local-worker-enqueue KIND=<kind> INPUT=<repo path>" >&2; exit 2; }
+	uv run python -m scripts.local_worker enqueue --kind $(KIND) $(if $(INPUT),--input $(INPUT)) $(if $(PARAMS),--params '$(PARAMS)')
 

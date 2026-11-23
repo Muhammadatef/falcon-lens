@@ -1,0 +1,143 @@
+{
+  "created_at": "2026-11-23T02:04:33Z",
+  "dataset_hash": "382f7d6e759be20e721a3912ce4f1ca750685b9c7bd91f98116b7dcea81101b1",
+  "git_sha": "d977f04791a60a69b21d41b59f0648ea8e45dc4f-dirty",
+  "metrics": {
+    "test.ece": 0.069463,
+    "test.ece_ci95": [
+      0.05421,
+      0.104291
+    ],
+    "test.f1": 0.967213,
+    "test.f1_ci95": [
+      0.93202,
+      0.992593
+    ],
+    "test.fpr": 0.0375,
+    "test.fpr_ci95": [
+      0.0,
+      0.082377
+    ],
+    "test.message_path.dangerous_recall": 0.0,
+    "test.message_path.dangerous_recall_ci95": [
+      0.0,
+      0.0
+    ],
+    "test.message_path.fpr": 0.0375,
+    "test.message_path.fpr_ci95": [
+      0.018576,
+      0.059748
+    ],
+    "test.message_path.n": 560,
+    "test.message_path.recall": 0.983333,
+    "test.message_path.recall_ci95": [
+      0.965116,
+      0.996078
+    ],
+    "test.n": 140,
+    "test.official_false_dangerous": 0,
+    "test.pr_auc": 0.956071,
+    "test.pr_auc_ci95": [
+      0.899433,
+      0.999225
+    ],
+    "test.precision": 0.951613,
+    "test.precision_ci95": [
+      0.888889,
+      1.0
+    ],
+    "test.recall": 0.983333,
+    "test.recall_ci95": [
+      0.948253,
+      1.0
+    ],
+    "val.ece": 0.087331,
+    "val.ece_ci95": [
+      0.066558,
+      0.115172
+    ],
+    "val.f1": 0.97479,
+    "val.f1_ci95": [
+      0.938768,
+      1.0
+    ],
+    "val.fpr": 0.011905,
+    "val.fpr_ci95": [
+      0.0,
+      0.0375
+    ],
+    "val.message_path.dangerous_recall": 0.0,
+    "val.message_path.dangerous_recall_ci95": [
+      0.0,
+      0.0
+    ],
+    "val.message_path.fpr": 0.011905,
+    "val.message_path.fpr_ci95": [
+      0.002833,
+      0.025072
+    ],
+    "val.message_path.n": 576,
+    "val.message_path.recall": 0.966667,
+    "val.message_path.recall_ci95": [
+      0.941171,
+      0.987805
+    ],
+    "val.n": 144,
+    "val.official_false_dangerous": 0,
+    "val.pr_auc": 0.986559,
+    "val.pr_auc_ci95": [
+      0.966758,
+      1.0
+    ],
+    "val.precision": 0.983051,
+    "val.precision_ci95": [
+      0.943396,
+      1.0
+    ],
+    "val.recall": 0.966667,
+    "val.recall_ci95": [
+      0.912251,
+      1.0
+    ]
+  },
+  "model_ids": {
+    "llm_cloud": "not_evaluated",
+    "llm_sovereign": "not_evaluated",
+    "t1": {
+      "fit_date": "2026-11-23",
+      "git_sha": "d977f04791a60a69b21d41b59f0648ea8e45dc4f",
+      "model_id": "t1_hgb",
+      "model_sha256": "41db3ba644d5084d45c3ff0fa0a11ca258caa145d7d81856a0c4fe8b9b179ed3",
+      "sklearn_version": "1.9.1"
+    }
+  },
+  "not_evaluated": [
+    "arabic_clarity",
+    "cost_per_check_llm",
+    "faithfulness",
+    "flip_rate_3_runs",
+    "injection_attack_success_rate",
+    "llm_tier_T3",
+    "sandbox_tier_T2",
+    "zero_day",
+    "synthetic",
+    "cloud_route",
+    "sovereign_route"
+  ],
+  "schema_version": 1,
+  "scope": "offline T1 + arbiter on URLs; real data only; temporal_cut false (single poll)",
+  "seeds": {
+    "bootstrap": 20261122,
+    "model": 20261122,
+    "n_bootstrap": 1000,
+    "split": 20261122
+  },
+  "temporal_cut": false,
+  "thresholds": {
+    "eps_high": 0.8639,
+    "eps_low": 0.0149,
+    "fit_source": "validation split only (make fit-thresholds)",
+    "tau_high": 0.8139,
+    "tau_low": 0.4727
+  }
+}
