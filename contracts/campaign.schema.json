@@ -9,6 +9,7 @@
   "properties": {
     "campaign_id": { "type": "string", "pattern": "^cmp_[0-9A-HJKMNP-TV-Z]{26}$" },
     "brand_id": { "type": ["string", "null"] },
+    "brand_name": { "type": ["object", "null"], "additionalProperties": false, "required": ["ar", "en"], "properties": { "ar": { "type": "string" }, "en": { "type": "string" } }, "description": "Display names from the brand registry (data/brands.yaml name_ar / name_en); a humanised brand_id if the brand is not in it; null when brand_id is null." },
     "title_ar": { "type": "string" },
     "title_en": { "type": "string" },
     "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },

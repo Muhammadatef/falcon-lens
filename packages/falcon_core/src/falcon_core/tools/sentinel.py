@@ -467,21 +467,38 @@ async def _stix(ctx: ToolContext, a: IncidentOnlyArgs) -> dict[str, Any]:
 # ---------------------------------------------------------------- drafts (never sent)
 
 
+def _brand_names(brand_id: str | None) -> tuple[str, str]:
+    """(en, ar) display names from the brand registry; humanised id if missing."""
+    if not brand_id:
+        return "unknown", "غير معروفة"
+    try:
+        from falcon_core.signals.brands import default_registry
+
+        for b in default_registry().brands:
+            if b.brand_id == brand_id:
+                return b.name_en, b.name_ar
+    except (ImportError, OSError, ValueError):
+        pass
+    human = " ".join(w.capitalize() for w in brand_id.replace("_", " ").replace("-", " ").split()) or brand_id
+    return human, human
+
+
 def make_draft(inc: dict[str, Any], tool: str, recipient_kind: str) -> dict[str, Any]:
     doms = [i["value_defanged"] for i in inc["indicators"] if i["kind"] == "domain"]
     keys = inc.get("correlation_keys", {})
     reg = ", ".join(keys.get("registrar", [])) or "n/a"
     n = len(doms)
+    brand_en, brand_ar = _brand_names(inc.get("brand_id"))
     lst = "\n".join(f"- {d}" for d in doms[:20])
     if tool == "draft_takedown":
         subject_en = f"Abuse report: {n} suspected phishing domains ({inc['incident_id']})"
         body_en = (
             f"Falcon Lens Sentinel observed {n} domains that appear to imitate a brand "
-            f"({inc.get('brand_id') or 'unknown'}). Registrar signal: {reg}.\nDomains (defanged):\n{lst}\n"
+            f"({brand_en}). Registrar signal: {reg}.\nDomains (defanged):\n{lst}\n"
             f"Evidence is available on request. This is a DRAFT awaiting operator approval."
         )
         body_ar = (
-            f"رصد نظام عدسة الصقر {n} نطاقاً يبدو أنها تنتحل علامة تجارية ({inc.get('brand_id') or 'غير معروفة'}). "
+            f"رصد نظام عدسة الصقر {n} نطاقاً يبدو أنها تنتحل علامة تجارية ({brand_ar}). "
             f"المسجّل: {reg}.\nالنطاقات (مُعطّلة الروابط):\n{lst}\nالأدلة متاحة عند الطلب. هذه مسودة بانتظار موافقة المشغّل."
         )
         kind = recipient_kind
