@@ -116,7 +116,7 @@ def test_h1_beats_low_classifier_p() -> None:
 def test_h2_beats_low_classifier_p() -> None:
     res = score([mk("rep.openphish", {"match": "host", "feed_age_s": 30})], p_clf=0.0)
     assert res.verdict == "dangerous"
-    assert res.calibrated_probability >= P.tau_high
+    assert res.calibrated_probability >= load_params().tau_high  # the FITTED threshold, not the draft constant
 
 
 def test_h6_floor_is_suspicious() -> None:
@@ -159,12 +159,19 @@ def test_t1_evidence_not_double_counted_when_p_clf_given() -> None:
 
 
 def test_draft_classifier_used_when_p_clf_none() -> None:
+    """No fitted T1 probability for a URL: draft fallback, DEGRADED with t1_model_unavailable, never no_warning_signs."""
     res = score([mk("url.typosquat")], p_clf=None)
     assert res.p_clf_draft is True
-    assert math.isclose(res.calibrated_probability, sigmoid(P.draft_intercept + 2.5))
-    assert res.verdict == "suspicious"
+    assert math.isclose(res.calibrated_probability, sigmoid(load_params().draft_intercept + 2.5))
+    assert res.degraded and "t1_model_unavailable" in res.degraded_reasons
+    assert res.verdict != "no_warning_signs"
     empty = score([], None)
-    assert empty.verdict == "no_warning_signs"
+    assert empty.degraded and empty.verdict != "no_warning_signs"
+
+
+def test_p_clf_none_not_degraded_for_messages() -> None:
+    res = score([], None, ArbiterContext(input_type="message"))
+    assert "t1_model_unavailable" not in res.degraded_reasons
 
 
 @pytest.mark.parametrize(
@@ -337,5 +344,5 @@ def test_enrichment_signal_error_never_degrades() -> None:
         tier="T1", confidence=0.0, error="HTTPStatusError: 502",
     )  # fmt: skip
     assert score([ev], None, ArbiterContext()).degraded  # critical by default
-    r = score([ev], None, ArbiterContext(enrichment_signals=frozenset({"domain.cert_age_days"})))
+    r = score([ev], 0.1, ArbiterContext(enrichment_signals=frozenset({"domain.cert_age_days"})))
     assert not r.degraded and r.verdict == "no_warning_signs"

@@ -277,6 +277,9 @@ def score(
             [f"signal_error:{e.signal}" for e in errored]
             + [f"invalid_input:{e.signal}" for e in invalid]
             + list(ctx.extra_degraded_reasons)
+            # No fitted T1 probability for a URL: the draft fallback is used and the verdict is degraded, so by
+            # contract invariant 4 it can never be no_warning_signs (SCORING §4).
+            + (["t1_model_unavailable"] if p_clf is None and ctx.input_type == "url" else [])
         )
     )
     degraded = bool(reasons)
@@ -320,10 +323,42 @@ def has_brand_conflict(evidence: Sequence[Evidence]) -> bool:
     return any(e.signal in BRAND_CONFLICT_SIGNALS and family_matches(e) and is_present(e) for e in evidence)
 
 
-def t1_should_exit(p_clf: float, brand_conflict: bool, params: ScoringParams | None = None) -> bool:
-    """SCORING §1.6: T1 exits if (p_clf < eps_low or p_clf > eps_high) and no brand conflict."""
+def t1_risk_evidence(result: ArbiterResult, params: ScoringParams | None = None) -> bool:
+    """True if T1 saw url/domain/reputation risk: any positive contribution, or a domain-age error.
+
+    A domain younger than 30 days has a positive ``domain.age`` weight; an unknown age (RDAP error that is not a
+    configuration state such as ``rdap_unsupported_tld``) counts as risk too (SCORING §1.6).
+    """
     prm = params or load_params()
-    return (p_clf < prm.eps_low or p_clf > prm.eps_high) and not brand_conflict
+    for e in result.weighted_evidence:
+        if e.family in CLASSIFIER_FAMILIES and e.weight > 0:
+            return True
+        if (
+            canonical_signal(e.signal) == "domain.age"
+            and e.error is not None
+            and e.error not in prm.informational_errors
+        ):
+            return True
+    return False
+
+
+def t1_should_exit(
+    p_clf: float,
+    brand_conflict: bool,
+    params: ScoringParams | None = None,
+    risk_evidence: bool = False,
+) -> bool:
+    """SCORING §1.6: T1 exits if (p_clf < eps_low or p_clf > eps_high) and no brand conflict.
+
+    The low exit (-> no_warning_signs) is allowed only without url/domain/reputation risk evidence
+    (``risk_evidence``); a high exit is not affected.
+    """
+    prm = params or load_params()
+    if brand_conflict:
+        return False
+    if p_clf > prm.eps_high:
+        return True
+    return p_clf < prm.eps_low and not risk_evidence
 
 
 def t2_should_exit(result: ArbiterResult, params: ScoringParams | None = None) -> bool:
