@@ -1,0 +1,160 @@
+{
+  "area": "cost_per_check",
+  "ci_method": "Wilson 95% for proportions; percentile bootstrap (2000, seed 20261122) for means",
+  "cloud_route": {
+    "checks": 38,
+    "cross_check_router_accounting_usd_per_check": {
+      "ci95": [
+        0.002606,
+        0.005629
+      ],
+      "mean": 0.00409,
+      "n": 38
+    },
+    "method": "tokens actually used per check (router usage, all roles) x list prices above",
+    "tokens_per_check_input": {
+      "ci95": [
+        3252.242763,
+        5372.717763
+      ],
+      "mean": 4282.526316,
+      "n": 38
+    },
+    "tokens_per_check_output": {
+      "ci95": [
+        117.840132,
+        197.527632
+      ],
+      "mean": 156.578947,
+      "n": 38
+    },
+    "usd_per_1000_checks_at_mean": 4.0903,
+    "usd_per_check": {
+      "ci95": [
+        0.002606,
+        0.005629
+      ],
+      "mean": 0.00409,
+      "n": 38
+    },
+    "usd_per_check_by_final_tier": {
+      "T1": {
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "mean": 0.0,
+        "n": 1
+      },
+      "T2": {
+        "ci95": [
+          8.1e-05,
+          0.000105
+        ],
+        "mean": 9e-05,
+        "n": 21
+      },
+      "T3": {
+        "ci95": [
+          0.008923,
+          0.010287
+        ],
+        "mean": 0.009596,
+        "n": 16
+      }
+    },
+    "usd_per_check_by_input_kind": {
+      "message": {
+        "ci95": [
+          7.8e-05,
+          8.2e-05
+        ],
+        "mean": 8e-05,
+        "n": 14
+      },
+      "page": {
+        "ci95": [
+          0.004616,
+          0.008237
+        ],
+        "mean": 0.00643,
+        "n": 24
+      }
+    },
+    "usd_per_check_p95": 0.010657274499999998
+  },
+  "created_at": "2026-11-23T16:09:25Z",
+  "excluded": "infrastructure, hosting, bandwidth and the deterministic tiers (no per-call cost)",
+  "git_sha": "33179245eadd7963f91ba8c1e0588ba42e3c5ded-dirty",
+  "local_route": {
+    "checks": 42,
+    "energy": {
+      "reason": "electricity / GPU energy was not measured; local is zero marginal API cost, not zero cost",
+      "status": "not_evaluated"
+    },
+    "marginal_api_cost_usd_per_check": 0.0,
+    "tokens_per_check_input": {
+      "ci95": [
+        1178.941071,
+        2452.289286
+      ],
+      "mean": 1775.666667,
+      "n": 42
+    },
+    "tokens_per_check_output": {
+      "ci95": [
+        51.635714,
+        120.433333
+      ],
+      "mean": 84.02381,
+      "n": 42
+    }
+  },
+  "model_ids": {
+    "cloud": {
+      "extractor": "claude-haiku-5-5",
+      "investigator": "claude-sonnet-5-5",
+      "judge": "claude-sonnet-5-5",
+      "responder": "claude-haiku-5-5",
+      "sentinel": "claude-sonnet-5-5",
+      "vision": "claude-sonnet-5-5"
+    },
+    "local": "inkling-2-mini-chat"
+  },
+  "model_route": "cloud (priced) + local (zero marginal)",
+  "n": {
+    "cloud_checks": 38,
+    "local_checks": 42
+  },
+  "notes": [],
+  "prices": {
+    "read_on": "2026-11-23",
+    "source": "hxxps://platform[.]claude[.]com/docs/en/about-claude/pricing",
+    "tier_note": "Haiku 5.5 up to 100k-token prompts; all calls are far below",
+    "usd_per_mtok": {
+      "claude-haiku-5-5": {
+        "cache_read": 0.01,
+        "cache_write_5m": 0.125,
+        "input": 0.1,
+        "output": 0.5
+      },
+      "claude-sonnet-5-5": {
+        "cache_read": 0.1,
+        "cache_write_5m": 2.5,
+        "input": 2.0,
+        "output": 10.0
+      }
+    }
+  },
+  "provenance": "synthetic fixtures; cost depends on prompt sizes of this corpus (short pages and messages)",
+  "schema_version": 1,
+  "scope": "AI cost per check from tokens actually used on the synthetic fixture corpus, cloud route; local route zero marginal API cost",
+  "system_under_test": {
+    "commit": "fc577d7a5d2f59366f35da287a9be106fe6bb03c",
+    "note": "the cascade and Sentinel runs behind this artifact were taken on this commit (origin/main when the jobs started); main moved on afterwards and the model runs were not repeated. The offline parts (no model) were recomputed at git_sha and checked equal on the synthetic split."
+  },
+  "total_spend_usd": {
+    "method": "all cloud calls of this evaluation (cascade, extractor eval, sentinel replay): logged tokens x recorded prices",
+    "value": 0.5332
+  }
+}

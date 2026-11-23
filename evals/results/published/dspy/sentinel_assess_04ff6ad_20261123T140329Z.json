@@ -1,0 +1,82 @@
+{
+  "kind": "dspy_role_optimisation",
+  "role": "sentinel_assess",
+  "router_role": "sentinel",
+  "route": "local",
+  "model": "inkling-2-mini-chat",
+  "dspy_version": "3.5.0",
+  "generated_at": "20261123T140329Z",
+  "git_sha": "04ff6ad",
+  "seed": {
+    "data": 20261123,
+    "optimizer": 9,
+    "bootstrap_ci": 20261123
+  },
+  "synthetic_data": true,
+  "dataset": "Sentinel replay fixtures (synthetic), train seeds 1-12, validation seeds 101-108",
+  "splits": {
+    "train": 8,
+    "val": 8,
+    "train_sha256": "6954905d94f28310d8712c7f129a65b8fca6486341e749fbfc77ec3ab4ca3e09",
+    "val_sha256": "0910401e900c8b57cc8b5a255d28342945a856cf7218e77c9c5fc1c99e0a4c21",
+    "note": "train for optimisation, validation for selection; frozen test split and held-out legit sets never read"
+  },
+  "metric": "production validators (see evals/dspy/roles.py), mean task score in [0,1]; invalid output scores 0",
+  "before_val": {
+    "mean": 0.75,
+    "ci95": [
+      0.5,
+      1.0
+    ],
+    "valid_rate": 0.75,
+    "n": 8
+  },
+  "after_val": {
+    "mean": 1.0,
+    "ci95": [
+      1.0,
+      1.0
+    ],
+    "valid_rate": 1.0,
+    "n": 8
+  },
+  "paired_diff": {
+    "mean_diff": 0.25,
+    "ci95": [
+      0.0,
+      0.5
+    ]
+  },
+  "candidates": {
+    "bootstrap_few_shot": {
+      "mean": 1.0,
+      "ci95": [
+        1.0,
+        1.0
+      ],
+      "valid_rate": 1.0,
+      "n": 8,
+      "seconds_to_build": 0.0,
+      "demos": 3
+    }
+  },
+  "selected": null,
+  "adopted": false,
+  "decision": "not adopted (within noise)",
+  "budget": {
+    "cap_calls": 150,
+    "calls_note": "calls = real model calls (DSPy + production evaluation); DSPy cache hits are counted separately",
+    "calls": 17,
+    "dspy_cache_hits": 3,
+    "input_tokens": 73098,
+    "output_tokens": 8377,
+    "n_train": 8,
+    "n_val": 8,
+    "mipro_trials": 3,
+    "threads": 2
+  },
+  "errors": [],
+  "notes": "Run-to-run instability on the local model: the hand-written prompt scored 1.0 on VALIDATION in one run and 0.75 in another (n=8). The paired CI of (after - before) includes 0, so it is not adopted.",
+  "exported": null,
+  "seconds": 431.5
+}

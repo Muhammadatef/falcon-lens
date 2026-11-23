@@ -72,6 +72,7 @@ def url_table(env: Mapping[str, str]) -> list[tuple[str, str]]:
         "AI operations",
         "Security",
         "Sentinel",
+        "Model quality",
     )
     rows += [(f"Grafana {i}: {n}", f"{ep.grafana}/dashboards?query={quote(n)}") for i, n in enumerate(names, 1)]
     phoenix = ep.phoenix

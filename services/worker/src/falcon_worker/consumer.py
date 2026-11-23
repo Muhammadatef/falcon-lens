@@ -32,6 +32,7 @@ from falcon_core.cascade.engine import usable_cached
 from falcon_core.scoring.arbiter import ArbiterContext, score
 from falcon_core.signals.brands.registry import BrandRegistry
 from falcon_core.signals.url.canonical import canonicalize
+from falcon_core.telemetry import metrics as tm
 from falcon_worker import keys
 from falcon_worker.events import verdict_created
 from falcon_worker.store import VerdictStore
@@ -242,6 +243,19 @@ class Worker:
                 break
         return total
 
+    async def observe_queue(self) -> None:
+        """Publish ``fl_queue_depth{stream,state}`` (pending = delivered not acked, lag = not yet delivered)."""
+        try:
+            groups = await self.r.xinfo_groups(keys.JOBS_STREAM)
+        except Exception:  # noqa: BLE001 - a metrics hiccup must never stop the consumer
+            return
+        for g in groups:
+            if g.get("name") in (keys.JOBS_GROUP, keys.JOBS_GROUP.encode()):
+                for state in ("pending", "lag"):
+                    value = g.get(state)
+                    if isinstance(value, int):
+                        tm.QUEUE_DEPTH.labels("jobs", state).set(value)
+
     async def run_forever(self, reclaim_every_s: float = 15.0) -> None:
         next_reclaim = 0.0
         while True:
@@ -252,6 +266,7 @@ class Worker:
                     if time.monotonic() >= next_reclaim:
                         next_reclaim = time.monotonic() + reclaim_every_s
                         await self.reclaim()
+                        await self.observe_queue()
                     await self.read_batch(pending=False)
             except asyncio.CancelledError:
                 raise

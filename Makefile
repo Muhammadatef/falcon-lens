@@ -4,7 +4,7 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr
+.PHONY: redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
 
 help: ## List every make target with a one-line description (this list)
 	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
@@ -36,6 +36,9 @@ test-web: ## web: typecheck + eslint + vitest + production build + Playwright e2
 unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL and REDIS_URL, host-reachable)
 	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
 	uv run python -m falcon_sentinel.unblock $(ID)
+
+dspy-optimize: ## offline DSPy prompt optimisation for every LLM role (ADR-002). DSPY_ROUTE=cloud|local; default cloud if ANTHROPIC_API_KEY is already in the environment, else local (Ollama)
+	uv run --group dspy python evals/dspy/optimize.py $(if $(DSPY_ROUTE),--route $(DSPY_ROUTE),) $(ARGS)
 
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py

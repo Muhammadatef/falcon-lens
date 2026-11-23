@@ -356,6 +356,19 @@ async def test_stale_mirror_entry_is_not_h2() -> None:
     assert not any(e.get("hard_rule") == "H2" for e in final["evidence"])
 
 
+async def test_queue_depth_gauge_reports_pending_and_lag() -> None:
+    from falcon_core.telemetry import metrics as tm
+
+    rig = Rig(StubSandboxClient(default=benign_features()))
+    await rig.worker.ensure_group()
+    await rig.submit(DEMO_BENIGN_URL)
+    await rig.submit(DEMO_BENIGN_URL)
+    await rig.worker.observe_queue()
+    lag = tm.REGISTRY.get_sample_value("fl_queue_depth", {"stream": "jobs", "state": "lag"})
+    assert lag == 2  # two jobs queued, none delivered yet
+    assert tm.REGISTRY.get_sample_value("fl_queue_depth", {"stream": "jobs", "state": "pending"}) == 0
+
+
 async def test_jobs_stream_is_empty_after_success_dead_letter_and_duplicate() -> None:
     sandbox = StubSandboxClient(default=benign_features())
     rig = Rig(sandbox)

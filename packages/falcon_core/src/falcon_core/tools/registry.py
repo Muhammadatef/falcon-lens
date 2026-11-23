@@ -275,6 +275,13 @@ class ToolRegistry:
         return result
 
     async def execute(self, action: Action, ctx: ProvenanceContext, *, timeout_s: float | None = None) -> ToolOutcome:
+        outcome = await self._execute(action, ctx, timeout_s=timeout_s)
+        # tool label is bounded: names outside the registry (a model's invention) are all "unknown"
+        tool = outcome.tool if outcome.tool in SPECS else "unknown"
+        self.metrics.inc(m.AGENT_TOOL_CALLS, tool=tool, status=outcome.status)
+        return outcome
+
+    async def _execute(self, action: Action, ctx: ProvenanceContext, *, timeout_s: float | None = None) -> ToolOutcome:
         checked = self.validate(action, ctx)
         if isinstance(checked, ToolOutcome):
             return checked

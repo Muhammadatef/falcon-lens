@@ -7,7 +7,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "editable": false,
   "graphTooltip": 1,
   "refresh": "5s",
@@ -66,6 +66,13 @@
       "url": "/d/fl-sentinel",
       "icon": "dashboard",
       "targetBlank": false
+    },
+    {
+      "title": "Model quality | جودة النموذج",
+      "type": "link",
+      "url": "/d/fl-model-quality",
+      "icon": "dashboard",
+      "targetBlank": false
     }
   ],
   "annotations": {
@@ -78,7 +85,8 @@
     {
       "type": "stat",
       "title": "Data source | مصدر البيانات",
-      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live.",
+      "description": "REPLAY when any fl_checks_total{source=\"replay\"} was recorded in the last 5 minutes. Replayed or synthetic data is never presented as live. Counters without a source label (LLM, sandbox, security) include replayed traffic while the banner says REPLAY. Thresholds: green = LIVE only, orange = replayed data present (a label, not a fault). No data: no check was recorded at all; the panel then reads LIVE.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -113,6 +121,7 @@
               }
             ]
           },
+          "noValue": "No data",
           "mappings": [
             {
               "type": "value",
@@ -156,7 +165,14 @@
     {
       "type": "stat",
       "title": "p95 end-to-end | زمن p95",
-      "description": "",
+      "description": "95th percentile of a whole check. Thresholds: green < 6 s, amber 6-8 s, red >= 8 s (objective p95 < 8 s). No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [
+        {
+          "title": "Runbook: latency-burn",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#latency-burn",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -164,7 +180,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(fl_stage_latency_seconds_bucket{stage=\"total\"}[5m])))",
+          "expr": "fl:check_latency_seconds:p95_5m",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -186,7 +202,7 @@
                 "value": null
               },
               {
-                "color": "#F5A623",
+                "color": "#E8B339",
                 "value": 6
               },
               {
@@ -194,13 +210,15 @@
                 "value": 8
               }
             ]
-          }
+          },
+          "noValue": "No data",
+          "decimals": 2
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -213,7 +231,7 @@
       "id": 2,
       "gridPos": {
         "h": 3,
-        "w": 4,
+        "w": 6,
         "x": 8,
         "y": 0
       }
@@ -221,7 +239,14 @@
     {
       "type": "stat",
       "title": "Slow ratio (>8 s), 1 h | نسبة البطء",
-      "description": "Budget is 5%. Recording rule from infra/prometheus/rules/falcon-alerts.yml.",
+      "description": "Share of checks slower than 8 s. Recording rule in falcon-alerts.yml. Thresholds: green < 5% (the budget), amber 5-72%, red >= 72% (14.4 x budget, fast burn). No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [
+        {
+          "title": "Runbook: latency-burn",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#latency-burn",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -251,7 +276,7 @@
                 "value": null
               },
               {
-                "color": "#F5A623",
+                "color": "#E8B339",
                 "value": 0.05
               },
               {
@@ -259,13 +284,14 @@
                 "value": 0.72
               }
             ]
-          }
+          },
+          "noValue": "No data"
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -278,15 +304,22 @@
       "id": 3,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 12,
+        "w": 6,
+        "x": 14,
         "y": 0
       }
     },
     {
       "type": "stat",
       "title": "Burn rate, 1 h | معدل الاستهلاك",
-      "description": "",
+      "description": "Slow ratio divided by the 5% budget. Thresholds: green < 1, amber 1-14.4, red >= 14.4. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [
+        {
+          "title": "Runbook: latency-burn",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#latency-burn",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -294,7 +327,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "fl:check_slow_ratio:rate1h / 0.05",
+          "expr": "fl:slo_burn:rate1h",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -316,7 +349,7 @@
                 "value": null
               },
               {
-                "color": "#F5A623",
+                "color": "#E8B339",
                 "value": 1
               },
               {
@@ -325,13 +358,14 @@
               }
             ]
           },
+          "noValue": "No data",
           "decimals": 1
         },
         "overrides": []
       },
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -344,186 +378,247 @@
       "id": 4,
       "gridPos": {
         "h": 3,
-        "w": 4,
-        "x": 16,
-        "y": 0
+        "w": 6,
+        "x": 0,
+        "y": 3
       }
     },
     {
+      "type": "stat",
+      "title": "Render success, 1 h | نجاح العرض",
+      "description": "Share of sandbox visits that rendered a full page. Thresholds: green >= 80%, amber 50-80%, red < 50%: heuristic; the rest are partial, timeouts or failures. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [
+        {
+          "title": "Runbook: sandbox-failure",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#sandbox-failure",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_sandbox_renders_total{outcome=\"ok\"}[1h])) / clamp_min(sum(increase(fl_sandbox_renders_total[1h])), 1)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E5484D",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 0.5
+              },
+              {
+                "color": "#3FB68B",
+                "value": 0.8
+              }
+            ]
+          },
+          "noValue": "No data",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
       "id": 5,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Job backlog | تراكم المهام",
+      "description": "Jobs queued or in flight in the check queue (lag + pending). Thresholds: green < 10, amber 10-50, red >= 50: heuristic for a single worker. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [
+        {
+          "title": "Runbook: latency-burn",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#latency-burn",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(fl_queue_depth{state=\"lag\"}) + sum(fl_queue_depth{state=\"pending\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 10
+              },
+              {
+                "color": "#E5484D",
+                "value": 50
+              }
+            ]
+          },
+          "noValue": "No data"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 6,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 3
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Egress denied, 1 h | حظر الخروج",
+      "description": "Connections the filtering egress proxy refused. Thresholds: none: expected under SSRF red-team replay; investigate on live traffic. No data: the egress proxy has served no request.",
+      "links": [
+        {
+          "title": "Runbook: ssrf-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#ssrf-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(fl_egress_connects_total{result=\"denied\"}[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5B9BF0",
+                "value": null
+              }
+            ]
+          },
+          "noValue": "No egress traffic yet"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "id": 7,
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      }
+    },
+    {
+      "id": 8,
       "type": "row",
-      "title": "Latency per stage | الزمن لكل مرحلة",
+      "title": "Latency per tier | الزمن لكل مستوى",
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 3
+        "y": 6
       },
       "panels": []
     },
     {
-      "type": "timeseries",
-      "title": "Stage latency p50 | زمن المرحلة",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.5, sum by (le, stage) (rate(fl_stage_latency_seconds_bucket[5m])))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": "{{stage}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 18,
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "id": 6,
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 4
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Stage latency p95 | زمن المرحلة",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le, stage) (rate(fl_stage_latency_seconds_bucket[5m])))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": "{{stage}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 18,
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "id": 7,
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 4
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Stage latency p99 | زمن المرحلة",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le, stage) (rate(fl_stage_latency_seconds_bucket[5m])))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": "{{stage}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 18,
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "id": 8,
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 4
-      }
-    },
-    {
       "type": "heatmap",
       "title": "End-to-end latency heatmap | خريطة الزمن",
+      "description": "Distribution of whole-check time; darker = more checks. Thresholds: none: read the shape; mass right of 8 s breaks the objective. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [
+        {
+          "title": "Runbook: latency-burn",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#latency-burn",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -531,7 +626,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (le) (increase(fl_stage_latency_seconds_bucket{stage=\"total\"}[1m]))",
+          "expr": "sum by (le) (increase(fl_stage_latency_seconds_bucket{stage=\"total\"}[$__rate_interval]))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -560,13 +655,14 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 12
+        "y": 7
       }
     },
     {
-      "type": "timeseries",
-      "title": "Checks by tier | الفحوصات حسب المستوى | REPLAY-aware",
-      "description": " Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "type": "heatmap",
+      "title": "T1 latency heatmap | خريطة زمن T1",
+      "description": "T1 (URL model and signals) stage time. Thresholds: none: read the shape. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -574,12 +670,435 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "label_replace(label_replace(sum by (tier, source) (rate(fl_checks_total[1m])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
+          "expr": "sum by (le) (increase(fl_stage_latency_seconds_bucket{stage=\"T1\"}[$__rate_interval]))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "legendFormat": "{{tier}} · {{source}}"
+          "legendFormat": "{{le}}",
+          "format": "heatmap"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "color": {
+          "scheme": "Oranges",
+          "mode": "scheme"
+        },
+        "yAxis": {
+          "unit": "s"
+        },
+        "cellGap": 1
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "id": 10,
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 7
+      }
+    },
+    {
+      "type": "heatmap",
+      "title": "T2 latency heatmap | خريطة زمن T2",
+      "description": "T2 (sandbox page visit) stage time. Thresholds: none: read the shape; the sandbox budget is about 6 s. No data: no check reached T2.",
+      "links": [
+        {
+          "title": "Runbook: sandbox-failure",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#sandbox-failure",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (le) (increase(fl_stage_latency_seconds_bucket{stage=\"T2\"}[$__rate_interval]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{le}}",
+          "format": "heatmap"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "color": {
+          "scheme": "Oranges",
+          "mode": "scheme"
+        },
+        "yAxis": {
+          "unit": "s"
+        },
+        "cellGap": 1
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "id": 11,
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 7
+      }
+    },
+    {
+      "type": "heatmap",
+      "title": "T0 latency heatmap | خريطة زمن T0",
+      "description": "T0 (cache and feed lookups) stage time. Thresholds: none: read the shape. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (le) (increase(fl_stage_latency_seconds_bucket{stage=\"T0\"}[$__rate_interval]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{le}}",
+          "format": "heatmap"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "color": {
+          "scheme": "Oranges",
+          "mode": "scheme"
+        },
+        "yAxis": {
+          "unit": "s"
+        },
+        "cellGap": 1
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "id": 12,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      }
+    },
+    {
+      "type": "heatmap",
+      "title": "T3 latency heatmap | خريطة زمن T3",
+      "description": "T3 (investigator) stage time. Thresholds: none: read the shape; LLM latency dominates. No data: no check reached T3.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (le) (increase(fl_stage_latency_seconds_bucket{stage=\"T3\"}[$__rate_interval]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{le}}",
+          "format": "heatmap"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "color": {
+          "scheme": "Oranges",
+          "mode": "scheme"
+        },
+        "yAxis": {
+          "unit": "s"
+        },
+        "cellGap": 1
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "id": 13,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Stage latency p50 | زمن المرحلة",
+      "description": "p50 per stage (T0-T3 and total). Thresholds: dashed line at 8 s (end-to-end objective). No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [
+        {
+          "title": "Runbook: latency-burn",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#latency-burn",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le, stage) (rate(fl_stage_latency_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{stage}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 8
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 14,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 22
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Stage latency p95 | زمن المرحلة",
+      "description": "p95 per stage (T0-T3 and total). Thresholds: dashed line at 8 s (end-to-end objective). No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [
+        {
+          "title": "Runbook: latency-burn",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#latency-burn",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, stage) (rate(fl_stage_latency_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{stage}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 8
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 15,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 22
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Stage latency p99 | زمن المرحلة",
+      "description": "p99 per stage (T0-T3 and total). Thresholds: dashed line at 8 s (end-to-end objective). No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check.",
+      "links": [
+        {
+          "title": "Runbook: latency-burn",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#latency-burn",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.99, sum by (le, stage) (rate(fl_stage_latency_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{stage}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 8
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 16,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 22
+      }
+    },
+    {
+      "id": 17,
+      "type": "row",
+      "title": "Queue, sandbox, egress | الطابور والصندوق والخروج",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue depth and lag | عمق الطابور",
+      "description": "Jobs waiting (lag) and delivered but unacked (pending) in the check stream. Thresholds: dashed line at 50 jobs (red). No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (state) (fl_queue_depth)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{state}}"
         }
       ],
       "fieldConfig": {
@@ -591,7 +1110,90 @@
             "showPoints": "never",
             "spanNulls": true,
             "stacking": {
-              "mode": "normal",
+              "mode": "none",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E8B339",
+                "value": 10
+              },
+              {
+                "color": "#E5484D",
+                "value": 50
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 18,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 30
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Enqueued vs completed / min | الوارد مقابل المنجز | REPLAY-aware",
+      "description": "Jobs accepted by the API against checks finished. A widening gap is a backlog. Thresholds: none: compare the two lines. No data: no checks ran in this time range; run make seed, make replay or make demo, or send a real check. Series with source=replay are drawn dashed orange and labelled REPLAY.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(fl_api_jobs_enqueued_total[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "enqueued"
+        },
+        {
+          "refId": "B",
+          "expr": "label_replace(label_replace(sum by (source) (rate(fl_checks_total[$__rate_interval])) * 60, \"source\", \"REPLAY\", \"source\", \"replay\"), \"source\", \"LIVE\", \"source\", \"live\")",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "completed · {{source}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
               "group": "A"
             }
           }
@@ -649,31 +1251,145 @@
           "sort": "desc"
         }
       },
-      "id": 10,
+      "id": 19,
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 12
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 30
       }
     },
     {
-      "id": 11,
-      "type": "row",
-      "title": "Errors and caches | الأخطاء والذاكرة المؤقتة",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 20
+      "type": "timeseries",
+      "title": "Sandbox renders by outcome | نتائج العرض",
+      "description": "ok = full page, partial = page with an error note, timeout, failed. Thresholds: none: composition; timeouts above 3 in 10 min fire SandboxFailure. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [
+        {
+          "title": "Runbook: sandbox-failure",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#sandbox-failure",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
       },
-      "panels": []
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (outcome) (rate(fl_sandbox_renders_total[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{outcome}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 20,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 30
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Egress allowed vs denied | الخروج المسموح والمحظور",
+      "description": "Connections per minute through the egress proxy (the only way out of the sandbox). Thresholds: none: denied is the proxy doing its job. No data: the egress proxy has served no request.",
+      "links": [
+        {
+          "title": "Runbook: ssrf-spike",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#ssrf-spike",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (result) (rate(fl_egress_connects_total[$__rate_interval])) * 60",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{result}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 21,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 37
+      }
     },
     {
       "type": "timeseries",
       "title": "Tool errors | أخطاء الأدوات",
-      "description": "",
+      "description": "Signal, sandbox and investigator-tool failures by reason. Thresholds: none: counts; steady errors from one tool mean its feed or key is down. No data: no tool failed, which is the healthy state.",
+      "links": [
+        {
+          "title": "Runbook: error-rate",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#error-rate",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -715,18 +1431,19 @@
           "sort": "desc"
         }
       },
-      "id": 12,
+      "id": 22,
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 0,
-        "y": 21
+        "x": 8,
+        "y": 37
       }
     },
     {
       "type": "timeseries",
       "title": "Cache hits by layer | إصابات الذاكرة",
-      "description": "",
+      "description": "Cache hits per minute (verdict cache, single-flight). Thresholds: none: composition. No data: no cache was hit.",
+      "links": [],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -734,7 +1451,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (layer) (rate(fl_cache_hits_total[1m])) * 60",
+          "expr": "sum by (layer) (rate(fl_cache_hits_total[$__rate_interval])) * 60",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -768,71 +1485,25 @@
           "sort": "desc"
         }
       },
-      "id": 13,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 21
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Sandbox timeouts | مهلات الصندوق",
-      "description": "",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(increase(fl_sandbox_timeouts_total[5m]))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "legendFormat": "timeouts"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 18,
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "id": 14,
+      "id": 23,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 21
+        "y": 37
       }
     },
     {
       "type": "timeseries",
-      "title": "API requests by status | طلبات الواجهة",
-      "description": "",
+      "title": "HTTP requests by status | طلبات HTTP",
+      "description": "Requests per second by service and status class. Thresholds: none: composition; 5xx above 5% for 5 min fires ErrorRateHigh. No data: no HTTP request was served.",
+      "links": [
+        {
+          "title": "Runbook: error-rate",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#error-rate",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -840,7 +1511,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (service, status) (rate(fl_http_requests_total[1m]))",
+          "expr": "sum by (service, status) (rate(fl_http_requests_total[$__rate_interval]))",
           "datasource": {
             "type": "prometheus",
             "uid": "prometheus"
@@ -874,18 +1545,25 @@
           "sort": "desc"
         }
       },
-      "id": 15,
+      "id": 24,
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 44
       }
     },
     {
       "type": "timeseries",
       "title": "Feed age | عمر المصادر",
-      "description": "Alert FeedStale fires above 1 h for enabled feeds.",
+      "description": "Age of the last successful feed refresh. Thresholds: dashed line at 6 h (21600 s): past it hard rule H2 is off. No data: no feed has been polled yet.",
+      "links": [
+        {
+          "title": "Runbook: feed-stale",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#feed-stale",
+          "targetBlank": true
+        }
+      ],
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -912,7 +1590,23 @@
             "stacking": {
               "mode": "none",
               "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
             }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#3FB68B",
+                "value": null
+              },
+              {
+                "color": "#E5484D",
+                "value": 21600
+              }
+            ]
           }
         },
         "overrides": []
@@ -927,12 +1621,12 @@
           "sort": "desc"
         }
       },
-      "id": 16,
+      "id": 25,
       "gridPos": {
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 44
       }
     }
   ]

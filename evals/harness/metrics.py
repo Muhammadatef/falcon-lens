@@ -62,6 +62,22 @@ def pr_auc(y: Sequence[int], score: Sequence[float]) -> float:
     return float(average_precision_score(yt, np.asarray(score)))
 
 
+def roc_auc(y: Sequence[int], score: Sequence[float]) -> float:
+    """Area under the ROC curve (rank statistic, ties count half); NaN when one class is absent."""
+    from sklearn.metrics import roc_auc_score
+
+    yt = np.asarray(y)
+    if yt.sum() == 0 or yt.sum() == len(yt):
+        return float("nan")
+    return float(roc_auc_score(yt, np.asarray(score)))
+
+
+def accuracy(y: Sequence[int], pred: Sequence[bool]) -> float:
+    """(tp + tn) / n at the operating point; NaN for an empty set."""
+    tp, _, _, tn = confusion(y, pred)
+    return _div(tp + tn, len(y))
+
+
 def reliability(y: Sequence[int], p: Sequence[float], bins: int = 10) -> list[dict[str, float]]:
     """Equal-width bins on [0, 1]: mean predicted p, observed rate and count per non-empty bin."""
     yt = np.asarray(y, dtype=float)

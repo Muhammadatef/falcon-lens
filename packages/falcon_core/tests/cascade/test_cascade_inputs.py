@@ -108,3 +108,106 @@ async def test_child_link_verdict_evidence_carries_display_url_not_userinfo_or_p
     blob = str(final)
     for leak in ("secret.user", "pw0rd", "test.user", "example.invalid"):
         assert leak not in blob
+
+
+# ---- image / QR (fixtures: services/api/tests/fixtures/qr, TEST FIXTURE, Falcon Demo Bank .test only) ----
+import io  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+QR_DIR = Path(__file__).resolve().parents[3].parent / "services/api/tests/fixtures/qr"
+
+
+def _qr_png(text: str) -> bytes:
+    import zxingcpp
+    from PIL import Image
+
+    bc = zxingcpp.write_barcode(zxingcpp.BarcodeFormat.QRCode, text, width=400, height=400)
+    buf = io.BytesIO()
+    Image.fromarray(bc).convert("RGB").save(buf, "PNG")
+    return buf.getvalue()
+
+
+def _sandbox_for(official: bool) -> StubSandboxClient:
+    return StubSandboxClient(default=benign_features() if official else phish_features())
+
+
+async def test_official_qr_matches_pasted_link_and_is_not_degraded() -> None:
+    data = _qr_png("http://falcon-demo-bank.test/")  # pure QR, no other content
+    img = (await check("image", data, sandbox=_sandbox_for(True))).docs[-1]
+    link = (await check("message", b"http://falcon-demo-bank.test/", sandbox=_sandbox_for(True))).docs[-1]
+    assert_valid(img)
+    assert img["verdict"] == link["verdict"] == "no_warning_signs"
+    assert not img["degraded"]
+    skipped = [e for e in img["evidence"] if e["signal"] == "image.ocr_skipped"]
+    assert skipped and skipped[0]["weight"] == 0
+
+
+async def test_phishing_qr_is_dangerous() -> None:
+    # The demo-kit poster uses an http .test host the stub harness cannot render; encode the harness lookalike.
+    data = _qr_png(DEMO_LOOKALIKE_URL)
+    final = (await check("image", data, sandbox=StubSandboxClient(default=phish_features()))).docs[-1]
+    assert_valid(final)
+    assert final["verdict"] == "dangerous" and "H5" in rules(final)
+
+
+async def test_image_without_decodable_qr_stays_degraded() -> None:
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 64), "white").save(buf, "PNG")
+    final = (await check("image", buf.getvalue(), sandbox=StubSandboxClient(default=benign_features()))).docs[-1]
+    assert_valid(final)
+    assert final["degraded"] and final["verdict"] != "no_warning_signs"
+
+
+async def test_qr_with_two_links_worst_wins() -> None:
+    data = _qr_png("http://falcon-demo-bank.test/ http://falcon-demo-bank-login.test/secure/")
+    sb = StubSandboxClient(
+        default=benign_features(), by_url={"http://falcon-demo-bank-login.test/secure/": phish_features()}
+    )
+    final = (await check("image", data, sandbox=sb)).docs[-1]
+    assert_valid(final)
+    assert final["verdict"] == "dangerous"
+
+
+async def test_official_qr_with_printed_scam_text_stays_degraded() -> None:
+    # TEST FIXTURE, not a real site: Falcon Demo Bank QR next to printed scam wording, generated here.
+    from PIL import Image, ImageDraw, ImageFont
+
+    qr = Image.open(io.BytesIO(_qr_png("http://falcon-demo-bank.test/")))
+    canvas = Image.new("RGB", (500, 760), "white")
+    canvas.paste(qr.resize((400, 400)), (50, 20))
+    draw = ImageDraw.Draw(canvas)
+    font = ImageFont.load_default(size=22)
+    lines = [
+        "TEST FIXTURE - not a real site",
+        "Falcon Demo Bank: account blocked.",
+        "Send your card number and OTP",
+        "to this number within 1 hour",
+        "or your account will be closed.",
+        "Reply now to confirm identity",
+    ]
+    for i, ln in enumerate(lines):
+        draw.text((20, 450 + i * 45), ln, fill="black", font=font)
+    buf = io.BytesIO()
+    canvas.save(buf, "PNG")
+    final = (await check("image", buf.getvalue(), sandbox=_sandbox_for(True))).docs[-1]
+    assert_valid(final)
+    assert final["degraded"] and final["verdict"] == "suspicious"
+
+
+async def test_qr_with_title_caption_or_one_short_line_stays_degraded() -> None:
+    from PIL import Image, ImageDraw, ImageFont
+
+    # demo-kit poster has a title and a caption: no longer a pure QR
+    poster = (QR_DIR / "02-qr-official.png").read_bytes()
+    final = (await check("image", poster, sandbox=_sandbox_for(True))).docs[-1]
+    assert final["degraded"] and final["verdict"] == "suspicious"
+    # TEST FIXTURE, not a real site: pure QR plus one short line, generated here
+    canvas = Image.new("RGB", (500, 500), "white")
+    canvas.paste(Image.open(io.BytesIO(_qr_png("http://falcon-demo-bank.test/"))).resize((400, 400)), (50, 20))
+    ImageDraw.Draw(canvas).text((20, 450), "Scan now", fill="black", font=ImageFont.load_default(size=22))
+    buf = io.BytesIO()
+    canvas.save(buf, "PNG")
+    final = (await check("image", buf.getvalue(), sandbox=_sandbox_for(True))).docs[-1]
+    assert final["degraded"] and final["verdict"] == "suspicious"
