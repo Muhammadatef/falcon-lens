@@ -177,7 +177,7 @@ Comma-separated. Generated from the lockfiles, the compose file, the source impo
 
 ## Document (.docx or .pdf)
 
-- File to upload: `submission/description.pdf` (built by `make submission`; a .docx version is built by the document task).
+- File to upload: `submission/FalconLens_Project_Description.pdf` (or `.docx`), the project description document.
 
 ## Demo Video URL (one minute, recorded by the owner)
 

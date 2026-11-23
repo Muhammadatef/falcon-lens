@@ -394,8 +394,11 @@ def slide_solution(f: Facts, img: dict[str, Path]) -> Slide:
     verdict_row(s, MARGIN, 5.67, 7.4, "Suspicious", "مريب", "warn", "warn_tint", "warn_line")
     verdict_row(s, MARGIN, 6.39, 7.4, "No warning signs found", "لم نجد علامات تحذير", "nws", "nws_tint", "nws_line")
     pic = img["check"]  # 767 x 840 design render
-    ph = 4.75
-    pw = ph * 767 / 850
+    from PIL import Image  # noqa: PLC0415
+
+    with Image.open(pic) as im:
+        ph = 4.75
+        pw = ph * im.width / im.height
     px = W - MARGIN - pw
     s.add(
         Pic(
@@ -404,16 +407,16 @@ def slide_solution(f: Facts, img: dict[str, Path]) -> Slide:
             1.85,
             pw,
             ph,
-            "Design render of the Falcon Lens result page: a Dangerous verdict with three reasons and what to do now",
+            "Screenshot of the Falcon Lens result page: a Dangerous verdict with three reasons and what to do now",
         ),
         Box(px, 1.85, pw, ph, None, "border", "round", 0.14),
     )
-    chip(s, px, 6.68, pw, "Design render · demo data, not a real check", size=12)
+    chip(s, W - MARGIN - 3.6, 6.68, 3.6, "Demo data, not a real check", size=12)
     s.notes = (
         "One line: check before you tap. You paste a link, a message, an email or an image, and you get one clear answer in Arabic: "
         "what we found, why, and what to do now, including what to do if you already clicked. There are three verdicts: Dangerous, Suspicious, "
         "and No warning signs found. The lowest verdict always carries a caution reminder, because no checker can promise that. "
-        "The picture on the right is a design render with demo data, labelled as such."
+        "The picture on the right is a screenshot of the result page with demo data, labelled as such."
     )
     return s
 
@@ -646,9 +649,9 @@ def slide_results(f: Facts) -> Slide:
                 anchor="m",
             )
         )  # fmt: skip
-    ne = [humanise(k) for k in (art.not_evaluated or [])][:6]
+    ne = [humanise(k) for k in (art.not_evaluated or [])]
     if ne:
-        s.add(tb(MARGIN, 6.62, 12.1, 0.55, p("Not measured yet: " + ", ".join(ne) + ".", 13, "faint")))
+        s.add(tb(MARGIN, 6.55, 12.1, 0.8, p("Not measured yet: " + ", ".join(ne) + ".", 12, "faint")))
     s.notes = (
         f"Every number on this slide is copied by code from the published evaluation file {art.path.name}, with its bootstrap confidence interval. "
         "Read the scope line first: this is the offline model plus the arbiter on URLs, on a frozen test split, real data only. It is not a measurement of the whole system. "
@@ -679,7 +682,11 @@ def slide_security(f: Facts) -> Slide:
         ),
         ("SSRF guard", "Own DNS resolution, private ranges blocked, every redirect re-checked.", "url_check"),
         ("Private by default", "Personal data is redacted before logs and before any cloud call.", "sovereign"),
-        ("Sovereign mode", "Every model call stays on the local machine. No content leaves it.", "sovereign"),
+        (
+            "Sovereign mode",
+            "Every model call stays on the local machine. Its accuracy is not yet measured.",
+            "sovereign",
+        ),
     ]
     w, h, gx, gy = 3.85, 2.2, 0.275, 0.25
     for i, (head, body, cap) in enumerate(cells):
@@ -726,7 +733,7 @@ def slide_authorities(f: Facts) -> Slide:
         ("STIX 2.1 export", "of incident indicators for intelligence sharing", "stix"),
         ("Signed webhooks", "campaign alerts with an HMAC signature", None),
         ("Operator board", "the Sentinel proposes, a human approves", "ops_board"),
-        ("Sovereign mode", "all model calls stay on local hardware", "sovereign"),
+        ("Sovereign mode", "all model calls stay on local hardware (accuracy not yet measured)", "sovereign"),
     ]
     w, h, gx, gy = 3.85, 1.35, 0.275, 0.2
     for i, (head, body, cap) in enumerate(surfaces):
@@ -993,7 +1000,12 @@ def prepare_images(root: Path, cache: Path) -> dict[str, Path]:
         browser.close()
     crops = {
         # the result page without the activity timing column and without the reporting-channel card
-        "check": (root / "web/design/v2/shots/check-dangerous-ar-1440.png", (529, 310, 1296, 1160)),
+        # what is on main now; the v2 render is used automatically once web v2 is merged (web/app/agents exists)
+        "check": (
+            (root / "web/design/v2/shots/check-dangerous-ar-1440.png", (529, 310, 1296, 1160))
+            if (root / "web/app/agents").is_dir()
+            else (root / "web/design/app-shots/03-check-dangerous-390-ar-night.png", (0, 0, 390, 560))
+        ),
         "campaigns": (root / "web/design/app-shots/08-campaigns-live-1440-ar-night.png", (144, 100, 1296, 880)),
     }
     for key, (src, box) in crops.items():
