@@ -18,9 +18,10 @@ const VERDICT_ID_RE = /^vd_[0-9A-HJKMNP-TV-Z]{26}$/;
 
 const seeOther = (location: string) => new Response(null, { status: 303, headers: { Location: location, "Cache-Control": "no-store" } });
 
-async function startCheck(plan: Exclude<SharePlan, { kind: "none" }>, forwardedFor: string | null): Promise<string | null> {
+async function startCheck(plan: Exclude<SharePlan, { kind: "none" }>, forwardedFor: string | null, clientIp: string | null = null): Promise<string | null> {
   const headers: Record<string, string> = { accept: "application/json" };
   if (forwardedFor) headers["x-forwarded-for"] = forwardedFor;
+  if (clientIp) headers["x-falcon-client-ip"] = clientIp;
   let body: BodyInit;
   if (plan.kind === "url") {
     headers["content-type"] = "application/json";
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
   const plan = planShare({ title: text("title"), text: text("text"), url: text("url"), files });
   if (plan.kind === "none") return seeOther("/");
 
-  const id = await startCheck(plan, request.headers.get("x-forwarded-for"));
+  const id = await startCheck(plan, request.headers.get("x-forwarded-for"), request.headers.get("x-falcon-client-ip"));
   return seeOther(id ? `/?id=${id}` : "/?share=failed");
 }
 
