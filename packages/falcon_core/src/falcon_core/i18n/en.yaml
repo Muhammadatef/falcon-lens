@@ -17,6 +17,9 @@ hard_rules:
   H5: "This message contains a link we found dangerous."
   H5s: "This message contains a link we found suspicious."
   H6: "This message asks for a code or an app install while posing as an official body or bank."
+  RF1: "This message asks for money while posing as an official body, a bank or a service."
+  RF2: "This message claims a problem with your account and asks you to install a remote-access app."
+  RF3: "This message asks for a code, PIN or card details and pushes you to act."
 
 reasons:
   rep.feed_hit: "This link is on a list of known scam sites."

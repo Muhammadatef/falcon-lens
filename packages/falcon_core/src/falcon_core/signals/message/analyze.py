@@ -19,7 +19,7 @@ from falcon_core.signals.message.extract import (
     extract_urls,
     mask_phone,
 )
-from falcon_core.signals.message.intent import scam_intent
+from falcon_core.signals.message.intent import floor_evidence, scam_intent
 from falcon_core.signals.message.normalize import MAX_MESSAGE_CHARS, normalize
 from falcon_core.signals.message.rules import RuleHit, find_rules
 from falcon_core.signals.message.scripts import script_match_offline
@@ -69,7 +69,7 @@ SPEC_INTENT = SignalSpec(
     input_types=_IN,
     timeout_ms=T1_MS,
     network="none",
-    emits=("message.scam_intent",),
+    emits=("message.scam_intent", "message.floor_pair"),
 )
 SPEC_BRAND = SignalSpec(
     name="message.brand_mention",
@@ -192,6 +192,7 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
         find_rules(text), brand_named=any(e.signal == "message.brand_mention" for e in brand_ev)
     )
     res.evidence += scam_intent(text)
+    res.evidence += floor_evidence(text)
     res.evidence += script_match_offline(text)
     phones = extract_phones(text)
     res.children = [*urls, *phones]
@@ -249,4 +250,5 @@ def run_brand(ctx: SignalContext) -> list[Evidence]:
 
 @signal(SPEC_INTENT)
 def run_intent(ctx: SignalContext) -> list[Evidence]:
-    return scam_intent((ctx.text or "")[:MAX_MESSAGE_CHARS])
+    t = (ctx.text or "")[:MAX_MESSAGE_CHARS]
+    return [*scam_intent(t), *floor_evidence(t)]

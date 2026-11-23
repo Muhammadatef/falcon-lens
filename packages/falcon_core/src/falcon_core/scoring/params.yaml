@@ -97,7 +97,8 @@ weights:
   visual.favicon_match_brand: 1.0
   brand.claimed_not_owned: 3.0
   message.script_match: 2.5
-  message.scam_intent: 4.0      # weight x p (p >= theta in intent_weights.json); proposed by builder-signals, L1 to confirm
+  message.floor_pair: 0.0        # informational: carries an R-floor pair; the floor is a hard rule (RF1-RF3)
+  message.scam_intent: 3.0  # fitted on val: evals/message_text/fit_weight.py
   message.brand_mention: 0.5
   message.brand_url_mismatch: 1.0
   email.auth_fail: 1.5

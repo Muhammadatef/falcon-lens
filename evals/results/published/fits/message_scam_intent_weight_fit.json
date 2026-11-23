@@ -1,0 +1,121 @@
+{
+ "kind": "message_scam_intent_weight_fit",
+ "label": "synthetic, single-author, pending audit",
+ "procedure": "maximise val recall s.t. val legit FPR <= 2%; ties to the smallest weight (as L1 D2 model_cap fit)",
+ "git_sha": "d065e909c507636f75211cb3f3523bed7343ba46-dirty",
+ "dataset_hash": "036de1048cd68797338115ca65a840508aebf4dfa193b2bac8fe17f304ddf7a7",
+ "n_val_scam": 26,
+ "n_val_legit": 15,
+ "chosen": {
+  "weight": 3.0,
+  "val_recall": 0.9231,
+  "val_fpr": 0.0
+ },
+ "grid": [
+  {
+   "weight": 0.0,
+   "val_recall": 0.4615,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 0.5,
+   "val_recall": 0.5,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 1.0,
+   "val_recall": 0.5385,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 1.5,
+   "val_recall": 0.7308,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 2.0,
+   "val_recall": 0.7308,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 2.5,
+   "val_recall": 0.8846,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 3.0,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 3.5,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 4.0,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 4.5,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 5.0,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 5.5,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 6.0,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 6.5,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 7.0,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 7.5,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 8.0,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 8.5,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 9.0,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 9.5,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  },
+  {
+   "weight": 10.0,
+   "val_recall": 0.9231,
+   "val_fpr": 0.0
+  }
+ ]
+}

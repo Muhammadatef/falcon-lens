@@ -284,6 +284,10 @@ L1 also needs to paste the build-prompt §11 `fl_` metric list into docs/OBSERVA
   hard-negative weighting for the T1 model; measure on val only.
 - acceptance: hard-negative false-warning rate per category in the eval artifact does not worsen; test untouched.
 
+### T-032 Wire pgvector/Ollama `message.script_match` into the worker · builder-signals + builder-platform · P2 · `feat/script-match-pgvector` · depends_on: T-031
+- scope: `signals/message/scripts.py` has a pgvector `ScriptStore` + Ollama embedder runner, but `SignalCtx` carries no `scripts`/`ollama_base_url`, nothing seeds `scam_scripts`, and the message path never runs registry signals. Today the offline char-3-gram index (train-split synthetic scripts) supplies `message.script_match`. Give the worker a DB handle and embedder, seed from an audited script set, run the runner in the message path, and compare against the offline index on val.
+- acceptance: `message.script_match` appears with `observed.index` naming the backend; the message-text eval is re-run (val, then test only if the owner allows a further read) and reported next to the offline index; timeout respected, no network except through `ctx.http`.
+
 ---
 ### P2 note: router circuit breaker (owner: builder-agent-core / L1)
 `falcon_core.llm.router` has no circuit breaker. With the cloud route down, every Sentinel call waits the cloud timeout (12 s) before falling back to local, so three calls cost about 36 s of the 120 s triage budget. Add a breaker (open after N failures, half-open probe) so the router skips a dead cloud route. Not part of PR #64.

@@ -68,6 +68,58 @@ def extract_features(text: str) -> dict[str, int]:
     return f
 
 
+# Floor pairs (L1-approved R-floor rules): BOTH halves must be present and no protective wording (a "never share"
+# warning or a plain code delivery) may be present. name -> (rule id, half A, half B)
+FLOOR_PAIRS: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
+    "pay_authority": ("RF1", ("pay_ask", "gift_card_crypto", "personal_account"), AUTHORITY),
+    "remote_trouble": ("RF2", ("remote_access",), ("account_trouble",)),
+    "secret_lure": ("RF3", ("otp_request", "ask_card_data"), ("urgency", "penalty", "prize", "fine")),
+}
+FLOOR_DISPLAY = {
+    "pay_authority": {
+        "en": "Asks for money while posing as an official body, bank or service",
+        "ar": "يطلب مالا وهو ينتحل صفة جهة رسمية أو بنك أو شركة",
+    },
+    "remote_trouble": {
+        "en": "Claims an account problem and asks you to install a remote-access app",
+        "ar": "يدّعي مشكلة في الحساب ويطلب تثبيت تطبيق تحكم عن بعد",
+    },
+    "secret_lure": {
+        "en": "Asks for a code, PIN or card details with pressure or a lure",
+        "ar": "يطلب رمزا أو رقما سريا أو بيانات بطاقة مع ضغط أو إغراء",
+    },
+}
+
+
+def floor_pairs(feats: dict[str, int]) -> dict[str, tuple[list[str], list[str]]]:
+    """Which floor pairs hold, with the features that make up each half."""
+    if any(k in feats for k in PROTECTIVE):
+        return {}
+    out: dict[str, tuple[list[str], list[str]]] = {}
+    for name, (_rid, a, b) in FLOOR_PAIRS.items():
+        pa, pb = [k for k in a if k in feats], [k for k in b if k in feats]
+        if pa and pb:
+            out[name] = (pa, pb)
+    return out
+
+
+def floor_evidence(text: str) -> list[Evidence]:
+    """Zero-weight ``message.floor_pair`` evidence, one per pair that holds; the hard rule cites its id."""
+    out = []
+    for name, (pa, pb) in floor_pairs(extract_features(text)).items():
+        rid = FLOOR_PAIRS[name][0]
+        out.append(
+            Evidence(
+                signal="message.floor_pair",
+                family="message",
+                observed={"pair": name, "rule": rid, "ask": pa, "claim": pb},
+                display=FLOOR_DISPLAY[name],
+                hard_rule=rid,
+            )
+        )
+    return out
+
+
 @lru_cache(maxsize=1)
 def load_weights() -> dict[str, Any] | None:
     try:

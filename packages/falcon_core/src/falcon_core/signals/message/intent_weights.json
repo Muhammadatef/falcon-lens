@@ -40,7 +40,7 @@
   "n_train": 128,
   "n_val": 41,
   "dataset_hash": "036de1048cd68797338115ca65a840508aebf4dfa193b2bac8fe17f304ddf7a7",
-  "git_sha": "21516c13e0c7c2d619dcc6f1bd70e4e91be6a4d1",
+  "git_sha": "d065e909c507636f75211cb3f3523bed7343ba46",
   "class_weight": "balanced",
   "note": "test split never read"
  }

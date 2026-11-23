@@ -54,7 +54,7 @@ def verdict(text: str, with_intent: bool = True) -> str:
     ev = [
         from_signal(e)
         for e in analyze_message(text).evidence
-        if with_intent or e.signal not in ("message.scam_intent", "message.script_match")
+        if with_intent or e.signal not in ("message.scam_intent", "message.script_match", "message.floor_pair")
     ]
     ctx = ArbiterContext(input_type="message", params=load_params())
     return str(score_with_model(ev, None, ctx).verdict)
@@ -114,6 +114,8 @@ def main(argv: list[str] | None = None) -> int:
         "schema_version": 1,
         "kind": "message_text_eval",
         "synthetic": True,
+        "label": "synthetic, single-author, pending audit",
+        "test_read": "second read after floor rules (first read: message_text_21516c13e0c7_20261123T115126Z.json, before RF1-RF3 and the val-fitted weight)",
         "note": "Synthetic, link-free messages (Falcon Demo Bank and generic roles). Recall/FPR with Wilson 95% intervals; "
         "small n means wide intervals. Test is evaluated once per build; report-only (not in evals/baseline.json).",
         "git_sha": sha,
