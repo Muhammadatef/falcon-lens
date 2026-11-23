@@ -132,7 +132,7 @@ def _sandbox_for(official: bool) -> StubSandboxClient:
 
 
 async def test_official_qr_matches_pasted_link_and_is_not_degraded() -> None:
-    data = (QR_DIR / "02-qr-official.png").read_bytes()
+    data = _qr_png("http://falcon-demo-bank.test/")  # pure QR, no other content
     img = (await check("image", data, sandbox=_sandbox_for(True))).docs[-1]
     link = (await check("message", b"http://falcon-demo-bank.test/", sandbox=_sandbox_for(True))).docs[-1]
     assert_valid(img)
@@ -193,4 +193,21 @@ async def test_official_qr_with_printed_scam_text_stays_degraded() -> None:
     canvas.save(buf, "PNG")
     final = (await check("image", buf.getvalue(), sandbox=_sandbox_for(True))).docs[-1]
     assert_valid(final)
+    assert final["degraded"] and final["verdict"] == "suspicious"
+
+
+async def test_qr_with_title_caption_or_one_short_line_stays_degraded() -> None:
+    from PIL import Image, ImageDraw, ImageFont
+
+    # demo-kit poster has a title and a caption: no longer a pure QR
+    poster = (QR_DIR / "02-qr-official.png").read_bytes()
+    final = (await check("image", poster, sandbox=_sandbox_for(True))).docs[-1]
+    assert final["degraded"] and final["verdict"] == "suspicious"
+    # TEST FIXTURE, not a real site: pure QR plus one short line, generated here
+    canvas = Image.new("RGB", (500, 500), "white")
+    canvas.paste(Image.open(io.BytesIO(_qr_png("http://falcon-demo-bank.test/"))).resize((400, 400)), (50, 20))
+    ImageDraw.Draw(canvas).text((20, 450), "Scan now", fill="black", font=ImageFont.load_default(size=22))
+    buf = io.BytesIO()
+    canvas.save(buf, "PNG")
+    final = (await check("image", buf.getvalue(), sandbox=_sandbox_for(True))).docs[-1]
     assert final["degraded"] and final["verdict"] == "suspicious"

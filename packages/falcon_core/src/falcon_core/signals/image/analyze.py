@@ -128,8 +128,8 @@ def analyze_image(data: bytes) -> ImageAnalysis:
     return res
 
 
-MAX_OUTSIDE_INK = 0.03  # fraction of pixels that are ink outside the QR boxes
-MAX_OUTSIDE_LINES = 3  # text-like row bands outside the QR boxes
+MAX_OUTSIDE_INK = 0.01  # fraction of pixels that are ink outside the QR boxes
+MAX_OUTSIDE_LINES = 0  # text-like row bands allowed outside the QR boxes: none (pure QR only)
 
 
 def _decode_qr(rgb: object) -> tuple[list[str], list[tuple[int, int, int, int]]]:
@@ -150,7 +150,7 @@ def _decode_qr(rgb: object) -> tuple[list[str], list[tuple[int, int, int, int]]]
 
 
 def _substantial_outside(rgb: object, boxes: list[tuple[int, int, int, int]]) -> bool:
-    """Heuristic: is there more than a title/caption of non-QR content? Ink = pixels far from the dominant
+    """Heuristic: is there any non-QR content (title, caption, text)? Ink = pixels far from the dominant
     background colour, outside the QR boxes (plus a quiet-zone pad). Residual limit: THREAT_MODEL.md."""
     import numpy as np
     from PIL import Image
