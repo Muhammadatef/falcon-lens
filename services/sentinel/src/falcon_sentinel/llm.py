@@ -2,7 +2,7 @@
 
 The graph codes to the `LLMClient` protocol only (agent-core's router in falcon_core.llm will satisfy it).
 Here: a deterministic stub (tests, offline demo) and a thin adapter to an OpenAI-compatible endpoint
-(Ollama at OLLAMA_BASE_URL, model inkling-2-mini-chat) for live runs. Outputs are parsed with pydantic and
+(the falcon_core router: cloud or local) for live runs. Outputs are parsed with pydantic and
 get ONE repair retry; the model never sets a score and only ever sees structured evidence.
 """
 
@@ -13,8 +13,9 @@ import re
 from collections.abc import Callable
 from typing import Any, Protocol
 
-import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+from falcon_core.llm import JsonRequest, LLMRouter
 
 END_TOKENS = ("<|end_message|>", "<|im_end|>", "<|endoftext|>")
 
@@ -29,6 +30,11 @@ class LLMClient(Protocol):
 
 class LLMOutputError(Exception):
     """Model output was not valid after the repair retry."""
+
+
+class LLMUnavailable(LLMOutputError):
+    """The model could not be reached or answered with an error (HTTP, connection, timeout).
+    A subclass of LLMOutputError so every node falls back to the template path; it is never retried."""
 
 
 class BudgetExceeded(Exception):
@@ -96,6 +102,9 @@ async def structured[M: BaseModel](
     on_tokens: Callable[[int], None] | None = None,
 ) -> M:
     """complete_json -> pydantic, with one repair retry that feeds the validation error back."""
+    complete_model = getattr(llm, "complete_model", None)
+    if complete_model is not None:  # router-backed client: redaction, repair and budgets live in the router
+        return await complete_model(model, system=system, user_json=user_json, on_tokens=on_tokens)  # type: ignore[no-any-return]
     schema = model.model_json_schema()
     last_err = ""
     for attempt in range(2):
@@ -107,7 +116,13 @@ async def structured[M: BaseModel](
                 "repair": f"Previous output was invalid: {last_err[:300]}. Return only valid JSON matching the schema.",
             }
         )
-        data = await llm.complete_json(role="sentinel", system=system, user_json=payload, schema=schema)
+        try:
+            data = await llm.complete_json(role="sentinel", system=system, user_json=payload, schema=schema)
+        except LLMUnavailable:
+            raise
+        except LLMOutputError as exc:  # unparseable text: one repair retry like a schema failure
+            last_err = str(exc)
+            continue
         if on_tokens:
             on_tokens(estimate_tokens(payload, data))
         try:
@@ -120,47 +135,48 @@ async def structured[M: BaseModel](
 # ------------------------------------------------------------------ OpenAI-compatible adapter
 
 
-class OpenAICompatLLM:
-    """Ollama exposes /v1/chat/completions; any OpenAI-compatible server works."""
+class RouterLLM:
+    """The only live LLM client: every Sentinel call goes through falcon_core.llm.router.LLMRouter, which applies
+    normalise -> redact -> (spotlight) -> canary -> one repair retry, honours sovereign mode (no cloud route
+    without a key or in sovereign mode) and falls back cloud -> local. Failures raise LLMUnavailable/LLMOutputError
+    so every node degrades to its template."""
 
-    route = "local"
+    def __init__(self, router: LLMRouter, max_output_tokens: int = 1200) -> None:
+        self.router = router
+        self.max_output_tokens = max_output_tokens
+        self._last_route: str | None = None
 
-    def __init__(
+    @property
+    def route(self) -> str:
+        """Route of the latest call (cloud | local); the planned primary route before any call."""
+        return self._last_route or self.router.primary_route("sentinel")
+
+    async def complete_model[M: BaseModel](
         self,
-        base_url: str,
-        model: str = "inkling-2-mini-chat",
-        timeout: float = 30.0,
-        client: httpx.AsyncClient | None = None,
-    ) -> None:
-        self.url = base_url.rstrip("/") + "/v1/chat/completions"
-        self.model = model
-        self._client = client or httpx.AsyncClient(timeout=timeout)
-
-    async def complete_json(
-        self, *, role: str, system: str, user_json: dict[str, Any], schema: dict[str, Any]
-    ) -> dict[str, Any]:
-        sys_prompt = f"{system}\nReturn ONLY a JSON object matching this JSON Schema:\n{json.dumps(schema)}"
-        resp = await self._client.post(
-            self.url,
-            json={
-                "model": self.model,
-                "temperature": 0,
-                "response_format": {"type": "json_object"},
-                "messages": [
-                    {"role": "system", "content": sys_prompt},
-                    {"role": "user", "content": json.dumps(user_json, ensure_ascii=False)},
-                ],
-            },
+        model: type[M],
+        *,
+        system: str,
+        user_json: dict[str, Any],
+        on_tokens: Callable[[int], None] | None = None,
+    ) -> M:
+        res = await self.router.complete_json(
+            JsonRequest(
+                role="sentinel",
+                task=system,
+                schema=model,
+                context=json.dumps(user_json, ensure_ascii=False, default=str),
+                max_output_tokens=self.max_output_tokens,
+            )
         )
-        resp.raise_for_status()
-        content = resp.json()["choices"][0]["message"]["content"]
-        try:
-            out = json.loads(clean_text(content))
-        except json.JSONDecodeError as exc:
-            raise LLMOutputError(f"not json: {exc}") from exc
-        if not isinstance(out, dict):
-            raise LLMOutputError("json root is not an object")
-        return out
+        if res.route != "none":
+            self._last_route = res.route
+        if on_tokens:  # count tokens even when the output turns out unusable
+            on_tokens(res.usage.input_tokens + res.usage.output_tokens)
+        if res.ok and res.value is not None:
+            return res.value
+        if res.route == "none" or all(c.error for c in res.calls):
+            raise LLMUnavailable(res.error or "no route answered")
+        raise LLMOutputError(res.error or "invalid model output")
 
 
 # ------------------------------------------------------------------ deterministic stub
