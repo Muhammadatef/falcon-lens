@@ -20,7 +20,7 @@ export function summarise(items: Campaign[]): { campaigns: number; checks: numbe
 }
 
 /**
- * The Sentinel at work, on Home. Reads GET /v1/campaigns (same endpoint as the live board), refreshes
+ * The Sentinel at work, on Home. Reads GET /api/public/campaigns (same endpoint as the live board), refreshes
  * every 30 s while the tab is visible, and never shows a number the API did not return.
  * States: live data, non-live source (dashed DEMO DATA badge), empty, unreachable.
  */
@@ -45,7 +45,7 @@ export function SentinelTicker({ demo, sentinelLive }: { demo: boolean; sentinel
         apply({ kind: "ok", items: DEMO_CAMPAIGNS.map(parseCampaign).filter((c): c is Campaign => c !== null) });
         return;
       }
-      const result = await loadBoard("/v1/campaigns", parseCampaign, unwrapList, undefined, abort.signal);
+      const result = await loadBoard("/api/public/campaigns", parseCampaign, unwrapList, undefined, abort.signal);
       apply(result.state === "ok" ? { kind: "ok", items: result.items } : { kind: "offline" });
     };
     const loop = async () => {
