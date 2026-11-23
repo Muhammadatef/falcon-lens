@@ -46,6 +46,7 @@ Rules that apply to everything below:
 
 | Script | What it is for | Command | Owner |
 |---|---|---|---|
+| `ci_local.py` | Local CI: every ci.yml job in parallel, logs in `work/ci-local/<sha>/`, summary table; `--pr N` tests the merge result and comments on the PR. Parity test keeps it in step with ci.yml | `make ci-local` / `make ci-local-pr PR=123` | platform |
 | `check_no_live_urls.py` | The defensive-only guard behind `make guard` | `make guard` | platform |
 | `check_openapi_drift.py` | Fails if the API implements a route that `contracts/openapi.yaml` does not declare | `uv run python scripts/check_openapi_drift.py` | platform |
 | `gen_openapi.py` | Writes (or with `--check` verifies) `contracts/openapi.yaml` | `make openapi` | platform |

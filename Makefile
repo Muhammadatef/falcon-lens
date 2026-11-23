@@ -4,7 +4,7 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck
+.PHONY: regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr
 
 help: ## List every make target with a one-line description (this list)
 	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
@@ -40,6 +40,7 @@ unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL
 guard: ## defensive-only guard: no live URLs, no data/private in git
 	python3 scripts/check_no_live_urls.py
 	python3 scripts/check_env_example.py
+	uv run python scripts/readme_stack.py --check
 
 # Merge gate for detection quality. Becomes real when builder-evals lands evals/baseline.json:
 # until then it says so loudly and does NOT claim a pass.
@@ -133,3 +134,10 @@ local-worker-enqueue: ## make local-worker-enqueue KIND=summarize INPUT=path [PA
 	@test -n "$(KIND)" || { echo "usage: make local-worker-enqueue KIND=<kind> INPUT=<repo path>" >&2; exit 2; }
 	uv run python -m scripts.local_worker enqueue --kind $(KIND) $(if $(INPUT),--input $(INPUT)) $(if $(PARAMS),--params '$(PARAMS)')
 
+
+ci-local: ## run every ci.yml job locally in parallel (logs: work/ci-local/<sha>/); JOBS="lint test" for a subset
+	@python3 scripts/ci_local.py
+
+ci-local-pr: ## ci-local on the merge result of origin/main + PR (temp worktree), comments on the PR: make ci-local-pr PR=123
+	@test -n "$(PR)" || { echo "usage: make ci-local-pr PR=<number>" >&2; exit 2; }
+	@python3 scripts/ci_local.py --pr $(PR)
