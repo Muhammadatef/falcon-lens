@@ -38,3 +38,9 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 (timeouts) with the same harmful cases". The figures live only in `evals/results/published/redteam/` (one artifact per budget);
 copy them from there, never from this page. Eight extra `t3_page` cases (uncertain band, so the T3 investigator runs) are
 reported separately as `summary.t3_uncertain` and are not part of the 113.
+
+Recipe (two runs, the second embeds the first one's coverage in its caveat; extended investigator deadline 300 s, harness only):
+```
+make redteam-shipped BUDGET=production PUBLISH=1
+make redteam-shipped BUDGET=extended PAIRED=evals/results/published/redteam/<production artifact>.json PUBLISH=1
+```

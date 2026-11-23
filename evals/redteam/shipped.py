@@ -56,11 +56,11 @@ from .html_segments import page_features
 
 RANK = {"no_warning_signs": 0, "suspicious": 1, "dangerous": 2}
 URL_RE = re.compile(r"https?://[^\s<>\"')\]]+", re.IGNORECASE)
-CASE_TIMEOUT_S = 480.0
+CASE_TIMEOUT_S = 600.0
 # Evaluation timeouts: a local 20 GB model cannot answer inside the production 7 s / 16 s budgets, and a
 # tripped circuit breaker would silently turn the run into a deterministic-only run.
 EVAL_EXTRACTOR_TIMEOUT_S = 90.0
-EVAL_INVESTIGATOR_TIMEOUT_S = 120.0
+EVAL_INVESTIGATOR_TIMEOUT_S = 300.0
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
