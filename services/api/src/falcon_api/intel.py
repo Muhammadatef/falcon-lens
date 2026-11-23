@@ -171,9 +171,26 @@ def _series(times: list[datetime], lo: datetime, hi: datetime) -> list[int]:
     return out
 
 
+def brand_display(brand_id: str | None) -> tuple[str, str] | None:
+    """(name_en, name_ar) from the brand registry; a humanised id for both if the brand is not in it."""
+    if not brand_id:
+        return None
+    try:
+        from falcon_core.signals.brands import default_registry
+
+        for b in default_registry().brands:
+            if b.brand_id == brand_id:
+                return b.name_en, b.name_ar
+    except (ImportError, OSError, ValueError):
+        pass
+    human = " ".join(w.capitalize() for w in str(brand_id).replace("_", " ").replace("-", " ").split()) or str(brand_id)
+    return human, human
+
+
 def campaign_of(inc: dict[str, Any]) -> dict[str, Any]:
     """Project an incident onto the small campaign card the UI draws (contracts/campaign.schema.json)."""
-    brand = inc.get("brand_id")
+    brand_id = inc.get("brand_id")
+    names = brand_display(brand_id)
     inds = [i for i in inc.get("indicators", []) if i.get("kind") in ("domain", "url")]
     first, last = inc["created_at"], inc["updated_at"]
     times = [_dt(i["first_seen"]) for i in inds if i.get("first_seen")]
@@ -182,9 +199,10 @@ def campaign_of(inc: dict[str, Any]) -> dict[str, Any]:
     ar, en = _ADVICE["high" if sev in ("high", "critical") else "default"]
     return {
         "campaign_id": "cmp_" + str(inc["incident_id"]).removeprefix("inc_"),
-        "brand_id": brand,
-        "title_ar": f"حملة احتيال تنتحل {brand}" if brand else "حملة احتيال مشتبه بها",
-        "title_en": f"Suspected scam campaign impersonating {brand}" if brand else "Suspected scam campaign",
+        "brand_id": brand_id,
+        "brand_name": {"ar": names[1], "en": names[0]} if names else None,
+        "title_ar": f"حملة احتيال تنتحل {names[1]}" if names else "حملة احتيال مشتبه بها",
+        "title_en": f"Suspected scam campaign impersonating {names[0]}" if names else "Suspected scam campaign",
         "severity": sev,
         "count": max(len(inds), len(inc.get("linked_verdicts", []))),
         "first_seen": first,

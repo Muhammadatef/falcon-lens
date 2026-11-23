@@ -10,7 +10,7 @@ import { defang } from "./defang";
 
 export interface PublicCampaign {
   campaign_id: string;
-  brand_name: string | null;
+  brand_name: { ar?: string; en?: string } | null;
   title: { ar?: string; en?: string };
   advice: { ar?: string; en?: string };
   severity: "low" | "medium" | "high" | "critical";
@@ -39,6 +39,16 @@ function bilingual(obj: Record<string, unknown>, nested: string, flatAr: string,
   return { ar: text(obj[flatAr]), en: text(obj[flatEn]) };
 }
 
+function brandName(v: unknown): { ar?: string; en?: string } | null {
+  if (isObj(v)) {
+    const ar = text(v.ar, 120);
+    const en = text(v.en, 120);
+    return ar || en ? { ar, en } : null;
+  }
+  const en = text(v, 120);
+  return en ? { en } : null;
+}
+
 /** Accepts the contract shape (title_ar/title_en) and the small nested shape; returns null for anything unusable. */
 export function toPublicCampaign(raw: unknown): PublicCampaign | null {
   if (!isObj(raw)) return null;
@@ -54,7 +64,7 @@ export function toPublicCampaign(raw: unknown): PublicCampaign | null {
     : [];
   return {
     campaign_id: id,
-    brand_name: text(raw.brand_name, 120) ?? null,
+    brand_name: brandName(raw.brand_name),
     title: bilingual(raw, "title", "title_ar", "title_en"),
     advice: bilingual(raw, "advice", "advice_ar", "advice_en"),
     severity: sev,
