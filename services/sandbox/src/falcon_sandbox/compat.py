@@ -63,7 +63,11 @@ def to_flat(f: RenderFeatures, verdict_id: str | None = None) -> dict[str, Any]:
                 for fm in p.forms
             ],
             # origins only: a phisher's bot token in the path is never copied into our data
-            post_targets=sorted({t.origin for t in p.script_post_targets}),
+            post_targets=sorted({t.origin for t in p.script_post_targets if t.carries_form_data}),
+            # POSTs with no form-field data (analytics, pixels, keep-alives): informational only
+            beacon_origins=sorted(
+                {t.origin for t in p.script_post_targets if not t.carries_form_data and t.cross_origin}
+            )[:10],
             exfil_targets=_dedupe(exfil),
             hotlinked_origins=p.asset_origins,
             visible_text=p.visible_text,

@@ -110,6 +110,8 @@ class SandboxFeatures(BaseModel):
     title: str = ""
     forms: list[SandboxForm] = Field(default_factory=list)
     post_targets: list[str] = Field(default_factory=list)
+    # Cross-origin POST targets that carry NO form-field data (telemetry, pixels): informational only.
+    beacon_origins: list[str] = Field(default_factory=list)
     hotlinked_origins: list[str] = Field(default_factory=list)
     visible_text: str = ""
     favicon_sha256: str | None = None

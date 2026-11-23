@@ -51,7 +51,9 @@ EXTRACT_JS = r"""
     meta_refresh: !!document.querySelector('meta[http-equiv="refresh" i]'),
   };
   const typed = [];
-  const addAll = (re, kind) => { for (const m of js.matchAll(re)) { const u = abs(m[2]); if (u) typed.push({kind, url: u}); } };
+  // does the call site read form data? (looked for in the 700 characters after the call; payload, not destination)
+  const FD = /\.value\b|FormData|serialize|URLSearchParams|passw|\botp\b|\bcvv\b|card|\bpin\b|emirates/i;
+  const addAll = (re, kind) => { for (const m of js.matchAll(re)) { const u = abs(m[2]); if (u) typed.push({kind, url: u, body: FD.test(js.slice(m.index, m.index + 700))}); } };
   addAll(/fetch\(\s*(['"`])([^'"`]+)\1\s*,\s*\{[^}]{0,300}method\s*:\s*['"`]POST/gi, 'fetch');
   addAll(/\.open\(\s*['"`]POST['"`]\s*,\s*(['"`])([^'"`]+)\1/gi, 'xhr');
   addAll(/sendBeacon\(\s*(['"`])([^'"`]+)\1/g, 'beacon');

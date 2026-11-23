@@ -30,7 +30,7 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | domain.age_days < 30 | domain | +1.5 | <7 days: +2.5 |
 | domain.cert_age_days < 7 | domain | +0.8 | |
 | page.cred_form (password/card/CVV/OTP/EID/UAE Pass) | page | +1.5 | intent, not by itself proof |
-| page.cross_origin_post (bot API/webhook/form relay) | page | +3.0 | |
+| page.cross_origin_post (bot API/webhook/form relay) | page | +3.0 | the page sends user-entered form data off-origin: a cross-origin form action, or a script POST whose body uses the page's field names or credential/ID-like names, or any POST to a known relay. Payload decides, never the destination |
 | page.hotlinked_brand_assets | page | +2.0 | |
 | page.cloaking (mobile-AR vs desktop differ) | page | +2.5 | |
 | visual.favicon_match_brand | visual | +1.0 | only risk if domain not owned |
@@ -40,6 +40,8 @@ Code: `packages/falcon_core/scoring/arbiter.py`. The weights below are the **ini
 | message.brand_mention | message | +0.5 | |
 | message.brand_url_mismatch | message | +1.0 | brand named, link to unofficial domain |
 | message.contains_url / message.contains_phone | message | 0 (informational) | children go to the URL pipeline (H5) |
+| page.truncated | page | 0 (informational) | the page was read in part (cut at the size cap or half-loaded); never an error |
+| page.telemetry_beacon | page | 0 (informational) | a script POST with no form-field data (analytics, pixels, keep-alives); NOT page.cross_origin_post |
 | email.attachment | email | 0 (+1.5 if executable/script type) | type by magic bytes + sha256 only |
 | email.return_path_mismatch | email | 0 (informational) | |
 | email.invalid / image.invalid | email/image | 0 | sets degraded |

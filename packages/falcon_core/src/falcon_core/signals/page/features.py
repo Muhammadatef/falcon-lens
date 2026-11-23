@@ -45,6 +45,11 @@ class PostTarget(_M):
     cross_origin: bool = True
     exfil: bool = False
     exfil_category: str | None = None
+    carries_form_data: bool = Field(
+        default=False,
+        description="the request carries the page's form-field values (or goes to a known relay); "
+        "False = telemetry-style beacon with no form data",
+    )
 
 
 class BlockedRequest(_M):

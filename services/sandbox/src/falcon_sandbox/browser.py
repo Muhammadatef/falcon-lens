@@ -38,10 +38,13 @@ from falcon_core.signals.page.simhash import dom_simhash
 from falcon_core.signals.visual.phash import phash_from_gray32
 
 from .build import (
+    body_carries_form_data,
+    body_field_names,
     build_dynamic_post_target,
     build_forms,
     build_js,
     build_static_post_targets,
+    page_field_names,
     truncate_utf8,
 )
 from .extract_js import EXTRACT_JS
@@ -114,6 +117,7 @@ class _State:
     by_type: dict[str, int] = field(default_factory=dict)
     assets: set[str] = field(default_factory=set)
     posts: list[PostTarget] = field(default_factory=list)
+    post_keys: list[list[str]] = field(default_factory=list)  # field names of each dynamic POST body (no values)
     non_get_blocked: int = 0
     non_get_sent: int = 0
     size_cap_hit: bool = False
@@ -297,6 +301,11 @@ class SandboxBrowser:
                     tgt = build_dynamic_post_target(req.url, req.resource_type, url)
                     if tgt and len(st.posts) < 20:
                         st.posts.append(tgt)
+                        try:
+                            body = req.post_data
+                        except (UnicodeDecodeError, PlaywrightError):
+                            body = None
+                        st.post_keys.append(body_field_names(body, req.headers.get("content-type", "")))
                 with contextlib.suppress(PlaywrightError):
                     await route.abort("blockedbyclient")
                 return
@@ -548,6 +557,9 @@ class SandboxBrowser:
             feats.visible_text = truncate_utf8(str(raw.get("text", "")))
             feats.forms = build_forms(raw.get("forms", []), final)
             feats.js = build_js(raw.get("js", {}))
+            names = page_field_names(raw.get("forms", []))
+            for tgt, keys in zip(st.posts, st.post_keys, strict=False):
+                tgt.carries_form_data = tgt.carries_form_data or body_carries_form_data(keys, names)
             feats.script_post_targets = [
                 *build_static_post_targets(raw.get("typed", []), raw.get("literals", []), final),
                 *st.posts,
