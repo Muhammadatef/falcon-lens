@@ -80,15 +80,86 @@ def echo_guard(text: str, segments: Iterable[Mapping[str, object]]) -> str:
     return text
 
 
-# Whisper invents stock phrases on silence or noise.
-_HALLUCINATIONS = re.compile(r"(thanks? (you )?for watching\.?|you\.?|\.+|شكرا\.?)", re.IGNORECASE)
+# Whisper invents stock phrases on silence or noise (measured on the shipped model: "Thank you." and
+# «ترجمة نانسي قنقر» without a prompt). None of them is ever a command, so they are dropped.
+_HALLUCINATIONS = re.compile(
+    r"(thanks? (you )?for watching\.?|thank you( very much)?\.?|you\.?|bye\.?|\.+|شكرا\.?|شكرا للمشاهده\.?"
+    r"|ترجمه نانسي قنقر\.?|اشتركوا في القناه\.?|لا تنسوا الاشتراك في القناه\.?)",
+    re.IGNORECASE,
+)
+_FOLD = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ة": "ه", "ى": "ي"})
+
+# Words of the two decoding prompts («يا صقر. عدسة الصقر.» / "Hey Falcon. Falcon Lens.") and how Whisper respells
+# them. On silence or steady noise Whisper echoes the prompt; measured on the shipped model: silence gave
+# "Falcon Lens.", pink noise gave «عدسة الصقر. هاي فالكون.». A person says ONE wake phrase, so a transcript made
+# only of prompt words that holds more than one phrase (4+ words, or both scripts) is an echo, not speech.
+_PROMPT_WORDS = frozenset({"hey", "falcon", "lens", "يا", "صقر", "عدسه", "الصقر", "هاي", "فالكون", "لينس", "لنس"})
+PROMPT_ECHO_MIN_WORDS = 4
 
 
-def clean_transcript(text: str, audio_s: float, segments: Iterable[Mapping[str, object]] = ()) -> str:
+def _fold(text: str) -> str:
+    return _DIACRITICS.sub("", text.lower()).translate(_FOLD)
+
+
+def is_prompt_echo(text: str) -> bool:
+    """True when the transcript is only the decoding prompt repeated back (several wake phrases, nothing else)."""
+    words = [k for k in (_key(w).translate(_FOLD) for w in text.split()) if k]
+    if not words or any(w not in _PROMPT_WORDS for w in words):
+        return False
+    mixed = any(w.isascii() for w in words) and any(not w.isascii() for w in words)
+    return mixed or len(words) >= PROMPT_ECHO_MIN_WORDS
+
+
+# --- signal gate (before Whisper) ----------------------------------------------------------------------
+# Speech is bursty: syllables and pauses make the loudest 20 ms frames many times louder than the quietest.
+# Silence, a fan, a tone or steady crowd noise are flat. Measured on 16 kHz clips (p95 / p10 of 20 ms frame RMS):
+# silence 0, pink noise 1.7, white noise 1.1, a tone 1.0; speech 12-150 clean, 4.1-5.0 at 10 dB SNR, 2.9-3.3 at
+# 6 dB. Flat audio never reaches Whisper, so it cannot echo the prompt into a false wake.
+FRAME_S = 0.02
+MIN_PEAK_RMS = 0.003  # about -50 dBFS: below this the loudest frames are still silence
+MIN_SPREAD = 2.5
+VOICED_FRACTION = 0.3  # a frame counts as voiced when it is at least this share of the loud (p95) level
+SPARSE_MAX_WORDS = 3
+SPARSE_MIN_VOICED_S = 2.5
+
+
+def _percentile(sorted_vals: list[float], q: float) -> float:
+    return sorted_vals[min(len(sorted_vals) - 1, int(q * len(sorted_vals)))]
+
+
+def frame_stats(frame_rms: Iterable[float]) -> tuple[float, float, float]:
+    """(loud level p95, spread p95/p10, seconds of voiced frames) from per-frame RMS values (FRAME_S frames)."""
+    vals = [float(v) for v in frame_rms]
+    if not vals:
+        return 0.0, 0.0, 0.0
+    ordered = sorted(vals)
+    p95, p10 = _percentile(ordered, 0.95), _percentile(ordered, 0.10)
+    voiced = sum(1 for v in vals if v >= VOICED_FRACTION * p95) if p95 > 0 else 0
+    return p95, p95 / max(p10, 1e-6), voiced * FRAME_S
+
+
+def speech_like(frame_rms: Iterable[float]) -> bool:
+    """False for silence and for flat audio (steady noise, tones): such a clip is answered with an empty transcript."""
+    p95, spread, _ = frame_stats(frame_rms)
+    return p95 >= MIN_PEAK_RMS and spread >= MIN_SPREAD
+
+
+def is_sparse(text: str, voiced_s: float) -> bool:
+    """A few words out of seconds of continuous sound: an echo over noise, not speech ("Hey Falcon" is under 1.5 s)."""
+    return 0 < len(text.split()) <= SPARSE_MAX_WORDS and voiced_s > SPARSE_MIN_VOICED_S
+
+
+def clean_transcript(
+    text: str, audio_s: float, segments: Iterable[Mapping[str, object]] = (), voiced_s: float | None = None
+) -> str:
     """Full post-filter for a raw Whisper transcript."""
     text = echo_guard(text.strip(), segments)
     text = cap_words(collapse_repeats(text), word_cap(audio_s))
-    return "" if _HALLUCINATIONS.fullmatch(text) else text
+    if _HALLUCINATIONS.fullmatch(_fold(text)) or is_prompt_echo(text):
+        return ""
+    if voiced_s is not None and is_sparse(text, voiced_s):
+        return ""
+    return text
 
 
 def sniff(data: bytes) -> str | None:

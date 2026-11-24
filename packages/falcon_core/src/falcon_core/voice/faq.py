@@ -74,6 +74,17 @@ _CALL = _g(
     "تلفون", "رن", "يكلمني", "كلمت",
 )  # fmt: skip
 
+_CALLER = _g(
+    "called", "calls", "calling", "call from", "phone call", "a call", "rang", "on the phone", "phoned",
+    "اتصل", "يتصل", "اتصال", "مكالم", "كلمني", "يكلمني", "دق علي", "دقوا علي",
+)  # fmt: skip
+_BANK_CLAIM = _g(
+    "from the bank", "from my bank", "from a bank", "from his bank", "bank employee", "bank officer", "bank staff",
+    "bank manager", "works at the bank", "works for the bank", "is the bank", "was the bank", "are the bank",
+    "من البنك", "من بنك", "من بنكي", "موظف البنك", "موظف بنك", "موظف في البنك", "موظف بالبنك", "باسم البنك",
+    "مدير البنك", "من المصرف",
+)  # fmt: skip
+
 RULES: dict[str, tuple[Alt, ...]] = {
     "qr_code": ((_g("qr", "كيو ار", "كيوار", "كيو اي", "باركود", "barcode", "رمز استجابه"),),),
     "agents": (
@@ -600,6 +611,10 @@ RULES: dict[str, tuple[Alt, ...]] = {
                 "يرسل",
             ),
         ),
+        # "Someone called and said he is from the bank" with no code mentioned yet: the same advice applies
+        # (the caller claims to be the bank; the next thing he asks for is the code). Claim phrases only, so
+        # "should I call my bank" does not land here.
+        (_CALLER, _BANK_CLAIM),
     ),
 }
 FAQ_ORDER: tuple[str, ...] = tuple(RULES)

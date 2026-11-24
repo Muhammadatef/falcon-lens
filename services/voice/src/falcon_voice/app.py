@@ -25,7 +25,7 @@ from fastapi.responses import JSONResponse
 
 from falcon_core.contracts.voice import SttResult
 from falcon_core.service import create_app
-from falcon_core.voice.guard import clean_transcript, sniff
+from falcon_core.voice.guard import FRAME_S, clean_transcript, frame_stats, sniff, speech_like
 
 log = logging.getLogger("falcon.voice")
 
@@ -75,6 +75,13 @@ def decode(raw: bytes) -> np.ndarray:
                 break
     pcm = np.concatenate(chunks) if chunks else np.zeros(0, dtype=np.int16)
     return pcm.astype(np.float32) / 32768.0
+
+
+def frame_rms(audio: np.ndarray) -> list[float]:
+    """RMS of each 20 ms frame (input of the shared silence/noise gate)."""
+    n = int(SAMPLE_RATE * FRAME_S)
+    frames = audio[: len(audio) // n * n].reshape(-1, n)
+    return [float(v) for v in np.sqrt((frames**2).mean(axis=1))] if len(frames) else []
 
 
 class Engine:
@@ -143,6 +150,12 @@ class Engine:
         seconds = len(audio) / SAMPLE_RATE
         if seconds > MAX_AUDIO_S:
             raise AudioTooLongError(seconds)
+        energies = frame_rms(audio)
+        if not speech_like(energies):
+            # Silence or flat noise: Whisper would echo its prompt (a false wake). Answer empty without running it.
+            return SttResult(
+                text="", lang=None, ms=0, duration_ms=round(seconds * 1000), model=f"faster-whisper-{self.name}"
+            )
         if self.model is None:
             self.load()
         if self.model is None:
@@ -162,7 +175,7 @@ class Engine:
                 no_speech_threshold=0.5,
             )
             segs = [{"text": s.text, "compression_ratio": s.compression_ratio} for s in segments]
-        text = clean_transcript("".join(str(s["text"]) for s in segs), seconds, segs)
+        text = clean_transcript("".join(str(s["text"]) for s in segs), seconds, segs, frame_stats(energies)[2])
         return SttResult(
             text=text,
             lang=used,

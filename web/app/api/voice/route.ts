@@ -4,8 +4,12 @@ import { apiBase, notConnected, upstreamHeaders } from "../public/campaigns/shar
 
 export const dynamic = "force-dynamic";
 
-/** Per visitor: an utterance is at most ~12 s, so 20 a minute covers continuous listening with room to spare. */
-const limiter = new WindowLimiter(20, 60_000);
+/**
+ * Per visitor: 30 a minute, the same as the API (FL_VOICE_RATE_PER_MIN) and docs/PRIVACY.md. Continuous listening
+ * sends one clip per heard sentence, so a presenter talking next to the microphone can send one every few seconds;
+ * at 20 the 429 could land on the wake phrase itself (estimate from sentence length, not a measurement).
+ */
+const limiter = new WindowLimiter(30, 60_000);
 /** Multipart overhead on top of the 1 MB audio cap. */
 const MAX_BODY = VOICE_LIMITS.maxBytes + 16 * 1024;
 const AUDIO_TYPES = /^(audio\/(webm|ogg|wav|x-wav|wave)|video\/webm)(;|$)/i;
@@ -52,6 +56,10 @@ export async function POST(request: Request): Promise<Response> {
     const upstream = await fetch(`${apiBase()}/v1/voice/utterance`, { method: "POST", headers, body: out, cache: "no-store", signal: AbortSignal.timeout(20_000) });
     if (upstream.status === 429) return notConnected(429, { "Retry-After": "10" });
     if (upstream.status === 413 || upstream.status === 415 || upstream.status === 404) return notConnected(upstream.status);
+    // 422: this clip was refused (too long, undecodable) and the service is fine. 503: both speech engines are down.
+    // Passed through so the page can tell "say it again" from "voice is unavailable" (both used to be a 502).
+    if (upstream.status === 422) return notConnected(422);
+    if (upstream.status === 503) return notConnected(503, { "Retry-After": "2" });
     if (!upstream.ok) return notConnected(502);
     const reply = parseVoiceReply(await upstream.json());
     if (!reply) return notConnected(502);

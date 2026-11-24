@@ -34,7 +34,7 @@ from fastapi.responses import JSONResponse
 
 # The guards are shared with the API (packages/falcon_core); no install needed for this standalone project.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "falcon_core" / "src"))
-from falcon_core.voice.guard import clean_transcript, sniff  # noqa: E402
+from falcon_core.voice.guard import FRAME_S, clean_transcript, frame_stats, sniff, speech_like  # noqa: E402
 
 SAMPLE_RATE = 16000
 MAX_AUDIO_S = 15.0
@@ -92,6 +92,13 @@ def decode(raw: bytes, content_type: str) -> np.ndarray:
     return np.frombuffer(r.stdout, dtype="<i2").astype(np.float32) / 32768.0
 
 
+def frame_rms(audio: np.ndarray) -> list[float]:
+    """RMS of each 20 ms frame (input of the shared silence/noise gate)."""
+    n = int(SAMPLE_RATE * FRAME_S)
+    frames = audio[: len(audio) // n * n].reshape(-1, n)
+    return [float(v) for v in np.sqrt((frames**2).mean(axis=1))] if len(frames) else []
+
+
 def pick_lang(top: str | None, prob: float, hint: str | None) -> str:
     """Detector wins when it says ar/en with p >= 0.5; the hint only breaks ties (never forces); else Arabic."""
     if top in ("ar", "en") and prob >= 0.5:
@@ -114,7 +121,7 @@ def detect_lang(audio: np.ndarray, hint: str | None = None) -> str:
     return pick_lang(top, float(probs[top]), hint)
 
 
-def transcribe(audio: np.ndarray, lang: str | None) -> tuple[str, str]:
+def transcribe(audio: np.ndarray, lang: str | None, voiced_s: float | None = None) -> tuple[str, str]:
     import mlx_whisper
 
     seconds = len(audio) / SAMPLE_RATE
@@ -132,7 +139,7 @@ def transcribe(audio: np.ndarray, lang: str | None) -> tuple[str, str]:
             sample_len=min(SAMPLE_LEN_MAX, cap_words * TOKENS_PER_WORD),
             **({"without_timestamps": True} if NO_TIMESTAMPS else {}),
         )
-    text = clean_transcript(str(r.get("text") or ""), seconds, r.get("segments") or [])
+    text = clean_transcript(str(r.get("text") or ""), seconds, r.get("segments") or [], voiced_s)
     return text, str(r.get("language") or language)
 
 
@@ -197,8 +204,17 @@ async def stt(request: Request, lang: str | None = None) -> JSONResponse:
         return JSONResponse(
             {"text": "", "lang": None, "ms": 0, "duration_ms": round(seconds * 1000), "model": MODEL_NAME}
         )
+    energies = frame_rms(audio)
+    if not speech_like(energies):
+        # Silence or flat noise: Whisper would echo its prompt (a false wake). Answer empty without running it.
+        log.info(json.dumps({"event": "stt", "ms": 0, "audio_ms": round(seconds * 1000), "gate": "no_speech"}))
+        return JSONResponse(
+            {"text": "", "lang": None, "ms": 0, "duration_ms": round(seconds * 1000), "model": MODEL_NAME}
+        )
     t0 = time.perf_counter()
-    text, language = await asyncio.to_thread(transcribe, audio, lang if lang in ("ar", "en") else None)
+    text, language = await asyncio.to_thread(
+        transcribe, audio, lang if lang in ("ar", "en") else None, frame_stats(energies)[2]
+    )
     ms = round((time.perf_counter() - t0) * 1000)
     log.info(json.dumps({"event": "stt", "ms": ms, "audio_ms": round(seconds * 1000), "lang": language}))  # no text
     return JSONResponse(
