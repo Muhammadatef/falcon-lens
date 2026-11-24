@@ -174,6 +174,8 @@ async function voice(req, res) {
   const text = raw.toString("latin1");
   voiceCalls.push({ bytes: raw.length, hasAudioPart: /name="audio"/.test(text), followUp: /name="follow_up"\r\n\r\n(\d)/.exec(text)?.[1] ?? null, langHint: /name="lang_hint"\r\n\r\n(\w+)/.exec(text)?.[1] ?? null, marker: /;T:([a-z0-9]+)/.exec(text)?.[1] ?? null });
   if (text.includes("VOICE:fail")) return problem(req, res, 503, "unavailable", "Unavailable");
+  if (text.includes("VOICE:toolong")) return problem(req, res, 422, "too_long", "Too long");
+  if (text.includes("VOICE:fast")) return problem(req, res, 429, "rate_limited", "Too fast");
   const reply = VOICE_REPLIES[/VOICE:([a-z-]+)/.exec(text)?.[1] ?? ""];
   if (!reply) return problem(req, res, 422, "invalid-request", "Invalid request");
   return json(res, 200, { duration_ms: 3200, model: "mock-asr", answer_id: null, ...reply });

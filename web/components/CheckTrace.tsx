@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { loadOne, type OneLoad } from "@/lib/agent-trace-api";
+import { FoundList } from "./CheckSteps";
+import { tierFindingLines } from "@/lib/findings";
 import { TIERS, parseVerdict, type Evidence, type Tier, type TraceStep, type Verdict } from "@/lib/contracts";
 import { plainDegradedReasons } from "@/lib/degraded-reasons";
 import { hostOnly } from "@/lib/history";
@@ -185,6 +187,7 @@ function TierCard({ tier, v }: { tier: Tier; v: Verdict }) {
         <span className={ran ? "pill pill--brand" : "pill ck-skip"} data-testid="check-tier-state">{ran ? (items.length > 0 ? h("ck.ran") : h("ck.ran.empty")) : h("ck.skipped")}</span>
       </div>
       {why ? <p className="small" data-testid="check-tier-why">{why}</p> : null}
+      {ran && tier !== "T3" ? <FoundList lines={tierFindingLines(v.evidence, tier, lang, v.impersonated_brand?.brand_id ?? null)} testid="check-tier-found" /> : null}
       {shown.length > 0 ? (
         <>
           <p className="small">{h("ck.evidence.n", { n: shown.length })}</p>

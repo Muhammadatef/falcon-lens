@@ -9,7 +9,8 @@ import {
   arbiterClips,
   checkingClips,
   finalClips,
-  sentinelFindingClips,
+  sentinelFindingGroups,
+  tierFindingGroups,
   type SentinelFinding,
   foundClips,
   investigatorStartClips,
@@ -21,6 +22,16 @@ import {
 
 /** Renders clip keys in the spoken language (ar: Emirati). */
 export const spoken = (lang: Lang, keys: readonly string[]): string => render(toVoiceLang(lang), keys);
+
+/** Registry id of the brand named by the largest group of dangerous verdicts; null when there is none. */
+export function campaignBrand(outcomes: readonly Outcome[]): string | null {
+  const byBrand = new Map<string, number>();
+  for (const o of outcomes) {
+    const id = o.verdict?.verdict === "dangerous" ? o.verdict.impersonated_brand?.brand_id : undefined;
+    if (id) byBrand.set(id, (byBrand.get(id) ?? 0) + 1);
+  }
+  return [...byBrand.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
 
 /** Size of the largest group of dangerous verdicts naming the same impersonated brand; 0 when there is no campaign. */
 export function campaignSize(outcomes: readonly Outcome[]): number {
@@ -41,17 +52,34 @@ export const speakFound = (lang: Lang, total: number): string => spoken(lang, fo
 export const checkingKeys = (i: number, total: number): string[] => [...investigatorStartClips(i), ...checkingClips(i, total).slice(1)];
 export const speakChecking = (lang: Lang, i: number, total: number): string => spoken(lang, checkingKeys(i, total));
 
-/** Investigator step clips that a progressive snapshot proves ran. "wording" has no spoken line (screen only). */
+const STEP_TIER: Record<ProgressStep, "T0" | "T1" | "T2" | "T3"> = { lists: "T0", lookalike: "T1", wording: "T1", browser: "T2", ai: "T3" };
+
+/** Investigator step clips that a progressive snapshot proves ran (the tier's intro line only). */
 export function stepKeys(step: ProgressStep, v: Verdict): string[] {
   const map: Partial<Record<ProgressStep, InvestigatorStep | null>> = {
     lists: "lists",
     lookalike: "address",
+    wording: "wording",
     browser: "page",
     ai: v.model_route === "cloud" ? "ai_second_look_cloud" : v.model_route === "local" ? "ai_second_look_local" : null,
   };
   const s = map[step];
   return s ? investigatorStepClips(s) : [];
 }
+/**
+ * One tier, spoken: its intro, then up to two things THIS check found at that tier (from the real evidence of the
+ * verdict stream). Each inner list is one spoken line; the screen shows exactly the same lines.
+ */
+export function stepGroups(step: ProgressStep, v: Verdict): string[][] {
+  const intro = stepKeys(step, v);
+  if (!intro.length) return [];
+  return [intro, ...tierFindingGroups(v.evidence, STEP_TIER[step], v.impersonated_brand?.brand_id)];
+}
+/** The found-lines of one tier as text in the spoken language (what the progress panel shows under the tier). */
+export const tierFoundText = (lang: Lang, step: ProgressStep, v: Verdict): string | undefined => {
+  const groups = stepGroups(step, v).slice(1);
+  return groups.length ? groups.map((g) => spoken(lang, g)).join(" ") : undefined;
+};
 export const speakStep = (lang: Lang, step: ProgressStep, v: Verdict): string => {
   const keys = stepKeys(step, v);
   return keys.length ? spoken(lang, keys) : "";
@@ -78,5 +106,6 @@ export const speakMicDenied = (lang: Lang): string => spoken(lang, ["mic.denied"
 export const speakVoiceUnavailable = (lang: Lang): string => spoken(lang, ["voice.unavailable"]);
 export const speakWatching = (lang: Lang): string => spoken(lang, ["sentinel.watching"]);
 /** One spoken line per fact the incident shows (empty list when it shows nothing speakable). */
-export const findingKeys = (f: SentinelFinding): string[] => sentinelFindingClips(f);
-export const speakFinding = (lang: Lang, f: SentinelFinding): string[] => findingKeys(f).map((k) => spoken(lang, [k]));
+export const findingGroups = (f: SentinelFinding): string[][] => sentinelFindingGroups(f);
+export const findingKeys = (f: SentinelFinding): string[] => findingGroups(f).flat();
+export const speakFinding = (lang: Lang, f: SentinelFinding): string[] => findingGroups(f).map((g) => spoken(lang, g));
