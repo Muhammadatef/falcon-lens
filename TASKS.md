@@ -305,3 +305,88 @@ L1 also needs to paste the build-prompt §11 `fl_` metric list into docs/OBSERVA
   labelled replay stream + Sentinel evals.
 - P6 (G6 Tue 20:00): `make demo` / `demo-reset`, six scenarios on snapshots + fixtures only, README (tools used =
   shipped only, Roadmap incl. OpenPhish licence), published eval copies, `make submission`, deck + video shot list.
+
+---
+## Hunt mode for the Sentinel (design: `docs/design/HUNTER.md`; cards written Tue 24 Nov)
+Order: T-033 and T-036 in parallel → T-034 → T-035 (its UI can start on the T-033 contract fixtures). Each card is at most 2 h.
+Every card: no network in tests (`httpx.MockTransport`, fake resolver, recorded fixtures); committed fixtures name only
+`falcon-demo-bank*.test` hosts and say TEST FIXTURE; real recordings stay in `data/private/hunt/`. Nothing is described as shipped
+on the website, README or deck until its card is merged. `FL_HUNT_ENABLED` defaults to `false`.
+Note for the owner: CLAUDE.md sets the feature freeze at Tue 24 Nov 22:00; building these cards after it is an owner decision.
+
+### T-033 Hunt contracts + deterministic core · L1 (contracts) + builder-sentinel · P0 · `feat/sentinel-hunt-core` · `[needs Opus review]` (contracts)
+- scope: contract additions of HUNTER.md §4 (`hunt_candidate.schema.json`, `channel: hunt`, incident `type: early_warning` +
+  `detection` + `indicators[].found_by`, campaign `found_before_report` / `hunt_count`, openapi stubs) with pydantic models;
+  `services/sentinel/sentinel_core/hunt/{permute,tokens,prescore,candidates}.py`; `services/sentinel/hunt.yaml`;
+  migration `002_hunt.sql`. Pure code, no I/O.
+- acceptance:
+  - contract round-trip tests pass for every changed schema; old incident and campaign fixtures still validate (all additions optional).
+  - `permute`: for the `falcon_demo_bank` registry entry the output contains at least one variant of each kind (typo, homoglyph as
+    punycode, combosquat with `secure` / `login` / `pay` / `update` / `fine` / `refund`, TLD swap), is deterministic across two runs,
+    respects the per-brand cap, and contains no name whose registrable domain is a `verified_domain` of any brand.
+  - a brand label shorter than 5 characters yields combosquats only (no typo, no homoglyph).
+  - `grep -rnE "adpolice|uaepass|tamm|emiratespost" services/sentinel/sentinel_core/hunt/` is empty (brands come from the registry).
+  - `prescore` is monotone (adding `resolves_a`, `has_mx` or `cert_fresh` never lowers it) and is not imported by any scoring module.
+- eval impact: none (no scoring path touched). · files: `contracts/**`, `packages/falcon_core/src/falcon_core/contracts/**`,
+  `services/sentinel/sentinel_core/hunt/**`, `services/sentinel/hunt.yaml`, `services/sentinel/migrations/002_hunt.sql`, tests.
+
+### T-034 Hunt runtime: sources, hunt-egress, scheduler, submission, R6 · builder-sentinel + builder-security + builder-platform · P0 · `feat/sentinel-hunt-runtime` · depends_on: T-033 · `[needs Opus review]` (egress, auth scope, rule)
+- scope: `services/sentinel/src/falcon_sentinel/hunt/{http,store,scheduler,submit}.py` and `sources/{base,dns,ct,fixture,keyed}.py`
+  (HUNTER.md §3); `hunt-egress` in `docker-compose.yml` (`FL_EGRESS_DEST_ALLOW=crt.sh,<doh host>`); API key scope `hunt`, and
+  `channel=hunt` accepted only with it; consumer links verdict events to candidates by `verdict_id` and sets `origin`; rule R6
+  `early_warning` in `rules.yaml` through the `add-sentinel-rule` skill; kill switch, runtime pause and quotas (§5). Record in
+  `DECISIONS.md` the crt.sh and DoH terms pages with retrieval date before enabling either. If the card overruns, R6 moves to T-035.
+- acceptance:
+  - with `FL_HUNT_ENABLED` unset the hunt task is never created and no outbound request is made (asserted on the mock transport).
+  - with `fl:hunt:paused` set mid-cycle, no further request leaves; the cycle ends with outcome `paused`.
+  - one fixture cycle (fixture source + fake resolver): candidates are stored, deduped on registrable domain, only those at or above
+    `FL_HUNT_PRESCORE_MIN` are submitted, never more than `FL_HUNT_SUBMIT_MAX_PER_HOUR`; a second run and a restart submit nothing twice.
+  - DNS source: an NXDOMAIN on `NS` gives `unregistered` and no `A` / `MX` query follows; token bucket holds `FL_HUNT_DNS_QPS` (fake clock).
+  - CT source: 429 and timeout open the breaker with growing backoff; an empty list never changes a candidate's status;
+    `ct_search` is off by default; two calls are never closer than `FL_HUNT_CT_MIN_INTERVAL_S`.
+  - keyed sources report `ready_needs_key` and `poll()` raises `SourceDisabled`; no HTTP call exists in `sources/keyed.py`.
+  - egress: `services/egress/tests` gain a case where the hunt allow-list refuses any host but the two listed
+    (`destination_not_allowed`); a test fails if any module under `hunt/` builds an HTTP client other than `hunt/http.py`.
+  - API: `channel=hunt` with a `check`-only key is rejected with 422; hunt checks do not appear in `/v1/verdicts` public history.
+  - the API answering `cached` or `attached` marks the candidate `already_known`, and `found_before_report` stays false.
+  - R6: fire (one hunt-origin `dangerous` look-alike verdict), no-fire (`suspicious`; user-origin `dangerous`; hunt-origin non-look-alike)
+    and replay tests; a hunt candidate that was never scored opens no incident (no `domain.observed` is published).
+  - `found_before_report` flips to false when a user-channel verdict or report for the same domain is older, and never flips back.
+- eval impact: none on the Investigator; Sentinel evals re-run for R1–R5 must be unchanged. · files: `services/sentinel/**`,
+  `services/api/src/falcon_api/{app,auth}.py`, `docker-compose.yml`, `.env.example`, `services/egress/tests/**`.
+
+### T-035 Hunting feed, metrics, dashboard, truth-up · builder-platform + builder-frontend + builder-observability + builder-docs · P0 · `feat/hunt-feed-ui` · depends_on: T-034 · `[needs Opus review]` (public projection, privacy text)
+- scope: `GET /v1/hunt/candidates`, `GET`/`PUT /v1/admin/hunt` (operator, audit-logged), `Meta.hunt`; `fl_hunt_*` metrics (§5) in
+  `falcon_core/telemetry/metrics.py`; `web/components/HuntFeed.tsx` on `/campaigns` and the operator view on `/ops` (§6);
+  `web/app/api/public/hunt/route.ts`; Grafana row "Hunting | الرصد الاستباقي" in `6-sentinel.json`; alerts `HuntStalled`,
+  `HuntSourceBackoff`, `HuntQuotaExhausted` with `docs/RUNBOOK.md` entries; update `ARCHITECTURE.md`, `THREAT_MODEL.md`,
+  `PRIVACY.md`, `OBSERVABILITY.md`, `DEMO.md` and the README tools list to exactly what merged.
+- acceptance:
+  - the public projection returns only `confirmed` candidates, with defanged domains, no prescore and no live host name; unconfirmed
+    ones appear only as counts (API test with a mixed table).
+  - the feed renders domains as plain text (no `<a>`), shows «رُصد قبل أي بلاغ» only when `found_before_report` is true, shows the
+    TEST FIXTURE label for `source=fixture`, and shows search, ads and Maps as "جاهز، يحتاج مفتاح API"; Playwright test with an
+    XSS payload in `reasons` and in the domain; axe has no serious or critical finding; RTL and mobile snapshot.
+  - empty, loading and error states exist; `grep -rniE "\bsafe\b|آمن" web/components/HuntFeed.tsx` is empty; no number in the
+    section is a literal (every figure comes from the API response).
+  - `PUT /v1/admin/hunt` needs the operator scope and writes one `audit_log` row; a `read` key gets 403.
+  - every `fl_hunt_*` series carries `source`; the dashboard provisions with no error; each alert has a `runbook_url` that resolves.
+  - `time to detection` is shown with its basis; `lead` shows "no user report yet" when the histogram is empty.
+  - `make demo` step for hunting runs offline with the fixture source and ends with one `early_warning` incident awaiting approval.
+- files: `services/api/src/falcon_api/{integration,intel}.py`, `packages/falcon_core/src/falcon_core/telemetry/**`, `web/**`, `infra/**`, docs.
+
+### T-036 Official-number registry + `brand.unofficial_contact_number` evidence · builder-signals · P1 · `feat/signals-helpline` · `[needs Opus review]` (privacy: phone numbers)
+- scope: optional `official_contacts` per brand in `data/brands.yaml`, each number read on the entity's own page with `source_url`
+  and `retrieved_at` (omit and note what cannot be verified; `config/reporting_channels.yaml` already holds the verified Abu Dhabi
+  Police numbers and is the model); `falcon_core/signals/brands/contacts.py`; `falcon_core/signals/message/helpline.py` for message
+  text and sandbox page text (HUNTER.md §7). Weight 0 until an owner-approved fit on train and val; `params.yaml` is not edited.
+- acceptance:
+  - registry test: every `official_contacts` entry has `value` in E.164, `source_url` (https) and `retrieved_at`; no entry without them loads.
+  - fixture message naming Falcon Demo Bank with a number outside its (invented, fixture-only) list → one evidence item whose
+    `observed` holds the masked number and sha256 and never the full number (asserted on the serialised evidence and on captured logs).
+  - same message with the listed number → no evidence (a match is not trust); a brand with no verified numbers → no evidence;
+    a message with a number and no brand → no evidence.
+  - Arabic-Indic digits, `00971`, `+971` and `05x` forms normalise to the same number.
+  - the arbiter output for the eval val split is byte-identical with and without the signal (weight 0); `make eval-gate` passes; test split untouched.
+- eval impact: none tonight; a fit that gives the evidence weight is a separate, owner-approved card. · files: `data/brands.yaml`,
+  `packages/falcon_core/src/falcon_core/signals/{brands,message}/**`, `packages/falcon_core/tests/signals/**`.
