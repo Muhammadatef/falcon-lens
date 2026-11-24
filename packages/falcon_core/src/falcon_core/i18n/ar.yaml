@@ -70,6 +70,7 @@ reasons:
   url.data_uri: "الرابط يحمل صفحة مخفية بدل عنوان موقع حقيقي."
   message.brand_mention: "الرسالة تذكر اسم جهة معروفة."
   message.brand_url_mismatch: "الرسالة تذكر جهة معروفة، لكن رابطها يفتح موقعاً آخر."
+  brand.unofficial_contact_number: "الرسالة تذكر رقم هاتف غير مدرج في القائمة الرسمية للجهة."
   email.attachment: "البريد فيه مرفق يمكنه تشغيل برامج على جهازك."
   injection.instruction_like_text: "المحتوى فيه نص مخفي يحاول خداع أدوات الفحص."
   injection.tool_provenance: "المحتوى حاول توجيه الفحص إلى عنوان آخر غير الرابط الذي أرسلته."

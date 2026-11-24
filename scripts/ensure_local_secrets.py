@@ -12,7 +12,13 @@ import secrets
 import sys
 from pathlib import Path
 
-LOCAL_ONLY = ("PHOENIX_SECRET", "PHOENIX_ADMIN_SECRET", "PHOENIX_ADMIN_INITIAL_PASSWORD", "FL_VOICE_TOKEN")
+LOCAL_ONLY = (
+    "PHOENIX_SECRET",
+    "PHOENIX_ADMIN_SECRET",
+    "PHOENIX_ADMIN_INITIAL_PASSWORD",
+    "FL_VOICE_TOKEN",
+    "FL_EVIDENCE_HMAC_KEY",
+)
 
 
 def new_secret() -> str:

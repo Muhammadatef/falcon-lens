@@ -38,6 +38,7 @@ x-app-env: &app-env
   DATABASE_URL: postgresql://${POSTGRES_USER:-falcon}:${POSTGRES_PASSWORD:-change-me-local-only}@postgres:5432/${POSTGRES_DB:-falcon}
   REDIS_URL: redis://redis:6379/0
   FL_API_KEY_PEPPER: ${FL_API_KEY_PEPPER:-change-me}
+  FL_EVIDENCE_HMAC_KEY: ${FL_EVIDENCE_HMAC_KEY:-}  # keyed ids for masked evidence values; empty -> masked only
   FL_SANDBOX_API_KEY: ${FL_SANDBOX_API_KEY:-fl_sandbox_demo_key}
   FL_SANDBOX_URL: ${FL_SANDBOX_URL:-http://sandbox:8000}
   # Demo/test fixture hosts exempt from the SSRF internal-name check. Honoured only when FL_ENV is local, demo or ci.
