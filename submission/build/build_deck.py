@@ -1060,22 +1060,660 @@ def slide_thanks(f: Facts) -> Slide:
     return s
 
 
+# ── pitch deck (Thu 26 Nov): five-minute slot, three-minute demo, one slide per judging criterion ──────────
+def cap_on(f: Facts, cap: str) -> bool:
+    return bool(f.caps.get(cap, False))
+
+
+def status(f: Facts, cap: str, text: str) -> str:
+    """The text as it is when the capability is merged in this checkout, else a 'Planned:' line."""
+    return text if cap_on(f, cap) else f"Planned, not on main yet: {text[0].lower()}{text[1:]}"
+
+
+def rows_card(
+    s: Slide, x: float, y: float, w: float, h: float, head: str, rows: Sequence[tuple[str, str]], size: float = 13
+) -> None:
+    """A card with a heading and (label, text) paragraphs: the numbers panel of a criterion slide."""
+    s.add(card(x, y, w, h))
+    paras = [Para([Run(head, 15, "brand", True)], after=5)]
+    for label, text in rows:
+        paras.append(Para([Run(label + "  ", size, "text", True), Run(text, size, "muted")], after=5))
+    s.add(tb(x + 0.25, y + 0.1, w - 0.5, h - 0.2, *paras, anchor="t"))
+
+
+def criterion_slide(
+    s: Slide,
+    left: Sequence[tuple[str, str]],
+    head: str,
+    rows: Sequence[tuple[str, str]],
+    foot: str,
+    *,
+    left_w: float = 5.7,
+    row_h: float = 0.98,
+    size: float = 15,
+) -> None:
+    bullets(s, MARGIN, 1.8, left_w, left, size=size, gap=0.1, row_h=row_h)
+    x = MARGIN + left_w + 0.3
+    rows_card(s, x, 1.8, W - MARGIN - x, 4.85, head, rows)
+    s.add(tb(MARGIN, 6.75, 12.1, 0.55, p(foot, 12, "faint")))
+
+
+def slide_title(f: Facts) -> Slide:
+    s = Slide("title", "ScamShield AI entry", "مسابقة ScamShield")
+    s.add(
+        tb(MARGIN, 2.0, 12.1, 1.1, p("Falcon Lens | عدسة الصقر", 54, "brand", True), anchor="m"),
+        tb(MARGIN, 3.15, 12.1, 0.7, p("Check before you tap  ·  افحص قبل أن تضغط", 28, "sand", True), anchor="m"),
+        tb(
+            MARGIN,
+            4.05,
+            12.1,
+            1.3,
+            p(
+                "An Arabic-first AI that tells UAE residents whether a link, message or email is a scam, with evidence, in seconds.",
+                22,
+                "text",
+            ),
+            p(
+                "Two agents: Baseer | بصير judges one input. Dir' | درع watches for campaigns. Ask by voice: يا صقر.",
+                18,
+                "muted",
+            ),
+        ),
+    )
+    chip(
+        s,
+        MARGIN,
+        5.75,
+        6.4,
+        "Independent project  ·  ready to connect, not connected",
+        "nws",
+        "nws_tint",
+        "nws_line",
+        13,
+    )
+    s.notes = (
+        "Say: Good afternoon. We are Falcon Lens, عدسة الصقر. In the next three minutes you will watch a real check run on our own machine, "
+        "in Arabic, by voice. We have two AI agents: Baseer, بصير, who judges one input, and Dir', درع, who watches for campaigns around the clock. "
+        "We are an independent project: ready to connect to police systems, and not connected to any."
+    )
+    return s
+
+
+def slide_hook(f: Facts) -> Slide:
+    s = Slide("hook", "Hook", "المشهد")
+    s.add(card(MARGIN, 1.85, 7.3, 4.2, "s1", "brand"))
+    s.add(
+        tb(MARGIN + 0.4, 2.0, 6.5, 0.6, p("Play the hook video", 22, "brand", True), anchor="m"),
+        tb(
+            MARGIN + 0.4,
+            2.7,
+            6.5,
+            3.2,
+            p(
+                "Twenty-five seconds. Abu Saeed, sixty-five, Abu Dhabi. One more SMS says his account will be frozen. He has already lost money to a fake bank call.",
+                19,
+                "text",
+                after=10,
+            ),
+            p("His son says: do not tap. Copy it, and ask the falcon.", 19, "text", after=10),
+            p(
+                "Embed the video file on this slide before presenting. The production brief is demo-kit/hook-video/PROMPT.md.",
+                14,
+                "muted",
+            ),
+        ),
+    )
+    chip(s, MARGIN + 0.4, 5.5, 4.2, "تمثيل — Dramatisation", "warn", "warn_tint", "warn_line", 14)
+    x = MARGIN + 7.6
+    w = W - MARGIN - x
+    s.add(card(x, 1.85, w, 4.2))
+    s.add(
+        tb(
+            x + 0.3,
+            1.95,
+            w - 0.6,
+            4.0,
+            Para([Run("What the video shows", 16, "brand", True)], after=8),
+            p("An invented bank, Falcon Demo Bank. No real brand, number or link.", 15, "muted", after=8),
+            p("Fictional actors. No police logo, uniform or vehicle.", 15, "muted", after=8),
+            p("The verdict word is «خطِر». We never give a guarantee.", 15, "muted"),
+        )
+    )
+    s.add(
+        tb(
+            MARGIN,
+            6.3,
+            12.1,
+            0.5,
+            p("If the video does not play, say the first line and go straight to the problem.", 13, "faint"),
+        )
+    )
+    s.notes = (
+        "Play the hook video, twenty-five seconds, no talking over it. It is a dramatisation and says so on screen. "
+        "Then say: this is Abu Saeed. He did nothing foolish. The scam was simply good, and the warning came too late. "
+        "If the video does not play, say that line in Arabic and move on: «أبو سعيد، خمسة وستون عاماً، وصلته رسالة تقول إن حسابه سيُجمَّد.»"
+    )
+    return s
+
+
+def slide_solution3(f: Facts, img: dict[str, Path]) -> Slide:
+    s = Slide("solution", "Problem and solution", "المشكلة والحل")
+    s.add(
+        tb(
+            MARGIN,
+            1.75,
+            12.1,
+            0.6,
+            p(
+                "A blocklist lists a page only after someone reports it. A new fake page is on no list.",
+                20,
+                "text",
+                True,
+            ),
+            anchor="m",
+        ),
+        tb(
+            MARGIN,
+            2.3,
+            12.1,
+            0.5,
+            p("القائمة السوداء لا تُدرج الصفحة إلا بعد أن يبلّغ عنها أحد.", 17, "sand", False, "r"),
+            anchor="m",
+        ),
+    )
+    ph = 3.75
+    pw = ph * 1200 / 870
+    s.add(
+        Pic(
+            img["arch"],
+            MARGIN,
+            3.0,
+            pw,
+            ph,
+            "Falcon Lens in three layers: voice, two agents, and the platform with its interfaces and local models",
+        ),
+        Box(MARGIN, 3.0, pw, ph, None, "border", "round", 0.1),
+    )
+    x = MARGIN + pw + 0.35
+    w = W - MARGIN - x
+    layers = [
+        ("Voice  ·  الصوت", "Say Hey Falcon, or call the falcon in Arabic. Speech is recognised on our machine."),
+        ("Two agents  ·  وكيلان", "Baseer | بصير judges one input. Dir' | درع links checks into campaigns."),
+        ("Platform  ·  المنصة", "Gateway, API, sandbox, REST, MCP, STIX, local models."),
+    ]
+    y = 3.0
+    for head, body in layers:
+        s.add(card(x, y, w, 1.12))
+        s.add(
+            tb(
+                x + 0.25,
+                y,
+                w - 0.4,
+                1.12,
+                Para([Run(head, 16, "brand", True)], after=2),
+                p(body, 13, "muted"),
+                anchor="m",
+            )
+        )
+        y += 1.25
+    s.notes = (
+        "Say, without pausing: scams outrun the blocklists, and the warnings are not in the language people read. "
+        "Falcon Lens is two AI agents. Baseer, بصير, the Investigator, judges one message, link or email: it reads, it checks, and fixed code, not the AI, sets the score. "
+        "Dir', درع, the Sentinel, watches around the clock, links checks into campaigns and drafts takedowns that wait for a human. "
+        "You talk to it by voice: يا صقر. And it can run sovereign, on local models, on our own machine, which is what you will see."
+    )
+    return s
+
+
+def slide_demo(f: Facts) -> Slide:
+    s = Slide("demo", "Live demo", "العرض المباشر")
+    beats = [
+        (
+            "0:55 to 1:25",
+            "Voice check in Arabic",
+            "Numbered live steps, then a red Dangerous verdict, an alert sound, and the falcon speaks the real findings. A teammate asks in Arabic: «يا صقر، شيّك اللي نسخته»",
+        ),
+        (
+            "1:25 to 1:45",
+            "Question in English",
+            '"Hey Falcon, someone called saying he\'s from the bank." A short, sourced FAQ answer.',
+        ),
+        (
+            "1:45 to 2:10",
+            "Trace and evidence",
+            status(
+                f,
+                "evidence_pack",
+                "/history trace of one check, then the evidence pack download: screenshot, WHOIS and RDAP, hosting, UTC times, SHA-256 manifest, takedown draft, STIX.",
+            ),
+        ),
+        (
+            "2:10 to 2:30",
+            "Campaigns and results",
+            "/campaigns links checks into one campaign. /results shows the KPIs and the fresh two-hundred-site test.",
+        ),
+        ("2:30 to 2:40", "Route selector", "/ops: cloud model with local fallback, or local only."),
+    ]
+    y, row_h = 1.8, 0.92
+    for when, head, body in beats:
+        s.add(card(MARGIN, y, 12.1, row_h))
+        s.add(
+            tb(MARGIN + 0.25, y, 1.9, row_h, p(when, 16, "brand", True), anchor="m"),
+            tb(MARGIN + 2.2, y, 3.2, row_h, p(head, 17, "text", True), anchor="m"),
+            tb(MARGIN + 5.4, y, 6.5, row_h, p(body, 13, "muted"), anchor="m"),
+        )
+        y += row_h + 0.1
+    s.add(
+        tb(
+            MARGIN,
+            7.0,
+            12.1,
+            0.35,
+            p("Live on our own machine. Demo data is labelled. Fallback: the paste box, and localhost.", 12, "faint"),
+        )
+    )
+    s.notes = (
+        "This is the live part, one minute forty-five seconds on the clock. A teammate speaks Arabic: «يا صقر، شيّك اللي نسخته». "
+        "Point at the numbered steps as they tick: listening, understanding the request, then Baseer: the lists, the address, the page, the AI, then Dir'. "
+        "When the red «خطِر» lands, let the alert sound play and let the falcon speak. Then switch to English and ask the bank-call question. "
+        "Then tour: the trace, the evidence pack, campaigns, results, and the route selector. If voice fails, use the paste box; if the network fails, use localhost."
+    )
+    return s
+
+
+def slide_c_detection(f: Facts) -> Slide:
+    s = Slide("c_detection", "Detection accuracy", "دقّة الكشف")
+    left = [
+        (
+            "Cascade T0 to T3 and a fixed arbiter",
+            "Lists, address model, sealed browser, then the AI only for the unclear band.",
+        ),
+        (
+            "Redirects and cloaking",
+            "The sandbox follows redirects and judges the final page. A cloaking check compares two loads.",
+        ),
+        (
+            "Low false alarms on banks and government",
+            "A verified-official rule keeps registered sites from being flagged.",
+        ),
+        ("The AI cannot change the score", "Page text is quarantined; a red-team of attacks found no harm."),
+    ]
+    rows: list[tuple[str, str]] = []
+    if f.artifact is not None:
+        for split, label in (("val", "Validation"), ("test", "Test")):
+            rows.append(
+                (
+                    f"{label}, address only:",
+                    f"recall {pct(f.metric(split + '.recall'))}, false-alarm rate {pct(f.metric(split + '.fpr'))}, {f.metric(split + '.official_false_dangerous')} official sites marked Dangerous.",
+                )
+            )
+    if f.ev:
+        for line, label in (
+            (f.ev.fresh_main_line(), "Fresh test, main set:"),
+            (f.ev.fresh_second_line(), "Fresh test, not-on-feed set:"),
+        ):
+            if line:
+                rows.append(
+                    (
+                        label,
+                        line.split(": ", 1)[1]
+                        if line.startswith("main set: ") or line.startswith("hosts from")
+                        else line,
+                    )
+                )
+        rt = f.ev.redteam_line("extended")
+        if rt:
+            rows.append(("Red-team, synthetic:", rt + "."))
+    criterion_slide(
+        s,
+        left,
+        "Numbers, from published artifacts only",
+        rows,
+        "Fresh test: one run, one day, legitimate labels not hand-audited; the main-set phishing came from a feed the stack also reads. Read the not-on-feed row for the model's own detection.",
+        size=14,
+    )
+    s.notes = (
+        "First criterion, detection accuracy. We built a cascade with a fixed arbiter, so the AI never sets the score. "
+        "On our frozen test split the address-only model catches most phishing with a low false-alarm rate, and no official site is marked Dangerous; the numbers are on the slide with their scope. "
+        "The fresh two-hundred-site test is the harder number. On the main set the feed itself supplied the phishing, so read it as feed coverage. "
+        "On hosts from a feed our stack does not query, every one was warned, but only one was Dangerous and many could not finish every check. We say that plainly. "
+        "The red-team row always carries the answered count next to the harmful count. For your hidden set, our batch checker runs a file of URLs in strict or lenient mode."
+    )
+    return s
+
+
+def slide_c_early(f: Facts) -> Slide:
+    s = Slide("c_early", "Early detection and coverage", "الكشف المبكر")
+    left = [
+        (
+            "New look-alike pages, no list needed",
+            "A page that claims a brand it does not own and asks for credentials is flagged by a rule.",
+        ),
+        ("Messages with no link", "Arabic and English scam scripts are recognised from the text itself."),
+        (
+            "Proactive hunter",
+            status(
+                f,
+                "hunter",
+                "The Sentinel looks for new look-alike domains from certificate logs and links them to campaigns.",
+            ),
+        ),
+        (
+            "Fake helplines",
+            status(f, "helpline_registry", "Numbers in a message are compared with an official-number registry."),
+        ),
+    ]
+    rows: list[tuple[str, str]] = []
+    if f.ev:
+        if f.ev.brand_new_line():
+            rows.append(("Brand-new look-alike pages, synthetic:", f.ev.brand_new_line() or ""))
+        if f.ev.message_line():
+            rows.append(("Messages with no link, synthetic, single author:", f.ev.message_line() or ""))
+    rows.append(
+        (
+            "Search results, ads and Maps:",
+            "Ready, needs a key. The code path exists; no key is configured, so we show no result.",
+        )
+    )
+    criterion_slide(
+        s,
+        left,
+        "Numbers and status",
+        rows,
+        "Synthetic fixtures are labelled as such. Anything marked Planned is not on main and is not shown in the demo.",
+        size=14,
+    )
+    s.notes = (
+        "Second criterion, early detection and coverage. The point is the page that is on no list yet. A rule flags a page that claims a brand it does not own and asks for credentials. "
+        "On our synthetic look-alike set every one was Dangerous, and we show the benign controls next to it, because a rule like this must not cry wolf. "
+        "Messages with no link are judged from the text, with a small synthetic set and a wide interval. "
+        "The proactive hunter and the fake-helpline registry are shown here exactly as they stand on main: if the slide says Planned, it is next-thirty-days work. "
+        "Search, ads and Maps coverage are ready and need a key; we have not configured one, so we show no number."
+    )
+    return s
+
+
+def slide_c_explain(f: Facts) -> Slide:
+    s = Slide("c_explain", "Explainability and actionability", "التفسير وقابلية الإجراء")
+    left = [
+        ("A verdict with reasons", "A risk score, three clear levels, and the reasons in Arabic with what to do now."),
+        ("A trace for every check", "Every step, signal and the arbiter's rule is kept and can be opened in /history."),
+        (
+            "Police-ready evidence pack",
+            status(
+                f,
+                "evidence_pack",
+                "Screenshot, WHOIS and RDAP, hosting and ASN, UTC timestamps, a SHA-256 manifest, a takedown draft and STIX 2.1.",
+            ),
+        ),
+        ("Nothing leaves without a human", "Takedowns and reports are drafts until a person approves them."),
+    ]
+    rows: list[tuple[str, str]] = []
+    if f.ev:
+        if f.ev.faith_line():
+            rows.append(("Faithfulness, fixture verdicts:", f.ev.faith_line() or ""))
+        if f.ev.t3_line():
+            rows.append(("Investigator tools:", f.ev.t3_line() or ""))
+    rows.append(
+        ("Export:", "REST, signed webhooks, MCP and STIX for downstream systems: ready to connect, not connected.")
+    )
+    if cap_on(f, "batch_check"):
+        rows.append(("Batch:", "A file of URLs in, a results table out, strict or lenient."))
+    criterion_slide(
+        s,
+        left,
+        "What a reviewer receives",
+        rows,
+        "Shown reasons are templates tied to evidence, not free model text, so a reason cannot be invented.",
+        size=14,
+    )
+    s.notes = (
+        "Third criterion, explainability and actionability. Every verdict has a risk level and reasons in plain Arabic, and each reason points at evidence in the verdict; we measured that on fixtures. "
+        "Every check keeps a trace you can open. For a police analyst the evidence pack is the deliverable: screenshot, WHOIS and RDAP, hosting, UTC timestamps, a SHA-256 manifest, a takedown draft and a STIX bundle. "
+        "If the slide says Planned, the pack is not merged on main yet, and we say it is next. Nothing is sent out by us: a human approves every takedown."
+    )
+    return s
+
+
+def slide_c_uae(f: Facts) -> Slide:
+    s = Slide("c_uae", "UAE relevance and innovation", "الإمارات والابتكار")
+    left = [
+        ("Arabic first, English too", "Formal Arabic on screen, Emirati Arabic and English by voice."),
+        (
+            "A UAE brand registry",
+            "UAE banks, TAMM, UAE PASS, Salik, RTA and Abu Dhabi Mobility, each with its official domains.",
+        ),
+        (
+            "Voice assistant",
+            "Hey Falcon, in Arabic and English, narrates the live steps"
+            + (
+                " and speaks the real findings of each check."
+                if cap_on(f, "voice_findings")
+                else ". Speaking the real findings is next."
+            ),
+        ),
+        (
+            "Scam networks and visual match",
+            "The Sentinel links checks into campaigns. A perceptual hash compares page appearance.",
+        ),
+    ]
+    rows: list[tuple[str, str]] = []
+    if f.ev and f.ev.voice_line():
+        rows.append(
+            ("Voice bench, synthetic speech:", (f.ev.voice_line() or "") + f"; round trip p95 {f.ev.voice_speed()}.")
+        )
+    rows.append(
+        ("Local speech and models:", "Speech is recognised on our machine; audio and transcripts are not stored.")
+    )
+    rows.append(("Route selector:", "The operator picks a cloud model with local fallback, or local only."))
+    criterion_slide(
+        s,
+        left,
+        "Numbers and what is novel",
+        rows,
+        "The voice bench uses synthetic speech and noise, not real speakers: read it as an upper bound.",
+        size=14,
+    )
+    s.notes = (
+        "Fourth criterion, UAE relevance and innovation. It is built for the UAE: formal Arabic first, Emirati Arabic by voice, English too. "
+        "The brand registry holds the banks, TAMM, UAE PASS, Salik and the road authorities people are actually impersonated as. "
+        "What is new: you can simply talk to it, يا صقر; it links checks into scam networks; it compares how a page looks; and an AI helps only in the unclear band, bounded by code. "
+        "The voice bench is synthetic speech, so we call its numbers an upper bound."
+    )
+    return s
+
+
+def slide_c_feasible(f: Facts) -> Slide:
+    s = Slide("c_feasible", "Feasibility and presentation", "الجدوى والعرض")
+    left = [
+        ("Working live demo", "Everything you saw runs on one Mac Studio, in front of you."),
+        ("Sovereign by design", "Every model call can stay on the machine. Only lookups about the checked site leave."),
+        ("Scales out", "Redis streams and stateless workers: add workers for more checks. Proven on one machine only."),
+        (
+            "A realistic police pilot",
+            "Same stack inside the authority's network, shadow mode first, then ready to connect.",
+        ),
+    ]
+    rows: list[tuple[str, str]] = []
+    if f.ev and f.ev.sovereign_line():
+        rows.append(("Sovereign proof, one machine:", (f.ev.sovereign_line() or "") + "."))
+    rows.append(
+        (
+            "Needed for production:",
+            "The authority's own sign-on and roles, closed-network feeds, a security review, and a licence for the feed.",
+        )
+    )
+    rows.append(("Status:", "Ready to connect, not connected. No police endorsement is claimed."))
+    criterion_slide(
+        s,
+        left,
+        "Evidence and pilot path",
+        rows,
+        "Sovereign mode keeps text and prompts on the machine; lookups such as RDAP and the sandbox's one passive visit still use the internet through the egress proxy.",
+        size=14,
+    )
+    s.notes = (
+        "Fifth criterion, feasibility and presentation. The demo is live on our own machine. We ran the sovereign proof on two local models: every scenario passed and there were no calls to a cloud model. "
+        "One of the two runs is marked failed in the file because the Sentinel summary fell back to a template; we do not hide that. "
+        "Scaling is by design, workers on Redis streams, and proven on one machine only. A pilot would run the same stack inside the authority's network, in shadow mode first. "
+        "Ready to connect, not connected."
+    )
+    return s
+
+
+def slide_limits(f: Facts) -> Slide:
+    s = Slide("limits", "Honest limits", "حدودنا بصراحة")
+    items: list[tuple[str, str]] = []
+    if f.fp is not None:
+        fp = f.fp
+        items.append(
+            (
+                "Live false alarms are above target",
+                f"Full stack on {fp['n']} held-out legitimate sites: {pct(fp['false_positive_rate']['value'])} flagged, target {pct(fp['target'])}. Most are checks that could not finish.",
+            )
+        )
+    if f.ev and f.ev.fresh_caveat():
+        items.append(("The fresh test is one run", f.ev.fresh_caveat() or ""))
+    rt = f.ev.redteam_both() if f.ev else None
+    if rt:
+        items.append(
+            (
+                "Red-team: read the answered count",
+                "Harmful counts are zero, but the model did not answer every case; the rest tested the fixed layers only.",
+            )
+        )
+    items.append(
+        (
+            "Synthetic data is labelled",
+            "Voice, red-team, message and look-alike sets are synthetic or fixtures, not real traffic.",
+        )
+    )
+    items.append(
+        (
+            "Not measured yet",
+            "A native reader's rating of the Arabic text, and sandbox recall on labelled phishing pages.",
+        )
+    )
+    bullets(s, MARGIN, 1.8, 12.1, items, size=16, gap=0.1, row_h=0.9, accent="warn")
+    s.notes = (
+        "We would rather you hear our limits from us. In the full stack, too many legitimate sites are flagged, and most of those are checks that could not finish; the target is lower and it is our first item. "
+        "The fresh test is a single run and its labels are not audited. In the red-team, always read the harmful count with the answered count. Voice, red-team and message sets are synthetic. "
+        "And two things are simply not measured yet: a native reader's rating of the Arabic, and sandbox recall on labelled phishing pages."
+    )
+    return s
+
+
+def slide_next(f: Facts) -> Slide:
+    s = Slide("next", "Next thirty days", "الثلاثون يوماً القادمة")
+    items = [
+        (
+            "Bring live false alarms to target",
+            "Finish the checks that time out; a check that cannot finish stays Suspicious, never clean.",
+        ),
+        (
+            "Proactive hunter in production",
+            "Certificate-log hunting, scheduled, with every new look-alike linked to a campaign."
+            if cap_on(f, "hunter")
+            else "Certificate-log hunting, scheduled, with every new look-alike linked to a campaign. Not on main yet.",
+        ),
+        (
+            "Fake-helpline registry",
+            "Official numbers from official sources, with their source and date. Not on main yet."
+            if not cap_on(f, "helpline_registry")
+            else "Grow the official-number registry, each with its source and date.",
+        ),
+        ("Search, ads and Maps coverage", "Add the keys and run the connectors we have already written."),
+        (
+            "A police pilot, shadow mode",
+            "On-premise, with their sign-on, feeds and security review; ready to connect, not connected.",
+        ),
+    ]
+    bullets(s, MARGIN, 1.8, 12.1, items, size=16, gap=0.1, row_h=0.88, accent="sand")
+    s.notes = (
+        "What we do in the next thirty days, in order: bring the live false-alarm rate to target, put the proactive hunter and the fake-helpline registry into production if they are not already, "
+        "switch on search, ads and Maps coverage with keys, and run a shadow-mode pilot inside an authority's own network."
+    )
+    return s
+
+
+def slide_close(f: Facts) -> Slide:
+    s = Slide("thanks", "Thank you", "شكراً لكم")
+    s.add(
+        tb(MARGIN, 1.8, 12.1, 0.9, p("Check before you tap.  ·  افحص قبل أن تضغط", 36, "brand", True), anchor="m"),
+    )
+    recap = [
+        ("Detection", "cascade, fixed arbiter, honest numbers"),
+        ("Early detection", "look-alikes with no list; hunter next"),
+        ("Explainable", "reasons, trace, evidence pack"),
+        ("UAE and new", "Arabic voice, UAE brands, campaigns"),
+        ("Feasible", "live, sovereign, pilot path"),
+    ]
+    x = MARGIN
+    w, g = 2.25, 0.2125
+    for head, body in recap:
+        s.add(
+            card(x, 2.9, w, 1.7),
+            tb(
+                x + 0.15,
+                2.95,
+                w - 0.3,
+                1.6,
+                Para([Run(head, 16, "sand", True)], after=4),
+                p(body, 13, "muted"),
+                anchor="m",
+            ),
+        )
+        x += w + g
+    s.add(
+        card(MARGIN, 4.85, 7.2, 1.7),
+        tb(
+            MARGIN + 0.35,
+            4.85,
+            6.6,
+            1.7,
+            Para([Run("Repository", 14, "faint")], after=2),
+            Para([Run(f.repo_url, 17, "brand", True)], after=8),
+            p("Pilot path: same stack inside your network, shadow mode first.", 15, "text"),
+            anchor="m",
+        ),
+    )
+    s.add(
+        card(MARGIN + 7.5, 4.85, 4.6, 1.7, "s1", "faint", dash=True),
+        tb(
+            MARGIN + 7.8,
+            4.85,
+            4.0,
+            1.7,
+            p(
+                "An independent project. Ready to connect, not connected. Not affiliated with Abu Dhabi Police.",
+                15,
+                "muted",
+            ),
+            anchor="m",
+        ),
+    )
+    s.notes = (
+        "Close quickly, a line for each criterion: detection with a fixed arbiter and honest numbers; early detection of look-alikes that are on no list; reasons, a trace and an evidence pack a police analyst can use; "
+        "an Arabic voice, UAE brands and campaigns; and a live, sovereign system with a clear pilot path. Ready to connect, not connected. Check before you tap: افحص قبل أن تضغط. Thank you. We are happy to take questions."
+    )
+    return s
+
+
 def build_slides(f: Facts, img: dict[str, Path]) -> list[Slide]:
     slides = [
-        slide_problem(f),
-        slide_solution(f, img),
-        slide_agents(f),
-        slide_how(f),
-        slide_sentinel(f, img),
-        slide_results(f),
-        slide_evidence(f),
-        slide_security(f),
-        slide_authorities(f),
-        slide_onprem(f),
-        slide_architecture(f, img),
-        slide_roadmap(f),
+        slide_title(f),
+        slide_hook(f),
+        slide_solution3(f, img),
+        slide_demo(f),
+        slide_c_detection(f),
+        slide_c_early(f),
+        slide_c_explain(f),
+        slide_c_uae(f),
+        slide_c_feasible(f),
+        slide_limits(f),
+        slide_next(f),
         slide_team(f),
-        slide_thanks(f),
+        slide_close(f),
     ]
     for i, s in enumerate(slides):
         frame(s, i + 1, len(slides))

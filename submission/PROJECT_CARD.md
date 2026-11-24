@@ -53,9 +53,9 @@ https://github.com/Muhammadatef/falcon-lens
 
 - File to upload: `submission/FalconLens_Project_Description.pdf` (or `.docx`), the project description document.
 
-## Demo Video URL (one minute, recorded by the owner)
+## Demo Video URL (recorded by the owner)
 
-- Record it with `submission/DEMO_SCRIPT.md`: real screen, real voice. No AI-generated video or voice is accepted.
+- Cut it from the hook and live-demo beats of `submission/DEMO_SCRIPT.md` (the Thursday pitch run-sheet): real screen, real voice. No AI-generated video or voice is accepted.
 - Upload it as Unlisted on YouTube (or another host the form accepts), open the link once in a private window to check it plays, and paste it here:
 
 ```text

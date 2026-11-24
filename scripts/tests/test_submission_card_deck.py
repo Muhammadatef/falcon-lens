@@ -65,11 +65,36 @@ def test_demo_script_numbers_come_from_the_artifact_and_trace() -> None:
     assert check_numbers.find_untraceable(check_numbers.strip_markdown(text), traceable, "DEMO_SCRIPT.md") == []
 
 
-def test_demo_script_has_every_beat_of_the_minute() -> None:
-    text, _ = load("demo_script").build(ROOT)
-    for stamp in ("0:00 to 0:04", "0:04 to 0:18", "0:36 to 0:46", "0:53 to 1:00", "M1", "Q1", "L2", "/history"):
+def test_demo_script_has_the_pitch_timeline_and_ten_questions() -> None:
+    text, problems = load("demo_script").build(ROOT)
+    assert problems == []
+    for stamp in (
+        "0:00 to 0:25",
+        "0:25 to 0:55",
+        "0:55 to 2:40",
+        "2:40 to 3:00",
+        "M1",
+        "/history",
+        "/campaigns",
+        "/results",
+        "/ops",
+    ):
         assert stamp in text
+    for phrase in ("يا صقر، شيّك اللي نسخته", "Hey Falcon, someone called saying he's from the bank", "خطِر"):
+        assert phrase in text
     assert "ready to connect, not connected" in text.lower()
+    assert not any(
+        f"{{{k}}}" in text for k in ("ASKED", "FRESH_MAIN", "STATUS_TABLE", "HUNTER_BEAT")
+    )  # every placeholder filled
+    questions = [ln for ln in text.splitlines() if re.match(r"^\d+\. \*\*.*\?\*\*", ln)]
+    assert len(questions) == 10
+
+
+def test_demo_script_marks_unmerged_features_as_planned() -> None:
+    mod = load("demo_script")
+    text, _ = mod.build(ROOT)
+    for cap_id in ("evidence_pack", "hunter", "batch_check"):
+        assert mod.shipped(cap_id) or "PLANNED" in text
 
 
 def write_fp(directory: Path, name: str, created: str, value: float) -> None:

@@ -80,10 +80,10 @@ def test_fake_claims_fail_and_real_evidence_lines_pass() -> None:
     ev = evidence.load(ROOT / "evals" / "results" / "published")
     published = ROOT / "evals" / "results" / "published"
     traceable = check_numbers.traceable_for(artifact.load(published), published)
-    for fake in ("7", "3.7%", "77%", "64"):
+    for fake in ("14", "3.7%", "77%", "64"):
         assert not traceable.has_number(fake), fake
     findings = check_numbers.find_untraceable(
-        "Red-team: harmful 7 of 113, FPR 3.7%, we stopped 77% of scams, answered 64 of 113.", traceable, "t"
+        "Red-team: harmful 14 of 113, FPR 3.7%, we stopped 77% of scams, answered 64 of 113.", traceable, "t"
     )
     assert findings
     for line in (
@@ -101,3 +101,33 @@ def test_fake_claims_fail_and_real_evidence_lines_pass() -> None:
         assert not check_numbers.find_untraceable(line, traceable, "t"), line
     for _label, text in ev.slide_rows():
         assert not check_numbers.find_untraceable(text, traceable, "t"), text
+
+
+def test_fresh_voice_and_sovereign_lines_trace_and_state_their_limits(tmp_path: Path) -> None:
+    group = {"dangerous": {"k": 1, "n": 4}, "warned": {"k": 2, "n": 4}, "degraded": {"k": 3, "n": 4}}
+    part = {"groups": {"legit_all": group, "legit_uae": group, "phishing_all": group}}
+    _write(tmp_path, "fresh200/fresh200_x_20261124T000000Z.json", {"results": part, "results_second_source": part})
+    local = {
+        "wake_accuracy": {"n": 83, "accuracy": 0.9759},
+        "intent_accuracy": {"n": 83, "accuracy": 0.8916},
+        "faq_answer_accuracy": {"n": 52, "accuracy": 0.8462},
+        "language_accuracy": {"n": 83, "accuracy": 1.0},
+        "round_trip_s": {"p95": 0.661},
+    }
+    _write(tmp_path, "voice/voice_live_bench_x_20261124T000000Z.json", {"clips": 85, "targets": {"local": local}})
+    run = {
+        "local_model": "alibaba:qwen",
+        "status": "failed",
+        "scenario_counts": {"PASS": 7},
+        "egress_audit": {"anthropic_sink_hits": 0},
+    }
+    _write(tmp_path, "sovereign/sovereign_qwen_20261124T000000Z.json", run)
+    ev = evidence.load(tmp_path)
+    assert "feed coverage" in (ev.fresh_main_line() or "")
+    assert "could not complete every check" in (ev.fresh_second_line() or "")
+    assert "synthetic" in (ev.voice_line() or "") and ev.voice_speed() == "0.661 s"
+    assert "marked failed" in (ev.sovereign_line() or "")  # a failed run is never reported as a pass
+    traceable = check_numbers.traceable_for(None, tmp_path)
+    text = f"{ev.fresh_main_line()}. {ev.voice_line()}. {ev.sovereign_line()}."
+    assert check_numbers.find_untraceable(text, traceable, "x") == []
+    assert check_numbers.find_untraceable("Wake word 99.9% accurate.", traceable, "x") != []

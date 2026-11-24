@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # ruff: noqa: E501  (script copy reads better unwrapped)
-"""Generate submission/DEMO_SCRIPT.md: what to say and do in the one-minute demo video.
+"""Generate submission/DEMO_SCRIPT.md: the pitch run-sheet (three-minute pitch and demo, then questions).
 
     uv run --with-requirements scripts/submission/requirements.txt python submission/build/demo_script.py [--check]
 
 The spoken results line is filled from the newest published evaluation artifact, so the numbers in
 the script are never typed. The text is scanned by scripts/submission/check_numbers.py in
-`make submission`. The owner records the video with his own screen and voice.
+`make submission`. The copy lives in demo_template.md; this file fills the numbers and the merged-or-planned beats.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from submission import artifact as artifact_mod  # noqa: E402
+from submission import capabilities as caps_mod  # noqa: E402
 from submission import descriptions  # noqa: E402
 from submission import evidence as evidence_mod  # noqa: E402
 
@@ -38,6 +39,8 @@ def values(art: artifact_mod.Artifact | None) -> dict[str, str]:
             "RESULTS_AR": "أرقام التقييم يولّدها تشغيل التقييم، ولا نعرضها إلا منه.",
             "ARTIFACT": "none published yet",
             "ASKED": "No live end-to-end figure is published yet. Say that evaluation is in progress.",
+            "FP_SHORT": fp_short(None),
+            **evidence_values(ROOT / "evals" / "results" / "published"),
         }
     m = dict(art.metrics)
     recall, fpr, official = pct(m["test.recall"]), pct(m["test.fpr"]), m["test.official_false_dangerous"]
@@ -48,6 +51,7 @@ def values(art: artifact_mod.Artifact | None) -> dict[str, str]:
         else "No live end-to-end figure is published yet. Say that evaluation is in progress."
     )
     return {
+        "FP_SHORT": fp_short(fp),
         "ASKED": asked,
         "RESULTS_EN": f"On our frozen test split: {recall} of phishing links caught, {fpr} of legitimate links wrongly flagged, and {official} official sites marked Dangerous.",
         "RESULTS_AR": f"على مجموعة الاختبار المجمّدة: كُشف {recall} من روابط الاحتيال، وأُنذر خطأً على {fpr} من الروابط السليمة، و{official} من المواقع الرسمية صُنّفت خطِرة.",
@@ -56,99 +60,89 @@ def values(art: artifact_mod.Artifact | None) -> dict[str, str]:
     }
 
 
+def fp_short(fp: dict[str, Any] | None) -> str:
+    if not fp:
+        return "no live figure is published yet; say that evaluation is in progress"
+    return f"{pct(fp['false_positive_rate']['value'])} on {fp['n']} held-out sites, against a target of {pct(fp['target'])}"
+
+
+def shipped(cap_id: str) -> bool:
+    cap = next(c for c in caps_mod.CAPABILITIES if c.id == cap_id)
+    return all(caps_mod.probe(ROOT, spec) for spec in cap.probes)
+
+
+GATED = (
+    (
+        "evidence_pack",
+        "Police evidence pack download (screenshot, WHOIS and RDAP, hosting, timestamps, hash manifest, takedown draft, STIX)",
+    ),
+    ("batch_check", "Batch URL checker (`make batch FILE=...`)"),
+    ("hunter", "Proactive hunter (new look-alike domains from certificate logs)"),
+    ("helpline_registry", "Official-number registry and fake-helpline flag"),
+    ("voice_findings", "Voice and Check page speak the real per-check findings"),
+    ("llm_route_selector", "Operator route selector on /ops"),
+)
+
+
+def gated_values() -> dict[str, str]:
+    on = {cid: shipped(cid) for cid, _ in GATED}
+    rows = ["| Item | State on main |", "|---|---|"]
+    rows += [f"| {label} | {'on main' if on[cid] else 'PLANNED, not on main'} |" for cid, label in GATED]
+    return {
+        "STATUS_TABLE": "\n".join(rows),
+        "FINDINGS_NOTE": "The falcon speaks the real findings of this check."
+        if on["voice_findings"]
+        else "The falcon speaks the result; speaking the real per-check findings is PLANNED, not on main, so do not promise it.",
+        "EVIDENCE_BEAT": "Then click the evidence pack download and open its manifest: screenshot, WHOIS and RDAP, hosting and ASN, UTC timestamps, SHA-256 hashes, takedown draft, STIX."
+        if on["evidence_pack"]
+        else "The evidence pack download is PLANNED, not on main: do not click it; say it once under next thirty days.",
+        "EVIDENCE_SAY": "One click gives the evidence pack: screenshot, WHOIS, hosting, UTC times and a hash manifest, with a takedown draft."
+        if on["evidence_pack"]
+        else "The incident exports as STIX; the one-click evidence pack is next.",
+        "EVIDENCE_SAY_AR": "ونقرة واحدة تعطيك حزمة الأدلة: لقطة الشاشة وWHOIS والاستضافة والتوقيت وبصمات الملفات ومسودة الإزالة."
+        if on["evidence_pack"]
+        else "ويُصدَّر الحادث بصيغة STIX، وحزمة الأدلة بنقرة واحدة هي الخطوة التالية.",
+        "RESULTS_NOTE": "If `/results` does not show the fresh two-hundred-site block, go back to the detection slide and read its not-on-feed row.",
+        "HUNTER_BEAT": "Then one line on the proactive hunter: new look-alike domains found from certificate logs appear on `/campaigns`."
+        if on["hunter"]
+        else "The proactive hunter is PLANNED (its core code is on main, its runtime is not): do not demo it; say it once under next thirty days.",
+        "HUNTER_QA": "A scheduled hunter also finds new look-alike domains from certificate logs."
+        if on["hunter"]
+        else "The hunter that goes looking for them ourselves is next-thirty-days work, not shipped.",
+        "BATCH_ANSWER": "`make batch FILE=urls.txt` runs it live in two modes, strict (Suspicious counts as flagged) and lenient (only Dangerous), and prints a results table."
+        if on["batch_check"]
+        else "the batch checker is PLANNED, not on main; today we would submit them through the API one at a time.",
+    }
+
+
 def evidence_values(published: Path) -> dict[str, str]:
     ev = evidence_mod.load(published)
+    fresh2 = ev.fresh_second_line()
     return {
+        "FRESH_MAIN": ev.fresh_main_line() or "no fresh-test run is published",
+        "FRESH_SECOND": fresh2 or "no fresh-test run is published",
+        "FRESH_SECOND_SHORT": f"on hosts from a feed our stack does not query, {fresh2.split(': ', 1)[1]}"
+        if fresh2
+        else "no fresh-test run is published",
+        "VOICE": ev.voice_line() or "no voice benchmark is published",
+        "VOICE_SPEED": ev.voice_speed() or "not published",
+        "SOVEREIGN": ev.sovereign_line() or "no sovereign proof is published",
+        "SOVEREIGN_SHORT": (ev.sovereign_line() or "no sovereign proof is published") + ".",
+        "BRAND_SHORT": (ev.brand_new_line() or "no brand-new-page run is published").split(";")[0] + ", synthetic",
         "REDTEAM": ev.redteam_both() or "no red-team run is published",
         "MSG": ev.message_line() or "no message-text run is published",
         "BRAND": ev.brand_new_line() or "no brand-new-page run is published",
     }
 
 
-TEMPLATE = """# Demo video script: Falcon Lens | عدسة الصقر
-
-For the owner. The video is one minute, recorded by you: real screen, your own voice. No AI-generated video or voice is accepted by the organiser.
-Generated by `make submission` (`submission/build/demo_script.py`). The results line is filled from the published evaluation file `{ARTIFACT}`; do not retype numbers.
-
-The product is an independent project. Never imply that Abu Dhabi Police approved, uses or is connected to it. Say "ready to connect, not connected".
-
-## The one-minute shot list
-
-Speak at a calm pace. Each beat names what must be on screen while you say the line. Do not narrate a verdict before it is on screen.
-
-| Time | On screen | Say (English) | Say (Arabic option) |
-|---|---|---|---|
-| 0:00 to 0:04 | Hook. The home page in Arabic, the check box centred, the cursor still. | "A text says your account will be frozen, and there is a link. Real or fake? Check before you tap." | «تصلك رسالة: حسابك سيُجمَّد، وفيها رابط. حقيقية أم مزيّفة؟ افحص قبل أن تضغط.» |
-| 0:04 to 0:18 | Demo kit item **M1**: the Arabic SMS (`messages/01-arabic-sms-phishing.txt`). Message tab, paste, click «افحص الآن». The steps complete, then the red plate «خطِر», the bank name «بنك الصقر التجريبي», the Arabic reasons and "what to do now". Keep the "demo data" label in frame. | "The Investigator reads the message and the link inside it. It names a bank but links somewhere else, and asks for a code. Dangerous, with the reasons in Arabic and what to do now." | «بصير يقرأ الرسالة والرابط داخلها: تذكر بنكاً وتربطك بنطاق آخر وتطلب رمزاً. النتيجة: خطِر، مع الأسباب بالعربية وما تفعله الآن.» |
-| 0:18 to 0:28 | Demo kit item **Q1**: the QR poster (`qr/01-qr-poster-phishing.png`). Image / QR tab, upload. Result «خطِر»: the QR leads to a dangerous link. | "Scams also come as a poster with a QR code. We read the code and check where it leads. Dangerous." | «وتأتي الاحتيالات أيضاً ملصقاً برمز QR. نقرأ الرمز ونفحص وجهته. النتيجة: خطِر.» |
-| 0:28 to 0:36 | Demo kit item **L2**: the official site (`http://falcon-demo-bank.test/`). Link tab, paste, check. Result «لم نجد علامات تحذير» with the line «هذا ليس ضماناً. ابقَ حذراً.» in frame. | "On the registered official site the answer is: no warning signs found. Stay careful. We never give a guarantee, and we do not cry wolf." | «في الموقع الرسمي المسجَّل: لم نجد علامات تحذير، ابقَ حذراً. لا نعطي ضماناً، ولا نُنذر بلا سبب.» |
-| 0:36 to 0:46 | `/campaigns`: the explainer of what a campaign is, then a campaign card with its linked checks while `make replay` runs. Keep the replay label in frame. | "One check protects one person. The Sentinel links similar checks into a campaign, and drafts a takedown that waits for a human." | «فحص واحد يحمي شخصاً واحداً. «درع» يربط الفحوص المتشابهة في حملة، ويُعدّ مسودة إزالة تنتظر موافقة إنسان.» |
-| 0:46 to 0:53 | `/history` (public read-only history until SSO): click one check to open its trace: the steps, the evidence, the verdict. | "Every check keeps its trace: what ran, what was found, and why the verdict is what it is." | «لكل فحص أثره: ما نُفِّذ، وما وُجد، ولماذا هذا الحكم.» |
-| 0:53 to 1:00 | `/results`: the REAL and SYNTHETIC badges and the scope line. Hold still, then end on the home page with the independence line. | "{RESULTS_EN} Ready to connect, not connected. Falcon Lens. Check before you tap." | «{RESULTS_AR} جاهز للربط وغير مربوط. عدسة الصقر. افحص قبل أن تضغط.» |
-
-No credentials on camera: the beats above use only public pages. Do not open `/ops` in the one-minute video, because it needs the operator key.
-
-If the results line is too long for its beat, say only the first two numbers. If a beat runs long, cut the `/history` beat first. Never say a number that is not on the screen in that shot.
-
-## The two-minute backup version
-
-Use it if the form or a later round allows two minutes. Same rules. Add these beats in this order and keep the main beats above.
-
-| Time | On screen | Say (English) |
-|---|---|---|
-| 0:00 to 0:15 | Hook and the two agents, as above, a little slower. | "A text about a fine, a delivery fee or a bank code, with a link. A blocklist only lists a page after someone reports it, so a new page is on no list. Falcon Lens answers in clear Arabic, in seconds." |
-| 0:15 to 0:35 | Message check: paste the synthetic Arabic scam message (kind «رسالة»), click «افحص الآن». Verdict Dangerous; the link inside is checked too. | "People get these as text messages, so that is what you paste. The link inside is checked as a link, and a dangerous link makes the whole message Dangerous." |
-| 0:35 to 1:05 | The lookalike link check, as in the main version, with «تفاصيل تقنية» open. | "No blocklist is needed. The page claims a bank, asks for a card number, and the domain is not the bank's. The AI explains; a fixed arbiter decides." |
-| 1:05 to 1:20 | The page with injected instructions (fixture), same verdict, one more evidence line. | "This page tells the AI to ignore its instructions. The verdict does not move, and the attempt itself becomes evidence." |
-| 1:20 to 1:30 | The verified official fixture: «لم نجد علامات تحذير» and the line «هذا ليس ضماناً. ابقَ حذراً.» | "On a verified official site the lowest answer is: no warning signs found. Stay careful. We never give a guarantee." |
-| 1:30 to 1:50 | The Sentinel scene as in the main version, slower; show the audit trail and the approval click. | "One check protects one person. The Sentinel protects everyone else, and nothing leaves the system without a human." |
-| 1:50 to 2:00 | Results, then the authorities page, then the home page. | "{RESULTS_EN} It is ready to connect, not connected. Falcon Lens. Check before you tap." |
-
-## Before you record
-
-1. Read `submission/CHECKLIST.md`, section "Capabilities claimed". If a capability is "not shipped", cut that beat and do not describe it as working.
-2. Start from a clean state: `make demo-reset YES=1` (resets the volumes, then runs `make demo`, which seeds the replay-labelled history). `make seed` alone is idempotent and can be repeated.
-3. Start the planted campaign a minute before the Sentinel beat: `make replay RATE=2/s DURATION=2m` in a second terminal. The incident appears around the middle of the run.
-4. Open the site at the address that `make urls` prints for the web app (default `https://localhost:8443/`). Accept the local certificate warning once, before recording.
-5. Pages and files to have ready in tabs, in this order: `/` (home), `/` again for the check (Message tab with M1 copied, Image / QR tab with Q1 ready, Link tab with L2 copied), `/campaigns`, `/history`, `/results`. The demo kit items M1, Q1 and L2 are in `demo-kit/` (README there lists what each should show). Run each once before recording and confirm the result matches.
-6. Paste the link before the record button only when it is a live address. The Falcon Demo Bank lookalike is an internal fixture, so it is fine on camera. Never put a real phishing address on screen.
-7. Browser: one clean window, Night theme, Arabic interface (use the language toggle only if you want an English take), zoom in one step so a phone screen can read it. Hide the bookmarks bar, close every other tab.
-8. Turn on Do Not Disturb. Quit chat, mail and calendar apps. No notification may slide in.
-9. Never show `.env`, the operator key, the bearer token or the terminal history. Use a clean terminal if the Sentinel beat needs one.
-10. Confirm the labels are visible when the beat needs them: «بيانات تجريبية» on the fixture verdict, «إعادة تشغيل» (Replay) on replayed data.
-11. Test the microphone, record in a quiet room, and record in full HD. Record the screen and your voice together, or record the voice after and match it to the picture. Rehearse twice with a timer. Export, then watch it once end to end before uploading.
-
-## If a judge asks about the numbers
-
-- Offline numbers: they come from the frozen test split, offline model plus arbiter on URLs, real data only. They are not a measurement of the whole system. Read the scope line on the results slide.
-- Live false alarms: {ASKED}
-- Red-team: {REDTEAM}. Always say the answered count with the harmful count.
-- Messages with no link: {MSG}. Say it is a small synthetic set written by one author and audited by the supervisor.
-- Brand-new pages: {BRAND}.
-- Anything not measured yet (a native reader's rating of the Arabic text, and sandbox recall on labelled phishing pages) is listed on the results and roadmap slides. Say "not measured yet", never a guess.
-
-## Do and do not
-
-Do:
-- Say "No warning signs found", with "stay careful".
-- Say "ready to connect, not connected".
-- Say "demo data" or "replay data" when a screen shows it.
-- Show the independence line (home page footer) in the last beat.
-- Keep the cursor still while a verdict renders. Cut hard between beats.
-
-Do not:
-- Say the word "safe" or its Arabic equivalent, even to deny it.
-- Say or show that Abu Dhabi Police approved, uses, partners with or is connected to Falcon Lens. Show no police logo.
-- Say a number that is not on screen in that shot, or any number from memory.
-- Type or show a real phishing link, a real brand logo or real personal data.
-- Use AI-generated video, voice or stock footage.
-"""
+TEMPLATE = (Path(__file__).with_name("demo_template.md")).read_text(encoding="utf-8")
 
 
 def build(root: Path = ROOT) -> tuple[str, list[str]]:
     art = artifact_mod.load(root / "evals" / "results" / "published")
     text = TEMPLATE
-    for key, value in values(art).items():
+    vals = {**gated_values(), **values(art)}
+    for key, value in vals.items():
         text = text.replace("{" + key + "}", value)
     return text, [f"DEMO_SCRIPT: {e}" for e in descriptions.wording_errors(strip_rules(text))]
 

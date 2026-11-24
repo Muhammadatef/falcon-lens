@@ -86,6 +86,9 @@ class Evidence:
     t3: dict[str, Any] | None = None
     sandbox: dict[str, Any] | None = None
     dspy: list[dict[str, Any]] = field(default_factory=list)
+    fresh: dict[str, Any] | None = None
+    voice: dict[str, Any] | None = None
+    sovereign: list[dict[str, Any]] = field(default_factory=list)
 
     def claimed_values(self) -> list[float]:
         """The exact numbers the lines and slide rows above read, and nothing else (the tracer accepts only these)."""
@@ -145,6 +148,21 @@ class Evidence:
             for key in ("k", "n"):
                 take(self.t3, "by_route", "cloud", "reached_T3", key)
                 take(self.t3, "by_route", "cloud", "forbidden_tool_call_rate", key)
+        if self.fresh:
+            for part in ("results", "results_second_source"):
+                for grp in ("legit_all", "legit_uae", "phishing_all"):
+                    for metric in ("dangerous", "warned", "degraded"):
+                        for key in ("k", "n"):
+                            take(self.fresh, part, "groups", grp, metric, key)
+        if self.voice:
+            take(self.voice, "clips")
+            for metric in ("wake_accuracy", "intent_accuracy", "faq_answer_accuracy", "language_accuracy"):
+                take(self.voice, "targets", "local", metric, "n")
+                take(self.voice, "targets", "local", metric, "accuracy")
+            take(self.voice, "targets", "local", "round_trip_s", "p95")
+        for run in self.sovereign:
+            take(run, "scenario_counts", "PASS")
+            take(run, "egress_audit", "anthropic_sink_hits")
         for run in self.fp:
             for key in ("value", "ci95"):
                 take(run, "false_positive_rate", key)
@@ -154,7 +172,7 @@ class Evidence:
 
     # ── sources for the number tracer ────────────────────────────────────────────
     def sources(self) -> list[dict[str, Any]]:
-        out: list[dict[str, Any]] = [*self.redteam.values(), *self.fp, *self.dspy]
+        out: list[dict[str, Any]] = [*self.redteam.values(), *self.fp, *self.dspy, *self.sovereign]
         out += [
             d
             for d in (
@@ -166,6 +184,8 @@ class Evidence:
                 self.faith,
                 self.t3,
                 self.sandbox,
+                self.fresh,
+                self.voice,
             )
             if d
         ]
@@ -323,12 +343,90 @@ class Evidence:
             )
         return rows
 
+    # ── fresh 200-site live test, voice bench, sovereign proof ───────────────────
+    def _fresh_group(self, part: str, grp: str, metric: str) -> tuple[int, int] | None:
+        if not self.fresh:
+            return None
+        m = self.fresh[part]["groups"][grp][metric]
+        return int(m["k"]), int(m["n"])
+
+    def fresh_main_line(self) -> str | None:
+        d = self._fresh_group("results", "phishing_all", "dangerous")
+        w = self._fresh_group("results", "legit_all", "warned")
+        ld = self._fresh_group("results", "legit_all", "dangerous")
+        lu = self._fresh_group("results", "legit_uae", "warned")
+        if not (d and w and ld and lu):
+            return None
+        return (
+            f"main set: {d[0]} of {d[1]} listed phishing URLs Dangerous (the feed supplied them, so this is feed coverage plus pipeline); "
+            f"legitimate sites {ld[0]} of {ld[1]} Dangerous and {w[0]} of {w[1]} warned (Suspicious); of {lu[1]} UAE sites {lu[0]} warned"
+        )
+
+    def fresh_second_line(self) -> str | None:
+        w = self._fresh_group("results_second_source", "phishing_all", "warned")
+        d = self._fresh_group("results_second_source", "phishing_all", "dangerous")
+        g = self._fresh_group("results_second_source", "phishing_all", "degraded")
+        if not (w and d and g):
+            return None
+        return (
+            f"hosts from a feed the stack does not query: {w[0]} of {w[1]} warned, only {d[0]} of {d[1]} Dangerous "
+            f"(the rest Suspicious), and {g[0]} of {g[1]} could not complete every check"
+        )
+
+    def fresh_caveat(self) -> str | None:
+        if not self.fresh:
+            return None
+        return "single run on one day; legitimate labels are not hand-audited; phishing labels are the feed's own and some pages were already dead"
+
+    def voice_line(self) -> str | None:
+        if not self.voice:
+            return None
+        t = self.voice["targets"]["local"]
+        return (
+            f"wake word {pct(t['wake_accuracy']['accuracy'])}, intent {pct(t['intent_accuracy']['accuracy'])}, "
+            f"FAQ answer {pct(t['faq_answer_accuracy']['accuracy'])}, language {pct(t['language_accuracy']['accuracy'])} "
+            f"on {t['wake_accuracy']['n']} synthetic clips (macOS say and Polly voices, synthetic noise; not real speakers)"
+        )
+
+    def voice_speed(self) -> str | None:
+        if not self.voice:
+            return None
+        return f"{self.voice['targets']['local']['round_trip_s']['p95']} s"
+
+    def sovereign_line(self) -> str | None:
+        if not self.sovereign:
+            return None
+        parts = []
+        for run in self.sovereign:
+            ok = run["scenario_counts"]["PASS"]
+            n = sum(run["scenario_counts"].values())
+            sink = run["egress_audit"]["anthropic_sink_hits"]
+            model = str(run["local_model"])
+            label = "Qwen" if "qwen" in model.lower() else "Inkling-2-Mini" if "inkling" in model.lower() else model
+            note = (
+                ""
+                if run.get("status") == "passed"
+                else "; the run is marked failed because the Sentinel summary fell back to a template"
+            )
+            parts.append(f"{label}: {ok} of {n} scenarios passed, {sink} calls to a cloud model{note}")
+        return "; ".join(parts)
+
     def dspy_line(self) -> str | None:
         if not self.dspy:
             return None
         if any(d.get("adopted") for d in self.dspy):
             return "DSPy prompt optimisation ran for every model role; the roles it improved beyond noise are adopted, the rest are not"
         return "DSPy prompt optimisation ran for every model role and was not adopted for any of them (the gains are within noise)"
+
+
+def _sovereign_latest(published: Path) -> list[dict[str, Any]]:
+    """Newest sovereign-proof run per local model."""
+    best: dict[str, dict[str, Any]] = {}
+    for path in sorted((published / "sovereign").glob("*.json"), key=lambda p: (_stamp(p), p.name)):
+        data = _read(path)
+        if data and "scenario_counts" in data and "egress_audit" in data:
+            best[str(data.get("local_model"))] = data
+    return list(best.values())
 
 
 def load(published: Path = PUBLISHED) -> Evidence:
@@ -354,6 +452,9 @@ def load(published: Path = PUBLISHED) -> Evidence:
         t3=newest(published, "t3_investigator"),
         sandbox=newest(published, "sandbox_t2"),
         dspy=[d for _, d in dspy_latest.values()],
+        fresh=newest(published, "fresh200"),
+        voice=newest(published, "voice", "voice_live_bench_*.json"),
+        sovereign=_sovereign_latest(published),
     )
 
 
