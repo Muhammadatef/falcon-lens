@@ -36,7 +36,18 @@ import yaml
 REPO = Path(__file__).resolve().parents[1]
 CONFIG = REPO / "infra" / "demo_mode.yaml"
 STATE = REPO / "work" / "demo_mode" / "state.json"
-TUNNEL_FILE = REPO / "data" / "private" / "tunnel_url.txt"
+
+
+def data_root() -> Path:
+    """data/private lives only in the main checkout: FL_REPO_ROOT, else ~/Eaglelens, else this repo."""
+    env = os.environ.get("FL_REPO_ROOT")
+    for cand in (Path(env) if env else None, Path.home() / "Eaglelens", REPO):
+        if cand is not None and (cand / "data" / "private").is_dir():
+            return cand
+    return REPO
+
+
+TUNNEL_FILE = data_root() / "data" / "private" / "tunnel_url.txt"
 KIT_MESSAGES = Path.home() / "Eaglelens" / "demo-kit" / "messages"
 STT_URL = "http://127.0.0.1:8093"
 OLLAMA_URL = "http://127.0.0.1:11434"
@@ -417,7 +428,7 @@ def tunnel_row() -> Row:
 def api_client() -> tuple[Any, str, str | None]:
     """(ApiClient, gateway URL, API key) built from .env like the other demo tooling."""
     sys.path.insert(0, str(REPO / "scripts"))
-    from falcon_demo.common import ApiClient, Endpoints, load_env, pick_key
+    from falcon_demo.common import ApiClient, Endpoints, load_env, pick_key  # type: ignore[import-not-found,unused-ignore]
 
     env = load_env()
     key, _ = pick_key(env)
@@ -495,6 +506,10 @@ def silent_wav(seconds: float = 1.0, rate: int = 16000) -> bytes:
     return buf.getvalue()
 
 
+def _warm(client: Any, text: str, stamp: int, i: int) -> Callable[[], Any]:
+    return lambda: client.check_message(text, idem=f"dm-warm-{stamp}-{i}", wait=8)
+
+
 def prewarm() -> None:
     """Whisper, three fixture checks, the voice web route. Failures are printed, never fatal."""
     print("pre-warm:")
@@ -510,7 +525,7 @@ def prewarm() -> None:
         stamp = int(time.time())
         for i in range(3):
             text = FIXTURE_MSGS[i]
-            ms, err = timed(lambda t=text, i=i: client.check_message(t, idem=f"dm-warm-{stamp}-{i}", wait=8))
+            ms, err = timed(_warm(client, text, stamp, i))
             print(f"  check warm-up {i + 1}: " + (f"{ms:.0f} ms" if ms is not None else f"failed ({err})"))
         client.close()
         r = httpx.get(f"{gateway}/voice", timeout=10, verify=False)  # noqa: S501 - local CA gateway only
@@ -576,9 +591,9 @@ def cmd_rehearsal() -> int:
         try:
             r = httpx.post(
                 f"{gateway}/v1/voice/utterance",
-                content=wav.read_bytes(),
-                headers={"Content-Type": "audio/wav", "X-API-Key": key or ""},
-                params={"lang": lang},
+                files={"audio": (f"{lang}.wav", wav.read_bytes(), "audio/wav")},
+                data={"lang_hint": lang},
+                headers={"X-API-Key": key or ""},
                 timeout=60,
                 verify=False,  # noqa: S501 - local CA gateway only
             )

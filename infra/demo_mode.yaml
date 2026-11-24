@@ -3,6 +3,8 @@
 # lists it below. Processes are matched by case-insensitive substring of the command line and are only ever
 # stopped with SIGSTOP and resumed with SIGCONT (never killed).
 keep_projects: [falcon]
+# Pausable leftovers (other worktrees' stacks); the owner decides at demo time. `on` pauses every non-kept project
+# that is running, including these: falcon-integ, falcon-phx, falcon-sandbox, flvoice.
 pause_processes:
   - Google Chrome for Testing
   - flowplan
