@@ -133,3 +133,60 @@
   .vflow-step:not(:last-child)::after { animation: dash-down 0.9s linear infinite; }
 }
 @keyframes vflow-lit { 0%, 14% { border-color: var(--fl-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fl-brand) 25%, transparent); } 16%, 100% { border-color: var(--fl-border); box-shadow: none; } }
+
+/* ── Three-layer architecture (components/arch/ArchLayers) ──────────────
+   Native <details>, no script. One accent per layer: voice = sand, agents = brand, platform = neutral. */
+.al { display: grid; gap: var(--fl-space-3); min-width: 0; margin-block: var(--fl-space-6); }
+.al-lead { margin: 0; }
+.al-stack { display: grid; gap: 0; min-width: 0; }
+.al-row { display: grid; min-width: 0; }
+.al-layer { --al-c: var(--fl-border-strong); background: var(--fl-surface-1); border: 1px solid var(--fl-border); border-inline-start: 5px solid var(--al-c); border-radius: var(--fl-radius-lg); min-width: 0; transition: box-shadow var(--fl-dur-base) var(--fl-ease-out); }
+.al-layer[data-layer="voice"] { --al-c: var(--fl-sand); }
+.al-layer[data-layer="agents"] { --al-c: var(--fl-brand); }
+.al-layer:hover, .al-layer:focus-within { box-shadow: var(--fl-shadow-2); }
+.al-layer > summary { list-style: none; display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: var(--fl-space-2) var(--fl-space-3); padding: var(--fl-space-4); cursor: pointer; min-height: var(--fl-tap); border-radius: var(--fl-radius-lg); }
+.al-layer > summary::-webkit-details-marker { display: none; }
+.al-layer > summary .icon { color: var(--al-c); }
+.al-num { display: grid; place-items: center; inline-size: 2rem; block-size: 2rem; border-radius: 50%; border: 2px solid var(--al-c); font-weight: var(--fl-weight-bold); font-variant-numeric: tabular-nums; }
+.al-title { display: grid; min-width: 0; }
+.al-title strong { font-size: var(--fl-text-xl); line-height: var(--fl-leading-tight); }
+.al-title small { font-size: var(--fl-text-sm); color: var(--fl-text-muted); font-weight: var(--fl-weight-medium); text-align: start; }
+.al-sum { grid-column: 1 / -1; grid-row: 2; color: var(--fl-text-muted); max-width: 75ch; }
+.al-chev { grid-column: 4; grid-row: 1; inline-size: 0.7rem; block-size: 0.7rem; border-inline-end: 2px solid currentColor; border-block-end: 2px solid currentColor; transform: rotate(45deg); transition: transform var(--fl-dur-fast) var(--fl-ease-out); margin-inline: var(--fl-space-2); }
+.al-layer[open] .al-chev { transform: rotate(-135deg); }
+.al-body { display: grid; gap: var(--fl-space-3); padding: 0 var(--fl-space-4) var(--fl-space-4); grid-template-columns: minmax(0, 1fr); }
+.al-group { display: grid; gap: var(--fl-space-3); min-width: 0; align-content: start; }
+.al-body[data-groups="2"] .al-group { border: 1px solid var(--fl-border); border-radius: var(--fl-radius-md); padding: var(--fl-space-3); background: var(--fl-surface-2); }
+.al-body[data-groups="2"] .al-group[data-tone="inv"] { border-block-start: 3px solid var(--fl-brand); }
+.al-body[data-groups="2"] .al-group[data-tone="sen"] { border-block-start: 3px solid var(--fl-sand); }
+.al-group-head h3 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); margin: 0; }
+.al-group-head p { color: var(--fl-text-muted); font-size: var(--fl-text-sm); margin: 0; }
+.al-steps { display: grid; gap: var(--fl-space-2); grid-template-columns: minmax(0, 1fr); }
+.al-step { display: flex; gap: var(--fl-space-3); align-items: flex-start; padding: var(--fl-space-3); border: 1px solid var(--fl-border); border-radius: var(--fl-radius-md); background: var(--fl-surface-1); min-width: 0; transition: border-color var(--fl-dur-fast) var(--fl-ease-out), transform var(--fl-dur-fast) var(--fl-ease-out); }
+.al-step:hover { border-color: var(--al-c); }
+.al-step-n { flex: none; display: grid; place-items: center; inline-size: 1.6rem; block-size: 1.6rem; border-radius: 50%; background: var(--fl-surface-2); border: 1px solid var(--fl-border-strong); font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); font-variant-numeric: tabular-nums; }
+.al-step-body { display: grid; gap: 0.15rem; min-width: 0; overflow-wrap: anywhere; }
+.al-step-body b { font-weight: var(--fl-weight-bold); line-height: var(--fl-leading-tight); }
+.al-step-body span { color: var(--fl-text-muted); font-size: var(--fl-text-sm); line-height: 1.6; }
+.al-link { display: flex; align-items: center; gap: var(--fl-space-3); margin: 0; padding-inline-start: 1.6rem; min-height: 3.25rem; color: var(--fl-text-muted); font-size: var(--fl-text-sm); font-weight: var(--fl-weight-medium); }
+.al-link-rail { position: relative; flex: none; inline-size: 2px; block-size: 3.25rem; background: var(--fl-border-strong); }
+.al-link-rail::after { content: ""; position: absolute; inset-block-end: 0; inset-inline-start: -4px; inline-size: 8px; block-size: 8px; border-inline-end: 2px solid var(--fl-border-strong); border-block-end: 2px solid var(--fl-border-strong); transform: rotate(45deg); box-sizing: border-box; }
+[dir="rtl"] .al-link-rail::after { transform: rotate(-45deg); inset-inline-start: -3px; }
+.al-link-dot { position: absolute; inset-block-start: 0; inset-inline-start: -3px; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--fl-brand); opacity: 0; }
+@media (min-width: 900px) {
+  .al-layer > summary { grid-template-columns: auto auto minmax(12rem, auto) minmax(0, 1fr) auto; }
+  .al-sum { grid-column: 4; grid-row: 1; }
+  .al-chev { grid-column: 5; }
+  .al-body[data-groups="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .al-body[data-groups="1"] .al-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 640px) and (max-width: 899px) {
+  .al-body[data-groups="1"] .al-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* A request flowing down: one small dot per link, the second link half a cycle later. Transform and opacity only. */
+@media (prefers-reduced-motion: no-preference) {
+  .al-link-dot { animation: al-flow 3.6s var(--fl-ease-out) infinite; }
+  .al-row:nth-child(2) .al-link-dot { animation-delay: 1.8s; }
+  .al-step:hover { transform: translateY(-1px); }
+}
+@keyframes al-flow { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: 1; } 45% { transform: translateY(2.75rem); opacity: 1; } 55%, 100% { transform: translateY(2.75rem); opacity: 0; } }

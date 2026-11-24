@@ -49,7 +49,7 @@
 .voice-sentinel { padding: var(--fl-space-4); display: grid; gap: var(--fl-space-2); font-size: var(--fl-text-lg); line-height: 1.7; border-color: var(--fl-sand, var(--fl-brand)); }
 .voice-sentinel-title { font-weight: var(--fl-weight-bold); }
 .voice-sentinel-links { display: flex; flex-wrap: wrap; gap: var(--fl-space-3); }
-.voice-how ol { padding-inline-start: 1.5rem; display: grid; gap: var(--fl-space-2); font-size: var(--fl-text-lg); margin-block-end: var(--fl-space-3); }
+.voice-how ol { list-style: decimal; padding-inline-start: 1.75rem; display: grid; gap: var(--fl-space-2); font-size: var(--fl-text-lg); margin-block-end: var(--fl-space-3); }
 
 .voice-entry { margin-block: var(--fl-space-5); }
 .voice-entry-card { display: flex; align-items: center; gap: var(--fl-space-4); padding: var(--fl-space-5); flex-wrap: wrap; border-color: var(--fl-brand); }

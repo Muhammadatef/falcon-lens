@@ -27,7 +27,7 @@ const en: VoiceDoc = {
   steps: [
     { tag: "MIC", title: "Wake phrase", body: "You switch on the microphone and say \"Hey Falcon\". The browser records one short clip (at most fifteen seconds) and sends it to our own web route, /api/voice." },
     { tag: "STT", title: "Speech to text, locally", body: "The API passes the clip to a Whisper model on our own machine: native mlx-whisper first, the voice container (faster-whisper, small model) as the fallback. The audio stays in memory. Audio and transcripts are never stored and never logged." },
-    { tag: "INTENT", title: "Intent by fixed rules", body: "Fixed rules, not a model, decide what you asked: check what you copied, check some text, help, or stop." },
+    { tag: "INTENT", title: "Intent by fixed rules first", body: "Fixed rules decide what you asked: check what you copied, check some text, help, stop, or a scam-safety question. A question is answered by a pre-recorded clip. Only when no rule matches, a local embedding model on our own machine finds the nearest prepared question; anything else gets a short redirect back to scam checking. No generative model writes an answer." },
     { tag: "CHECK", title: "The same check as the Check page", body: "Each message you copied goes through the same public check API as the Check page, with the channel set to voice. Nothing is checked differently because you spoke." },
     { tag: "BASEER", title: "Baseer narrates each live step", body: "Baseer, the Investigator, is narrated only for steps the verdict stream shows really ran: known scam lists, the web address, the isolated page, an AI second look if it was needed. Then the verdict, how sure it is, and what to do now." },
     { tag: "DIR'", title: "Hand-over to Dir'", body: "The results go to Dir', the Sentinel. If the data links two or more checks, the assistant says so: one incident or campaign. If Dir' is not reachable it says that, and does not guess. Any outside action waits for an officer's approval." },
@@ -38,7 +38,7 @@ const en: VoiceDoc = {
     "A clip is at most fifteen seconds and one megabyte.",
     "Rate limits apply per visitor on the web route and per address on the API.",
     "The voice container has no direct internet access; its only outbound traffic is the one-time download of the open Whisper weights through an allow-listing proxy.",
-    "The wake phrase and the intent are decided by fixed rules; the model never sets a score.",
+    "The wake phrase is decided by fixed rules, and the intent by fixed rules first; a local embedding model only matches a question to a prepared answer. No model sets a score.",
   ],
   tryLabel: "Try it on the Check page",
 };
@@ -50,7 +50,7 @@ const ar: VoiceDoc = {
   steps: [
     { tag: "MIC", title: "عبارة التنبيه", body: "تشغّل الميكروفون وتقول «يا صقر». يسجّل المتصفح مقطعاً قصيراً (خمس عشرة ثانية على الأكثر) ويرسله إلى مسار الويب لدينا /api/voice." },
     { tag: "STT", title: "تحويل الكلام إلى نص محلياً", body: "تمرّر الواجهة البرمجية المقطع إلى نموذج Whisper على جهازنا نفسه: محرّك mlx-whisper الأصلي أولاً، وحاوية الصوت (faster-whisper بالنموذج الصغير) احتياطاً. يبقى الصوت في الذاكرة فقط، ولا يُخزَّن الصوت ولا النص المفرَّغ ولا يُسجَّلان." },
-    { tag: "INTENT", title: "فهم الطلب بقواعد ثابتة", body: "قواعد ثابتة، لا نموذج، تحدد ما طلبته: فحص ما نسخته، أو فحص نص، أو مساعدة، أو إيقاف." },
+    { tag: "INTENT", title: "فهم الطلب بقواعد ثابتة أولاً", body: "قواعد ثابتة تحدد ما طلبته: فحص ما نسخته، أو فحص نص، أو مساعدة، أو إيقاف، أو سؤال عن الحماية من الاحتيال. ويُجاب السؤال بمقطع مسجَّل مسبقاً. وإن لم تنطبق أي قاعدة، يبحث نموذج تضمين محلي على جهازنا نفسه عن أقرب سؤال مُعَدّ؛ وما عدا ذلك يُرَدّ عليه بتوجيه قصير إلى فحص الاحتيال. ولا يكتب أي نموذج توليدي إجابة." },
     { tag: "CHECK", title: "الفحص نفسه في صفحة الفحص", body: "تمرّ كل رسالة نسختها عبر واجهة الفحص العامة نفسها التي تستخدمها صفحة الفحص بقناة «صوت». لا يختلف الفحص لأنك تحدثت." },
     { tag: "BASEER", title: "«بصير» يروي كل خطوة مباشرة", body: "يروي المساعد خطوات «بصير»، المحقّق، التي يثبت تدفق الحكم أنها جرت فعلاً فقط: قوائم الاحتيال المعروفة، وعنوان الموقع، والصفحة في المتصفح المعزول، والنظرة الثانية بالذكاء الاصطناعي إن لزمت. ثم الحكم ودرجة الثقة وما عليك فعله الآن." },
     { tag: "DIR'", title: "التسليم إلى «درع»", body: "تُسلَّم النتائج إلى «درع»، الحارس. فإن ربطت البيانات فحصين أو أكثر قال المساعد ذلك: حادثة أو حملة واحدة. وإن تعذّر الوصول إلى «درع» قال ذلك ولم يخمّن. وأي إجراء خارجي ينتظر موافقة ضابط." },
@@ -61,7 +61,7 @@ const ar: VoiceDoc = {
     "المقطع خمس عشرة ثانية وميغابايت واحد على الأكثر.",
     "تُطبَّق حدود للمعدّل لكل زائر على مسار الويب ولكل عنوان على الواجهة البرمجية.",
     "حاوية الصوت لا تصل إلى الإنترنت مباشرة، وحركتها الخارجية الوحيدة تنزيل أوزان Whisper المفتوحة مرة واحدة عبر وسيط يسمح بنطاقات محددة.",
-    "عبارة التنبيه والطلب تحددهما قواعد ثابتة، والنموذج لا يحدد أي درجة.",
+    "عبارة التنبيه تحددها قواعد ثابتة، والطلب تحدده قواعد ثابتة أولاً؛ ونموذج التضمين المحلي يطابق السؤال بإجابة مُعَدّة فقط. ولا يحدد أي نموذج أي درجة.",
   ],
   tryLabel: "جرّبه في صفحة الفحص",
 };
