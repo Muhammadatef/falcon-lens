@@ -244,3 +244,18 @@ def test_formula_cells_are_escaped_on_write_and_resume_matches(tmp_path: Path) -
     rows = asyncio.run(go())  # resumed: not re-submitted, still escaped on disk
     assert rows[0]["verdict"] == "dangerous"
     assert out.read_text().count("'=cmd") == 1 and ",=cmd" not in out.read_text()
+
+
+def test_defanged_url_does_not_abort_the_run(tmp_path: Path) -> None:
+    assert bc.is_http_url("http://a[.]test/") is False
+    assert bc.is_http_url("http://[bad/") is False
+    out = tmp_path / "r.csv"
+
+    async def go() -> list[dict[str, str]]:
+        async with client(lambda r: httpx.Response(200, json=doc("dangerous"))) as c:
+            items = [(A, None), ("http://a[.]test/", None), ("http://[bad/", None), (B, None)]
+            return (await bc.run_batch(c, items, out, "strict", 2, sleep=nosleep))[0]
+
+    rows = asyncio.run(go())
+    assert [r["verdict"] for r in rows] == ["dangerous", "could_not_check", "could_not_check", "dangerous"]
+    assert rows[1]["error"] == "not_http_url"

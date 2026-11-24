@@ -383,7 +383,10 @@ def safe_row(row: dict[str, str]) -> dict[str, str]:
 
 def is_http_url(url: str) -> bool:
     """Only http(s) URLs with a host are submitted."""
-    u = urlsplit(url.strip())
+    try:
+        u = urlsplit(url.strip())
+    except ValueError:  # e.g. a defanged host such as a[.]test with a stray bracket
+        return False
     return u.scheme.lower() in ("http", "https") and bool(u.netloc)
 
 
