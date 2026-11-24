@@ -243,6 +243,7 @@ const ar = {
   "offline": "أنت غير متصل بالإنترنت. الفحص يتطلب اتصالاً ولم يُفحص شيء. لا تفتح أي رابط مشبوه إلى أن يتم فحصه.",
 
   "nav.agents": "الوكيلان الذكيان",
+  "nav.voice": "المساعد الصوتي",
   "nav.docs": "التوثيق",
   "nav.live": "الحملات المباشرة",
   "nav.campaigns": "الحملات",
@@ -613,6 +614,7 @@ const en: Record<MessageKey, string> = {
   "offline": "You are offline. A check needs a connection and nothing was checked. Do not open a suspicious link until it has been checked.",
 
   "nav.agents": "AI agents",
+  "nav.voice": "Voice assistant",
   "nav.docs": "Docs",
   "nav.live": "Live campaigns",
   "nav.campaigns": "Campaigns",

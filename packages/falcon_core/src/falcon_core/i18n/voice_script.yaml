@@ -1,0 +1,941 @@
+# GENERATED from web/lib/voice-script.ts by web/scripts/gen-voice-script.mjs. Do not edit by hand.
+# Every SPOKEN line of the Hey Falcon assistant. ar_ae = Emirati spoken Arabic (screen text stays formal MSA).
+# Every spoken output is a concatenation of the clips below; ids are stable: <lang>.<key>.
+version: 1
+clip_count: 466
+languages: [ar_ae, en]
+ar_ae:
+  "wake.ack": "هلا، سامعك."
+  "clip.reading": "لحظة، أقرا اللي نسخته."
+  "found.1": "لقيت مسج وحدة."
+  "found.2": "لقيت مسجين."
+  "found.3": "لقيت ثلاث مسجات."
+  "found.4": "لقيت أربع مسجات."
+  "found.5": "لقيت خمس مسجات."
+  "found.6": "لقيت ست مسجات."
+  "found.7": "لقيت سبع مسجات."
+  "found.8": "لقيت ثمان مسجات."
+  "found.9": "لقيت تسع مسجات."
+  "found.10": "لقيت عشر مسجات."
+  "checking.1": "أشيّك المسج الأول"
+  "checking.2": "أشيّك المسج الثاني"
+  "checking.3": "أشيّك المسج الثالث"
+  "checking.4": "أشيّك المسج الرابع"
+  "checking.5": "أشيّك المسج الخامس"
+  "checking.6": "أشيّك المسج السادس"
+  "checking.7": "أشيّك المسج السابع"
+  "checking.8": "أشيّك المسج الثامن"
+  "checking.9": "أشيّك المسج التاسع"
+  "checking.10": "أشيّك المسج العاشر"
+  "of.2": "من اثنين."
+  "of.3": "من ثلاث."
+  "of.4": "من أربع."
+  "of.5": "من خمس."
+  "of.6": "من ست."
+  "of.7": "من سبع."
+  "of.8": "من ثمان."
+  "of.9": "من تسع."
+  "of.10": "من عشر."
+  "investigator.start.1": "المحقق يشيّك المسج الأول."
+  "investigator.start.2": "المحقق يشيّك المسج الثاني."
+  "investigator.start.3": "المحقق يشيّك المسج الثالث."
+  "investigator.start.4": "المحقق يشيّك المسج الرابع."
+  "investigator.start.5": "المحقق يشيّك المسج الخامس."
+  "investigator.start.6": "المحقق يشيّك المسج السادس."
+  "investigator.start.7": "المحقق يشيّك المسج السابع."
+  "investigator.start.8": "المحقق يشيّك المسج الثامن."
+  "investigator.start.9": "المحقق يشيّك المسج التاسع."
+  "investigator.start.10": "المحقق يشيّك المسج العاشر."
+  "investigator.lists": "أطابقه مع قوائم النصب المعروفة."
+  "investigator.address": "أشوف عنوان الموقع، يمكن فيه تشابه مخادع."
+  "investigator.page": "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي."
+  "investigator.ai_second_look_local": "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي."
+  "investigator.ai_second_look_cloud": "نظرة ثانية بالذكاء الاصطناعي، بموديل كلود."
+  "investigator.rules_only": "القواعد حكمت، من غير ذكاء اصطناعي."
+  "investigator.arbiter_result.dangerous": "الحكم النهائي: المسج خطر!"
+  "investigator.arbiter_result.suspicious": "الحكم النهائي: المسج مشكوك فيه."
+  "investigator.arbiter_result.no_warning_signs": "الحكم النهائي: ما لقينا علامات تحذير."
+  "investigator.arbiter_result.could_not_check": "ما قدرنا نشيّك هذا المسج."
+  "score.lead": "الدرجة"
+  "num.0": "صفر"
+  "num.1": "واحد"
+  "num.2": "ثنين"
+  "num.3": "ثلاثة"
+  "num.4": "أربعة"
+  "num.5": "خمسة"
+  "num.6": "ستة"
+  "num.7": "سبعة"
+  "num.8": "ثمانية"
+  "num.9": "تسعة"
+  "num.10": "عشرة"
+  "num.11": "إحداعش"
+  "num.12": "اثناعش"
+  "num.13": "ثلاثطعش"
+  "num.14": "أربعطعش"
+  "num.15": "خمسطعش"
+  "num.16": "ستطعش"
+  "num.17": "سبعطعش"
+  "num.18": "ثمانطعش"
+  "num.19": "تسعطعش"
+  "num.20": "عشرين"
+  "num.21": "واحد وعشرين"
+  "num.22": "ثنين وعشرين"
+  "num.23": "ثلاثة وعشرين"
+  "num.24": "أربعة وعشرين"
+  "num.25": "خمسة وعشرين"
+  "num.26": "ستة وعشرين"
+  "num.27": "سبعة وعشرين"
+  "num.28": "ثمانية وعشرين"
+  "num.29": "تسعة وعشرين"
+  "num.30": "ثلاثين"
+  "num.31": "واحد وثلاثين"
+  "num.32": "ثنين وثلاثين"
+  "num.33": "ثلاثة وثلاثين"
+  "num.34": "أربعة وثلاثين"
+  "num.35": "خمسة وثلاثين"
+  "num.36": "ستة وثلاثين"
+  "num.37": "سبعة وثلاثين"
+  "num.38": "ثمانية وثلاثين"
+  "num.39": "تسعة وثلاثين"
+  "num.40": "أربعين"
+  "num.41": "واحد وأربعين"
+  "num.42": "ثنين وأربعين"
+  "num.43": "ثلاثة وأربعين"
+  "num.44": "أربعة وأربعين"
+  "num.45": "خمسة وأربعين"
+  "num.46": "ستة وأربعين"
+  "num.47": "سبعة وأربعين"
+  "num.48": "ثمانية وأربعين"
+  "num.49": "تسعة وأربعين"
+  "num.50": "خمسين"
+  "num.51": "واحد وخمسين"
+  "num.52": "ثنين وخمسين"
+  "num.53": "ثلاثة وخمسين"
+  "num.54": "أربعة وخمسين"
+  "num.55": "خمسة وخمسين"
+  "num.56": "ستة وخمسين"
+  "num.57": "سبعة وخمسين"
+  "num.58": "ثمانية وخمسين"
+  "num.59": "تسعة وخمسين"
+  "num.60": "ستين"
+  "num.61": "واحد وستين"
+  "num.62": "ثنين وستين"
+  "num.63": "ثلاثة وستين"
+  "num.64": "أربعة وستين"
+  "num.65": "خمسة وستين"
+  "num.66": "ستة وستين"
+  "num.67": "سبعة وستين"
+  "num.68": "ثمانية وستين"
+  "num.69": "تسعة وستين"
+  "num.70": "سبعين"
+  "num.71": "واحد وسبعين"
+  "num.72": "ثنين وسبعين"
+  "num.73": "ثلاثة وسبعين"
+  "num.74": "أربعة وسبعين"
+  "num.75": "خمسة وسبعين"
+  "num.76": "ستة وسبعين"
+  "num.77": "سبعة وسبعين"
+  "num.78": "ثمانية وسبعين"
+  "num.79": "تسعة وسبعين"
+  "num.80": "ثمانين"
+  "num.81": "واحد وثمانين"
+  "num.82": "ثنين وثمانين"
+  "num.83": "ثلاثة وثمانين"
+  "num.84": "أربعة وثمانين"
+  "num.85": "خمسة وثمانين"
+  "num.86": "ستة وثمانين"
+  "num.87": "سبعة وثمانين"
+  "num.88": "ثمانية وثمانين"
+  "num.89": "تسعة وثمانين"
+  "num.90": "تسعين"
+  "num.91": "واحد وتسعين"
+  "num.92": "ثنين وتسعين"
+  "num.93": "ثلاثة وتسعين"
+  "num.94": "أربعة وتسعين"
+  "num.95": "خمسة وتسعين"
+  "num.96": "ستة وتسعين"
+  "num.97": "سبعة وتسعين"
+  "num.98": "ثمانية وتسعين"
+  "num.99": "تسعة وتسعين"
+  "num.100": "مية"
+  "score.of": "من مية."
+  "sentinel.handover": "أسلّم النتايج للحارس."
+  "sentinel.linked.2": "الحارس ربط مسجين في حملة نصب وحدة."
+  "sentinel.linked.3": "الحارس ربط ثلاث مسجات في حملة نصب وحدة."
+  "sentinel.linked.4": "الحارس ربط أربع مسجات في حملة نصب وحدة."
+  "sentinel.linked.5": "الحارس ربط خمس مسجات في حملة نصب وحدة."
+  "sentinel.linked.6": "الحارس ربط ست مسجات في حملة نصب وحدة."
+  "sentinel.linked.7": "الحارس ربط سبع مسجات في حملة نصب وحدة."
+  "sentinel.linked.8": "الحارس ربط ثمان مسجات في حملة نصب وحدة."
+  "sentinel.linked.9": "الحارس ربط تسع مسجات في حملة نصب وحدة."
+  "sentinel.linked.10": "الحارس ربط عشر مسجات في حملة نصب وحدة."
+  "sentinel.summary": "الحارس كتب ملخص بالعربي والإنجليزي."
+  "sentinel.draft": "الحارس جهّز مسودة طلب لإزالة الموقع."
+  "sentinel.awaiting_approval": "ننتظر موافقة ضابط. ما يُرسل شي بدونها."
+  "sentinel.watching": "الحارس يظل يراقب أي بلاغات مشابهة."
+  "final.both_agents": "المحقق شيّك، والحارس ربطها وصار يتابع."
+  "sentinel.unavailable": "ما وصلت للحارس الحين، فما أعرف إذا فيه حملة."
+  "nothing_checked": "ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس."
+  "mic.denied": "ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات."
+  "voice.unavailable": "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."
+  "final.sentinel_unavailable": "المحقق شيّك، بس ما قدرت أوصل للحارس."
+  "final.sentinel_watching": "المحقق شيّك، والحارس يظل يراقب."
+  "sum.dangerous.1": "مسج وحدة منها خطر."
+  "sum.suspicious.1": "مسج وحدة منها مشكوك فيها."
+  "sum.clear.1": "مسج وحدة ما فيها علامات تحذير."
+  "sum.failed.1": "مسج وحدة ما قدرت أشيّكها."
+  "sum.dangerous.2": "مسجين منها خطر."
+  "sum.suspicious.2": "مسجين منها مشكوك فيها."
+  "sum.clear.2": "مسجين ما فيها علامات تحذير."
+  "sum.failed.2": "مسجين ما قدرت أشيّكها."
+  "sum.dangerous.3": "ثلاث مسجات منها خطر."
+  "sum.suspicious.3": "ثلاث مسجات منها مشكوك فيها."
+  "sum.clear.3": "ثلاث مسجات ما فيها علامات تحذير."
+  "sum.failed.3": "ثلاث مسجات ما قدرت أشيّكها."
+  "sum.dangerous.4": "أربع مسجات منها خطر."
+  "sum.suspicious.4": "أربع مسجات منها مشكوك فيها."
+  "sum.clear.4": "أربع مسجات ما فيها علامات تحذير."
+  "sum.failed.4": "أربع مسجات ما قدرت أشيّكها."
+  "sum.dangerous.5": "خمس مسجات منها خطر."
+  "sum.suspicious.5": "خمس مسجات منها مشكوك فيها."
+  "sum.clear.5": "خمس مسجات ما فيها علامات تحذير."
+  "sum.failed.5": "خمس مسجات ما قدرت أشيّكها."
+  "sum.dangerous.6": "ست مسجات منها خطر."
+  "sum.suspicious.6": "ست مسجات منها مشكوك فيها."
+  "sum.clear.6": "ست مسجات ما فيها علامات تحذير."
+  "sum.failed.6": "ست مسجات ما قدرت أشيّكها."
+  "sum.dangerous.7": "سبع مسجات منها خطر."
+  "sum.suspicious.7": "سبع مسجات منها مشكوك فيها."
+  "sum.clear.7": "سبع مسجات ما فيها علامات تحذير."
+  "sum.failed.7": "سبع مسجات ما قدرت أشيّكها."
+  "sum.dangerous.8": "ثمان مسجات منها خطر."
+  "sum.suspicious.8": "ثمان مسجات منها مشكوك فيها."
+  "sum.clear.8": "ثمان مسجات ما فيها علامات تحذير."
+  "sum.failed.8": "ثمان مسجات ما قدرت أشيّكها."
+  "sum.dangerous.9": "تسع مسجات منها خطر."
+  "sum.suspicious.9": "تسع مسجات منها مشكوك فيها."
+  "sum.clear.9": "تسع مسجات ما فيها علامات تحذير."
+  "sum.failed.9": "تسع مسجات ما قدرت أشيّكها."
+  "sum.dangerous.10": "عشر مسجات منها خطر."
+  "sum.suspicious.10": "عشر مسجات منها مشكوك فيها."
+  "sum.clear.10": "عشر مسجات ما فيها علامات تحذير."
+  "sum.failed.10": "عشر مسجات ما قدرت أشيّكها."
+  "result.dangerous": "هذا المسج خطر!"
+  "result.suspicious": "هذا المسج مشكوك فيه."
+  "result.no_warning_signs": "ما لقيت فيه علامات تحذير."
+  "result.could_not_check": "ما قدرت أشيّك هذا المسج."
+  "todo.lead": "نصيحتي لك:"
+  "todo.link": "لا تضغط على الرابط، ولا تدوس عليه."
+  "todo.otp": "ولا تعطي حد الرمز أبداً."
+  "todo.bank": "كلّم بنكك على الرقم اللي على بطاقتك."
+  "todo.report": "وبلّغ عن المسج من القنوات الرسمية."
+  "todo.careful": "بس خلّك حذر."
+  "todo.wait": "لا تفتح الرابط لين نشيّكه."
+  "help": "انسخ المسجات، وقل: يا فالكون، شيّك مسجاتي."
+  "stop": "تمام، وقّفت."
+  "didnt": "ما فهمت عليك. عيد، لو سمحت."
+  "clip.empty": "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي."
+  "clip.denied": "ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة."
+  "error": "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط."
+  "goodbye": "يزاك الله خير. الله يحفظك."
+en:
+  "wake.ack": "Yes, I'm listening."
+  "clip.reading": "One moment, reading what you copied."
+  "found.1": "I found one message."
+  "found.2": "I found two messages."
+  "found.3": "I found three messages."
+  "found.4": "I found four messages."
+  "found.5": "I found five messages."
+  "found.6": "I found six messages."
+  "found.7": "I found seven messages."
+  "found.8": "I found eight messages."
+  "found.9": "I found nine messages."
+  "found.10": "I found ten messages."
+  "checking.1": "Checking the first message"
+  "checking.2": "Checking the second message"
+  "checking.3": "Checking the third message"
+  "checking.4": "Checking the fourth message"
+  "checking.5": "Checking the fifth message"
+  "checking.6": "Checking the sixth message"
+  "checking.7": "Checking the seventh message"
+  "checking.8": "Checking the eighth message"
+  "checking.9": "Checking the ninth message"
+  "checking.10": "Checking the tenth message"
+  "of.2": "of two."
+  "of.3": "of three."
+  "of.4": "of four."
+  "of.5": "of five."
+  "of.6": "of six."
+  "of.7": "of seven."
+  "of.8": "of eight."
+  "of.9": "of nine."
+  "of.10": "of ten."
+  "investigator.start.1": "The Investigator agent is checking the first message."
+  "investigator.start.2": "The Investigator agent is checking the second message."
+  "investigator.start.3": "The Investigator agent is checking the third message."
+  "investigator.start.4": "The Investigator agent is checking the fourth message."
+  "investigator.start.5": "The Investigator agent is checking the fifth message."
+  "investigator.start.6": "The Investigator agent is checking the sixth message."
+  "investigator.start.7": "The Investigator agent is checking the seventh message."
+  "investigator.start.8": "The Investigator agent is checking the eighth message."
+  "investigator.start.9": "The Investigator agent is checking the ninth message."
+  "investigator.start.10": "The Investigator agent is checking the tenth message."
+  "investigator.lists": "Checking known scam lists."
+  "investigator.address": "Checking the web address for look-alike tricks."
+  "investigator.page": "Opening the page in our isolated browser. Nothing is typed."
+  "investigator.ai_second_look_local": "AI second look, with our local model."
+  "investigator.ai_second_look_cloud": "AI second look, with Claude."
+  "investigator.rules_only": "The rules decided, without AI."
+  "investigator.arbiter_result.dangerous": "The arbiter's decision: dangerous."
+  "investigator.arbiter_result.suspicious": "The arbiter's decision: suspicious."
+  "investigator.arbiter_result.no_warning_signs": "The arbiter's decision: no warning signs found."
+  "investigator.arbiter_result.could_not_check": "The message could not be checked."
+  "score.lead": "The score is"
+  "num.0": "zero"
+  "num.1": "one"
+  "num.2": "two"
+  "num.3": "three"
+  "num.4": "four"
+  "num.5": "five"
+  "num.6": "six"
+  "num.7": "seven"
+  "num.8": "eight"
+  "num.9": "nine"
+  "num.10": "ten"
+  "num.11": "eleven"
+  "num.12": "twelve"
+  "num.13": "thirteen"
+  "num.14": "fourteen"
+  "num.15": "fifteen"
+  "num.16": "sixteen"
+  "num.17": "seventeen"
+  "num.18": "eighteen"
+  "num.19": "nineteen"
+  "num.20": "twenty"
+  "num.21": "twenty-one"
+  "num.22": "twenty-two"
+  "num.23": "twenty-three"
+  "num.24": "twenty-four"
+  "num.25": "twenty-five"
+  "num.26": "twenty-six"
+  "num.27": "twenty-seven"
+  "num.28": "twenty-eight"
+  "num.29": "twenty-nine"
+  "num.30": "thirty"
+  "num.31": "thirty-one"
+  "num.32": "thirty-two"
+  "num.33": "thirty-three"
+  "num.34": "thirty-four"
+  "num.35": "thirty-five"
+  "num.36": "thirty-six"
+  "num.37": "thirty-seven"
+  "num.38": "thirty-eight"
+  "num.39": "thirty-nine"
+  "num.40": "forty"
+  "num.41": "forty-one"
+  "num.42": "forty-two"
+  "num.43": "forty-three"
+  "num.44": "forty-four"
+  "num.45": "forty-five"
+  "num.46": "forty-six"
+  "num.47": "forty-seven"
+  "num.48": "forty-eight"
+  "num.49": "forty-nine"
+  "num.50": "fifty"
+  "num.51": "fifty-one"
+  "num.52": "fifty-two"
+  "num.53": "fifty-three"
+  "num.54": "fifty-four"
+  "num.55": "fifty-five"
+  "num.56": "fifty-six"
+  "num.57": "fifty-seven"
+  "num.58": "fifty-eight"
+  "num.59": "fifty-nine"
+  "num.60": "sixty"
+  "num.61": "sixty-one"
+  "num.62": "sixty-two"
+  "num.63": "sixty-three"
+  "num.64": "sixty-four"
+  "num.65": "sixty-five"
+  "num.66": "sixty-six"
+  "num.67": "sixty-seven"
+  "num.68": "sixty-eight"
+  "num.69": "sixty-nine"
+  "num.70": "seventy"
+  "num.71": "seventy-one"
+  "num.72": "seventy-two"
+  "num.73": "seventy-three"
+  "num.74": "seventy-four"
+  "num.75": "seventy-five"
+  "num.76": "seventy-six"
+  "num.77": "seventy-seven"
+  "num.78": "seventy-eight"
+  "num.79": "seventy-nine"
+  "num.80": "eighty"
+  "num.81": "eighty-one"
+  "num.82": "eighty-two"
+  "num.83": "eighty-three"
+  "num.84": "eighty-four"
+  "num.85": "eighty-five"
+  "num.86": "eighty-six"
+  "num.87": "eighty-seven"
+  "num.88": "eighty-eight"
+  "num.89": "eighty-nine"
+  "num.90": "ninety"
+  "num.91": "ninety-one"
+  "num.92": "ninety-two"
+  "num.93": "ninety-three"
+  "num.94": "ninety-four"
+  "num.95": "ninety-five"
+  "num.96": "ninety-six"
+  "num.97": "ninety-seven"
+  "num.98": "ninety-eight"
+  "num.99": "ninety-nine"
+  "num.100": "one hundred"
+  "score.of": "out of one hundred."
+  "sentinel.handover": "Handing the results to the Sentinel agent."
+  "sentinel.linked.2": "The Sentinel linked two reports into one campaign."
+  "sentinel.linked.3": "The Sentinel linked three reports into one campaign."
+  "sentinel.linked.4": "The Sentinel linked four reports into one campaign."
+  "sentinel.linked.5": "The Sentinel linked five reports into one campaign."
+  "sentinel.linked.6": "The Sentinel linked six reports into one campaign."
+  "sentinel.linked.7": "The Sentinel linked seven reports into one campaign."
+  "sentinel.linked.8": "The Sentinel linked eight reports into one campaign."
+  "sentinel.linked.9": "The Sentinel linked nine reports into one campaign."
+  "sentinel.linked.10": "The Sentinel linked ten reports into one campaign."
+  "sentinel.summary": "The Sentinel wrote a summary in Arabic and English."
+  "sentinel.draft": "The Sentinel prepared a takedown request draft."
+  "sentinel.awaiting_approval": "Waiting for an officer's approval. Nothing is sent without it."
+  "sentinel.watching": "The Sentinel keeps watching for similar reports."
+  "final.both_agents": "The Investigator checked, and the Sentinel linked them and follows up."
+  "sentinel.unavailable": "I couldn't reach the Sentinel right now, so I can't say whether there is a campaign."
+  "nothing_checked": "No check could be completed, so I handed nothing to the Sentinel."
+  "mic.denied": "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box."
+  "voice.unavailable": "The voice service isn't available right now. Please use the paste box."
+  "final.sentinel_unavailable": "The Investigator checked, but I couldn't reach the Sentinel."
+  "final.sentinel_watching": "The Investigator checked, and the Sentinel keeps watching."
+  "sum.dangerous.1": "One message is dangerous."
+  "sum.suspicious.1": "One message looks suspicious."
+  "sum.clear.1": "One message showed no warning signs."
+  "sum.failed.1": "One message could not be checked."
+  "sum.dangerous.2": "Two messages are dangerous."
+  "sum.suspicious.2": "Two messages look suspicious."
+  "sum.clear.2": "Two messages showed no warning signs."
+  "sum.failed.2": "Two messages could not be checked."
+  "sum.dangerous.3": "Three messages are dangerous."
+  "sum.suspicious.3": "Three messages look suspicious."
+  "sum.clear.3": "Three messages showed no warning signs."
+  "sum.failed.3": "Three messages could not be checked."
+  "sum.dangerous.4": "Four messages are dangerous."
+  "sum.suspicious.4": "Four messages look suspicious."
+  "sum.clear.4": "Four messages showed no warning signs."
+  "sum.failed.4": "Four messages could not be checked."
+  "sum.dangerous.5": "Five messages are dangerous."
+  "sum.suspicious.5": "Five messages look suspicious."
+  "sum.clear.5": "Five messages showed no warning signs."
+  "sum.failed.5": "Five messages could not be checked."
+  "sum.dangerous.6": "Six messages are dangerous."
+  "sum.suspicious.6": "Six messages look suspicious."
+  "sum.clear.6": "Six messages showed no warning signs."
+  "sum.failed.6": "Six messages could not be checked."
+  "sum.dangerous.7": "Seven messages are dangerous."
+  "sum.suspicious.7": "Seven messages look suspicious."
+  "sum.clear.7": "Seven messages showed no warning signs."
+  "sum.failed.7": "Seven messages could not be checked."
+  "sum.dangerous.8": "Eight messages are dangerous."
+  "sum.suspicious.8": "Eight messages look suspicious."
+  "sum.clear.8": "Eight messages showed no warning signs."
+  "sum.failed.8": "Eight messages could not be checked."
+  "sum.dangerous.9": "Nine messages are dangerous."
+  "sum.suspicious.9": "Nine messages look suspicious."
+  "sum.clear.9": "Nine messages showed no warning signs."
+  "sum.failed.9": "Nine messages could not be checked."
+  "sum.dangerous.10": "Ten messages are dangerous."
+  "sum.suspicious.10": "Ten messages look suspicious."
+  "sum.clear.10": "Ten messages showed no warning signs."
+  "sum.failed.10": "Ten messages could not be checked."
+  "result.dangerous": "This message is dangerous."
+  "result.suspicious": "This message looks suspicious."
+  "result.no_warning_signs": "I found no warning signs in it."
+  "result.could_not_check": "I could not check this message."
+  "todo.lead": "What to do now:"
+  "todo.link": "Don't tap the link."
+  "todo.otp": "Never share a code with anyone."
+  "todo.bank": "Call your bank on the number on your card."
+  "todo.report": "Report the message through the official channels."
+  "todo.careful": "But stay careful."
+  "todo.wait": "Don't open the link until it is checked."
+  "help": "Copy your messages, then say: Hey Falcon, check my messages."
+  "stop": "Okay, I've stopped."
+  "didnt": "Sorry, I didn't catch that. Please say it again."
+  "clip.empty": "I found no messages in what you copied. Copy them and try again."
+  "clip.denied": "I couldn't read what you copied. Paste it in the box on the screen."
+  "error": "Something went wrong. Try again, and don't open any link."
+  "goodbye": "Thank you. Take care."
+clips:
+  - {id: "ar_ae.wake.ack", lang: ar_ae, text: "هلا، سامعك."}
+  - {id: "ar_ae.clip.reading", lang: ar_ae, text: "لحظة، أقرا اللي نسخته."}
+  - {id: "ar_ae.found.1", lang: ar_ae, text: "لقيت مسج وحدة."}
+  - {id: "ar_ae.found.2", lang: ar_ae, text: "لقيت مسجين."}
+  - {id: "ar_ae.found.3", lang: ar_ae, text: "لقيت ثلاث مسجات."}
+  - {id: "ar_ae.found.4", lang: ar_ae, text: "لقيت أربع مسجات."}
+  - {id: "ar_ae.found.5", lang: ar_ae, text: "لقيت خمس مسجات."}
+  - {id: "ar_ae.found.6", lang: ar_ae, text: "لقيت ست مسجات."}
+  - {id: "ar_ae.found.7", lang: ar_ae, text: "لقيت سبع مسجات."}
+  - {id: "ar_ae.found.8", lang: ar_ae, text: "لقيت ثمان مسجات."}
+  - {id: "ar_ae.found.9", lang: ar_ae, text: "لقيت تسع مسجات."}
+  - {id: "ar_ae.found.10", lang: ar_ae, text: "لقيت عشر مسجات."}
+  - {id: "ar_ae.checking.1", lang: ar_ae, text: "أشيّك المسج الأول"}
+  - {id: "ar_ae.checking.2", lang: ar_ae, text: "أشيّك المسج الثاني"}
+  - {id: "ar_ae.checking.3", lang: ar_ae, text: "أشيّك المسج الثالث"}
+  - {id: "ar_ae.checking.4", lang: ar_ae, text: "أشيّك المسج الرابع"}
+  - {id: "ar_ae.checking.5", lang: ar_ae, text: "أشيّك المسج الخامس"}
+  - {id: "ar_ae.checking.6", lang: ar_ae, text: "أشيّك المسج السادس"}
+  - {id: "ar_ae.checking.7", lang: ar_ae, text: "أشيّك المسج السابع"}
+  - {id: "ar_ae.checking.8", lang: ar_ae, text: "أشيّك المسج الثامن"}
+  - {id: "ar_ae.checking.9", lang: ar_ae, text: "أشيّك المسج التاسع"}
+  - {id: "ar_ae.checking.10", lang: ar_ae, text: "أشيّك المسج العاشر"}
+  - {id: "ar_ae.of.2", lang: ar_ae, text: "من اثنين."}
+  - {id: "ar_ae.of.3", lang: ar_ae, text: "من ثلاث."}
+  - {id: "ar_ae.of.4", lang: ar_ae, text: "من أربع."}
+  - {id: "ar_ae.of.5", lang: ar_ae, text: "من خمس."}
+  - {id: "ar_ae.of.6", lang: ar_ae, text: "من ست."}
+  - {id: "ar_ae.of.7", lang: ar_ae, text: "من سبع."}
+  - {id: "ar_ae.of.8", lang: ar_ae, text: "من ثمان."}
+  - {id: "ar_ae.of.9", lang: ar_ae, text: "من تسع."}
+  - {id: "ar_ae.of.10", lang: ar_ae, text: "من عشر."}
+  - {id: "ar_ae.investigator.start.1", lang: ar_ae, text: "المحقق يشيّك المسج الأول."}
+  - {id: "ar_ae.investigator.start.2", lang: ar_ae, text: "المحقق يشيّك المسج الثاني."}
+  - {id: "ar_ae.investigator.start.3", lang: ar_ae, text: "المحقق يشيّك المسج الثالث."}
+  - {id: "ar_ae.investigator.start.4", lang: ar_ae, text: "المحقق يشيّك المسج الرابع."}
+  - {id: "ar_ae.investigator.start.5", lang: ar_ae, text: "المحقق يشيّك المسج الخامس."}
+  - {id: "ar_ae.investigator.start.6", lang: ar_ae, text: "المحقق يشيّك المسج السادس."}
+  - {id: "ar_ae.investigator.start.7", lang: ar_ae, text: "المحقق يشيّك المسج السابع."}
+  - {id: "ar_ae.investigator.start.8", lang: ar_ae, text: "المحقق يشيّك المسج الثامن."}
+  - {id: "ar_ae.investigator.start.9", lang: ar_ae, text: "المحقق يشيّك المسج التاسع."}
+  - {id: "ar_ae.investigator.start.10", lang: ar_ae, text: "المحقق يشيّك المسج العاشر."}
+  - {id: "ar_ae.investigator.lists", lang: ar_ae, text: "أطابقه مع قوائم النصب المعروفة."}
+  - {id: "ar_ae.investigator.address", lang: ar_ae, text: "أشوف عنوان الموقع، يمكن فيه تشابه مخادع."}
+  - {id: "ar_ae.investigator.page", lang: ar_ae, text: "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي."}
+  - {id: "ar_ae.investigator.ai_second_look_local", lang: ar_ae, text: "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي."}
+  - {id: "ar_ae.investigator.ai_second_look_cloud", lang: ar_ae, text: "نظرة ثانية بالذكاء الاصطناعي، بموديل كلود."}
+  - {id: "ar_ae.investigator.rules_only", lang: ar_ae, text: "القواعد حكمت، من غير ذكاء اصطناعي."}
+  - {id: "ar_ae.investigator.arbiter_result.dangerous", lang: ar_ae, text: "الحكم النهائي: المسج خطر!"}
+  - {id: "ar_ae.investigator.arbiter_result.suspicious", lang: ar_ae, text: "الحكم النهائي: المسج مشكوك فيه."}
+  - {id: "ar_ae.investigator.arbiter_result.no_warning_signs", lang: ar_ae, text: "الحكم النهائي: ما لقينا علامات تحذير."}
+  - {id: "ar_ae.investigator.arbiter_result.could_not_check", lang: ar_ae, text: "ما قدرنا نشيّك هذا المسج."}
+  - {id: "ar_ae.score.lead", lang: ar_ae, text: "الدرجة"}
+  - {id: "ar_ae.num.0", lang: ar_ae, text: "صفر"}
+  - {id: "ar_ae.num.1", lang: ar_ae, text: "واحد"}
+  - {id: "ar_ae.num.2", lang: ar_ae, text: "ثنين"}
+  - {id: "ar_ae.num.3", lang: ar_ae, text: "ثلاثة"}
+  - {id: "ar_ae.num.4", lang: ar_ae, text: "أربعة"}
+  - {id: "ar_ae.num.5", lang: ar_ae, text: "خمسة"}
+  - {id: "ar_ae.num.6", lang: ar_ae, text: "ستة"}
+  - {id: "ar_ae.num.7", lang: ar_ae, text: "سبعة"}
+  - {id: "ar_ae.num.8", lang: ar_ae, text: "ثمانية"}
+  - {id: "ar_ae.num.9", lang: ar_ae, text: "تسعة"}
+  - {id: "ar_ae.num.10", lang: ar_ae, text: "عشرة"}
+  - {id: "ar_ae.num.11", lang: ar_ae, text: "إحداعش"}
+  - {id: "ar_ae.num.12", lang: ar_ae, text: "اثناعش"}
+  - {id: "ar_ae.num.13", lang: ar_ae, text: "ثلاثطعش"}
+  - {id: "ar_ae.num.14", lang: ar_ae, text: "أربعطعش"}
+  - {id: "ar_ae.num.15", lang: ar_ae, text: "خمسطعش"}
+  - {id: "ar_ae.num.16", lang: ar_ae, text: "ستطعش"}
+  - {id: "ar_ae.num.17", lang: ar_ae, text: "سبعطعش"}
+  - {id: "ar_ae.num.18", lang: ar_ae, text: "ثمانطعش"}
+  - {id: "ar_ae.num.19", lang: ar_ae, text: "تسعطعش"}
+  - {id: "ar_ae.num.20", lang: ar_ae, text: "عشرين"}
+  - {id: "ar_ae.num.21", lang: ar_ae, text: "واحد وعشرين"}
+  - {id: "ar_ae.num.22", lang: ar_ae, text: "ثنين وعشرين"}
+  - {id: "ar_ae.num.23", lang: ar_ae, text: "ثلاثة وعشرين"}
+  - {id: "ar_ae.num.24", lang: ar_ae, text: "أربعة وعشرين"}
+  - {id: "ar_ae.num.25", lang: ar_ae, text: "خمسة وعشرين"}
+  - {id: "ar_ae.num.26", lang: ar_ae, text: "ستة وعشرين"}
+  - {id: "ar_ae.num.27", lang: ar_ae, text: "سبعة وعشرين"}
+  - {id: "ar_ae.num.28", lang: ar_ae, text: "ثمانية وعشرين"}
+  - {id: "ar_ae.num.29", lang: ar_ae, text: "تسعة وعشرين"}
+  - {id: "ar_ae.num.30", lang: ar_ae, text: "ثلاثين"}
+  - {id: "ar_ae.num.31", lang: ar_ae, text: "واحد وثلاثين"}
+  - {id: "ar_ae.num.32", lang: ar_ae, text: "ثنين وثلاثين"}
+  - {id: "ar_ae.num.33", lang: ar_ae, text: "ثلاثة وثلاثين"}
+  - {id: "ar_ae.num.34", lang: ar_ae, text: "أربعة وثلاثين"}
+  - {id: "ar_ae.num.35", lang: ar_ae, text: "خمسة وثلاثين"}
+  - {id: "ar_ae.num.36", lang: ar_ae, text: "ستة وثلاثين"}
+  - {id: "ar_ae.num.37", lang: ar_ae, text: "سبعة وثلاثين"}
+  - {id: "ar_ae.num.38", lang: ar_ae, text: "ثمانية وثلاثين"}
+  - {id: "ar_ae.num.39", lang: ar_ae, text: "تسعة وثلاثين"}
+  - {id: "ar_ae.num.40", lang: ar_ae, text: "أربعين"}
+  - {id: "ar_ae.num.41", lang: ar_ae, text: "واحد وأربعين"}
+  - {id: "ar_ae.num.42", lang: ar_ae, text: "ثنين وأربعين"}
+  - {id: "ar_ae.num.43", lang: ar_ae, text: "ثلاثة وأربعين"}
+  - {id: "ar_ae.num.44", lang: ar_ae, text: "أربعة وأربعين"}
+  - {id: "ar_ae.num.45", lang: ar_ae, text: "خمسة وأربعين"}
+  - {id: "ar_ae.num.46", lang: ar_ae, text: "ستة وأربعين"}
+  - {id: "ar_ae.num.47", lang: ar_ae, text: "سبعة وأربعين"}
+  - {id: "ar_ae.num.48", lang: ar_ae, text: "ثمانية وأربعين"}
+  - {id: "ar_ae.num.49", lang: ar_ae, text: "تسعة وأربعين"}
+  - {id: "ar_ae.num.50", lang: ar_ae, text: "خمسين"}
+  - {id: "ar_ae.num.51", lang: ar_ae, text: "واحد وخمسين"}
+  - {id: "ar_ae.num.52", lang: ar_ae, text: "ثنين وخمسين"}
+  - {id: "ar_ae.num.53", lang: ar_ae, text: "ثلاثة وخمسين"}
+  - {id: "ar_ae.num.54", lang: ar_ae, text: "أربعة وخمسين"}
+  - {id: "ar_ae.num.55", lang: ar_ae, text: "خمسة وخمسين"}
+  - {id: "ar_ae.num.56", lang: ar_ae, text: "ستة وخمسين"}
+  - {id: "ar_ae.num.57", lang: ar_ae, text: "سبعة وخمسين"}
+  - {id: "ar_ae.num.58", lang: ar_ae, text: "ثمانية وخمسين"}
+  - {id: "ar_ae.num.59", lang: ar_ae, text: "تسعة وخمسين"}
+  - {id: "ar_ae.num.60", lang: ar_ae, text: "ستين"}
+  - {id: "ar_ae.num.61", lang: ar_ae, text: "واحد وستين"}
+  - {id: "ar_ae.num.62", lang: ar_ae, text: "ثنين وستين"}
+  - {id: "ar_ae.num.63", lang: ar_ae, text: "ثلاثة وستين"}
+  - {id: "ar_ae.num.64", lang: ar_ae, text: "أربعة وستين"}
+  - {id: "ar_ae.num.65", lang: ar_ae, text: "خمسة وستين"}
+  - {id: "ar_ae.num.66", lang: ar_ae, text: "ستة وستين"}
+  - {id: "ar_ae.num.67", lang: ar_ae, text: "سبعة وستين"}
+  - {id: "ar_ae.num.68", lang: ar_ae, text: "ثمانية وستين"}
+  - {id: "ar_ae.num.69", lang: ar_ae, text: "تسعة وستين"}
+  - {id: "ar_ae.num.70", lang: ar_ae, text: "سبعين"}
+  - {id: "ar_ae.num.71", lang: ar_ae, text: "واحد وسبعين"}
+  - {id: "ar_ae.num.72", lang: ar_ae, text: "ثنين وسبعين"}
+  - {id: "ar_ae.num.73", lang: ar_ae, text: "ثلاثة وسبعين"}
+  - {id: "ar_ae.num.74", lang: ar_ae, text: "أربعة وسبعين"}
+  - {id: "ar_ae.num.75", lang: ar_ae, text: "خمسة وسبعين"}
+  - {id: "ar_ae.num.76", lang: ar_ae, text: "ستة وسبعين"}
+  - {id: "ar_ae.num.77", lang: ar_ae, text: "سبعة وسبعين"}
+  - {id: "ar_ae.num.78", lang: ar_ae, text: "ثمانية وسبعين"}
+  - {id: "ar_ae.num.79", lang: ar_ae, text: "تسعة وسبعين"}
+  - {id: "ar_ae.num.80", lang: ar_ae, text: "ثمانين"}
+  - {id: "ar_ae.num.81", lang: ar_ae, text: "واحد وثمانين"}
+  - {id: "ar_ae.num.82", lang: ar_ae, text: "ثنين وثمانين"}
+  - {id: "ar_ae.num.83", lang: ar_ae, text: "ثلاثة وثمانين"}
+  - {id: "ar_ae.num.84", lang: ar_ae, text: "أربعة وثمانين"}
+  - {id: "ar_ae.num.85", lang: ar_ae, text: "خمسة وثمانين"}
+  - {id: "ar_ae.num.86", lang: ar_ae, text: "ستة وثمانين"}
+  - {id: "ar_ae.num.87", lang: ar_ae, text: "سبعة وثمانين"}
+  - {id: "ar_ae.num.88", lang: ar_ae, text: "ثمانية وثمانين"}
+  - {id: "ar_ae.num.89", lang: ar_ae, text: "تسعة وثمانين"}
+  - {id: "ar_ae.num.90", lang: ar_ae, text: "تسعين"}
+  - {id: "ar_ae.num.91", lang: ar_ae, text: "واحد وتسعين"}
+  - {id: "ar_ae.num.92", lang: ar_ae, text: "ثنين وتسعين"}
+  - {id: "ar_ae.num.93", lang: ar_ae, text: "ثلاثة وتسعين"}
+  - {id: "ar_ae.num.94", lang: ar_ae, text: "أربعة وتسعين"}
+  - {id: "ar_ae.num.95", lang: ar_ae, text: "خمسة وتسعين"}
+  - {id: "ar_ae.num.96", lang: ar_ae, text: "ستة وتسعين"}
+  - {id: "ar_ae.num.97", lang: ar_ae, text: "سبعة وتسعين"}
+  - {id: "ar_ae.num.98", lang: ar_ae, text: "ثمانية وتسعين"}
+  - {id: "ar_ae.num.99", lang: ar_ae, text: "تسعة وتسعين"}
+  - {id: "ar_ae.num.100", lang: ar_ae, text: "مية"}
+  - {id: "ar_ae.score.of", lang: ar_ae, text: "من مية."}
+  - {id: "ar_ae.sentinel.handover", lang: ar_ae, text: "أسلّم النتايج للحارس."}
+  - {id: "ar_ae.sentinel.linked.2", lang: ar_ae, text: "الحارس ربط مسجين في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.3", lang: ar_ae, text: "الحارس ربط ثلاث مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.4", lang: ar_ae, text: "الحارس ربط أربع مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.5", lang: ar_ae, text: "الحارس ربط خمس مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.6", lang: ar_ae, text: "الحارس ربط ست مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.7", lang: ar_ae, text: "الحارس ربط سبع مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.8", lang: ar_ae, text: "الحارس ربط ثمان مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.9", lang: ar_ae, text: "الحارس ربط تسع مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.10", lang: ar_ae, text: "الحارس ربط عشر مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.summary", lang: ar_ae, text: "الحارس كتب ملخص بالعربي والإنجليزي."}
+  - {id: "ar_ae.sentinel.draft", lang: ar_ae, text: "الحارس جهّز مسودة طلب لإزالة الموقع."}
+  - {id: "ar_ae.sentinel.awaiting_approval", lang: ar_ae, text: "ننتظر موافقة ضابط. ما يُرسل شي بدونها."}
+  - {id: "ar_ae.sentinel.watching", lang: ar_ae, text: "الحارس يظل يراقب أي بلاغات مشابهة."}
+  - {id: "ar_ae.final.both_agents", lang: ar_ae, text: "المحقق شيّك، والحارس ربطها وصار يتابع."}
+  - {id: "ar_ae.sentinel.unavailable", lang: ar_ae, text: "ما وصلت للحارس الحين، فما أعرف إذا فيه حملة."}
+  - {id: "ar_ae.nothing_checked", lang: ar_ae, text: "ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس."}
+  - {id: "ar_ae.mic.denied", lang: ar_ae, text: "ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات."}
+  - {id: "ar_ae.voice.unavailable", lang: ar_ae, text: "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."}
+  - {id: "ar_ae.final.sentinel_unavailable", lang: ar_ae, text: "المحقق شيّك، بس ما قدرت أوصل للحارس."}
+  - {id: "ar_ae.final.sentinel_watching", lang: ar_ae, text: "المحقق شيّك، والحارس يظل يراقب."}
+  - {id: "ar_ae.sum.dangerous.1", lang: ar_ae, text: "مسج وحدة منها خطر."}
+  - {id: "ar_ae.sum.suspicious.1", lang: ar_ae, text: "مسج وحدة منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.1", lang: ar_ae, text: "مسج وحدة ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.1", lang: ar_ae, text: "مسج وحدة ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.2", lang: ar_ae, text: "مسجين منها خطر."}
+  - {id: "ar_ae.sum.suspicious.2", lang: ar_ae, text: "مسجين منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.2", lang: ar_ae, text: "مسجين ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.2", lang: ar_ae, text: "مسجين ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.3", lang: ar_ae, text: "ثلاث مسجات منها خطر."}
+  - {id: "ar_ae.sum.suspicious.3", lang: ar_ae, text: "ثلاث مسجات منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.3", lang: ar_ae, text: "ثلاث مسجات ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.3", lang: ar_ae, text: "ثلاث مسجات ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.4", lang: ar_ae, text: "أربع مسجات منها خطر."}
+  - {id: "ar_ae.sum.suspicious.4", lang: ar_ae, text: "أربع مسجات منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.4", lang: ar_ae, text: "أربع مسجات ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.4", lang: ar_ae, text: "أربع مسجات ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.5", lang: ar_ae, text: "خمس مسجات منها خطر."}
+  - {id: "ar_ae.sum.suspicious.5", lang: ar_ae, text: "خمس مسجات منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.5", lang: ar_ae, text: "خمس مسجات ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.5", lang: ar_ae, text: "خمس مسجات ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.6", lang: ar_ae, text: "ست مسجات منها خطر."}
+  - {id: "ar_ae.sum.suspicious.6", lang: ar_ae, text: "ست مسجات منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.6", lang: ar_ae, text: "ست مسجات ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.6", lang: ar_ae, text: "ست مسجات ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.7", lang: ar_ae, text: "سبع مسجات منها خطر."}
+  - {id: "ar_ae.sum.suspicious.7", lang: ar_ae, text: "سبع مسجات منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.7", lang: ar_ae, text: "سبع مسجات ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.7", lang: ar_ae, text: "سبع مسجات ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.8", lang: ar_ae, text: "ثمان مسجات منها خطر."}
+  - {id: "ar_ae.sum.suspicious.8", lang: ar_ae, text: "ثمان مسجات منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.8", lang: ar_ae, text: "ثمان مسجات ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.8", lang: ar_ae, text: "ثمان مسجات ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.9", lang: ar_ae, text: "تسع مسجات منها خطر."}
+  - {id: "ar_ae.sum.suspicious.9", lang: ar_ae, text: "تسع مسجات منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.9", lang: ar_ae, text: "تسع مسجات ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.9", lang: ar_ae, text: "تسع مسجات ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.10", lang: ar_ae, text: "عشر مسجات منها خطر."}
+  - {id: "ar_ae.sum.suspicious.10", lang: ar_ae, text: "عشر مسجات منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.10", lang: ar_ae, text: "عشر مسجات ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.10", lang: ar_ae, text: "عشر مسجات ما قدرت أشيّكها."}
+  - {id: "ar_ae.result.dangerous", lang: ar_ae, text: "هذا المسج خطر!"}
+  - {id: "ar_ae.result.suspicious", lang: ar_ae, text: "هذا المسج مشكوك فيه."}
+  - {id: "ar_ae.result.no_warning_signs", lang: ar_ae, text: "ما لقيت فيه علامات تحذير."}
+  - {id: "ar_ae.result.could_not_check", lang: ar_ae, text: "ما قدرت أشيّك هذا المسج."}
+  - {id: "ar_ae.todo.lead", lang: ar_ae, text: "نصيحتي لك:"}
+  - {id: "ar_ae.todo.link", lang: ar_ae, text: "لا تضغط على الرابط، ولا تدوس عليه."}
+  - {id: "ar_ae.todo.otp", lang: ar_ae, text: "ولا تعطي حد الرمز أبداً."}
+  - {id: "ar_ae.todo.bank", lang: ar_ae, text: "كلّم بنكك على الرقم اللي على بطاقتك."}
+  - {id: "ar_ae.todo.report", lang: ar_ae, text: "وبلّغ عن المسج من القنوات الرسمية."}
+  - {id: "ar_ae.todo.careful", lang: ar_ae, text: "بس خلّك حذر."}
+  - {id: "ar_ae.todo.wait", lang: ar_ae, text: "لا تفتح الرابط لين نشيّكه."}
+  - {id: "ar_ae.help", lang: ar_ae, text: "انسخ المسجات، وقل: يا فالكون، شيّك مسجاتي."}
+  - {id: "ar_ae.stop", lang: ar_ae, text: "تمام، وقّفت."}
+  - {id: "ar_ae.didnt", lang: ar_ae, text: "ما فهمت عليك. عيد، لو سمحت."}
+  - {id: "ar_ae.clip.empty", lang: ar_ae, text: "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي."}
+  - {id: "ar_ae.clip.denied", lang: ar_ae, text: "ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة."}
+  - {id: "ar_ae.error", lang: ar_ae, text: "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط."}
+  - {id: "ar_ae.goodbye", lang: ar_ae, text: "يزاك الله خير. الله يحفظك."}
+  - {id: "en.wake.ack", lang: en, text: "Yes, I'm listening."}
+  - {id: "en.clip.reading", lang: en, text: "One moment, reading what you copied."}
+  - {id: "en.found.1", lang: en, text: "I found one message."}
+  - {id: "en.found.2", lang: en, text: "I found two messages."}
+  - {id: "en.found.3", lang: en, text: "I found three messages."}
+  - {id: "en.found.4", lang: en, text: "I found four messages."}
+  - {id: "en.found.5", lang: en, text: "I found five messages."}
+  - {id: "en.found.6", lang: en, text: "I found six messages."}
+  - {id: "en.found.7", lang: en, text: "I found seven messages."}
+  - {id: "en.found.8", lang: en, text: "I found eight messages."}
+  - {id: "en.found.9", lang: en, text: "I found nine messages."}
+  - {id: "en.found.10", lang: en, text: "I found ten messages."}
+  - {id: "en.checking.1", lang: en, text: "Checking the first message"}
+  - {id: "en.checking.2", lang: en, text: "Checking the second message"}
+  - {id: "en.checking.3", lang: en, text: "Checking the third message"}
+  - {id: "en.checking.4", lang: en, text: "Checking the fourth message"}
+  - {id: "en.checking.5", lang: en, text: "Checking the fifth message"}
+  - {id: "en.checking.6", lang: en, text: "Checking the sixth message"}
+  - {id: "en.checking.7", lang: en, text: "Checking the seventh message"}
+  - {id: "en.checking.8", lang: en, text: "Checking the eighth message"}
+  - {id: "en.checking.9", lang: en, text: "Checking the ninth message"}
+  - {id: "en.checking.10", lang: en, text: "Checking the tenth message"}
+  - {id: "en.of.2", lang: en, text: "of two."}
+  - {id: "en.of.3", lang: en, text: "of three."}
+  - {id: "en.of.4", lang: en, text: "of four."}
+  - {id: "en.of.5", lang: en, text: "of five."}
+  - {id: "en.of.6", lang: en, text: "of six."}
+  - {id: "en.of.7", lang: en, text: "of seven."}
+  - {id: "en.of.8", lang: en, text: "of eight."}
+  - {id: "en.of.9", lang: en, text: "of nine."}
+  - {id: "en.of.10", lang: en, text: "of ten."}
+  - {id: "en.investigator.start.1", lang: en, text: "The Investigator agent is checking the first message."}
+  - {id: "en.investigator.start.2", lang: en, text: "The Investigator agent is checking the second message."}
+  - {id: "en.investigator.start.3", lang: en, text: "The Investigator agent is checking the third message."}
+  - {id: "en.investigator.start.4", lang: en, text: "The Investigator agent is checking the fourth message."}
+  - {id: "en.investigator.start.5", lang: en, text: "The Investigator agent is checking the fifth message."}
+  - {id: "en.investigator.start.6", lang: en, text: "The Investigator agent is checking the sixth message."}
+  - {id: "en.investigator.start.7", lang: en, text: "The Investigator agent is checking the seventh message."}
+  - {id: "en.investigator.start.8", lang: en, text: "The Investigator agent is checking the eighth message."}
+  - {id: "en.investigator.start.9", lang: en, text: "The Investigator agent is checking the ninth message."}
+  - {id: "en.investigator.start.10", lang: en, text: "The Investigator agent is checking the tenth message."}
+  - {id: "en.investigator.lists", lang: en, text: "Checking known scam lists."}
+  - {id: "en.investigator.address", lang: en, text: "Checking the web address for look-alike tricks."}
+  - {id: "en.investigator.page", lang: en, text: "Opening the page in our isolated browser. Nothing is typed."}
+  - {id: "en.investigator.ai_second_look_local", lang: en, text: "AI second look, with our local model."}
+  - {id: "en.investigator.ai_second_look_cloud", lang: en, text: "AI second look, with Claude."}
+  - {id: "en.investigator.rules_only", lang: en, text: "The rules decided, without AI."}
+  - {id: "en.investigator.arbiter_result.dangerous", lang: en, text: "The arbiter's decision: dangerous."}
+  - {id: "en.investigator.arbiter_result.suspicious", lang: en, text: "The arbiter's decision: suspicious."}
+  - {id: "en.investigator.arbiter_result.no_warning_signs", lang: en, text: "The arbiter's decision: no warning signs found."}
+  - {id: "en.investigator.arbiter_result.could_not_check", lang: en, text: "The message could not be checked."}
+  - {id: "en.score.lead", lang: en, text: "The score is"}
+  - {id: "en.num.0", lang: en, text: "zero"}
+  - {id: "en.num.1", lang: en, text: "one"}
+  - {id: "en.num.2", lang: en, text: "two"}
+  - {id: "en.num.3", lang: en, text: "three"}
+  - {id: "en.num.4", lang: en, text: "four"}
+  - {id: "en.num.5", lang: en, text: "five"}
+  - {id: "en.num.6", lang: en, text: "six"}
+  - {id: "en.num.7", lang: en, text: "seven"}
+  - {id: "en.num.8", lang: en, text: "eight"}
+  - {id: "en.num.9", lang: en, text: "nine"}
+  - {id: "en.num.10", lang: en, text: "ten"}
+  - {id: "en.num.11", lang: en, text: "eleven"}
+  - {id: "en.num.12", lang: en, text: "twelve"}
+  - {id: "en.num.13", lang: en, text: "thirteen"}
+  - {id: "en.num.14", lang: en, text: "fourteen"}
+  - {id: "en.num.15", lang: en, text: "fifteen"}
+  - {id: "en.num.16", lang: en, text: "sixteen"}
+  - {id: "en.num.17", lang: en, text: "seventeen"}
+  - {id: "en.num.18", lang: en, text: "eighteen"}
+  - {id: "en.num.19", lang: en, text: "nineteen"}
+  - {id: "en.num.20", lang: en, text: "twenty"}
+  - {id: "en.num.21", lang: en, text: "twenty-one"}
+  - {id: "en.num.22", lang: en, text: "twenty-two"}
+  - {id: "en.num.23", lang: en, text: "twenty-three"}
+  - {id: "en.num.24", lang: en, text: "twenty-four"}
+  - {id: "en.num.25", lang: en, text: "twenty-five"}
+  - {id: "en.num.26", lang: en, text: "twenty-six"}
+  - {id: "en.num.27", lang: en, text: "twenty-seven"}
+  - {id: "en.num.28", lang: en, text: "twenty-eight"}
+  - {id: "en.num.29", lang: en, text: "twenty-nine"}
+  - {id: "en.num.30", lang: en, text: "thirty"}
+  - {id: "en.num.31", lang: en, text: "thirty-one"}
+  - {id: "en.num.32", lang: en, text: "thirty-two"}
+  - {id: "en.num.33", lang: en, text: "thirty-three"}
+  - {id: "en.num.34", lang: en, text: "thirty-four"}
+  - {id: "en.num.35", lang: en, text: "thirty-five"}
+  - {id: "en.num.36", lang: en, text: "thirty-six"}
+  - {id: "en.num.37", lang: en, text: "thirty-seven"}
+  - {id: "en.num.38", lang: en, text: "thirty-eight"}
+  - {id: "en.num.39", lang: en, text: "thirty-nine"}
+  - {id: "en.num.40", lang: en, text: "forty"}
+  - {id: "en.num.41", lang: en, text: "forty-one"}
+  - {id: "en.num.42", lang: en, text: "forty-two"}
+  - {id: "en.num.43", lang: en, text: "forty-three"}
+  - {id: "en.num.44", lang: en, text: "forty-four"}
+  - {id: "en.num.45", lang: en, text: "forty-five"}
+  - {id: "en.num.46", lang: en, text: "forty-six"}
+  - {id: "en.num.47", lang: en, text: "forty-seven"}
+  - {id: "en.num.48", lang: en, text: "forty-eight"}
+  - {id: "en.num.49", lang: en, text: "forty-nine"}
+  - {id: "en.num.50", lang: en, text: "fifty"}
+  - {id: "en.num.51", lang: en, text: "fifty-one"}
+  - {id: "en.num.52", lang: en, text: "fifty-two"}
+  - {id: "en.num.53", lang: en, text: "fifty-three"}
+  - {id: "en.num.54", lang: en, text: "fifty-four"}
+  - {id: "en.num.55", lang: en, text: "fifty-five"}
+  - {id: "en.num.56", lang: en, text: "fifty-six"}
+  - {id: "en.num.57", lang: en, text: "fifty-seven"}
+  - {id: "en.num.58", lang: en, text: "fifty-eight"}
+  - {id: "en.num.59", lang: en, text: "fifty-nine"}
+  - {id: "en.num.60", lang: en, text: "sixty"}
+  - {id: "en.num.61", lang: en, text: "sixty-one"}
+  - {id: "en.num.62", lang: en, text: "sixty-two"}
+  - {id: "en.num.63", lang: en, text: "sixty-three"}
+  - {id: "en.num.64", lang: en, text: "sixty-four"}
+  - {id: "en.num.65", lang: en, text: "sixty-five"}
+  - {id: "en.num.66", lang: en, text: "sixty-six"}
+  - {id: "en.num.67", lang: en, text: "sixty-seven"}
+  - {id: "en.num.68", lang: en, text: "sixty-eight"}
+  - {id: "en.num.69", lang: en, text: "sixty-nine"}
+  - {id: "en.num.70", lang: en, text: "seventy"}
+  - {id: "en.num.71", lang: en, text: "seventy-one"}
+  - {id: "en.num.72", lang: en, text: "seventy-two"}
+  - {id: "en.num.73", lang: en, text: "seventy-three"}
+  - {id: "en.num.74", lang: en, text: "seventy-four"}
+  - {id: "en.num.75", lang: en, text: "seventy-five"}
+  - {id: "en.num.76", lang: en, text: "seventy-six"}
+  - {id: "en.num.77", lang: en, text: "seventy-seven"}
+  - {id: "en.num.78", lang: en, text: "seventy-eight"}
+  - {id: "en.num.79", lang: en, text: "seventy-nine"}
+  - {id: "en.num.80", lang: en, text: "eighty"}
+  - {id: "en.num.81", lang: en, text: "eighty-one"}
+  - {id: "en.num.82", lang: en, text: "eighty-two"}
+  - {id: "en.num.83", lang: en, text: "eighty-three"}
+  - {id: "en.num.84", lang: en, text: "eighty-four"}
+  - {id: "en.num.85", lang: en, text: "eighty-five"}
+  - {id: "en.num.86", lang: en, text: "eighty-six"}
+  - {id: "en.num.87", lang: en, text: "eighty-seven"}
+  - {id: "en.num.88", lang: en, text: "eighty-eight"}
+  - {id: "en.num.89", lang: en, text: "eighty-nine"}
+  - {id: "en.num.90", lang: en, text: "ninety"}
+  - {id: "en.num.91", lang: en, text: "ninety-one"}
+  - {id: "en.num.92", lang: en, text: "ninety-two"}
+  - {id: "en.num.93", lang: en, text: "ninety-three"}
+  - {id: "en.num.94", lang: en, text: "ninety-four"}
+  - {id: "en.num.95", lang: en, text: "ninety-five"}
+  - {id: "en.num.96", lang: en, text: "ninety-six"}
+  - {id: "en.num.97", lang: en, text: "ninety-seven"}
+  - {id: "en.num.98", lang: en, text: "ninety-eight"}
+  - {id: "en.num.99", lang: en, text: "ninety-nine"}
+  - {id: "en.num.100", lang: en, text: "one hundred"}
+  - {id: "en.score.of", lang: en, text: "out of one hundred."}
+  - {id: "en.sentinel.handover", lang: en, text: "Handing the results to the Sentinel agent."}
+  - {id: "en.sentinel.linked.2", lang: en, text: "The Sentinel linked two reports into one campaign."}
+  - {id: "en.sentinel.linked.3", lang: en, text: "The Sentinel linked three reports into one campaign."}
+  - {id: "en.sentinel.linked.4", lang: en, text: "The Sentinel linked four reports into one campaign."}
+  - {id: "en.sentinel.linked.5", lang: en, text: "The Sentinel linked five reports into one campaign."}
+  - {id: "en.sentinel.linked.6", lang: en, text: "The Sentinel linked six reports into one campaign."}
+  - {id: "en.sentinel.linked.7", lang: en, text: "The Sentinel linked seven reports into one campaign."}
+  - {id: "en.sentinel.linked.8", lang: en, text: "The Sentinel linked eight reports into one campaign."}
+  - {id: "en.sentinel.linked.9", lang: en, text: "The Sentinel linked nine reports into one campaign."}
+  - {id: "en.sentinel.linked.10", lang: en, text: "The Sentinel linked ten reports into one campaign."}
+  - {id: "en.sentinel.summary", lang: en, text: "The Sentinel wrote a summary in Arabic and English."}
+  - {id: "en.sentinel.draft", lang: en, text: "The Sentinel prepared a takedown request draft."}
+  - {id: "en.sentinel.awaiting_approval", lang: en, text: "Waiting for an officer's approval. Nothing is sent without it."}
+  - {id: "en.sentinel.watching", lang: en, text: "The Sentinel keeps watching for similar reports."}
+  - {id: "en.final.both_agents", lang: en, text: "The Investigator checked, and the Sentinel linked them and follows up."}
+  - {id: "en.sentinel.unavailable", lang: en, text: "I couldn't reach the Sentinel right now, so I can't say whether there is a campaign."}
+  - {id: "en.nothing_checked", lang: en, text: "No check could be completed, so I handed nothing to the Sentinel."}
+  - {id: "en.mic.denied", lang: en, text: "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box."}
+  - {id: "en.voice.unavailable", lang: en, text: "The voice service isn't available right now. Please use the paste box."}
+  - {id: "en.final.sentinel_unavailable", lang: en, text: "The Investigator checked, but I couldn't reach the Sentinel."}
+  - {id: "en.final.sentinel_watching", lang: en, text: "The Investigator checked, and the Sentinel keeps watching."}
+  - {id: "en.sum.dangerous.1", lang: en, text: "One message is dangerous."}
+  - {id: "en.sum.suspicious.1", lang: en, text: "One message looks suspicious."}
+  - {id: "en.sum.clear.1", lang: en, text: "One message showed no warning signs."}
+  - {id: "en.sum.failed.1", lang: en, text: "One message could not be checked."}
+  - {id: "en.sum.dangerous.2", lang: en, text: "Two messages are dangerous."}
+  - {id: "en.sum.suspicious.2", lang: en, text: "Two messages look suspicious."}
+  - {id: "en.sum.clear.2", lang: en, text: "Two messages showed no warning signs."}
+  - {id: "en.sum.failed.2", lang: en, text: "Two messages could not be checked."}
+  - {id: "en.sum.dangerous.3", lang: en, text: "Three messages are dangerous."}
+  - {id: "en.sum.suspicious.3", lang: en, text: "Three messages look suspicious."}
+  - {id: "en.sum.clear.3", lang: en, text: "Three messages showed no warning signs."}
+  - {id: "en.sum.failed.3", lang: en, text: "Three messages could not be checked."}
+  - {id: "en.sum.dangerous.4", lang: en, text: "Four messages are dangerous."}
+  - {id: "en.sum.suspicious.4", lang: en, text: "Four messages look suspicious."}
+  - {id: "en.sum.clear.4", lang: en, text: "Four messages showed no warning signs."}
+  - {id: "en.sum.failed.4", lang: en, text: "Four messages could not be checked."}
+  - {id: "en.sum.dangerous.5", lang: en, text: "Five messages are dangerous."}
+  - {id: "en.sum.suspicious.5", lang: en, text: "Five messages look suspicious."}
+  - {id: "en.sum.clear.5", lang: en, text: "Five messages showed no warning signs."}
+  - {id: "en.sum.failed.5", lang: en, text: "Five messages could not be checked."}
+  - {id: "en.sum.dangerous.6", lang: en, text: "Six messages are dangerous."}
+  - {id: "en.sum.suspicious.6", lang: en, text: "Six messages look suspicious."}
+  - {id: "en.sum.clear.6", lang: en, text: "Six messages showed no warning signs."}
+  - {id: "en.sum.failed.6", lang: en, text: "Six messages could not be checked."}
+  - {id: "en.sum.dangerous.7", lang: en, text: "Seven messages are dangerous."}
+  - {id: "en.sum.suspicious.7", lang: en, text: "Seven messages look suspicious."}
+  - {id: "en.sum.clear.7", lang: en, text: "Seven messages showed no warning signs."}
+  - {id: "en.sum.failed.7", lang: en, text: "Seven messages could not be checked."}
+  - {id: "en.sum.dangerous.8", lang: en, text: "Eight messages are dangerous."}
+  - {id: "en.sum.suspicious.8", lang: en, text: "Eight messages look suspicious."}
+  - {id: "en.sum.clear.8", lang: en, text: "Eight messages showed no warning signs."}
+  - {id: "en.sum.failed.8", lang: en, text: "Eight messages could not be checked."}
+  - {id: "en.sum.dangerous.9", lang: en, text: "Nine messages are dangerous."}
+  - {id: "en.sum.suspicious.9", lang: en, text: "Nine messages look suspicious."}
+  - {id: "en.sum.clear.9", lang: en, text: "Nine messages showed no warning signs."}
+  - {id: "en.sum.failed.9", lang: en, text: "Nine messages could not be checked."}
+  - {id: "en.sum.dangerous.10", lang: en, text: "Ten messages are dangerous."}
+  - {id: "en.sum.suspicious.10", lang: en, text: "Ten messages look suspicious."}
+  - {id: "en.sum.clear.10", lang: en, text: "Ten messages showed no warning signs."}
+  - {id: "en.sum.failed.10", lang: en, text: "Ten messages could not be checked."}
+  - {id: "en.result.dangerous", lang: en, text: "This message is dangerous."}
+  - {id: "en.result.suspicious", lang: en, text: "This message looks suspicious."}
+  - {id: "en.result.no_warning_signs", lang: en, text: "I found no warning signs in it."}
+  - {id: "en.result.could_not_check", lang: en, text: "I could not check this message."}
+  - {id: "en.todo.lead", lang: en, text: "What to do now:"}
+  - {id: "en.todo.link", lang: en, text: "Don't tap the link."}
+  - {id: "en.todo.otp", lang: en, text: "Never share a code with anyone."}
+  - {id: "en.todo.bank", lang: en, text: "Call your bank on the number on your card."}
+  - {id: "en.todo.report", lang: en, text: "Report the message through the official channels."}
+  - {id: "en.todo.careful", lang: en, text: "But stay careful."}
+  - {id: "en.todo.wait", lang: en, text: "Don't open the link until it is checked."}
+  - {id: "en.help", lang: en, text: "Copy your messages, then say: Hey Falcon, check my messages."}
+  - {id: "en.stop", lang: en, text: "Okay, I've stopped."}
+  - {id: "en.didnt", lang: en, text: "Sorry, I didn't catch that. Please say it again."}
+  - {id: "en.clip.empty", lang: en, text: "I found no messages in what you copied. Copy them and try again."}
+  - {id: "en.clip.denied", lang: en, text: "I couldn't read what you copied. Paste it in the box on the screen."}
+  - {id: "en.error", lang: en, text: "Something went wrong. Try again, and don't open any link."}
+  - {id: "en.goodbye", lang: en, text: "Thank you. Take care."}
