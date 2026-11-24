@@ -67,7 +67,7 @@ def test_demo_script_numbers_come_from_the_artifact_and_trace() -> None:
 
 def test_demo_script_has_every_beat_of_the_minute() -> None:
     text, _ = load("demo_script").build(ROOT)
-    for stamp in ("0:00 to 0:05", "0:12 to 0:27", "0:33 to 0:46", "0:54 to 1:00"):
+    for stamp in ("0:00 to 0:04", "0:04 to 0:18", "0:36 to 0:46", "0:53 to 1:00", "M1", "Q1", "L2", "/history"):
         assert stamp in text
     assert "ready to connect, not connected" in text.lower()
 

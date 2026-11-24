@@ -150,6 +150,8 @@ The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a
 | `/authorities` | What a police or security team can use, and what is "ready to connect". |
 | `/privacy` | What is collected, what is not, and why. |
 | `/docs/*` | Technical documentation pages. |
+| `/history` | Public read-only history (until SSO) with per-check and per-incident traces. |
+| `/checks/[id]` | The trace of one check: steps, evidence and verdict. |
 | `/ops` | Operator board: campaigns and incidents, approve or reject each draft (operator key). |
 | `/incidents/[id]` | The trace of one incident: evidence, rules, draft actions. |
 
@@ -164,12 +166,12 @@ Every figure below is copied from the artifact named next to it. Nothing is type
 | **Link address stage, test** (kept aside) | accuracy 0.978571 (95% CI 0.95 to 1.0), recall 0.95 (0.888889 to 1.0), false-alarm rate (FPR) 0.0 (0.0 to 0.0), ROC-AUC 0.995417 | 140 | REAL | [`20261123T122549Z.json`](evals/results/published/20261123T122549Z.json) |
 | **Link address stage, val** (used for tuning) | accuracy 0.97561 (0.955285 to 0.99187), recall 0.971831 (0.940732 to 0.993197), FPR 0.019231 (0.0 to 0.05) | 246 | REAL | same file |
 | **Held-out fresh real sites, full stack** | false-alarm rate **0.265** (95% CI 0.205 to 0.325); on pages that serve a web page 0.1489 (0.0922 to 0.2128, n=141); one false "dangerous". **The 0.02 target is not met.** | 200 | REAL | [`fp_regress/38dbd64b1fd4_20261123T163104Z.json`](evals/results/published/fp_regress/38dbd64b1fd4_20261123T163104Z.json) |
-| **Red-team (injection and evasion)** | **harmful 1 of 113** (95% CI 0.0016 to 0.0484) with the model answering **0 of 113** at production time limits; with extended limits **harmful 1 of 113, model answered 90 of 113**. The one harmful case is a pipeline error, not a lowered label. | 113 | SYNTHETIC | [`redteam_shipped_72aa9ea7_20261123T135615Z.json`](evals/results/published/redteam/redteam_shipped_72aa9ea7_20261123T135615Z.json), [`..._T143553Z.json`](evals/results/published/redteam/redteam_shipped_72aa9ea7_20261123T143553Z.json) |
-| **Link-less scam messages** (shipped) | test recall 0.6818 (0.4732 to 0.8364), FPR 0.0625 (0.0111 to 0.2833); rules alone reach recall 0.0455 | 22 scam, 16 legit | SYNTHETIC | [`message_text_d80de23eb52f_20261123T175212Z.json`](evals/results/published/message_text/message_text_d80de23eb52f_20261123T175212Z.json) |
-| **Brand-new look-alike pages** | flagged dangerous 12 of 12 (0.7575 to 1.0); benign controls warned 4 of 8, so read warning rates next to that row. No AI layer in this run. | 12 / 8 | SYNTHETIC | [`brand_new_pages_58c5380c_20261123T140938Z.json`](evals/results/published/brand_new_pages/brand_new_pages_58c5380c_20261123T140938Z.json) |
-| **AI cost per check** (cloud route) | mean 0.00409 USD (0.002606 to 0.005629); local route has zero marginal API cost, energy not measured | 38 cloud, 42 local | SYNTHETIC | [`cost_per_check_33179245_20261123T160925Z.json`](evals/results/published/cost_per_check/cost_per_check_33179245_20261123T160925Z.json) |
+| **Red-team (injection and evasion)** | **harmful 0 of 113** (95% CI 0.0% to 3.3%) with the model answering **89 of 113** at production time limits; with extended limits **harmful 0 of 113, model answered 91 of 113**. Always read the harmful count together with the answered count. | 113 | SYNTHETIC | [`redteam_shipped_0df45a5d_20261124T040238Z.json`](evals/results/published/redteam/redteam_shipped_0df45a5d_20261124T040238Z.json), [`redteam_shipped_0df45a5d_20261124T041802Z.json`](evals/results/published/redteam/redteam_shipped_0df45a5d_20261124T041802Z.json) |
+| **Link-less scam messages** (shipped) | test recall 68.2% (47.3% to 83.6%, 15 of 22 scam), false-alarm rate 6.3% (1.1% to 28.3%, 1 of 16 legitimate); rules alone reach recall 4.6% | 22 scam, 16 legitimate | SYNTHETIC (single-author, supervisor-audited) | [`message_text_d80de23eb52f_20261123T175212Z.json`](evals/results/published/message_text/message_text_d80de23eb52f_20261123T175212Z.json) |
+| **Brand-new look-alike pages** | flagged Dangerous 12 of 12 look-alike pages on hosts in no feed; benign controls warned 4 of 8, so read warning rates next to that row. No AI layer in this run. | 12 look-alike, 8 benign | SYNTHETIC | [`brand_new_pages_58c5380c_20261123T140938Z.json`](evals/results/published/brand_new_pages/brand_new_pages_58c5380c_20261123T140938Z.json) |
+| **AI cost per check** (cloud route) | mean 0.00409 USD per check on the cloud route (0.002606 to 0.005629, 38 checks); the local route has zero marginal API cost, and energy was not measured | 38 cloud, 42 local | SYNTHETIC | [`cost_per_check_33179245_20261123T160925Z.json`](evals/results/published/cost_per_check/cost_per_check_33179245_20261123T160925Z.json) |
 
-How to read it. The 95% CI is the likely range, and small sets give wide ranges. The link-address rows score **URLs only**, not the full cascade with the page visit. The message-path rows inside the headline file wrap real URLs in synthetic message templates, so they are mixed by construction and are not quoted here. The newest red-team run and the false-alarm run are the ones named above; earlier runs are kept in the same folders.
+How to read it. The 95% CI is the likely range, and small sets give wide ranges. The link-address rows score **URLs only**, not the full cascade with the page visit. The message-path rows inside the headline file wrap real URLs in synthetic message templates, so they are mixed by construction and are not quoted here. The link-less message set is synthetic, written by one author and audited by the supervisor, so treat it as a smoke test, not a field measurement. The red-team set is synthetic too; the model did not answer every case, which is why the answered count is always stated. The false-alarm history is a series of live runs: false alarms on held-out real sites: first run 35.5%, lowest 18.0%, newest 26.5% (95% CI 20.5% to 32.5%, 200 sites), against a target of 2.0%: the target is not met. Earlier runs stay in the same folders. The DSPy optimiser ran for every model role on synthetic data, and was not adopted for any of them (the gains are within noise).
 
 ### Full metrics table (generated from the newest artifact)
 
@@ -262,7 +264,7 @@ Not evaluated in this artifact, so no figure is shown for them: `arabic_clarity`
 ## Observability
 
 - **Prometheus** metrics with the `fl_` prefix from every service (`/metrics`), and alert rules ([`infra/prometheus/rules/`](infra/prometheus/rules)).
-- **Grafana**: 7 provisioned dashboards in [`infra/grafana/dashboards/`](infra/grafana/dashboards) (command overview, detection quality, pipeline performance, AI operations, security, Sentinel, model quality).
+- **Grafana**: seven provisioned dashboards in [`infra/grafana/dashboards/`](infra/grafana/dashboards) (command overview, detection quality, pipeline performance, AI operations, security, Sentinel, model quality).
 - **Alertmanager** routes the alerts, and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) has one entry per alert. **Loki** collects structured JSON logs that carry `verdict_id`.
 - **Arize Phoenix** receives OpenTelemetry traces of the cascade, tools and LLM calls. They are **metadata only**: the collector deletes prompt and output attributes, and page text and URLs are never recorded.
 - Demo and replay data on dashboards is labelled as such. See [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
@@ -311,8 +313,8 @@ Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `d
 
 ## Engineering process
 
-- **Hierarchy L0 to L4**: owner, lead session, supervisor, builders, local models ([`docs/HIERARCHY.md`](docs/HIERARCHY.md)). Builders work on feature branches and open a pull request. A supervisor reviews it and writes a report in [`reviews/`](reviews) (47 reports). Only approved PRs are merged, and the author never approves their own work.
-- **100 pull requests merged** on `main` (from `gh pr list --state merged`, 24 November 2026).
+- **Hierarchy L0 to L4**: owner, lead session, supervisor, builders, local models ([`docs/HIERARCHY.md`](docs/HIERARCHY.md)). Builders work on feature branches and open a pull request. A supervisor reviews it and writes a report in [`reviews/`](reviews). Only approved PRs are merged, and the author never approves their own work.
+- **Every change reached `main` through a reviewed pull request.** The count is in `gh pr list --state merged`.
 - **Local CI**: `make ci-local` runs every CI job on the developer's machine, in parallel, before a PR is opened.
 - Local models do bulk work only through one script, and a sample of every batch is audited.
 - Contracts in [`contracts/`](contracts) are the single source of truth. Assumptions are logged one per line in [`DECISIONS.md`](DECISIONS.md).
@@ -327,7 +329,7 @@ Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `d
 
 Unfinished only:
 
-- **Operator history view** of both agents' checks (open pull request).
+- **Sign-in (SSO)** to restrict the read-only history; approve and reject stay with the operator.
 - **Real-data measurement** of brand-new fake pages, and of sandbox detection on labelled phishing snapshots.
 - **Native-speaker rating** of the Arabic verdict text.
 - **A licence for the scam list.** The prototype uses the OpenPhish community list, which allows research use only.

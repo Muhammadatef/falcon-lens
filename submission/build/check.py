@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import verify_cookbook  # noqa: E402
 from common import ROOT, SUBMISSION, WORK, load_artifacts  # noqa: E402
+from common import evidence as common_evidence  # noqa: E402
 from docx import Document  # noqa: E402
 from pypdf import PdfReader  # noqa: E402
 
@@ -61,6 +62,8 @@ def traceable() -> cn.Traceable:
             if isinstance(leaf, int | float) and not isinstance(leaf, bool):
                 tr.values.append(Decimal(str(leaf)))
         tr.strings.add(str(a.fp.get("set", "")).lower())
+    for leaf in common_evidence().claimed_values():  # only the figures the documents quote from the other families
+        tr.values.append(Decimal(str(leaf)))
     return tr
 
 

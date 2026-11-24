@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from common import Artifacts, fmt_pct, tools_by_category
+from common import Artifacts, evidence, fmt_pct, tools_by_category
 
 Block = tuple[Any, ...]
 
@@ -124,7 +124,7 @@ def build(a: Artifacts) -> list[Block]:
     add(
         (
             "p",
-            f"The whole path works end to end on a laptop: web app, API, extension, MCP server, both agents, dashboards. Judged by address alone on a held-out test set, the classifier and arbiter reach recall {a.pct('test.recall')} with a false-alarm rate of {a.pct('test.fpr')} (small sets; ranges are given in section 8). Run live through the full stack on {a.fp_n()} legitimate sites, the false-alarm rate was {a.fp_pct()}, well above our target. We show it rather than hide it, and explain why in section 8. The sealed-browser layer, the AI Investigator, brand-new-page detection and the local model mode have not been evaluated yet.",
+            f"The whole path works end to end on a laptop: web app, API, extension, MCP server, both agents, dashboards. Judged by address alone on a held-out test set, the classifier and arbiter reach recall {a.pct('test.recall')} with a false-alarm rate of {a.pct('test.fpr')} (small sets; ranges are given in section 8). Run live through the full stack on {a.fp_n()} legitimate sites, the false-alarm rate was {a.fp_pct()}, well above our target. We show it rather than hide it, and explain why in section 8. Red-team, brand-new-page, link-less message, cost, stability and model-route results are published too (section 8), and the one thing still missing is a native reader's rating of the Arabic text.",
         )
     )
     add(
@@ -403,7 +403,7 @@ def build(a: Artifacts) -> list[Block]:
     add(
         (
             "p",
-            "**What it never does.** It never sees raw page or message text, only structured evidence. It never sets or lowers a score. It cannot be given orders by a page: a provenance rule rejects any address or domain argument that is not the input, a hop in its redirect chain, or derived from those, and the attempt itself is recorded as risk evidence. This layer has not been evaluated yet, so no accuracy figure exists for it.",
+            "**What it never does.** It never sees raw page or message text, only structured evidence. It never sets or lowers a score. It cannot be given orders by a page: a provenance rule rejects any address or domain argument that is not the input, a hop in its redirect chain, or derived from those, and the attempt itself is recorded as risk evidence. Its measured behaviour (tool calls, forbidden calls, label changes) is in section 8.",
         )
     )
     add(("h2", "4.5 The deterministic arbiter"))
@@ -484,9 +484,10 @@ def build(a: Artifacts) -> list[Block]:
         (
             "ul",
             [
-                "**Message:** text is normalised (Arabic and Arabizi), rule features are read (urgency, secrecy, OTP request, payment, authority, prize, delivery fee, fine and others), and it is compared with known scam scripts using embeddings. A quarantined extractor pulls out links, and each one goes through the full link pipeline as a child check.",
+                "**Message:** text is normalised (Arabic and Arabizi), rule features are read (urgency, secrecy, OTP request, payment, authority, prize, delivery fee, fine and others), and it is compared with known scam scripts using embeddings. A quarantined extractor pulls out links, and each one goes through the full link pipeline as a child check. A message with no link is judged on its wording: an intent classifier fitted on training data, with rule floors, reads the scam script itself (section 8 gives its recall and its false-alarm rate on a small synthetic set).",
                 "**Email:** parsed locally with a size cap and no remote fetch. Checks include sender authentication results, header mismatches, link text against the real target, QR codes in images, and attachment type and hash only.",
-                "**Picture:** the file type is verified by its first bytes, a QR code is decoded, and text is read by a quarantined vision model. Extracted links and text go through the link and message pipelines.",
+                "**Picture or QR poster:** the file type is verified by its first bytes, a QR code is decoded, and text is read by a quarantined vision model. Extracted links and text go through the link and message pipelines.",
+                "**Where you can see the work:** the campaign board has an explainer of what a campaign is; the public read-only History (until SSO) lists every check and every incident with its step-by-step trace; the results page shows each measured figure with a REAL or SYNTHETIC badge; a Grafana model-quality dashboard and Arize Phoenix traces (metadata only) show the models at work. Approving or rejecting a draft action stays with the operator. Verdicts read «خطِر», «مريب» and «لم نجد علامات تحذير», and a claimed brand is shown by its display name.",
             ],
         )
     )
@@ -705,28 +706,51 @@ def build(a: Artifacts) -> list[Block]:
     add(
         (
             "p",
-            '**Why it is high, in plain words.** The sealed browser timed out on some sites, and some hosts did not resolve. Falcon Lens treats a page it could not open as "suspicious, we could not complete every check" instead of clearing it. That is the cautious choice, and it costs false alarms. Sandbox fixes have been merged since this run, but no newer published run exists, so we claim no improvement.',
+            '**Why it is high, in plain words.** The sealed browser timed out on some sites, and some hosts did not resolve. Falcon Lens treats a page it could not open as "suspicious, we could not complete every check" instead of clearing it. That is the cautious choice, and it costs false alarms. Sandbox fixes were merged during the day and each later run is published, but the newest run is not the lowest one, so we claim no steady improvement.',
         )
     )
-    add(("h2", "8.4 What is not yet evaluated"))
+    ev = evidence()
+    add(
+        (
+            "p",
+            f"**History of the live run.** {ev.fp_history_line()}. Every run is kept in `evals/results/published/fp_regress/`; the newest is the figure above, whether or not it is the best.",
+        )
+    )
+    add(("h2", "8.4 Other published results (all synthetic or fixture data, labelled as such)"))
+    rt = ev.redteam_both()
+    rows2 = []
+    if rt:
+        rows2.append(
+            [
+                "Red-team: injection and evasion on the shipped cascade",
+                rt
+                + ". Harmful means a lowered label, a dropped score, attacker text in the reasons, a forbidden tool call, a leaked canary or a pipeline error. Read the harmful count with the answered count: where the model did not answer, the deterministic layers alone were tested.",
+                "synthetic fixtures",
+            ]
+        )
+    for label, line, kind in (
+        ("Scam messages that contain no link", ev.message_line(), "synthetic, single-author, supervisor-audited"),
+        ("Brand-new look-alike pages", ev.brand_new_line(), "synthetic fixtures; no AI layer in this run"),
+        ("Cost per check", ev.cost_line(), "fixtures"),
+        ("Stability on repeat runs", ev.stability_line(), "fixtures"),
+        ("Cloud versus local model route", ev.route_line(), "fixtures"),
+        ("Explanation faithfulness", ev.faith_line(), "fixture verdicts"),
+        ("AI Investigator layer (T3)", ev.t3_line(), "fixtures"),
+        ("DSPy prompt optimisation", ev.dspy_line(), "synthetic replay data"),
+    ):
+        if line:
+            rows2.append([label, line[0].upper() + line[1:] + ".", kind])
+    add(("table", ["Area", "Result", "Data"], rows2, [1.6, 3.6, 1.4]))
+    add(("h2", "8.5 What is not yet evaluated"))
     names = {
-        "arabic_clarity": "Arabic clarity of the verdict text",
-        "cost_per_check_llm": "AI cost per check",
-        "faithfulness": "Faithfulness of explanations",
-        "flip_rate_3_runs": "Stability across repeated runs",
-        "injection_attack_success_rate": "Resistance to prompt injection on the shipped cascade",
-        "llm_tier_T3": "The AI Investigator layer (T3)",
-        "sandbox_tier_T2": "The sealed-browser layer (T2)",
-        "zero_day": "Detection of brand-new pages",
-        "synthetic": "Synthetic data as a separate report",
-        "cloud_route": "The cloud model route",
-        "sovereign_route": "The local (sovereign) model route",
+        "arabic_clarity_human_rating": "A native reader's rating of the Arabic verdict text (the automated phone-fit checks ran; the human rating is pending)",
+        "sandbox_phishing_page_recall": "Recall of the sealed-browser layer on labelled phishing pages (no labelled snapshots exist, and visiting live phishing pages is out of scope)",
     }
     add(("ul", [names.get(k, k) for k in a.not_evaluated]))
     add(
         (
             "p",
-            "No figure is shown for these and none should be assumed. A red-team suite of injection and evasion cases runs under `make redteam`, but its attack-success rate on the shipped cascade is not published yet, so no figure is claimed.",
+            "No figure is shown for these and none should be assumed. Earlier drafts listed red-team resistance, cost, stability, faithfulness, the Investigator layer, brand-new pages and the two model routes here. They are measured now and appear in the table of other published results above.",
         )
     )
     add(("pb",))
@@ -798,10 +822,9 @@ def build(a: Artifacts) -> list[Block]:
         (
             "ul",
             [
-                "Publish evaluations for each unmeasured layer and route, and a new live false-alarm run after the sandbox fixes.",
-                "A per-incident view of the Sentinel's agent run (open pull request).",
-                "Offline optimisation of the AI prompts with DSPy, frozen before use (open pull request).",
-                "A business-oriented redesign of the web app (open pull requests).",
+                "A native reader's rating of the Arabic text, sandbox recall on labelled phishing pages, and bringing the live false-alarm rate down to its target.",
+                "Sign-in (SSO) to restrict the read-only History, which is public until then.",
+                "Adopting DSPy-optimised prompts: the optimiser ran for every model role and none was adopted, because the gains are within noise.",
                 "Active discovery of new look-alike domains.",
                 "A licensed scam-list feed, and additional warning lists once keys exist.",
                 "Automated data retention, and a switch to turn off external look-ups in sovereign mode.",

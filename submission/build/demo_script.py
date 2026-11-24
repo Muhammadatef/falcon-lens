@@ -22,6 +22,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from submission import artifact as artifact_mod  # noqa: E402
 from submission import descriptions  # noqa: E402
+from submission import evidence as evidence_mod  # noqa: E402
 
 OUT = ROOT / "submission" / "DEMO_SCRIPT.md"
 
@@ -51,6 +52,16 @@ def values(art: artifact_mod.Artifact | None) -> dict[str, str]:
         "RESULTS_EN": f"On our frozen test split: {recall} of phishing links caught, {fpr} of legitimate links wrongly flagged, and {official} official sites marked Dangerous.",
         "RESULTS_AR": f"على مجموعة الاختبار المجمّدة: كُشف {recall} من روابط الاحتيال، وأُنذر خطأً على {fpr} من الروابط السليمة، و{official} من المواقع الرسمية صُنّفت خطِرة.",
         "ARTIFACT": art.path.name,
+        **evidence_values(art.path.parent),
+    }
+
+
+def evidence_values(published: Path) -> dict[str, str]:
+    ev = evidence_mod.load(published)
+    return {
+        "REDTEAM": ev.redteam_both() or "no red-team run is published",
+        "MSG": ev.message_line() or "no message-text run is published",
+        "BRAND": ev.brand_new_line() or "no brand-new-page run is published",
     }
 
 
@@ -67,15 +78,17 @@ Speak at a calm pace. Each beat names what must be on screen while you say the l
 
 | Time | On screen | Say (English) | Say (Arabic option) |
 |---|---|---|---|
-| 0:00 to 0:05 | Hook. The home page in Arabic, the check box centred, the cursor still. | "A text says your account will be frozen, and there is a link. Is it real? Check before you tap." | «تصلك رسالة: حسابك سيُجمَّد، وفيها رابط. هل هي حقيقية؟ افحص قبل أن تضغط.» |
-| 0:05 to 0:12 | Scroll slowly to "Meet the two AI agents": the Investigator card, then the Sentinel card. | "Falcon Lens is Arabic-first and has two AI agents. The Investigator checks one input. The Sentinel watches for whole campaigns." | «عدسة الصقر وكيلان ذكيان بالعربية أولاً: «المحقّق» يفحص ما ترسله، و«الحارس» يرصد الحملات كلها.» |
-| 0:12 to 0:27 | Back to the check box. Paste the Falcon Demo Bank lookalike link, click «افحص الآن». The steps complete, then the red Dangerous plate, the name «بنك الصقر التجريبي», the three reasons, "what to do now". Keep the "demo data" label in frame. | "This fake bank page is on no blocklist. The Investigator sees that it claims a bank, asks for card details, and sits on a domain the bank does not own. Dangerous, with the reasons in Arabic and what to do now." | «هذه الصفحة المزيفة ليست في أي قائمة حظر. المحقّق يرى أنها تدّعي أنها بنك، وتطلب بيانات البطاقة، ونطاقها ليس نطاق البنك. النتيجة: خطِر، مع الأسباب بالعربية وما تفعله الآن.» |
-| 0:27 to 0:33 | Open «تفاصيل تقنية» for a moment: the evidence list and the hard rule. | "The AI explains. A fixed arbiter sets the verdict, so a page cannot talk its way out." | «الذكاء الاصطناعي يشرح، ومحكّم ثابت هو من يحسم، فلا تستطيع الصفحة أن تقنعه بغير ذلك.» |
-| 0:33 to 0:46 | The incident board (`/ops`) or the campaigns page (`/campaigns`) while `make replay` runs: a campaign appears, the internal block shows «نُفّذ», the takedown draft shows «بانتظار الموافقة», click «وافق». Keep the replay label in frame. | "The Sentinel links similar checks into a campaign, blocks the indicators inside our own system, and drafts a takedown. That draft waits for a human, and only a human can approve it." | «الحارس يربط الفحوص المتشابهة في حملة، ويحظر المؤشرات داخل نظامنا، ويُعدّ مسودة طلب إزالة. المسودة تنتظر موافقة إنسان، وهو وحده من يوافق.» |
-| 0:46 to 0:54 | The results page, or the proof strip on the home page: the three numbers, the scope line. Hold still. | "{RESULTS_EN}" | «{RESULTS_AR}» |
-| 0:54 to 1:00 | The authorities page ("ready to connect, not connected"), then the home page with the lens mark and the independence line. | "It is ready to connect over REST and MCP, and it is not connected to any police system. Falcon Lens. Check before you tap." | «جاهز للربط عبر REST وMCP، وليس مربوطاً بأي نظام شرطي. عدسة الصقر. افحص قبل أن تضغط.» |
+| 0:00 to 0:04 | Hook. The home page in Arabic, the check box centred, the cursor still. | "A text says your account will be frozen, and there is a link. Real or fake? Check before you tap." | «تصلك رسالة: حسابك سيُجمَّد، وفيها رابط. حقيقية أم مزيّفة؟ افحص قبل أن تضغط.» |
+| 0:04 to 0:18 | Demo kit item **M1**: the Arabic SMS (`messages/01-arabic-sms-phishing.txt`). Message tab, paste, click «افحص الآن». The steps complete, then the red plate «خطِر», the bank name «بنك الصقر التجريبي», the Arabic reasons and "what to do now". Keep the "demo data" label in frame. | "The Investigator reads the message and the link inside it. It names a bank but links somewhere else, and asks for a code. Dangerous, with the reasons in Arabic and what to do now." | «المحقّق يقرأ الرسالة والرابط داخلها: تذكر بنكاً وتربطك بنطاق آخر وتطلب رمزاً. النتيجة: خطِر، مع الأسباب بالعربية وما تفعله الآن.» |
+| 0:18 to 0:28 | Demo kit item **Q1**: the QR poster (`qr/01-qr-poster-phishing.png`). Image / QR tab, upload. Result «خطِر»: the QR leads to a dangerous link. | "Scams also come as a poster with a QR code. We read the code and check where it leads. Dangerous." | «وتأتي الاحتيالات أيضاً ملصقاً برمز QR. نقرأ الرمز ونفحص وجهته. النتيجة: خطِر.» |
+| 0:28 to 0:36 | Demo kit item **L2**: the official site (`http://falcon-demo-bank.test/`). Link tab, paste, check. Result «لم نجد علامات تحذير» with the line «هذا ليس ضماناً. ابقَ حذراً.» in frame. | "On the registered official site the answer is: no warning signs found. Stay careful. We never give a guarantee, and we do not cry wolf." | «في الموقع الرسمي المسجَّل: لم نجد علامات تحذير، ابقَ حذراً. لا نعطي ضماناً، ولا نُنذر بلا سبب.» |
+| 0:36 to 0:46 | `/campaigns`: the explainer of what a campaign is, then a campaign card with its linked checks while `make replay` runs. Keep the replay label in frame. | "One check protects one person. The Sentinel links similar checks into a campaign, and drafts a takedown that waits for a human." | «فحص واحد يحمي شخصاً واحداً. «الحارس» يربط الفحوص المتشابهة في حملة، ويُعدّ مسودة إزالة تنتظر موافقة إنسان.» |
+| 0:46 to 0:53 | `/history` (public read-only history until SSO): click one check to open its trace: the steps, the evidence, the verdict. | "Every check keeps its trace: what ran, what was found, and why the verdict is what it is." | «لكل فحص أثره: ما نُفِّذ، وما وُجد، ولماذا هذا الحكم.» |
+| 0:53 to 1:00 | `/results`: the REAL and SYNTHETIC badges and the scope line. Hold still, then end on the home page with the independence line. | "{RESULTS_EN} Ready to connect, not connected. Falcon Lens. Check before you tap." | «{RESULTS_AR} جاهز للربط وغير مربوط. عدسة الصقر. افحص قبل أن تضغط.» |
 
-If the results line is too long for its beat, say only the first two numbers. Never say a number that is not on the screen in that shot.
+No credentials on camera: the beats above use only public pages. Do not open `/ops` in the one-minute video, because it needs the operator key.
+
+If the results line is too long for its beat, say only the first two numbers. If a beat runs long, cut the `/history` beat first. Never say a number that is not on the screen in that shot.
 
 ## The two-minute backup version
 
@@ -97,7 +110,7 @@ Use it if the form or a later round allows two minutes. Same rules. Add these be
 2. Start from a clean state: `make demo-reset YES=1` (resets the volumes, then runs `make demo`, which seeds the replay-labelled history). `make seed` alone is idempotent and can be repeated.
 3. Start the planted campaign a minute before the Sentinel beat: `make replay RATE=2/s DURATION=2m` in a second terminal. The incident appears around the middle of the run.
 4. Open the site at the address that `make urls` prints for the web app (default `https://localhost:8443/`). Accept the local certificate warning once, before recording.
-5. Pages to have ready in tabs, in this order: `/` (home), `/` again for the check, `/ops` (paste the operator key before recording and never show it), `/campaigns`, `/results`, `/authorities`. If `/agents` is merged, use it for the agents beat; otherwise stay on the home page.
+5. Pages and files to have ready in tabs, in this order: `/` (home), `/` again for the check (Message tab with M1 copied, Image / QR tab with Q1 ready, Link tab with L2 copied), `/campaigns`, `/history`, `/results`. The demo kit items M1, Q1 and L2 are in `demo-kit/` (README there lists what each should show). Run each once before recording and confirm the result matches.
 6. Paste the link before the record button only when it is a live address. The Falcon Demo Bank lookalike is an internal fixture, so it is fine on camera. Never put a real phishing address on screen.
 7. Browser: one clean window, Night theme, Arabic interface (use the language toggle only if you want an English take), zoom in one step so a phone screen can read it. Hide the bookmarks bar, close every other tab.
 8. Turn on Do Not Disturb. Quit chat, mail and calendar apps. No notification may slide in.
@@ -109,7 +122,10 @@ Use it if the form or a later round allows two minutes. Same rules. Add these be
 
 - Offline numbers: they come from the frozen test split, offline model plus arbiter on URLs, real data only. They are not a measurement of the whole system. Read the scope line on the results slide.
 - Live false alarms: {ASKED}
-- Anything not measured yet (Arabic clarity, cost per check, injection attack success rate and others) is listed on the results and roadmap slides. Say "not measured yet", never a guess.
+- Red-team: {REDTEAM}. Always say the answered count with the harmful count.
+- Messages with no link: {MSG}. Say it is a small synthetic set written by one author and audited by the supervisor.
+- Brand-new pages: {BRAND}.
+- Anything not measured yet (a native reader's rating of the Arabic text, and sandbox recall on labelled phishing pages) is listed on the results and roadmap slides. Say "not measured yet", never a guess.
 
 ## Do and do not
 
