@@ -8,7 +8,6 @@
  */
 import type { Evidence, Lang, Tier } from "./contracts";
 import { BRAND_NAMES } from "./brand-names";
-import { defang } from "./defang";
 
 type Ctx = { lang: Lang; brand: string | null; host: string | null; days: number | null; extra: string | null };
 type Line = { ar: (c: Ctx) => string; en: (c: Ctx) => string };
@@ -36,7 +35,7 @@ export const FINDING_LINES: Readonly<Record<string, Line>> = {
   "url.shortener": L("الرابط مختصر ويخفي وجهته", "The link is shortened and hides its destination"),
   "domain.age_days": L((c) => `النطاق مسجّل ${dayWord(c.days ?? 0)}`, (c) => `The domain was registered ${dayWordEn(c.days ?? 0)}`),
   "domain.cert_age_days": L((c) => `شهادة الموقع صدرت ${dayWord(c.days ?? 0)}`, (c) => `The site certificate was issued ${dayWordEn(c.days ?? 0)}`),
-  "page.cred_form": L("الصفحة تطلب كلمة المرور ورمز التحقق", "The page asks for a password and a code"),
+  "page.cred_form": L((c) => (c.extra ? `الصفحة تطلب: ${c.extra}` : "الصفحة تطلب بيانات دخول أو بيانات حساسة"), (c) => (c.extra ? `The page asks for: ${c.extra}` : "The page asks for login or sensitive details")),
   "page.cross_origin_post": L((c) => (c.host ? `ما تكتبه يُرسل إلى خادم آخر: ${c.host}` : "ما تكتبه يُرسل إلى خادم آخر"), (c) => (c.host ? `What you type is sent to another server: ${c.host}` : "What you type is sent to another server")),
   "page.cloaking": L("الصفحة تعرض محتوى مختلفاً لأدوات الفحص", "The page shows different content to scanners"),
   "page.hotlinked_brand_assets": L("الصفحة تسحب صور جهة معروفة من موقعها الأصلي", "The page pulls a well-known brand's images from its real site"),
@@ -66,7 +65,6 @@ export const FINDING_LINES: Readonly<Record<string, Line>> = {
   "email.link_text_mismatch": L("الرابط المكتوب يختلف عن الرابط الحقيقي", "The link shown differs from the real link"),
   "email.attachment": L("المرفق قد يحمل رابطاً أو محتوى مشبوهاً", "The attachment may carry a link or suspicious content"),
   "image.qr_decoded": L((c) => (c.host ? `في الصورة رمز QR يقود إلى: ${c.host}` : "في الصورة رمز QR يقود إلى رابط"), (c) => (c.host ? `The image has a QR code leading to: ${c.host}` : "The image has a QR code leading to a link")),
-  "qr.ae": L("في الصورة رمز QR يقود إلى رابط", "The image has a QR code leading to a link"),
   "sandbox.not_rendered": L("تعذّر فتح الصفحة كاملة", "The page could not be fully opened"),
   "sandbox.unreachable": L("تعذّر فتح الصفحة كاملة", "The page could not be fully opened"),
   "sandbox.partial_render": L("تعذّر فتح الصفحة كاملة", "The page could not be fully opened"),
@@ -80,16 +78,46 @@ export const NO_FINDING = { ar: "لا شيء لافت في هذه الطبقة",
 const INFO_CODES: ReadonlySet<string> = new Set(["message.contains_url", "message.contains_phone", "message.brand_mention", "image.qr_decoded", "email.attachment"]);
 const INCOMPLETE: ReadonlySet<string> = new Set(["sandbox.not_rendered", "sandbox.unreachable", "sandbox.partial_render", "page.truncated", "page.static_fallback", "page.cloaking_inconclusive"]);
 const BRAND_ID = /^[a-z0-9_]{2,40}$/;
-const AUTH = new Set(["spf", "dkim", "dmarc"]);
+const AUTH = new Set(["spf", "dkim", "dmarc", "arc"]);
+/** The real field kinds of cascade/page.py, named for the reader. */
+const KIND_NAMES: Readonly<Record<string, { ar: string; en: string }>> = {
+  password: { ar: "كلمة المرور", en: "password" },
+  otp: { ar: "رمز التحقق", en: "verification code" },
+  card: { ar: "رقم البطاقة", en: "card number" },
+  cvv: { ar: "رمز أمان البطاقة", en: "card security code" },
+  card_expiry: { ar: "تاريخ انتهاء البطاقة", en: "card expiry" },
+  pin: { ar: "الرقم السري", en: "PIN" },
+  emirates_id: { ar: "رقم الهوية الإماراتية", en: "Emirates ID number" },
+  uae_pass: { ar: "بيانات الهوية الرقمية", en: "digital identity login" },
+};
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const brandName = (id: unknown, lang: Lang): string | null => (typeof id === "string" && BRAND_ID.test(id) && Object.hasOwn(BRAND_NAMES, id) ? BRAND_NAMES[id]![lang] : null);
-/** A defanged host from a URL-ish string; only host characters survive (no markup, no path, no query). */
+/**
+ * A defanged host from a URL-ish string. Non-ASCII hosts are shown in their punycode (xn--) form so a look-alike
+ * can never be disguised; markup, paths, queries and control or bidi characters never survive.
+ */
 export function safeHost(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  const host = defang(value.trim()).replace(/^[a-z][a-z0-9+.-]*:\/\//i, "").split(/[/?#\s]/)[0] ?? "";
-  const clean = host.replace(/[^A-Za-z0-9.[\]-]/g, "").slice(0, 64);
-  return clean.length >= 3 ? clean : null;
+  const raw = (value.trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, "").split(/[/?#\s]/)[0] ?? "").replace(/\[\.\]/g, ".").slice(0, 253);
+  let host: string;
+  try {
+    host = new URL(`http://${raw}`).hostname; // WHATWG: IDN to punycode, lower-case, rejects bidi/control/markup characters
+  } catch {
+    return null;
+  }
+  if (host.length < 3 || !/^[a-z0-9.-]+$/.test(host)) return null;
+  return host.slice(0, 64).replace(/\./g, "[.]");
+}
+
+/** "spf=fail" style strings from email.auth_fail: only the protocol names of failed checks are shown. */
+function authNames(failures: unknown[]): string | null {
+  const names = failures
+    .filter((f): f is string => typeof f === "string")
+    .map((f) => /^(spf|dkim|dmarc|arc)\s*=\s*(fail|softfail|permerror|temperror)$/i.exec(f.trim()))
+    .filter((m): m is RegExpExecArray => m !== null && AUTH.has(m[1]!.toLowerCase()))
+    .map((m) => m[1]!.toUpperCase());
+  return names.length ? [...new Set(names)].join(" / ") : null;
 }
 
 function context(e: Evidence, lang: Lang, verdictBrand: string | null): Ctx {
@@ -98,15 +126,21 @@ function context(e: Evidence, lang: Lang, verdictBrand: string | null): Ctx {
   let host: string | null = null;
   let extra: string | null = null;
   let days: number | null = null;
-  if (typeof o === "number" && Number.isFinite(o)) days = Math.max(0, Math.round(o));
+  if (typeof o === "number" && Number.isFinite(o)) days = Math.max(0, Math.round(o)); // tolerated; the real shape is an object
   if (isObj(o)) {
+    const n = e.signal === "domain.cert_age_days" ? o.cert_age_days : o.age_days;
+    if (typeof n === "number" && Number.isFinite(n)) days = Math.max(0, Math.round(n));
     if (typeof o.brand_id === "string") brand = brandName(o.brand_id, lang);
     if (Array.isArray(o.brands)) brand = o.brands.map((b) => brandName(b, lang)).find((x): x is string => !!x) ?? brand;
     if (Array.isArray(o.urls)) host = safeHost(o.urls[0]);
     host = host ?? safeHost(o.reply_to_domain) ?? safeHost(o.host);
-    if (Array.isArray(o.failures)) extra = o.failures.filter((f): f is string => typeof f === "string" && AUTH.has(f.toLowerCase())).map((f) => f.toUpperCase()).join(" / ") || null;
+    if (Array.isArray(o.failures)) extra = authNames(o.failures);
+    if (e.signal === "page.cross_origin_post" && Array.isArray(o.targets)) host = safeHost(o.targets[0]);
+    if (e.signal === "page.cred_form" && Array.isArray(o.field_kinds)) {
+      const names = [...new Set(o.field_kinds.filter((k): k is string => typeof k === "string" && Object.hasOwn(KIND_NAMES, k)))].slice(0, 3).map((k) => KIND_NAMES[k]![lang]);
+      extra = names.length ? names.join(lang === "ar" ? "، " : ", ") : null;
+    }
   }
-  if (e.signal === "page.cross_origin_post") host = safeHost(o);
   return { lang, brand, host, days, extra };
 }
 
@@ -118,7 +152,8 @@ export function findingLine(e: Evidence, lang: Lang, verdictBrandId: string | nu
   if (e.error || e.polarity === "trust") return null;
   if (!(e.weight > 0) && !INFO_CODES.has(e.signal)) return null;
   if (e.signal === "domain.age_days" || e.signal === "domain.cert_age_days") {
-    if (typeof e.observed !== "number" || !Number.isFinite(e.observed) || e.observed > 100) return null;
+    const d = context(e, lang, null).days;
+    if (d === null || d > 100) return null;
   }
   return line[lang](context(e, lang, brandName(verdictBrandId, lang)));
 }

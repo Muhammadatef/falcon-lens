@@ -21,16 +21,16 @@ const withEv = (evidence: Evidence[], extra: Partial<Verdict> = {}): Verdict => 
 
 describe("per-check findings come from the real evidence", () => {
   it("speaks the strongest two findings per tier, in weight order", () => {
-    const g = tierFindingGroups([ev("url.combosquat", "T1", 2), ev("domain.age_days", "T1", 2.5, 3), ev("url.shortener", "T1", 0.4)], "T1");
+    const g = tierFindingGroups([ev("url.combosquat", "T1", 2), ev("domain.age_days", "T1", 2.5, { age_days: 3 }), ev("url.shortener", "T1", 0.4)], "T1");
     expect(g).toEqual([["find.age.lead", "num.3", "find.age.days"], ["find.combosquat"]]);
   });
   it("numbers use the exact num clips; 0..2 days have their own wording; over 100 days is not spoken", () => {
-    const k = (n: number) => findingKeysFor(ev("domain.age_days", "T1", 2, n));
+    const k = (n: number) => findingKeysFor(ev("domain.age_days", "T1", 2, { age_days: n, registered_at: "x", registrar: null, domain: "a.test" }));
     expect(k(42)).toEqual(["find.age.lead", "num.42", "find.age.days"]);
     expect(k(0)).toEqual(["find.age.0"]);
     expect(k(2)).toEqual(["find.age.2"]);
     expect(k(400)).toBeNull();
-    expect(findingKeysFor(ev("domain.cert_age_days", "T1", 1, 9))).toEqual(["find.cert.lead", "num.9", "find.cert.days"]);
+    expect(findingKeysFor(ev("domain.cert_age_days", "T1", 1, { cert_age_days: 9, first_seen: "x", certs_seen: 1 }))).toEqual(["find.cert.lead", "num.9", "find.cert.days"]);
   });
   it("an unknown code, a trust item, a zero weight and an errored signal are never spoken", () => {
     expect(findingKeysFor(ev("evil.<script>alert(1)</script>", "T1", 5))).toBeNull();
@@ -48,6 +48,16 @@ describe("per-check findings come from the real evidence", () => {
     expect(findingKeysFor(ev("brand.claimed_not_owned", "T2", 3, { brand_id: "<img onerror=x>" }))).toEqual(["find.brand.generic"]);
     expect(findingKeysFor(ev("brand.claimed_not_owned", "T2", 3, { brand_id: "some_unlisted_brand" }))).toEqual(["find.brand.generic"]);
   });
+  it("a credential form says what it really asked for, by field kind", () => {
+    const k = (kinds: string[]) => findingKeysFor(ev("page.cred_form", "T2", 1.5, { present: true, field_kinds: kinds, forms: 1 }));
+    expect(k(["otp", "password"])).toEqual(["find.cred.password_otp"]);
+    expect(k(["card", "cvv", "password"])).toEqual(["find.cred.card"]);
+    expect(k(["emirates_id"])).toEqual(["find.cred.eid"]);
+    expect(k(["pin"])).toEqual(["find.cred.pin"]);
+    expect(k(["otp"])).toEqual(["find.cred.otp"]);
+    expect(k(["<img>"])).toEqual(["find.cred.generic"]);
+    expect(findingKeysFor(ev("page.cred_form", "T2", 1.5, true))).toEqual(["find.cred.generic"]);
+  });
   it("incomplete page renders are spoken even with no weight", () => {
     expect(findingKeysFor(ev("sandbox.not_rendered", "T2", 0))).toEqual(["find.incomplete"]);
   });
@@ -57,7 +67,7 @@ describe("per-check findings come from the real evidence", () => {
     for (const k of sentinelFindingGroups({ linked: 3, linkStep: true, summary: true, drafted: true, awaiting: true, brand: "falcon_demo_bank" }).flat()) expect(known.has(k), k).toBe(true);
   });
   it("two different checks give different step texts and the panel rows equal the spoken lines", () => {
-    const bank = withEv([ev("url.combosquat", "T1", 2), ev("domain.age_days", "T1", 2.5, 2), ev("page.cred_form", "T2", 1.5)]);
+    const bank = withEv([ev("url.combosquat", "T1", 2), ev("domain.age_days", "T1", 2.5, { age_days: 2 }), ev("page.cred_form", "T2", 1.5, { present: true, field_kinds: ["password", "otp"], forms: 1 })]);
     const sms = withEv([ev("message.rule.delivery_fee", "T1", 1.2), ev("message.rule.urgency", "T1", 0.8)], { tier_reached: "T1" });
     const a = stepGroups("lookalike", bank).map((g) => spoken("ar", g));
     const b = stepGroups("wording", sms).map((g) => spoken("ar", g));

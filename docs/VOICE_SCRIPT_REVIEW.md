@@ -7,7 +7,7 @@ For a native Emirati reviewer. Left: the line the assistant SPEAKS. Right: its E
 Rules for the lines: short, natural Emirati speech, respectful to an elderly listener, never the word for "safe",
 never asking for personal, bank or ID details, no phone numbers.
 
-Lines: 344. Digits are written out in words (`num.0` to `num.100`).
+Lines: 351. Digits are written out in words (`num.0` to `num.100`).
 
 | Emirati line | English meaning | Reviewer / OK |
 |---|---|---|
@@ -71,7 +71,6 @@ Lines: 344. Digits are written out in words (`num.0` to `num.100`).
 | الرابط يحوّلك لموقع ثاني. | The link bounces you to another site. |  |
 | الرابط يمر بعدة تحويلات. | The link goes through several redirects. |  |
 | الرابط مختصر ويخفي وجهته. | The link is shortened and hides its destination. |  |
-| الصفحة تطلب كلمة السر والرمز. | The page asks for a password and a code. |  |
 | اللي تكتبه يروح لخادم ثاني. | What you type goes to a different server. |  |
 | الصفحة تعرض شي مختلف لأدوات الفحص. | The page shows something different to scanners. |  |
 | الصفحة تسحب صور جهة معروفة من موقعها الأصلي. | The page pulls a well-known brand's images from its real site. |  |
@@ -99,6 +98,14 @@ Lines: 344. Digits are written out in words (`num.0` to `num.100`).
 | في الرسالة رقم تتصل عليه. | The message has a number to call. |  |
 | مسار الإرجاع غير عنوان المرسل. | The return path differs from the sender's address. |  |
 | المرفق ممكن يحمل رابط أو شي مشبوه. | The attachment may carry a link or something suspicious. |  |
+| الصفحة تطلب بيانات بطاقتك. | The page asks for your card details. |  |
+| الصفحة تطلب رقم هويتك الإماراتية. | The page asks for your Emirates ID number. |  |
+| الصفحة تطلب بيانات الهوية الرقمية. | The page asks for your digital identity login. |  |
+| الصفحة تطلب الرقم السري. | The page asks for your PIN. |  |
+| الصفحة تطلب كلمة السر والرمز. | The page asks for a password and a code. |  |
+| الصفحة تطلب كلمة السر. | The page asks for a password. |  |
+| الصفحة تطلب رمز التحقق. | The page asks for a verification code. |  |
+| الصفحة تطلب بيانات دخول أو بيانات حساسة. | The page asks for login or sensitive details. |  |
 | ما قدرنا نفتح الصفحة كامل. | We couldn't open the page fully. |  |
 | النطاق مسجّل اليوم. | The domain was registered today. |  |
 | النطاق مسجّل قبل يوم واحد. | The domain was registered one day ago. |  |
@@ -254,7 +261,7 @@ Lines: 344. Digits are written out in words (`num.0` to `num.100`).
 | خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق. | The voice service isn't available right now. Please use the paste box. |  |
 | بصير شيّك، بس ما قدرت أوصل لدرع. | Baseer checked, but I couldn't reach Dir. |  |
 | بصير شيّك، ودرع يظل يراقب. | Baseer checked, and Dir keeps watching. |  |
-| مسج واحد منها خطر. | One message is dangerous. |  |
+| مسج واحد منها خطِر. | One message is dangerous. |  |
 | مسج واحد منها مشكوك فيه. | One message looks suspicious. |  |
 | مسج واحد ما فيه علامات تحذير. | One message showed no warning signs. |  |
 | مسج واحد ما قدرت أشيّكه. | One message could not be checked. |  |

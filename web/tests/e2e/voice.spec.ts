@@ -393,7 +393,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
           e("rep0sms01", "rep.openphish", "reputation", "T0", 0, false),
           e("sms0fee01", "message.rule.delivery_fee", "message", "T1", 1.4, { rule: "delivery_fee" }),
           e("sms0urg01", "message.rule.urgency", "message", "T1", 0.4, { rule: "urgency" }),
-          e("sms0age01", "domain.age_days", "domain", "T1", 1.0, 12),
+          e("sms0age01", "domain.age_days", "domain", "T1", 1.0, { age_days: 12, registered_at: "x", registrar: null, domain: "parcel-fee.test" }),
           e("sms0unk01", "evil.unknown_code", "message", "T1", 9, "<img src=x onerror=alert(1)>"),
         ],
       });

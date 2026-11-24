@@ -480,14 +480,6 @@
     "voice": "am_fenrir"
   },
   {
-    "id": "en.find.cred_form",
-    "file": "en.find.cred_form.mp3",
-    "text": "The page asks for a password and a code.",
-    "ms": 1965,
-    "engine": "kokoro",
-    "voice": "am_fenrir"
-  },
-  {
     "id": "en.find.cross_post",
     "file": "en.find.cross_post.mp3",
     "text": "What you type goes to a different server.",
@@ -700,6 +692,70 @@
     "file": "en.find.attachment.mp3",
     "text": "The attachment may carry a link or something suspicious.",
     "ms": 2788,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred.card",
+    "file": "en.find.cred.card.mp3",
+    "text": "The page asks for your card details.",
+    "ms": 1744,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred.eid",
+    "file": "en.find.cred.eid.mp3",
+    "text": "The page asks for your Emirates ID number.",
+    "ms": 2168,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred.uae_pass",
+    "file": "en.find.cred.uae_pass.mp3",
+    "text": "The page asks for your digital identity login.",
+    "ms": 2438,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred.pin",
+    "file": "en.find.cred.pin.mp3",
+    "text": "The page asks for your PIN.",
+    "ms": 1294,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred.password_otp",
+    "file": "en.find.cred.password_otp.mp3",
+    "text": "The page asks for a password and a code.",
+    "ms": 1965,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred.password",
+    "file": "en.find.cred.password.mp3",
+    "text": "The page asks for a password.",
+    "ms": 1548,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred.otp",
+    "file": "en.find.cred.otp.mp3",
+    "text": "The page asks for a verification code.",
+    "ms": 2000,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred.generic",
+    "file": "en.find.cred.generic.mp3",
+    "text": "The page asks for login or sensitive details.",
+    "ms": 2547,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },

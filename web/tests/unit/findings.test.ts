@@ -22,9 +22,9 @@ describe("written findings mirror the spoken ones", () => {
 });
 
 describe("four input types give four different step lists from their own evidence", () => {
-  const link = [ev("url.combosquat", "T1", 2, { brand_id: "falcon_demo_bank" }), ev("domain.age_days", "T1", 2.5, 2), ev("domain.cert_age_days", "T1", 1, 1), ev("page.cross_origin_post", "T2", 3, "hxxps://collector[.]invalid/hook"), ev("brand.claimed_not_owned", "T2", 3, { brand_id: "falcon_demo_bank" })];
+  const link = [ev("url.combosquat", "T1", 2, { brand_id: "falcon_demo_bank" }), ev("domain.age_days", "T1", 2.5, { age_days: 2, registered_at: "x", registrar: null, domain: "a.test" }), ev("domain.cert_age_days", "T1", 1, { cert_age_days: 1, first_seen: "x", certs_seen: 1 }), ev("page.cross_origin_post", "T2", 3, { targets: ["hxxps://collector[.]invalid"], bot: false, target_kind: "other", credentials: true, basis: "payload" }), ev("brand.claimed_not_owned", "T2", 3, { brand_id: "falcon_demo_bank" })];
   const sms = [ev("message.rule.delivery_fee", "T1", 1.4), ev("message.rule.urgency", "T1", 0.9), ev("message.contains_url", "T1", 0, { count: 1, urls: ["hxxp://parcel-fee[.]test/pay"] }), ev("message.contains_phone", "T1", 0, { numbers: 1 })];
-  const mail = [ev("email.auth_fail", "T1", 2, { failures: ["spf", "dmarc", "<b>x</b>"] }), ev("email.display_name_impersonation", "T1", 2, { brands: ["falcon_demo_bank"], sender_domain: "mail[.]test" }), ev("email.reply_to_mismatch", "T1", 1, { from_domain: "a[.]test", reply_to_domain: "other[.]test" }), ev("email.attachment", "T1", 0.5, {})];
+  const mail = [ev("email.auth_fail", "T1", 2, { failures: ["spf=fail", "dmarc=softfail", "dkim=pass", "<b>x</b>"], dkim_signature_present: false }), ev("email.display_name_impersonation", "T1", 2, { brands: ["falcon_demo_bank"], sender_domain: "mail[.]test" }), ev("email.reply_to_mismatch", "T1", 1, { from_domain: "a[.]test", reply_to_domain: "other[.]test" }), ev("email.attachment", "T1", 0.5, {})];
   const qr = [ev("image.qr_decoded", "T0", 0, { qr_count: 1, urls: ["hxxps://poster-pay[.]test/x?y=1"] }), ev("url.free_host_or_tunnel", "T1", 1.2), ev("url.shortener", "T1", 0.4)];
 
   it("each list matches its own evidence, with values", () => {
@@ -35,7 +35,7 @@ describe("four input types give four different step lists from their own evidenc
     ]);
     expect(tierFindingLines(link, "T2", "ar")).toEqual([expect.stringContaining("خادم آخر"), "تدّعي أنها بنك الصقر التجريبي والنطاق ليس من نطاقاتها الرسمية"]);
     expect(tierFindingLines(sms, "T1", "en")).toEqual(["The message asks for a delivery fee", "The message rushes you", expect.stringContaining("parcel-fee[.]test")]);
-    expect(tierFindingLines(mail, "T1", "en")).toEqual([expect.stringContaining("SPF / DMARC"), expect.stringContaining("Falcon Demo Bank"), expect.stringContaining("other[.]test")]);
+    expect(tierFindingLines(mail, "T1", "en")).toEqual([expect.stringMatching(/\(SPF \/ DMARC\)$/), expect.stringContaining("Falcon Demo Bank"), expect.stringContaining("other[.]test")]);
     expect(tierFindingLines(qr, "T0", "en")).toEqual([expect.stringContaining("poster-pay[.]test")]);
   });
 
@@ -45,11 +45,23 @@ describe("four input types give four different step lists from their own evidenc
     for (const s of all) expect(s).not.toMatch(/<|>|javascript:/i);
   });
 
+  it("a credential form lists the kinds it asked for; unknown kinds fall back to the generic line", () => {
+    const l = (o: unknown) => findingLine(ev("page.cred_form", "T2", 1.5, o), "en");
+    expect(l({ present: true, field_kinds: ["card", "cvv", "pin"], forms: 1 })).toBe("The page asks for: card number, card security code, PIN");
+    expect(findingLine(ev("page.cred_form", "T2", 1.5, { field_kinds: ["emirates_id"] }), "ar")).toBe("الصفحة تطلب: رقم الهوية الإماراتية");
+    expect(l({ field_kinds: ["<b>"] })).toBe("The page asks for login or sensitive details");
+  });
+
+  it("a non-ASCII look-alike host is shown in its punycode form, never disguised", () => {
+    expect(safeHost("hxxps://раураl[.]test/x")).toMatch(/^xn--[a-z0-9-]+\[\.\]test$/);
+    expect(safeHost("https://a\u202eb.test")).toBeNull();
+  });
+
   it("unknown codes, trust items and errored signals print nothing; a host is reduced to host characters", () => {
     expect(findingLine(ev("evil.code<script>", "T1", 9), "en")).toBeNull();
     expect(findingLine(ev("url.combosquat", "T1", -2, true, { polarity: "trust" }), "en")).toBeNull();
     expect(findingLine(ev("url.combosquat", "T1", 2, true, { error: "timeout" }), "en")).toBeNull();
     expect(safeHost("hxxps://a[.]test/<img onerror=x>")).toBe("a[.]test");
-    expect(safeHost("javascript:alert(1)")).not.toContain("(");
+    expect(safeHost("javascript:alert(1)")).toBeNull();
   });
 });

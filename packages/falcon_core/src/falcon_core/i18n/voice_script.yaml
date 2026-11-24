@@ -2,7 +2,7 @@
 # Every SPOKEN line of the Hey Falcon assistant. ar_ae = Emirati spoken Arabic (screen text stays formal MSA).
 # Every spoken output is a concatenation of the clips below; ids are stable: <lang>.<key>.
 version: 1
-clip_count: 636
+clip_count: 650
 languages: [ar_ae, en]
 ar_ae:
   "wake.ack": "هلا، سامعك."
@@ -65,7 +65,6 @@ ar_ae:
   "find.open_redirect": "الرابط يحوّلك لموقع ثاني."
   "find.redirects": "الرابط يمر بعدة تحويلات."
   "find.shortener": "الرابط مختصر ويخفي وجهته."
-  "find.cred_form": "الصفحة تطلب كلمة السر والرمز."
   "find.cross_post": "اللي تكتبه يروح لخادم ثاني."
   "find.cloaking": "الصفحة تعرض شي مختلف لأدوات الفحص."
   "find.hotlinked": "الصفحة تسحب صور جهة معروفة من موقعها الأصلي."
@@ -93,6 +92,14 @@ ar_ae:
   "find.contains_phone": "في الرسالة رقم تتصل عليه."
   "find.return_path": "مسار الإرجاع غير عنوان المرسل."
   "find.attachment": "المرفق ممكن يحمل رابط أو شي مشبوه."
+  "find.cred.card": "الصفحة تطلب بيانات بطاقتك."
+  "find.cred.eid": "الصفحة تطلب رقم هويتك الإماراتية."
+  "find.cred.uae_pass": "الصفحة تطلب بيانات الهوية الرقمية."
+  "find.cred.pin": "الصفحة تطلب الرقم السري."
+  "find.cred.password_otp": "الصفحة تطلب كلمة السر والرمز."
+  "find.cred.password": "الصفحة تطلب كلمة السر."
+  "find.cred.otp": "الصفحة تطلب رمز التحقق."
+  "find.cred.generic": "الصفحة تطلب بيانات دخول أو بيانات حساسة."
   "find.incomplete": "ما قدرنا نفتح الصفحة كامل."
   "find.age.0": "النطاق مسجّل اليوم."
   "find.age.1": "النطاق مسجّل قبل يوم واحد."
@@ -248,7 +255,7 @@ ar_ae:
   "voice.unavailable": "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."
   "final.sentinel_unavailable": "بصير شيّك، بس ما قدرت أوصل لدرع."
   "final.sentinel_watching": "بصير شيّك، ودرع يظل يراقب."
-  "sum.dangerous.1": "مسج واحد منها خطر."
+  "sum.dangerous.1": "مسج واحد منها خطِر."
   "sum.suspicious.1": "مسج واحد منها مشكوك فيه."
   "sum.clear.1": "مسج واحد ما فيه علامات تحذير."
   "sum.failed.1": "مسج واحد ما قدرت أشيّكه."
@@ -384,7 +391,6 @@ en:
   "find.open_redirect": "The link bounces you to another site."
   "find.redirects": "The link goes through several redirects."
   "find.shortener": "The link is shortened and hides its destination."
-  "find.cred_form": "The page asks for a password and a code."
   "find.cross_post": "What you type goes to a different server."
   "find.cloaking": "The page shows something different to scanners."
   "find.hotlinked": "The page pulls a well-known brand's images from its real site."
@@ -412,6 +418,14 @@ en:
   "find.contains_phone": "The message has a number to call."
   "find.return_path": "The return path differs from the sender's address."
   "find.attachment": "The attachment may carry a link or something suspicious."
+  "find.cred.card": "The page asks for your card details."
+  "find.cred.eid": "The page asks for your Emirates ID number."
+  "find.cred.uae_pass": "The page asks for your digital identity login."
+  "find.cred.pin": "The page asks for your PIN."
+  "find.cred.password_otp": "The page asks for a password and a code."
+  "find.cred.password": "The page asks for a password."
+  "find.cred.otp": "The page asks for a verification code."
+  "find.cred.generic": "The page asks for login or sensitive details."
   "find.incomplete": "We couldn't open the page fully."
   "find.age.0": "The domain was registered today."
   "find.age.1": "The domain was registered one day ago."
@@ -703,7 +717,6 @@ clips:
   - {id: "ar_ae.find.open_redirect", lang: ar_ae, text: "الرابط يحوّلك لموقع ثاني."}
   - {id: "ar_ae.find.redirects", lang: ar_ae, text: "الرابط يمر بعدة تحويلات."}
   - {id: "ar_ae.find.shortener", lang: ar_ae, text: "الرابط مختصر ويخفي وجهته."}
-  - {id: "ar_ae.find.cred_form", lang: ar_ae, text: "الصفحة تطلب كلمة السر والرمز."}
   - {id: "ar_ae.find.cross_post", lang: ar_ae, text: "اللي تكتبه يروح لخادم ثاني."}
   - {id: "ar_ae.find.cloaking", lang: ar_ae, text: "الصفحة تعرض شي مختلف لأدوات الفحص."}
   - {id: "ar_ae.find.hotlinked", lang: ar_ae, text: "الصفحة تسحب صور جهة معروفة من موقعها الأصلي."}
@@ -731,6 +744,14 @@ clips:
   - {id: "ar_ae.find.contains_phone", lang: ar_ae, text: "في الرسالة رقم تتصل عليه."}
   - {id: "ar_ae.find.return_path", lang: ar_ae, text: "مسار الإرجاع غير عنوان المرسل."}
   - {id: "ar_ae.find.attachment", lang: ar_ae, text: "المرفق ممكن يحمل رابط أو شي مشبوه."}
+  - {id: "ar_ae.find.cred.card", lang: ar_ae, text: "الصفحة تطلب بيانات بطاقتك."}
+  - {id: "ar_ae.find.cred.eid", lang: ar_ae, text: "الصفحة تطلب رقم هويتك الإماراتية."}
+  - {id: "ar_ae.find.cred.uae_pass", lang: ar_ae, text: "الصفحة تطلب بيانات الهوية الرقمية."}
+  - {id: "ar_ae.find.cred.pin", lang: ar_ae, text: "الصفحة تطلب الرقم السري."}
+  - {id: "ar_ae.find.cred.password_otp", lang: ar_ae, text: "الصفحة تطلب كلمة السر والرمز."}
+  - {id: "ar_ae.find.cred.password", lang: ar_ae, text: "الصفحة تطلب كلمة السر."}
+  - {id: "ar_ae.find.cred.otp", lang: ar_ae, text: "الصفحة تطلب رمز التحقق."}
+  - {id: "ar_ae.find.cred.generic", lang: ar_ae, text: "الصفحة تطلب بيانات دخول أو بيانات حساسة."}
   - {id: "ar_ae.find.incomplete", lang: ar_ae, text: "ما قدرنا نفتح الصفحة كامل."}
   - {id: "ar_ae.find.age.0", lang: ar_ae, text: "النطاق مسجّل اليوم."}
   - {id: "ar_ae.find.age.1", lang: ar_ae, text: "النطاق مسجّل قبل يوم واحد."}
@@ -886,7 +907,7 @@ clips:
   - {id: "ar_ae.voice.unavailable", lang: ar_ae, text: "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."}
   - {id: "ar_ae.final.sentinel_unavailable", lang: ar_ae, text: "بصير شيّك، بس ما قدرت أوصل لدرع."}
   - {id: "ar_ae.final.sentinel_watching", lang: ar_ae, text: "بصير شيّك، ودرع يظل يراقب."}
-  - {id: "ar_ae.sum.dangerous.1", lang: ar_ae, text: "مسج واحد منها خطر."}
+  - {id: "ar_ae.sum.dangerous.1", lang: ar_ae, text: "مسج واحد منها خطِر."}
   - {id: "ar_ae.sum.suspicious.1", lang: ar_ae, text: "مسج واحد منها مشكوك فيه."}
   - {id: "ar_ae.sum.clear.1", lang: ar_ae, text: "مسج واحد ما فيه علامات تحذير."}
   - {id: "ar_ae.sum.failed.1", lang: ar_ae, text: "مسج واحد ما قدرت أشيّكه."}
@@ -1021,7 +1042,6 @@ clips:
   - {id: "en.find.open_redirect", lang: en, text: "The link bounces you to another site."}
   - {id: "en.find.redirects", lang: en, text: "The link goes through several redirects."}
   - {id: "en.find.shortener", lang: en, text: "The link is shortened and hides its destination."}
-  - {id: "en.find.cred_form", lang: en, text: "The page asks for a password and a code."}
   - {id: "en.find.cross_post", lang: en, text: "What you type goes to a different server."}
   - {id: "en.find.cloaking", lang: en, text: "The page shows something different to scanners."}
   - {id: "en.find.hotlinked", lang: en, text: "The page pulls a well-known brand's images from its real site."}
@@ -1049,6 +1069,14 @@ clips:
   - {id: "en.find.contains_phone", lang: en, text: "The message has a number to call."}
   - {id: "en.find.return_path", lang: en, text: "The return path differs from the sender's address."}
   - {id: "en.find.attachment", lang: en, text: "The attachment may carry a link or something suspicious."}
+  - {id: "en.find.cred.card", lang: en, text: "The page asks for your card details."}
+  - {id: "en.find.cred.eid", lang: en, text: "The page asks for your Emirates ID number."}
+  - {id: "en.find.cred.uae_pass", lang: en, text: "The page asks for your digital identity login."}
+  - {id: "en.find.cred.pin", lang: en, text: "The page asks for your PIN."}
+  - {id: "en.find.cred.password_otp", lang: en, text: "The page asks for a password and a code."}
+  - {id: "en.find.cred.password", lang: en, text: "The page asks for a password."}
+  - {id: "en.find.cred.otp", lang: en, text: "The page asks for a verification code."}
+  - {id: "en.find.cred.generic", lang: en, text: "The page asks for login or sensitive details."}
   - {id: "en.find.incomplete", lang: en, text: "We couldn't open the page fully."}
   - {id: "en.find.age.0", lang: en, text: "The domain was registered today."}
   - {id: "en.find.age.1", lang: en, text: "The domain was registered one day ago."}

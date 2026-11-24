@@ -140,7 +140,6 @@ const FINDINGS: readonly Finding[] = [
   [["url.open_redirect_abuse"], "find.open_redirect", "الرابط يحوّلك لموقع ثاني.", "The link bounces you to another site."],
   [["url.redirect_chain"], "find.redirects", "الرابط يمر بعدة تحويلات.", "The link goes through several redirects."],
   [["url.shortener"], "find.shortener", "الرابط مختصر ويخفي وجهته.", "The link is shortened and hides its destination."],
-  [["page.cred_form"], "find.cred_form", "الصفحة تطلب كلمة السر والرمز.", "The page asks for a password and a code."],
   [["page.cross_origin_post"], "find.cross_post", "اللي تكتبه يروح لخادم ثاني.", "What you type goes to a different server."],
   [["page.cloaking"], "find.cloaking", "الصفحة تعرض شي مختلف لأدوات الفحص.", "The page shows something different to scanners."],
   [["page.hotlinked_brand_assets"], "find.hotlinked", "الصفحة تسحب صور جهة معروفة من موقعها الأصلي.", "The page pulls a well-known brand's images from its real site."],
@@ -163,7 +162,7 @@ const FINDINGS: readonly Finding[] = [
   [["email.display_name_impersonation"], "find.display_spoof", "اسم المرسل يتظاهر بجهة معروفة.", "The sender name pretends to be a well-known body."],
   [["email.reply_to_mismatch"], "find.reply_to", "الرد يروح لعنوان غير عنوان المرسل.", "Replies go to a different address than the sender's."],
   [["email.link_text_mismatch"], "find.link_text", "الرابط المكتوب غير الرابط الحقيقي.", "The link shown is not the real link."],
-  [["image.qr_decoded", "qr.ae"], "find.qr_link", "في الصورة رمز كيو آر يودّي لرابط.", "The image has a QR code that leads to a link."],
+  [["image.qr_decoded"], "find.qr_link", "في الصورة رمز كيو آر يودّي لرابط.", "The image has a QR code that leads to a link."],
   [["message.contains_url"], "find.contains_url", "في الرسالة رابط.", "The message contains a link."],
   [["message.contains_phone"], "find.contains_phone", "في الرسالة رقم تتصل عليه.", "The message has a number to call."],
   [["email.return_path_mismatch"], "find.return_path", "مسار الإرجاع غير عنوان المرسل.", "The return path differs from the sender's address."],
@@ -189,8 +188,33 @@ const BRAND_IDS: ReadonlySet<string> = new Set(BRAND_CLIPS.map(([id]) => id));
 /** Informational codes (weight 0) that still earn a spoken line. */
 const INFO_CODES: readonly string[] = ["message.contains_url", "message.contains_phone", "image.qr_decoded", "email.attachment"];
 /** Every evidence code that has a spoken line (the written table in lib/findings.ts must cover all of them). */
-export const SPOKEN_CODES: readonly string[] = [...FINDINGS.flatMap(([codes]) => codes), ...INCOMPLETE_CODES, "domain.age_days", "domain.cert_age_days", "brand.claimed_not_owned"];
+export const SPOKEN_CODES: readonly string[] = [...FINDINGS.flatMap(([codes]) => codes), ...INCOMPLETE_CODES, "domain.age_days", "domain.cert_age_days", "brand.claimed_not_owned", "page.cred_form"];
 const CODE_KEY: ReadonlyMap<string, string> = new Map(FINDINGS.flatMap(([codes, key]) => codes.map((c) => [c, key] as const)));
+/** What a credential form asked for, by field kind (the real kinds of falcon_core cascade/page.py). */
+const CRED_LINES: readonly (readonly [key: string, ar_ae: string, en: string])[] = [
+  ["card", "الصفحة تطلب بيانات بطاقتك.", "The page asks for your card details."],
+  ["eid", "الصفحة تطلب رقم هويتك الإماراتية.", "The page asks for your Emirates ID number."],
+  ["uae_pass", "الصفحة تطلب بيانات الهوية الرقمية.", "The page asks for your digital identity login."],
+  ["pin", "الصفحة تطلب الرقم السري.", "The page asks for your PIN."],
+  ["password_otp", "الصفحة تطلب كلمة السر والرمز.", "The page asks for a password and a code."],
+  ["password", "الصفحة تطلب كلمة السر.", "The page asks for a password."],
+  ["otp", "الصفحة تطلب رمز التحقق.", "The page asks for a verification code."],
+  ["generic", "الصفحة تطلب بيانات دخول أو بيانات حساسة.", "The page asks for login or sensitive details."],
+];
+const CRED_KINDS = new Set(["password", "card", "cvv", "otp", "pin", "emirates_id", "uae_pass", "card_expiry"]);
+/** The clip for what the page really asked, from observed.field_kinds; the generic line when the kinds are unknown. */
+export function credFormKey(observed: unknown): string {
+  const raw = isObjLike(observed) && Array.isArray(observed.field_kinds) ? observed.field_kinds : [];
+  const k = new Set(raw.filter((x): x is string => typeof x === "string" && CRED_KINDS.has(x)));
+  if (k.has("card") || k.has("cvv") || k.has("card_expiry")) return "find.cred.card";
+  if (k.has("emirates_id")) return "find.cred.eid";
+  if (k.has("uae_pass")) return "find.cred.uae_pass";
+  if (k.has("pin")) return "find.cred.pin";
+  if (k.has("password") && k.has("otp")) return "find.cred.password_otp";
+  if (k.has("password")) return "find.cred.password";
+  if (k.has("otp")) return "find.cred.otp";
+  return "find.cred.generic";
+}
 /** Day counts that have their own wording (0, 1, 2); other counts up to 100 use "before N days" with the exact number clip. */
 const AGE_SPECIAL: readonly Pair[] = [["اليوم.", "today."], ["قبل يوم واحد.", "one day ago."], ["قبل يومين.", "two days ago."]];
 
@@ -221,6 +245,7 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("find.none", "ما لقينا شي ملفت في هذه الطبقة.", "Nothing notable at this layer.");
   put("investigator.wording", "أقرا صياغة المسج، وأدوّر على الاستعجال والضغط.", "Reading the wording for urgency and pressure.");
   for (const [, key, a, e] of FINDINGS) put(key, a, e);
+  for (const [k, a, e] of CRED_LINES) put(`find.cred.${k}`, a, e);
   put("find.incomplete", "ما قدرنا نفتح الصفحة كامل.", "We couldn't open the page fully.");
   for (const [kind, ar0, en0] of [["age", "النطاق مسجّل", "The domain was registered"], ["cert", "شهادة الموقع صدرت", "The site certificate was issued"]] as const) {
     AGE_SPECIAL.forEach(([a, e], i) => put(`find.${kind}.${i}`, `${ar0} ${a}`, `${en0} ${e}`));
@@ -262,7 +287,7 @@ function build(): Record<VoiceLang, Record<string, string>> {
     const en_ = SUM_EN(n);
     for (const k of SUMMARY_KINDS) {
       // One message is masculine singular ("مسج واحد ... فيه / أشيّكه"); two or more take the plural "منها / فيها".
-      const ar1 = { dangerous: "منها خطر.", suspicious: "منها مشكوك فيه.", clear: "ما فيه علامات تحذير.", failed: "ما قدرت أشيّكه." };
+      const ar1 = { dangerous: "منها خطِر.", suspicious: "منها مشكوك فيه.", clear: "ما فيه علامات تحذير.", failed: "ما قدرت أشيّكه." };
       put(`sum.${k}.${n}`, `${COUNT_AR[i]} ${n === 1 ? ar1[k] : SUM_AR[k]}`, `${COUNT_EN[i]} ${en_[k]}`);
     }
   });
@@ -375,10 +400,13 @@ export function findingKeysFor(e: FindingEvidence, verdictBrandId?: string | nul
   if (e.error || e.polarity === "trust" || (!(e.weight > 0) && !INFO_CODES.includes(e.signal))) return null;
   if (e.signal === "domain.age_days" || e.signal === "domain.cert_age_days") {
     const kind = e.signal === "domain.age_days" ? "age" : "cert";
-    const n = typeof e.observed === "number" && Number.isFinite(e.observed) ? Math.round(e.observed) : -1;
+    // Real shape: {age_days: N} (domain/rdap.py) and {cert_age_days: N} (domain/crt.py); a bare number is tolerated.
+    const raw = isObjLike(e.observed) ? e.observed[kind === "age" ? "age_days" : "cert_age_days"] : e.observed;
+    const n = typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : -1;
     if (n < 0 || n > 100) return null; // older than 100 days is not a warning sign; the exact number clips stop at one hundred
     return n <= 2 ? [`find.${kind}.${n}`] : [`find.${kind}.lead`, `num.${n}`, `find.${kind}.days`];
   }
+  if (e.signal === "page.cred_form") return [credFormKey(e.observed)];
   if (e.signal === "brand.claimed_not_owned") {
     const id = isObjLike(e.observed) && typeof e.observed.brand_id === "string" ? e.observed.brand_id : verdictBrandId;
     return brandClaimClips(id);
