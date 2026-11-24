@@ -180,3 +180,11 @@ def test_request_rejects_unknown_fields(tmp_path: Path) -> None:
             headers={"x-sandbox-key": "k"},
         )
     assert r.status_code == 422
+
+
+def test_render_screenshot_readable_by_read_only_api_mount(tmp_path: Path) -> None:
+    store = SnapshotStore(tmp_path)
+    sha = store.save_screenshot(b"\x89PNG-shot")
+    f = tmp_path / "screens" / f"{sha}.png"
+    assert f.read_bytes() == b"\x89PNG-shot"
+    assert f.stat().st_mode & 0o777 == 0o644 and (tmp_path / "screens").stat().st_mode & 0o777 == 0o755

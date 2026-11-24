@@ -69,6 +69,8 @@ Shipped at weight 0 (T-036, docs/design/HUNTER.md §7; unprefixed 600/800 number
 
 Informational evidence with no weight (proposed by builder-signals; fingerprints for the Sentinel, not scored): `domain.cert_issuer` (latest CT cert issuer), `domain.ct_siblings` (other registrable domains on the same certs).
 
+Police-evidence-pack evidence, also weight 0 and `enrichment` (never scored, never degrades): `infra.ip` (public A/AAAA of the checked host), `infra.hosting_asn` (ASN, AS name, country: Team Cymru IP-to-ASN), `infra.rdap_registrar` (registrar, dates, nameservers, status, registrar abuse contact; no registrant data), `page.screenshot` (sha256 of the stored PNG), and `not_before`/`not_after` on `domain.cert_issuer`.
+
 ## 3. Hard rules
 | Id | Condition | Effect |
 |---|---|---|

@@ -79,6 +79,8 @@ def to_flat(f: RenderFeatures, verdict_id: str | None = None) -> dict[str, Any]:
             favicon_sha256=p.favicon.sha256,
             favicon_phash=p.favicon.phash,
             screenshot_phash=p.screenshot_phash,
+            # hash only: /render stores the PNG privately as screens/<sha256>.png (operator evidence pack)
+            screenshot_sha256=p.screenshot_sha256,
             dom_simhash=p.dom_simhash,
             error=p.error,
             truncated=p.network.truncated,

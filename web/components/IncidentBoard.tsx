@@ -11,7 +11,9 @@ import { usePrefs } from "@/lib/prefs";
 import { readSse } from "@/lib/sse";
 import { HuntOpsPanel } from "./HuntOpsPanel";
 import { LlmRoutePanel } from "./LlmRoutePanel";
+import { MonitoringCard } from "./OperatorLinks";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
+import { EvidencePackButton } from "./EvidencePackButton";
 import { Icon, SeverityMark } from "./Icon";
 
 type Load = { state: "loading" } | { state: "not_connected" } | { state: "unauthorized" } | { state: "ok"; items: Incident[] };
@@ -163,6 +165,7 @@ export function IncidentBoard({ demo }: { demo: boolean }) {
             ) : null}
 
             {!demo && key ? <LlmRoutePanel operatorKey={key} /> : null}
+            {!demo && key ? <MonitoringCard /> : null}
             {!demo && key ? <HuntOpsPanel operatorKey={key} /> : null}
 
             {load.state === "loading" ? (
@@ -223,6 +226,15 @@ function IncidentCard({ incident, demo, notice, onDecide }: { incident: Incident
             {incident.rule_ids.map((r) => <span key={r}>rule:{r}</span>)}
             {Object.entries(incident.correlation_keys ?? {}).map(([k, v]) => <span key={k}>{k}={v}</span>)}
           </div>
+          {demo || incident.source === "synthetic" || incident.linked_verdicts.length === 0 ? null : (
+            <ul className="ind" data-testid="incident-evidence-packs">
+              {incident.linked_verdicts.map((v) => (
+                <li key={v}>
+                  <span className="mono" translate="no">{v.slice(-8)}</span> <EvidencePackButton verdictId={v} final compact />
+                </li>
+              ))}
+            </ul>
+          )}
           <h3>{t("i.ind")}</h3>
           {incident.indicators.length === 0 ? <p className="muted">{t("i.none")}</p> : (
             <ul className="ind">

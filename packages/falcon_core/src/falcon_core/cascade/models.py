@@ -127,6 +127,7 @@ class SandboxFeatures(BaseModel):
     favicon_sha256: str | None = None
     favicon_phash: str | None = None
     screenshot_phash: str | None = None
+    screenshot_sha256: str | None = None  # name of the privately stored PNG (sandbox screens/<sha>.png)
     dom_simhash: str | None = None
     cloaking: dict[str, Any] = Field(default_factory=dict)
     # Sandbox-classified exfiltration targets: [{"origin", "category"}] (bot API, webhook, relay).

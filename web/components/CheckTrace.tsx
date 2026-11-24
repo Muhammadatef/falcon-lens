@@ -11,7 +11,9 @@ import { hostOnly } from "@/lib/history";
 import { hT, type HistoryKey } from "@/lib/i18n-history";
 import { formatTime, pick } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
+import { OperatorLinks } from "./OperatorLinks";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
+import { EvidencePackButton } from "./EvidencePackButton";
 import { Icon, PolarityMark } from "./Icon";
 
 const POLL_MS = 3000;
@@ -84,7 +86,10 @@ export function CheckTrace({ verdictId, demo }: { verdictId: string; demo: boole
                 <p className="muted">{t("ops.nc.body")}</p>
               </div>
             ) : (
-              <Body verdict={view.verdict} />
+              <>
+                <OperatorLinks id={view.verdict.verdict_id} createdAt={view.verdict.created_at} latencyMs={view.verdict.latency_ms} />
+                <Body verdict={view.verdict} />
+              </>
             )}
           </div>
         </section>
@@ -152,6 +157,8 @@ function Body({ verdict: v }: { verdict: Verdict }) {
           <div><dt>ID</dt><dd className="mono" dir="ltr" translate="no">{v.verdict_id}</dd></div>
         </dl>
       </article>
+
+      {v.source === "synthetic" ? null : <EvidencePackButton verdictId={v.verdict_id} final={v.final} />}
 
       <h2 className="h3 ck-h">{h("ck.tiers")}</h2>
       <ol className="ck-tiers" data-testid="check-tiers">

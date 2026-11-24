@@ -93,6 +93,8 @@ export interface Verdict {
   screenshot_url?: string | null;
   source?: DataSource;
   channel?: Channel;
+  /** OpenTelemetry trace id (contracts/verdict.schema.json `trace_id`); absent when tracing was off. */
+  trace_id?: string;
   latency_ms: number;
   created_at: string;
 }
@@ -275,6 +277,7 @@ export function parseVerdict(raw: unknown): Verdict | null {
     trace: parseTrace(raw.trace),
     source: oneOf(raw.source, ["live", "replay", "synthetic", "fixture"] as const) ?? "live",
     ...(oneOf(raw.channel, CHANNEL_VALUES) ? { channel: oneOf(raw.channel, CHANNEL_VALUES) as Channel } : {}),
+    ...(typeof raw.trace_id === "string" && /^[0-9a-f]{32}$/.test(raw.trace_id) ? { trace_id: raw.trace_id } : {}),
     latency_ms: num(raw.latency_ms),
     created_at: str(raw.created_at),
   };
