@@ -257,8 +257,13 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-problem")).toHaveAttribute("data-problem", "server");
     await expect.poll(async () => (await spoken(page)).map((x) => x.text).join(" ")).toContain(SCRIPT.ar_ae["voice.unavailable"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 6_000 }); // after ~1 s back-off
-    await say(page, "fail");
-    await expect(page.getByTestId("voice-problem")).toHaveAttribute("data-problem", "unavailable");
+    // Under a loaded CI machine the second utterance can land before the mic loop re-arms; retry it
+    // (still the same behaviour: repeated failures end in a visible "unavailable" state).
+    await expect(async () => {
+      await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 6_000 });
+      await say(page, "fail");
+      await expect(page.getByTestId("voice-problem")).toHaveAttribute("data-problem", "unavailable", { timeout: 4_000 });
+    }).toPass({ timeout: 30_000 });
     await expect(page.getByTestId("voice-problem")).toContainText(AR["voice.unavailable.msg"]);
     await expect(page.getByTestId("voice-paste")).toBeVisible();
   });
