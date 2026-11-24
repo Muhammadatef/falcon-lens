@@ -212,9 +212,9 @@ def pick_legit(
 ) -> tuple[list[dict[str, Any]], dict[str, int]]:
     ranked = []
     for ln in tranco_csv.read_text().splitlines():
-        rk, _, dom = ln.partition(",")
-        if rk.isdigit() and RANK_LO <= int(rk) <= RANK_HI:
-            ranked.append((int(rk), dom.strip().lower()))
+        rk_s, _, dom = ln.partition(",")
+        if rk_s.isdigit() and RANK_LO <= int(rk_s) <= RANK_HI:
+            ranked.append((int(rk_s), dom.strip().lower()))
     stats = {"tranco_in_range": len(ranked), "excluded_seen": 0, "not_serving": 0, "blocklisted": 0}
     pool: list[tuple[int, str]] = []
     seen: set[str] = set()
