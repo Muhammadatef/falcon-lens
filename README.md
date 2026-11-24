@@ -413,7 +413,7 @@ make smoke               # end-to-end assertions against the running stack
 make demo                # the six scenarios and the Sentinel scene
 ```
 
-Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `demo-reset` `seed` `replay` `eval` `eval-gate` `redteam` `redteam-shipped` `scan` `openapi` `regress-legit` `tunnel` `submission` `ci-local`. Run `make help` for the full list. Scenarios and video shot list: [`docs/DEMO.md`](docs/DEMO.md).
+Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `demo-reset` `seed` `replay` `eval` `eval-gate` `redteam` `redteam-shipped` `scan` `openapi` `regress-legit` `batch` `tunnel` `submission` `ci-local`. Run `make help` for the full list. Scenarios and video shot list: [`docs/DEMO.md`](docs/DEMO.md).
 
 ## Engineering process
 
