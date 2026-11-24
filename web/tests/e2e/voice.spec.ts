@@ -771,7 +771,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
       await expect(page.getByTestId("voice-todo")).toBeVisible({ timeout: 25_000 });
       await page.waitForTimeout(600);
       expect(await scan()).toEqual([]);
-      await page.screenshot({ path: `design/app-shots/voice-${lang}-${page.viewportSize()?.width}.png`, fullPage: true });
+      if (test.info().project.name !== "iphone-15") await page.screenshot({ path: `design/app-shots/voice-${lang}-${page.viewportSize()?.width}.png`, fullPage: true });
     });
   }
 });
