@@ -1,0 +1,2 @@
+Generated in this repository by tools/voice_clips/sfx.py from synthesised sine waves.
+No third-party audio is used. Released under the repository licence.

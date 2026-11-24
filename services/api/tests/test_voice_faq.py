@@ -117,3 +117,21 @@ async def test_a_dead_embedding_model_degrades_to_off_topic() -> None:
 
     r = await ask("Hey Falcon, tell me about the zorp thing please", semantic=FaqSemantic(dead, threshold=0.1))
     assert (r["intent"], r["answer_id"]) == ("off_topic", None)
+
+
+async def test_language_follows_the_wake_phrase_not_the_detector() -> None:
+    assert (await ask("Hey Falcon, check my messages", "ar"))["lang"] == "en"
+    assert (await ask("Hey Falcon", "ar"))["lang"] == "en"
+    assert (await ask("يا صقر، افحص رسائلي", "en"))["lang"] == "ar"
+    assert (await ask("يا صقر", "en"))["lang"] == "ar"
+    assert (await ask("Hey Falcon, هل البنك يطلب مني الرمز", "en"))["lang"] == "ar"
+
+
+async def test_follow_up_language_is_the_script_of_the_follow_up() -> None:
+    r = await ask("شيّك اللي نسخته", "en", data={"follow_up": "1"})
+    assert (r["wake"], r["lang"], r["intent"]) == (True, "ar", "check_clipboard")
+    assert (await ask("check what I copied", "ar", data={"follow_up": "1"}))["lang"] == "en"
+
+
+async def test_detector_is_the_last_resort_when_there_are_no_letters() -> None:
+    assert (await ask("123", "ar"))["lang"] == "ar"

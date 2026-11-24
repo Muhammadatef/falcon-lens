@@ -2,7 +2,7 @@
 # Every SPOKEN line of the Hey Falcon assistant. ar_ae = Emirati spoken Arabic (screen text stays formal MSA).
 # Every spoken output is a concatenation of the clips below; ids are stable: <lang>.<key>.
 version: 1
-clip_count: 466
+clip_count: 494
 languages: [ar_ae, en]
 ar_ae:
   "wake.ack": "هلا، سامعك."
@@ -224,6 +224,20 @@ ar_ae:
   "result.suspicious": "هذا المسج مشكوك فيه."
   "result.no_warning_signs": "ما لقيت فيه علامات تحذير."
   "result.could_not_check": "ما قدرت أشيّك هذا المسج."
+  "msg.ord.1": "المسج الأول:"
+  "msg.ord.2": "المسج الثاني:"
+  "msg.ord.3": "المسج الثالث:"
+  "msg.ord.4": "المسج الرابع:"
+  "msg.ord.5": "المسج الخامس:"
+  "msg.ord.6": "المسج السادس:"
+  "msg.ord.7": "المسج السابع:"
+  "msg.ord.8": "المسج الثامن:"
+  "msg.ord.9": "المسج التاسع:"
+  "msg.ord.10": "المسج العاشر:"
+  "msg.verdict.dangerous": "خطِر. لا تضغط الرابط ولا تعطي أي بيانات."
+  "msg.verdict.suspicious": "مشكوك فيه. تأكد من الجهة الرسمية قبل لا ترد."
+  "msg.verdict.no_warning_signs": "ما لقينا علامات تحذير، بس خلّك منتبه."
+  "msg.verdict.could_not_check": "ما قدرنا نشيّكه كامل. لا تفتح الرابط لين تتأكد."
   "todo.lead": "نصيحتي لك:"
   "todo.link": "لا تضغط على الرابط، ولا تدوس عليه."
   "todo.otp": "ولا تعطي حد الرمز أبداً."
@@ -458,6 +472,20 @@ en:
   "result.suspicious": "This message looks suspicious."
   "result.no_warning_signs": "I found no warning signs in it."
   "result.could_not_check": "I could not check this message."
+  "msg.ord.1": "Message one:"
+  "msg.ord.2": "Message two:"
+  "msg.ord.3": "Message three:"
+  "msg.ord.4": "Message four:"
+  "msg.ord.5": "Message five:"
+  "msg.ord.6": "Message six:"
+  "msg.ord.7": "Message seven:"
+  "msg.ord.8": "Message eight:"
+  "msg.ord.9": "Message nine:"
+  "msg.ord.10": "Message ten:"
+  "msg.verdict.dangerous": "dangerous. Don't tap the link or share any details."
+  "msg.verdict.suspicious": "suspicious. Check with the official source before you reply."
+  "msg.verdict.no_warning_signs": "no warning signs found, but stay careful."
+  "msg.verdict.could_not_check": "could not be fully checked. Don't open the link until you are sure."
   "todo.lead": "What to do now:"
   "todo.link": "Don't tap the link."
   "todo.otp": "Never share a code with anyone."
@@ -692,6 +720,20 @@ clips:
   - {id: "ar_ae.result.suspicious", lang: ar_ae, text: "هذا المسج مشكوك فيه."}
   - {id: "ar_ae.result.no_warning_signs", lang: ar_ae, text: "ما لقيت فيه علامات تحذير."}
   - {id: "ar_ae.result.could_not_check", lang: ar_ae, text: "ما قدرت أشيّك هذا المسج."}
+  - {id: "ar_ae.msg.ord.1", lang: ar_ae, text: "المسج الأول:"}
+  - {id: "ar_ae.msg.ord.2", lang: ar_ae, text: "المسج الثاني:"}
+  - {id: "ar_ae.msg.ord.3", lang: ar_ae, text: "المسج الثالث:"}
+  - {id: "ar_ae.msg.ord.4", lang: ar_ae, text: "المسج الرابع:"}
+  - {id: "ar_ae.msg.ord.5", lang: ar_ae, text: "المسج الخامس:"}
+  - {id: "ar_ae.msg.ord.6", lang: ar_ae, text: "المسج السادس:"}
+  - {id: "ar_ae.msg.ord.7", lang: ar_ae, text: "المسج السابع:"}
+  - {id: "ar_ae.msg.ord.8", lang: ar_ae, text: "المسج الثامن:"}
+  - {id: "ar_ae.msg.ord.9", lang: ar_ae, text: "المسج التاسع:"}
+  - {id: "ar_ae.msg.ord.10", lang: ar_ae, text: "المسج العاشر:"}
+  - {id: "ar_ae.msg.verdict.dangerous", lang: ar_ae, text: "خطِر. لا تضغط الرابط ولا تعطي أي بيانات."}
+  - {id: "ar_ae.msg.verdict.suspicious", lang: ar_ae, text: "مشكوك فيه. تأكد من الجهة الرسمية قبل لا ترد."}
+  - {id: "ar_ae.msg.verdict.no_warning_signs", lang: ar_ae, text: "ما لقينا علامات تحذير، بس خلّك منتبه."}
+  - {id: "ar_ae.msg.verdict.could_not_check", lang: ar_ae, text: "ما قدرنا نشيّكه كامل. لا تفتح الرابط لين تتأكد."}
   - {id: "ar_ae.todo.lead", lang: ar_ae, text: "نصيحتي لك:"}
   - {id: "ar_ae.todo.link", lang: ar_ae, text: "لا تضغط على الرابط، ولا تدوس عليه."}
   - {id: "ar_ae.todo.otp", lang: ar_ae, text: "ولا تعطي حد الرمز أبداً."}
@@ -925,6 +967,20 @@ clips:
   - {id: "en.result.suspicious", lang: en, text: "This message looks suspicious."}
   - {id: "en.result.no_warning_signs", lang: en, text: "I found no warning signs in it."}
   - {id: "en.result.could_not_check", lang: en, text: "I could not check this message."}
+  - {id: "en.msg.ord.1", lang: en, text: "Message one:"}
+  - {id: "en.msg.ord.2", lang: en, text: "Message two:"}
+  - {id: "en.msg.ord.3", lang: en, text: "Message three:"}
+  - {id: "en.msg.ord.4", lang: en, text: "Message four:"}
+  - {id: "en.msg.ord.5", lang: en, text: "Message five:"}
+  - {id: "en.msg.ord.6", lang: en, text: "Message six:"}
+  - {id: "en.msg.ord.7", lang: en, text: "Message seven:"}
+  - {id: "en.msg.ord.8", lang: en, text: "Message eight:"}
+  - {id: "en.msg.ord.9", lang: en, text: "Message nine:"}
+  - {id: "en.msg.ord.10", lang: en, text: "Message ten:"}
+  - {id: "en.msg.verdict.dangerous", lang: en, text: "dangerous. Don't tap the link or share any details."}
+  - {id: "en.msg.verdict.suspicious", lang: en, text: "suspicious. Check with the official source before you reply."}
+  - {id: "en.msg.verdict.no_warning_signs", lang: en, text: "no warning signs found, but stay careful."}
+  - {id: "en.msg.verdict.could_not_check", lang: en, text: "could not be fully checked. Don't open the link until you are sure."}
   - {id: "en.todo.lead", lang: en, text: "What to do now:"}
   - {id: "en.todo.link", lang: en, text: "Don't tap the link."}
   - {id: "en.todo.otp", lang: en, text: "Never share a code with anyone."}

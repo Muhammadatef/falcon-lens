@@ -7,7 +7,7 @@ For a native Emirati reviewer. Left: the line the assistant SPEAKS. Right: its E
 Rules for the lines: short, natural Emirati speech, respectful to an elderly listener, never the word for "safe",
 never asking for personal, bank or ID details, no phone numbers.
 
-Lines: 259. Digits are written out in words (`num.0` to `num.100`).
+Lines: 273. Digits are written out in words (`num.0` to `num.100`).
 
 | Emirati line | English meaning | Reviewer / OK |
 |---|---|---|
@@ -230,6 +230,20 @@ Lines: 259. Digits are written out in words (`num.0` to `num.100`).
 | هذا المسج مشكوك فيه. | This message looks suspicious. |  |
 | ما لقيت فيه علامات تحذير. | I found no warning signs in it. |  |
 | ما قدرت أشيّك هذا المسج. | I could not check this message. |  |
+| المسج الأول: | Message one: |  |
+| المسج الثاني: | Message two: |  |
+| المسج الثالث: | Message three: |  |
+| المسج الرابع: | Message four: |  |
+| المسج الخامس: | Message five: |  |
+| المسج السادس: | Message six: |  |
+| المسج السابع: | Message seven: |  |
+| المسج الثامن: | Message eight: |  |
+| المسج التاسع: | Message nine: |  |
+| المسج العاشر: | Message ten: |  |
+| خطِر. لا تضغط الرابط ولا تعطي أي بيانات. | dangerous. Don't tap the link or share any details. |  |
+| مشكوك فيه. تأكد من الجهة الرسمية قبل لا ترد. | suspicious. Check with the official source before you reply. |  |
+| ما لقينا علامات تحذير، بس خلّك منتبه. | no warning signs found, but stay careful. |  |
+| ما قدرنا نشيّكه كامل. لا تفتح الرابط لين تتأكد. | could not be fully checked. Don't open the link until you are sure. |  |
 | نصيحتي لك: | What to do now: |  |
 | لا تضغط على الرابط، ولا تدوس عليه. | Don't tap the link. |  |
 | ولا تعطي حد الرمز أبداً. | Never share a code with anyone. |  |

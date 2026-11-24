@@ -78,6 +78,14 @@ make redteam-shipped BUDGET=extended PAIRED=evals/results/published/redteam/<pro
 
 Fixtures are the invented Falcon Demo Bank on `.test` hosts, labelled as test fixtures, served only by an offline fixture renderer; no live page is visited. The red-team shipped-cascade artifact (PR #84) covers prompt injection and is not repeated here.
 
+### Voice live bench (synthetic speech, on-site vs public tunnel)
+
+Source: `evals/results/published/voice/voice_live_bench_<sha>_<ts>.json`, written by `evals/voice_live_bench.py`. 85 synthetic clips (macOS `say` Majed/Daniel/Samantha/Karen/Rishi at several speeds, Amazon Polly Zayd/Hala/Matthew, three synthetic noise variants), sent through the web route to the live API; the artifact labels `SYNTHETIC_SPEECH: true`.
+- Synthetic speech, not real speakers: read every number as an upper bound. Local = gateway on the Mac Studio, tunnel = public `falconlens.app`; both used the native `whisper-large-v3-turbo` engine.
+- Local (83 scored clips): wake 97.6%, intent 89.2%, FAQ answer 84.6%, language 100%, off-topic and injection redirected 8 of 8, round trip p50 0.26 s / p95 0.66 s; tunnel (72 scored): wake 97.2%, intent 91.7%, p50 0.96 s / p95 1.97 s.
+- Tunnel pass had 13 errors in 85 requests (4 read timeouts at 30 s, 6 instant connection errors in a row, 2 HTTP 502 including the expected over-limit clip) against 2 in the local pass; the remaining failures are listed with the exact utterance and the transcript in the artifact.
+- Server latency is a Prometheus histogram delta (the response carries no timing), local pass only; the rate limit (20 a minute) forces pacing of 3.3 s between requests.
+
 ### Sovereign-mode proof (what "runs fully locally" may and may not claim)
 
 Source: `evals/results/published/sovereign/sovereign_<model>_<ts>.json`, written by `scripts/sovereign_proof.py` against an isolated stack (compose project `flsov`) with `FL_SOVEREIGN_MODE=1` and no `ANTHROPIC_API_KEY`. Four fresh-stack runs are published (2 per model), the failed ones too; one machine, invented Falcon Demo Bank fixtures, synthetic `say` speech.

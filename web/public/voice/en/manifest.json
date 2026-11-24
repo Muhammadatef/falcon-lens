@@ -1752,6 +1752,118 @@
     "voice": "am_fenrir"
   },
   {
+    "id": "en.msg.ord.1",
+    "file": "en.msg.ord.1.mp3",
+    "text": "Message one:",
+    "ms": 768,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.2",
+    "file": "en.msg.ord.2.mp3",
+    "text": "Message two:",
+    "ms": 774,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.3",
+    "file": "en.msg.ord.3.mp3",
+    "text": "Message three:",
+    "ms": 855,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.4",
+    "file": "en.msg.ord.4.mp3",
+    "text": "Message four:",
+    "ms": 802,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.5",
+    "file": "en.msg.ord.5.mp3",
+    "text": "Message five:",
+    "ms": 822,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.6",
+    "file": "en.msg.ord.6.mp3",
+    "text": "Message six:",
+    "ms": 848,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.7",
+    "file": "en.msg.ord.7.mp3",
+    "text": "Message seven:",
+    "ms": 885,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.8",
+    "file": "en.msg.ord.8.mp3",
+    "text": "Message eight:",
+    "ms": 774,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.9",
+    "file": "en.msg.ord.9.mp3",
+    "text": "Message nine:",
+    "ms": 803,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.ord.10",
+    "file": "en.msg.ord.10.mp3",
+    "text": "Message ten:",
+    "ms": 792,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.verdict.dangerous",
+    "file": "en.msg.verdict.dangerous.mp3",
+    "text": "dangerous. Don't tap the link or share any details.",
+    "ms": 2730,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.verdict.suspicious",
+    "file": "en.msg.verdict.suspicious.mp3",
+    "text": "suspicious. Check with the official source before you reply.",
+    "ms": 3053,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.verdict.no_warning_signs",
+    "file": "en.msg.verdict.no_warning_signs.mp3",
+    "text": "no warning signs found, but stay careful.",
+    "ms": 2079,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.msg.verdict.could_not_check",
+    "file": "en.msg.verdict.could_not_check.mp3",
+    "text": "could not be fully checked. Don't open the link until you are sure.",
+    "ms": 3374,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
     "id": "en.todo.lead",
     "file": "en.todo.lead.mp3",
     "text": "What to do now:",
