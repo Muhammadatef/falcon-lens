@@ -39,21 +39,22 @@ export function CampaignExplainer() {
           {WHY.map((w) => (
             <li key={w.h}>
               <Icon name={w.icon} size={24} />
-              <div><h3>{c(w.h)}</h3><p>{c(w.b)}</p></div>
+              <h3>{c(w.h)}</h3>
+              <p>{c(w.b)}</p>
             </li>
           ))}
         </ul>
         <h2 className="h3">{c("cx.how.h")}</h2>
         <ol className="cx-steps">
-          {STEPS.map((s) => (
-            <li key={s.k}><Icon name={s.icon} size={24} /><p>{c(s.k)}</p></li>
+          {STEPS.map((s, i) => (
+            <li key={s.k}><span className="cx-n" aria-hidden="true">{i + 1}</span><Icon name={s.icon} size={24} /><p>{c(s.k)}</p></li>
           ))}
         </ol>
         <h2 className="h3">{c("cx.read.h")}</h2>
         <ul className="cx-read">
           {READ.map((k) => <li key={k}>{c(k)}</li>)}
         </ul>
-        <p className="small muted">{c("cx.note")}</p>
+        <p className="small muted cx-note">{c("cx.note")}</p>
         {open ? <Link className="cx-more" href="/docs/agents">{c("cx.more")}</Link> : null}
       </div>
     </div>
