@@ -90,7 +90,7 @@ function Section({ s, lang, caps }: { s: DocSection; lang: Lang; caps: Capabilit
         </div>
       ) : null}
       {s.table ? (
-        <div className="tbl-wrap" tabIndex={0} role="region" aria-labelledby={`d-${s.id}`}>
+        <div className="tbl-wrap" tabIndex={0} role="group" aria-labelledby={`d-${s.id}`}>
           <table className="tbl">
             <thead>
               <tr>{s.table.cols.map((h) => <th scope="col" key={h}>{h}</th>)}</tr>
@@ -131,13 +131,8 @@ export function DocBody({ page, lang, caps }: { page: DocPage; lang: Lang; caps:
       ) : null}
       {page.sections.map((s) => <Section key={s.id} s={s} lang={lang} caps={caps} />)}
       <p className="small docs-sources" data-testid="doc-sources">
-        {dt(lang, "docs.sources")}{" "}
-        {page.sources.map((src, i) => (
-          <span key={src}>
-            {i > 0 ? " · " : null}
-            <a className="mono" dir="ltr" translate="no" href={REPO_BLOB + src} rel="noopener noreferrer" target="_blank">{src}</a>
-          </span>
-        ))}
+        {/* One plain link for engineers; raw repository paths are not shown on the page. */}
+        {page.sources.slice(0, 1).map((src) => <a key={src} href={REPO_BLOB + src} rel="noopener noreferrer" target="_blank">{dt(lang, "docs.sources")}</a>)}
       </p>
     </>
   );

@@ -5,6 +5,7 @@ import { CapBadge } from "@/components/CapBadge";
 import { Icon } from "@/components/Icon";
 import { Radar } from "@/components/Radar";
 import { ArchDiagram } from "@/components/arch/ArchDiagram";
+import { ArchLayers } from "@/components/arch/ArchLayers";
 import { VoiceAgentsSection } from "@/components/VoiceAgentsSection";
 import { at } from "@/lib/i18n-arch";
 import { loadCapabilities } from "@/lib/capabilities";
@@ -92,6 +93,8 @@ export default async function AgentsPage() {
           <Icon name="refresh" size={24} />
           <span>{t("agents.handoff")}</span>
         </p>
+
+        <ArchLayers lang={lang} />
 
         <section aria-labelledby="biz-arch-h" data-testid="agents-arch">
           <div className="sec-head"><h2 id="biz-arch-h">{at(lang, "arch.biz.title")}</h2></div>

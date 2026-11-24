@@ -46,9 +46,9 @@ type Pages = Record<Exclude<DocSlug, "agents">, DocPage>;
 
 const en: Pages = {
   architecture: {
-    lead: "Falcon Lens runs as separate services on isolated networks. This page restates docs/ARCHITECTURE.md: the services, the path of one check, the model router, the data stores and the sandbox.",
+    lead: "Falcon Lens runs as separate services on isolated networks. This page covers the services, the path of one check, the model router, the data stores and the sandbox.",
     sources: ["docs/ARCHITECTURE.md"],
-    figure: { src: "/images/architecture.svg", alt: "Diagram of one check end to end: the gateway, the API, worker, MCP and Sentinel services, the data stores, the egress proxy and the isolated sandbox network, plus the voice path from the microphone to the local speech-to-text service.", width: 1200, height: 990 },
+    figure: { src: "/images/architecture.svg", alt: "Falcon Lens architecture in three stacked layers. Top: the voice assistant layer, from the browser microphone through local speech to text, the wake phrase, the intent step and pre-generated narration clips. Middle: the two AI agents, Baseer the Investigator with tiers T0 to T3 and a deterministic arbiter, and Dir' the Sentinel with rules, a LangGraph triage and human approval. Bottom: the platform layer with the API, the event bus, the database, the isolated sandbox, the integrations that are ready to connect and not connected, observability and the public pages. Arrows show a request flowing down.", width: 1200, height: 1250 },
     sections: [
       { id: "services", title: "Services", list: [
         "gateway: TLS, the content security policy, and routing of the web app, the API and MCP.",
@@ -92,7 +92,7 @@ const en: Pages = {
   },
 
   cascade: {
-    lead: "A check passes through up to four tiers, fastest first, and stops as soon as the evidence is decisive. Most checks never reach a language model. This page restates ADR-001 and the exit rules in docs/SCORING.md.",
+    lead: "A check passes through up to four tiers, fastest first, and stops as soon as the evidence is decisive. Most checks never reach a language model.",
     sources: ["docs/adr/ADR-001-cascade-arbiter.md", "docs/SCORING.md"],
     sections: [
       { id: "tiers", title: "The four tiers", cards: [
@@ -120,7 +120,7 @@ const en: Pages = {
   },
 
   arbiter: {
-    lead: "The arbiter is the only component that sets the risk score, the calibrated probability and the verdict. This page restates docs/SCORING.md. The per-signal weights are draft values documented there and are not repeated here.",
+    lead: "The arbiter is the only component that sets the risk score, the calibrated probability and the verdict. The per-signal weights are draft values documented there and are not repeated here.",
     sources: ["docs/SCORING.md"],
     sections: [
       { id: "pipeline", title: "Pipeline", list: [
@@ -156,7 +156,7 @@ const en: Pages = {
   },
 
   security: {
-    lead: "This page restates docs/THREAT_MODEL.md and the content-security-policy section of docs/DESIGN.md. Its status is a design statement. The measured resistance to prompt injection is listed as not yet measured on the Results page.",
+    lead: "This page summarises the threat model and the content security policy. Its status is a design statement. The measured resistance to prompt injection is listed as not yet measured on the Results page.",
     sources: ["docs/THREAT_MODEL.md", "docs/DESIGN.md"],
     sections: [
       { id: "boundaries", title: "Trust boundaries", list: [
@@ -205,7 +205,7 @@ const en: Pages = {
   },
 
   evals: {
-    lead: "How the evaluation is built and gated. This page restates docs/EVALS.md. Every measured number on the site comes from the published evaluation file, described below, and is shown on the Results page.",
+    lead: "How the evaluation is built and gated. Every measured number on the site comes from the published evaluation file, described below, and is shown on the Results page.",
     sources: ["docs/EVALS.md"],
     sections: [
       { id: "data", title: "Datasets", body: ["Live links, snapshots and logos stay in a private, git-ignored folder. The repository holds manifests with hashes and defanged links only."], list: [
@@ -228,20 +228,20 @@ const en: Pages = {
         "Sentinel: a labelled replay stream with planted campaigns, measuring incident precision and recall, time to incident, duplicate rate, false-block rate and summary faithfulness.",
         "Several of these are not measured yet. The Results page lists exactly which, rather than estimating them.",
       ] },
-      { id: "gate", title: "Merge gate", body: ["On the validation split, against a stored baseline, a change fails if any of these happens: recall drops beyond its tolerance, the false-positive rate rises beyond its tolerance, any official site is called dangerous, injection success rises above zero, or faithfulness falls below full. The tolerances are in docs/EVALS.md. The test split is never used to tune."] },
+      { id: "gate", title: "Merge gate", body: ["On the validation split, against a stored baseline, a change fails if any of these happens: recall drops beyond its tolerance, the false-positive rate rises beyond its tolerance, any official site is called dangerous, injection success rises above zero, or faithfulness falls below full. The tolerances are documented in the repository. The test split is never used to tune."] },
       { id: "provenance", title: "The published artifact", body: ["Each evaluation run writes one file that records the dataset hash, the code revision, the model ids, the thresholds and the seeds. The newest published file is bundled into this site at build time. Its details:"], data: "provenance" },
     ],
   },
 
   integration: {
-    lead: "Ready to connect, not connected. Falcon Lens has no existing integration with any authority and implies no endorsement. This page restates docs/INTEGRATION.md: how a police mobile app or an internal agent could connect. Nothing here is wired to any agency system.",
+    lead: "Ready to connect, not connected. Falcon Lens has no existing integration with any authority and implies no endorsement. This page explains how a police mobile app or an internal agent could connect. Nothing here is wired to any agency system.",
     sources: ["docs/INTEGRATION.md", "contracts/openapi.yaml"],
     callout: "Ready to connect. Not connected. Everything below describes a possible connection.",
     sections: [
       { id: "surfaces", title: "Surfaces", table: {
         cols: ["Surface", "Entry", "Authentication"],
         rows: [
-          ["REST v1", "/v1/* with the OpenAPI contract in contracts/openapi.yaml, generated and drift-checked in CI", "X-API-Key header or Authorization: Bearer"],
+          ["REST v1", "/v1/* with a published OpenAPI contract, generated and drift-checked in CI", "X-API-Key header or Authorization: Bearer"],
           ["MCP (streamable HTTP)", "/mcp", "Bearer token"],
           ["STIX 2.1", "GET /v1/intel/stix", "A key with the intel scope"],
           ["Webhooks (outbound)", "campaign.alert, to configured targets", "HMAC-SHA256 signature"],
@@ -277,12 +277,12 @@ const en: Pages = {
         "Out: verdicts whose reasons cite evidence ids, with defanged links; campaign cards and incidents with defanged indicators and aggregate counts; STIX indicators. Never raw page or message text, never personal data of reporters. Replayed or synthetic data carries a source label.",
         "With a cloud model route, the model sees structured evidence, not raw content; see the privacy page.",
       ] },
-      { id: "sovereign", title: "Sovereign mode", body: ["When sovereign mode is on, every model call goes to the local model, so no content leaves the machine. The API and MCP behave identically, and the meta endpoint reports the mode so a client can display it. Feeds that need external keys stay off unless configured."] },
+      { id: "sovereign", title: "Sovereign mode", body: ["When sovereign mode is on, every model call goes to the local model, so no message or page content is sent to a cloud model. The API and MCP behave identically, and the meta endpoint reports the mode so a client can display it. Feeds that need external keys stay off unless configured."] },
     ],
   },
 
   privacy: {
-    lead: "The engineering behind the Privacy page. This restates docs/PRIVACY.md and the information-leak rows of docs/THREAT_MODEL.md. It describes how the system handles data; it is not a claim of compliance with any legal regime.",
+    lead: "The engineering behind the Privacy page. It describes how the system handles data; it is not a claim of compliance with any legal regime.",
     sources: ["docs/PRIVACY.md", "docs/THREAT_MODEL.md"],
     sections: [
       { id: "stored", title: "What is stored", list: [
@@ -295,7 +295,7 @@ const en: Pages = {
         "Logs are separate: they escape control characters, cap field lengths and carry no message bodies.",
       ] },
       { id: "cloud", title: "Cloud mode", body: ["Redacted, spotlighted text goes to the cloud model API for extraction, investigation and responses. Nothing else leaves the machine except lookups to RDAP, certificate-transparency logs and feeds, which carry domain names only."] },
-      { id: "sovereign", title: "Sovereign mode", body: ["Every model call goes to the local model, so no content leaves the machine. Lookups are still domain-only, and an environment setting can disable them."] },
+      { id: "sovereign", title: "Sovereign mode", body: ["Every model call goes to the local model, so no message or page content is sent to a cloud model. Lookups are still domain-only, and an environment setting can disable them."] },
       { id: "retention", title: "Retention", body: ["A retention policy is planned (verdicts kept for a limited period, then aggregated) but it is not yet automated. The audit log is append-only. Snapshots are local only."] },
       { id: "never", title: "What the product never asks for", body: ["Personal, banking or ID details. It never enters data into a suspicious page and never submits a form."] },
     ],
@@ -304,9 +304,9 @@ const en: Pages = {
 
 const ar: Pages = {
   architecture: {
-    lead: "تعمل عدسة الصقر خدماتٍ منفصلة على شبكات معزولة. تعيد هذه الصفحة عرض docs/ARCHITECTURE.md: الخدمات، ومسار الفحص الواحد، وموجِّه النماذج، ومخازن البيانات، والبيئة المعزولة.",
+    lead: "تعمل عدسة الصقر خدماتٍ منفصلة على شبكات معزولة. تعرض هذه الصفحة الخدمات، ومسار الفحص الواحد، وموجِّه النماذج، ومخازن البيانات، والبيئة المعزولة.",
     sources: ["docs/ARCHITECTURE.md"],
-    figure: { src: "/images/architecture.svg", alt: "مخطط لفحص واحد من أوله إلى آخره: البوابة، وخدمات الواجهة البرمجية والمعالج وMCP ودرع، ومخازن البيانات، ووسيط الخروج، وشبكة البيئة المعزولة، ومسار الصوت من الميكروفون إلى خدمة تحويل الكلام المحلية.", width: 1200, height: 990 },
+    figure: { src: "/images/architecture.svg", alt: "بنية عدسة الصقر في ثلاث طبقات متراكبة. في الأعلى طبقة المساعد الصوتي: من ميكروفون المتصفح إلى تحويل الكلام إلى نص محلياً، ثم عبارة التنبيه وفهم الطلب والرواية بمقاطع مولَّدة مسبقاً. وفي الوسط الوكيلان الذكيان: «بصير»، المحقّق، بطبقاته من T0 إلى T3 ومحكّمه الحتمي، و«درع»، الحارس، بقواعده وفرزه بمخطط LangGraph والموافقة البشرية. وفي الأسفل طبقة المنصة: الواجهة البرمجية، وناقل الأحداث، وقاعدة البيانات، والبيئة المعزولة، ووسائل الربط الجاهزة غير المربوطة، والمراقبة، والصفحات العامة. والأسهم تبيّن مرور الطلب من الأعلى إلى الأسفل.", width: 1200, height: 1250 },
     sections: [
       { id: "services", title: "الخدمات", list: [
         "البوابة: بروتوكول TLS وسياسة أمن المحتوى وتوجيه تطبيق الويب والواجهة البرمجية وMCP.",
@@ -350,7 +350,7 @@ const ar: Pages = {
   },
 
   cascade: {
-    lead: "يمرّ الفحص بما يصل إلى أربع طبقات، يبدأ بأسرعها ويتوقف حين تحسم الأدلة. ومعظم الفحوص لا تصل إلى نموذج لغوي. تعيد هذه الصفحة عرض ADR-001 وقواعد الخروج المبكر في docs/SCORING.md.",
+    lead: "يمرّ الفحص بما يصل إلى أربع طبقات، يبدأ بأسرعها ويتوقف حين تحسم الأدلة. ومعظم الفحوص لا تصل إلى نموذج لغوي.",
     sources: ["docs/adr/ADR-001-cascade-arbiter.md", "docs/SCORING.md"],
     sections: [
       { id: "tiers", title: "الطبقات الأربع", cards: [
@@ -378,7 +378,7 @@ const ar: Pages = {
   },
 
   arbiter: {
-    lead: "المحكّم هو المكوّن الوحيد الذي يحدد درجة الخطورة والاحتمالية المعايَرة والحكم. تعيد هذه الصفحة عرض docs/SCORING.md. أما أوزان الإشارات فهي قيم أولية موثّقة هناك ولا تتكرر هنا.",
+    lead: "المحكّم هو المكوّن الوحيد الذي يحدد درجة الخطورة والاحتمالية المعايَرة والحكم. أما أوزان الإشارات فهي قيم أولية موثّقة هناك ولا تتكرر هنا.",
     sources: ["docs/SCORING.md"],
     sections: [
       { id: "pipeline", title: "مسار الاحتساب", list: [
@@ -414,7 +414,7 @@ const ar: Pages = {
   },
 
   security: {
-    lead: "تعيد هذه الصفحة عرض docs/THREAT_MODEL.md وقسم سياسة أمن المحتوى في docs/DESIGN.md. وحالتها بيان تصميم. أما مقاومة حقن التعليمات فمدرجة في صفحة النتائج ضمن «لم يُقَس بعد».",
+    lead: "تلخّص هذه الصفحة نموذج التهديدات وسياسة أمن المحتوى. وحالتها بيان تصميم. أما مقاومة حقن التعليمات فمدرجة في صفحة النتائج ضمن «لم يُقَس بعد».",
     sources: ["docs/THREAT_MODEL.md", "docs/DESIGN.md"],
     sections: [
       { id: "boundaries", title: "حدود الثقة", list: [
@@ -463,7 +463,7 @@ const ar: Pages = {
   },
 
   evals: {
-    lead: "كيف يُبنى التقييم وكيف تُحرس بوابته. تعيد هذه الصفحة عرض docs/EVALS.md. كل رقم مقيس في الموقع يأتي من ملف التقييم المنشور الموصوف أدناه، ويظهر في صفحة النتائج.",
+    lead: "كيف يُبنى التقييم وكيف تُحرس بوابته. كل رقم مقيس في الموقع يأتي من ملف التقييم المنشور الموصوف أدناه، ويظهر في صفحة النتائج.",
     sources: ["docs/EVALS.md"],
     sections: [
       { id: "data", title: "مجموعات البيانات", body: ["تبقى الروابط الحية واللقطات والشعارات في مجلد خاص مستبعد من git. ولا يحمل المستودع إلا بيانات وصفية ببصمات وروابط معطَّلة."], list: [
@@ -486,20 +486,20 @@ const ar: Pages = {
         "درع: تدفق إعادة تشغيل موسوم بحملات مزروعة، يقيس دقة الحوادث واستدعاءها وزمن الوصول إلى الحادث ونسبة التكرار ونسبة الحظر الخاطئ وأمانة الملخص.",
         "كثير من هذه المقاييس لم يُقَس بعد. وتذكر صفحة النتائج أيها بالتحديد بدلاً من تقديره.",
       ] },
-      { id: "gate", title: "بوابة الدمج", body: ["على مجموعة التحقق ومقابل خط أساس محفوظ، يفشل أي تغيير إذا حدث أي مما يلي: انخفض الاستدعاء عن حدّ التسامح، أو ارتفع معدل الإنذار الخاطئ عن حدّ التسامح، أو صُنّف موقع رسمي خطِراً، أو ارتفعت نسبة نجاح الحقن فوق الصفر، أو قلّت الأمانة عن الكاملة. وحدود التسامح في docs/EVALS.md. ولا تُستخدم مجموعة الاختبار في الضبط أبداً."] },
+      { id: "gate", title: "بوابة الدمج", body: ["على مجموعة التحقق ومقابل خط أساس محفوظ، يفشل أي تغيير إذا حدث أي مما يلي: انخفض الاستدعاء عن حدّ التسامح، أو ارتفع معدل الإنذار الخاطئ عن حدّ التسامح، أو صُنّف موقع رسمي خطِراً، أو ارتفعت نسبة نجاح الحقن فوق الصفر، أو قلّت الأمانة عن الكاملة. وحدود التسامح موثّقة في المستودع. ولا تُستخدم مجموعة الاختبار في الضبط أبداً."] },
       { id: "provenance", title: "الملف المنشور", body: ["يكتب كل تشغيل للتقييم ملفاً واحداً يسجّل بصمة مجموعة البيانات ونسخة الشيفرة ومعرّفات النماذج والعتبات والبذور. وتُضمَّن أحدث نسخة منشورة في هذا الموقع عند البناء. وهذه تفاصيلها:"], data: "provenance" },
     ],
   },
 
   integration: {
-    lead: "جاهز للربط، وغير مربوط. لا يوجد لعدسة الصقر أي ربط قائم مع أي جهة، ولا تدّعي تأييداً. تعيد هذه الصفحة عرض docs/INTEGRATION.md: كيف يمكن لتطبيق جوال شرطي أو وكيل داخلي أن يرتبط بها. ولا شيء هنا موصول بأي نظام جهة.",
+    lead: "جاهز للربط، وغير مربوط. لا يوجد لعدسة الصقر أي ربط قائم مع أي جهة، ولا تدّعي تأييداً. تشرح هذه الصفحة كيف يمكن لتطبيق جوال شرطي أو وكيل داخلي أن يرتبط بها. ولا شيء هنا موصول بأي نظام جهة.",
     sources: ["docs/INTEGRATION.md", "contracts/openapi.yaml"],
     callout: "جاهز للربط، وغير مربوط. كل ما يلي وصف لإمكانية ربط.",
     sections: [
       { id: "surfaces", title: "الواجهات", table: {
         cols: ["الواجهة", "نقطة الدخول", "التوثيق"],
         rows: [
-          ["REST الإصدار 1", "/v1/* مع عقد OpenAPI في contracts/openapi.yaml، يُولَّد ويُفحص انحرافه في التكامل المستمر", "ترويسة X-API-Key أو Authorization: Bearer"],
+          ["REST الإصدار 1", "/v1/* مع عقد OpenAPI منشور، يُولَّد ويُفحص انحرافه في التكامل المستمر", "ترويسة X-API-Key أو Authorization: Bearer"],
           ["MCP (HTTP قابل للبث)", "/mcp", "رمز حامل"],
           ["STIX 2.1", "GET /v1/intel/stix", "مفتاح بصلاحية intel"],
           ["الخطافات الخارجية (Webhooks)", "campaign.alert إلى الوجهات المضبوطة", "توقيع HMAC-SHA256"],
@@ -535,12 +535,12 @@ const ar: Pages = {
         "يخرج: أحكام تستشهد أسبابها بمعرّفات أدلة وروابطها معطَّلة؛ وبطاقات حملات وحوادث بمؤشرات معطَّلة وأعداد مجمّعة؛ ومؤشرات STIX. ولا يخرج نص الصفحات أو الرسائل الخام ولا بيانات شخصية للمُبلِّغين. والبيانات المُعاد تشغيلها أو الاصطناعية تحمل وسماً لمصدرها.",
         "مع المسار السحابي يرى النموذج أدلة مهيكلة لا محتوى خاماً؛ انظر صفحة الخصوصية.",
       ] },
-      { id: "sovereign", title: "الوضع السيادي", body: ["عند تفعيل الوضع السيادي تذهب كل نداءات النموذج إلى النموذج المحلي، فلا يغادر أي محتوى الجهاز. وتتصرف الواجهة البرمجية وMCP بالطريقة نفسها، وتُبلغ نقطة meta بالوضع ليعرضه العميل. وتبقى المصادر التي تحتاج مفاتيح خارجية مطفأة ما لم تُضبط."] },
+      { id: "sovereign", title: "الوضع السيادي", body: ["عند تفعيل الوضع السيادي تذهب كل نداءات النموذج إلى النموذج المحلي، فلا يُرسَل محتوى الرسائل أو الصفحات إلى نموذج سحابي. وتتصرف الواجهة البرمجية وMCP بالطريقة نفسها، وتُبلغ نقطة meta بالوضع ليعرضه العميل. وتبقى المصادر التي تحتاج مفاتيح خارجية مطفأة ما لم تُضبط."] },
     ],
   },
 
   privacy: {
-    lead: "الهندسة التي تقف وراء صفحة الخصوصية. تعيد هذه الصفحة عرض docs/PRIVACY.md وبنود تسريب المعلومات في docs/THREAT_MODEL.md. وهي وصف لكيفية تعامل النظام مع البيانات، وليست ادعاءً بالامتثال لأي نظام قانوني.",
+    lead: "الهندسة التي تقف وراء صفحة الخصوصية. وهي وصف لكيفية تعامل النظام مع البيانات، وليست ادعاءً بالامتثال لأي نظام قانوني.",
     sources: ["docs/PRIVACY.md", "docs/THREAT_MODEL.md"],
     sections: [
       { id: "stored", title: "ما الذي يُخزَّن", list: [
@@ -553,7 +553,7 @@ const ar: Pages = {
         "السجلات منفصلة: تهرّب محارف التحكم وتقيّد أطوال الحقول ولا تحمل نصوص الرسائل.",
       ] },
       { id: "cloud", title: "الوضع السحابي", body: ["يذهب نص محجوب ومعلَّم إلى واجهة النموذج السحابي للاستخراج والتحقيق والإجابة. ولا يغادر الجهاز غير ذلك سوى عمليات بحث في RDAP وسجلات شفافية الشهادات ومصادر الاحتيال، وهذه تحمل أسماء النطاقات فقط."] },
-      { id: "sovereign", title: "الوضع السيادي", body: ["تذهب كل نداءات النموذج إلى النموذج المحلي، فلا يغادر أي محتوى الجهاز. وتبقى عمليات البحث بأسماء النطاقات فقط، ويمكن لإعداد في البيئة تعطيلها."] },
+      { id: "sovereign", title: "الوضع السيادي", body: ["تذهب كل نداءات النموذج إلى النموذج المحلي، فلا يُرسَل محتوى الرسائل أو الصفحات إلى نموذج سحابي. وتبقى عمليات البحث بأسماء النطاقات فقط، ويمكن لإعداد في البيئة تعطيلها."] },
       { id: "retention", title: "الاحتفاظ", body: ["سياسة الاحتفاظ مخطَّطة (حفظ الأحكام مدة محدودة ثم تجميعها إحصائياً) لكنها لم تُؤتمت بعد. وسجل التدقيق للإضافة فقط. واللقطات محلية فقط."] },
       { id: "never", title: "ما لا يطلبه المنتج أبداً", body: ["بيانات شخصية أو مصرفية أو رقم هوية. ولا يُدخل بيانات في صفحة مشبوهة ولا يرسل أي نموذج."] },
     ],

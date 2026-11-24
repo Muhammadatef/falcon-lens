@@ -51,7 +51,7 @@ For campaign incidents the API POSTs `{"event":"campaign.alert","id":...,"data":
 
 ## On-premise deployment | <span dir="rtl">التشغيل داخل الجهة</span>
 
-If an authority adopts Falcon Lens, the whole stack can run inside its own network. The same Docker Compose stack (`make up`) is used. With `FL_SOVEREIGN_MODE=1` every LLM role goes to a local model on the authority's own GPU servers, through any OpenAI-compatible server (Ollama or vLLM). The model tested here is Inkling-2-Mini; `qwen3.8:27b` is available locally and its sovereign-mode proof is pending. Speech-to-text is local Whisper and the voice clips are generated locally. Integration is through REST v1 (OpenAPI), SSE, MCP, the STIX export and signed webhooks: **ready to connect, not connected**, and nothing here implies endorsement by any authority.
+If an authority adopts Falcon Lens, the whole stack can run inside its own network. The same Docker Compose stack (`make up`) is used. With `FL_SOVEREIGN_MODE=1` every LLM role goes to a local model on the authority's own GPU servers, through any OpenAI-compatible server (Ollama or vLLM). The models tested here are Inkling-2-Mini and `qwen3.8:27b`; the sovereign-mode proof runs, including the ones recorded as failed, are in `evals/results/published/sovereign/` (read with `docs/EVALS.md`). Speech-to-text is local Whisper and the voice clips are generated locally. Integration is through REST v1 (OpenAPI), SSE, MCP, the STIX export and signed webhooks: **ready to connect, not connected**, and nothing here implies endorsement by any authority.
 
 **What a production deployment would still need**
 - The authority's own sign-on (SSO) and roles. Today there are scoped API keys and an operator key.

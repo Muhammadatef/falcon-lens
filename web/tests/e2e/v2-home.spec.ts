@@ -184,6 +184,8 @@ test.describe("/agents (W2-05)", () => {
     const text = await page.locator("main").evaluate((m) => {
       const c = m.cloneNode(true) as HTMLElement;
       c.querySelector('[data-testid="agents-arch"]')?.remove();
+      // Same for the three-layer architecture (owner request, 24 Nov): it names the tiers and LangGraph by design.
+      c.querySelector('[data-testid="arch-layers"]')?.remove();
       return c.innerText;
     });
     for (const banned of ["LangGraph", "T3", "state machine", "StateGraph"]) expect(text).not.toContain(banned);

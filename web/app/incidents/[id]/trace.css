@@ -4,7 +4,7 @@
 .trace::before { content: ""; position: absolute; inset-block: 1.5rem; inset-inline-start: 1.4rem; width: 2px; background: var(--fl-border-strong); }
 .trace-item { position: relative; padding-inline-start: 3.4rem; min-width: 0; }
 .trace-run { margin: 0 0 var(--fl-space-2); font-weight: var(--fl-weight-medium); }
-.trace-card { padding: var(--fl-space-4) var(--fl-space-5); display: grid; gap: var(--fl-space-3); min-width: 0; }
+.trace-card { padding: var(--fl-space-4) var(--fl-space-5); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--fl-space-3); min-width: 0; }
 .trace-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; }
 .trace-top h3 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); flex: 1 1 8rem; margin: 0; }
 .trace-dot { position: absolute; inset-inline-start: 0.35rem; inset-block-start: 0.9rem; width: 2.2rem; height: 2.2rem; border-radius: 50%; display: grid; place-items: center; background: var(--fl-surface-2); border: 2px solid var(--fl-brand); color: var(--fl-brand); }
@@ -21,6 +21,8 @@
 .chip--external_draft { border-style: dashed; border-color: var(--fl-suspicious-fg); color: var(--fl-suspicious-fg); }
 .chip--err { border-color: var(--fl-dangerous-fg); color: var(--fl-dangerous-fg); }
 .trace-llm { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; }
+/* A long status pill wraps on a phone instead of widening the page. */
+.trace-llm .pill { white-space: normal; max-width: 100%; }
 .route--local, .route--cloud { border-color: var(--fl-brand); color: var(--fl-brand); }
 .route--none { border-style: dashed; }
 .trace-budget { margin: 0; overflow-wrap: anywhere; }
