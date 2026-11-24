@@ -1,0 +1,74 @@
+[
+  {
+    "id": "greet_en",
+    "file": "greet_en.mp3",
+    "text": "Hello, I am Falcon. Paste a link or a message and I will check it for you.",
+    "ms": 4499,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "listening_en",
+    "file": "listening_en.mp3",
+    "text": "I'm listening.",
+    "ms": 1202,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "checking_en",
+    "file": "checking_en.mp3",
+    "text": "One moment while I check this.",
+    "ms": 2298,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "step_domain_en",
+    "file": "step_domain_en.mp3",
+    "text": "Checking the age and registration of the domain.",
+    "ms": 3223,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "step_page_en",
+    "file": "step_page_en.mp3",
+    "text": "Opening the page in an isolated sandbox, without entering any data.",
+    "ms": 4640,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "verdict_scam_en",
+    "file": "verdict_scam_en.mp3",
+    "text": "Warning. This looks like a scam. Do not open it or enter any details.",
+    "ms": 4357,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "verdict_suspicious_en",
+    "file": "verdict_suspicious_en.mp3",
+    "text": "There are suspicious signs. Avoid it and confirm with the official source.",
+    "ms": 4497,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "verdict_clear_en",
+    "file": "verdict_clear_en.mp3",
+    "text": "No warning signs found, but stay cautious.",
+    "ms": 3024,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "never_share_en",
+    "file": "never_share_en.mp3",
+    "text": "Never share your card number or PIN with anyone.",
+    "ms": 3300,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  }
+]
