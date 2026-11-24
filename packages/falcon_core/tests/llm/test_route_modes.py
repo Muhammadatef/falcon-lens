@@ -133,6 +133,8 @@ async def test_local_model_choice_and_per_model_base_url() -> None:
     (route, model, prov), *_ = router.plan("extractor")
     assert (route, model) == ("local", "qwen3.8:27b") and prov._url.startswith("http://gate:8085")  # type: ignore[attr-defined]
     assert router.config.local_base_for("inkling-2-mini-chat") == "http://ollama:11434"
+    assert prov._no_think is True  # type: ignore[attr-defined]  # qwen via the gate needs FL_LOCAL_NO_THINK behaviour
+    assert router._local_for("inkling-2-mini-chat")._no_think is False  # type: ignore[attr-defined]
 
 
 async def test_no_shadow_to_cloud_in_local_mode() -> None:

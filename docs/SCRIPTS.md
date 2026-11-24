@@ -59,6 +59,7 @@ Rules that apply to everything below:
 | `readme_metrics.py` | Copies published eval numbers into the README block | `python scripts/readme_metrics.py [--check]` | docs |
 | `qwen_task.py` | The only way to call the local model for bulk drafts; validates every item | `uv run --no-project --with httpx --with jsonschema python scripts/qwen_task.py --task ID --kind KIND --spec SPEC.json` | evals |
 | `collect_loop.sh` | Polls the OpenPhish feed every 12 hours | `scripts/collect_loop.sh &` | evals |
+| `sovereign_proof.py` | Sovereign-mode proof against a running isolated stack (scenarios, voice, Sentinel summary, model per role, egress audit); writes a published artifact | `PYTHONPATH=scripts uv run python scripts/sovereign_proof.py --label X --model M --host-llm-url U --sink-log F --prom-url P --publish` | evals |
 
 ## Demo tooling in `scripts/falcon_demo/`
 

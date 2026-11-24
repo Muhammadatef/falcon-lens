@@ -182,9 +182,12 @@ class LLMRouter:
         if self._local_injected is not None:
             return self._local_injected
         base = self.config.local_base_for(model)
-        prov = self._locals.get(base)
+        # Qwen 3.8 behind the gate answers with empty content unless thinking is off, so it always gets no-think.
+        no_think = self.config.local_no_think or model.startswith("qwen")
+        k = f"{base}|{no_think}"
+        prov = self._locals.get(k)
         if prov is None:
-            prov = self._locals[base] = OllamaProvider(base)
+            prov = self._locals[k] = OllamaProvider(base, no_think=no_think)
         return prov
 
     def plan(self, role: Role) -> list[tuple[Route, str, Provider]]:
