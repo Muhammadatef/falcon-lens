@@ -33,6 +33,7 @@ from falcon_api import hunt as hunt_api
 from falcon_api.auth import (
     AuditLog,
     Authenticator,
+    KeyConflictError,
     KeyStore,
     MemoryAuditLog,
     MemoryKeyStore,
@@ -247,8 +248,13 @@ def build_app(
                 ("sentinel-hunt", os.environ.get("FL_HUNT_API_KEY"), ["hunt"], 60, "Sentinel hunt key (hunt only)"),
             ]
             for key_id, key, scopes, rate, label in seeds:
-                if key:
+                if not key:
+                    continue
+                try:
                     await auth.seed(key_id, key, scopes, rate, label)
+                except KeyConflictError as exc:  # a conflicting seed must not take every API key down
+                    log.warning("could not seed configured key %s (%s); continuing without it", key_id, exc)
+                # any other StoreUnavailableError (a real outage) propagates: not ready, retried on the next request
             state["auth"] = auth
             state["ready"] = True
             return auth
@@ -265,8 +271,8 @@ def build_app(
             state["jobs"] = Jobs(state["redis"], state["store"])
         try:
             await ensure_auth()
-        except AuthStoreUnavailableError:
-            log.warning("key store unavailable at startup; will retry on first request")
+        except AuthStoreUnavailableError as exc:
+            log.warning("key store unavailable at startup (%s); will retry on first request", exc)
         targets = parse_targets(os.environ.get("FL_WEBHOOK_TARGETS"))
         wh_secret = secret(settings.fl_webhook_secret)
         if targets and wh_secret and state["redis"] is not None:
@@ -466,7 +472,8 @@ def build_app(
             try:
                 auth = await ensure_auth()
                 principal = await auth.authenticate(key) if auth else None
-            except AuthStoreUnavailableError:
+            except AuthStoreUnavailableError as exc:
+                log.warning("key store unavailable (%s)", exc)
                 resp = problem_response(request, Problem(503, "auth-unavailable", "Key store unavailable"))
             else:
                 if principal is None and await count(f"rl:badkey:{client_ip(request)}:{int(time.time() // 60)}") > 10:

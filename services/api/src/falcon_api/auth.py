@@ -33,6 +33,10 @@ class StoreUnavailableError(Exception):
     pass
 
 
+class KeyConflictError(StoreUnavailableError):
+    """A write hit a unique constraint (e.g. the same key value under another key_id). Not an outage."""
+
+
 @dataclass(frozen=True, slots=True)
 class Principal:
     key_id: str
@@ -106,6 +110,12 @@ class MemoryKeyStore:
         return None
 
     async def put(self, rec: KeyRecord) -> None:
+        # Mirror the Postgres UNIQUE(fingerprint) constraint so tests see the same failure mode.
+        if any(r.fingerprint == rec.fingerprint and k != rec.key_id for k, r in self.rows.items()):
+            raise KeyConflictError("UniqueViolationError")
+        old = self.rows.get(rec.key_id)
+        if old is not None and old.revoked_at is not None:  # like Postgres put: never un-revoke an existing row
+            rec.revoked_at = old.revoked_at
         self.rows[rec.key_id] = rec
 
     async def revoke(self, key_id: str) -> None:
@@ -150,21 +160,48 @@ class Authenticator:
             async with self._lock:  # argon2 is CPU/memory-bound: serialise to bound memory use
                 ok = await asyncio.to_thread(verify_key, self.pepper, key, rec.key_hash)
             if ok:
-                principal = Principal(rec.key_id, frozenset(rec.scopes), rec.rate_limit_per_min, rec.label)
+                principal = self._principal(rec)
         self._cache[fp] = (now, principal)
         self._cache.move_to_end(fp)
         while len(self._cache) > CACHE_MAX:  # LRU: random bad keys cannot grow memory or evict everything at once
             self._cache.popitem(last=False)
         return principal
 
+    @staticmethod
+    def _principal(rec: KeyRecord) -> Principal | None:
+        """Known scopes only: an unknown stored scope is dropped (fail closed for that scope, never the store)."""
+        known = frozenset(s for s in rec.scopes if s in SCOPES)
+        unknown = sorted(set(rec.scopes) - known)
+        if unknown:
+            log.warning("api key %s has unknown scopes %s; ignored", rec.key_id, unknown)
+        if not known:
+            return None
+        return Principal(rec.key_id, known, rec.rate_limit_per_min, rec.label)
+
     async def seed(self, key_id: str, key: str, scopes: list[str], rate: int, label: str) -> None:
-        """Idempotently register a configured key (hash recomputed only when something changed)."""
+        """Idempotently register a configured key (hash recomputed only when something changed).
+
+        If the same key value is already stored under another key_id (e.g. created with scripts/create_api_key.py
+        and then copied into .env), the stored row wins: inserting it again would violate UNIQUE(fingerprint) and
+        take the whole key store down. Seeding never un-revokes: a revoked stored row (any key_id) stays revoked.
+        """
         fp = fingerprint(self.pepper, key)
         existing = await self.store.find(fp)
+        if existing is not None and existing.revoked_at is not None:
+            log.warning("configured key %s is revoked (stored as %s); not re-seeding it", key_id, existing.key_id)
+            return
+        if existing is not None and existing.key_id != key_id:
+            log.warning(
+                "configured key %s is already stored as %s (revoked=%s, scopes=%s); keeping the stored row",
+                key_id,
+                existing.key_id,
+                existing.revoked_at is not None,
+                sorted(existing.scopes),
+            )
+            return
         if (
             existing is not None
             and existing.key_id == key_id
-            and existing.revoked_at is None
             and existing.scopes == scopes
             and existing.rate_limit_per_min == rate
         ):
