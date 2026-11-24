@@ -63,6 +63,30 @@ If a beat runs long, drop `/ops` first, then the English question. Never narrate
 - **Say (English).** "Detection with a fixed arbiter and honest numbers. Look-alikes that are on no list. Reasons, a trace and an evidence pack a police analyst can use. Arabic voice and UAE brands. Live, sovereign, and a pilot path: the same stack inside your network, in shadow mode first. Ready to connect, not connected. Check before you tap."
 - **Say (Arabic).** «كشف بحكَم ثابت وأرقام صادقة، ومواقع منتحلة لم تُدرج في أي قائمة، وأسباب وأثر وحزمة أدلة يستعملها المحلل، وصوت عربي وعلامات إماراتية. نظام حي وسيادي، ومسار تجريبي: المنظومة نفسها داخل شبكتكم في وضع المراقبة أولاً. جاهز للربط وغير مربوط. افحص قبل أن تضغط.»
 
+## One-minute narration for the demo video (Emirati Arabic)
+
+Read as one paragraph, calmly, in about sixty seconds. The cues in brackets say which page to show; they are not spoken. During the voice part, the teammate says «يا صقر، شيّك اللي نسخته» live so Zayd's real answer is heard.
+
+<div dir="rtl" lang="ar">
+
+«كل يوم يوصل لأهلنا مسج يقول "حسابك موقوف، حدّث بياناتك"، ووايد كبار سن يخسرون فلوسهم في ثواني. عشان جذي سوّينا عدسة الصقر. [الصفحة الرئيسية] تلصق الرابط أو المسج أو الإيميل أو تصوّر الكيو آر، أو بس تقول: "يا صقر، شيّك اللي نسخته". [صفحة الصوت] وتشوف "بصير" يفحص خطوة خطوة: قوائم النصب، عمر النطاق، الصفحة في متصفح معزول، ونظرة ذكاء اصطناعي، [النتيجة] وبعدها يقول لك بصوت إماراتي: "خطِر، لا تضغط الرابط" مع الأسباب. [صفحة الحملات] و"درع" يربط البلاغات المتشابهة في حملة وحدة ويرصد النطاقات المزيّفة قبل لا يبلّغ عنها أحد، [السجل] وكل فحص له سجل كامل وملف أدلة جاهز للجهات المختصة، وما يطلع أي إجراء إلا بموافقة ضابط. [صفحة النتائج] ونتايجنا منشورة بالأرقام والحدود بكل صراحة. وكل شي يقدر يشتغل محلياً داخل الدولة. عدسة الصقر… اسأل الصقر قبل لا تضغط.»
+
+</div>
+
+English subtitles: "Every day our families get a message saying 'your account is suspended, update your details', and many older people lose their money in seconds. That is why we built Falcon Lens. Paste a link, a message or an email, scan a QR code, or just say 'Hey Falcon, check what I copied'. Watch Baseer check step by step: scam lists, the domain's age, the page in an isolated browser, and an AI second look; then it tells you in an Emirati voice: 'Dangerous, don't tap the link', with the reasons. Dir' links similar reports into one campaign and spots fake domains before anyone reports them. Every check has a full record and an evidence file ready for the authorities, and nothing goes out without an officer's approval. Our results are published with their numbers and limits. And everything can run locally, inside the country. Falcon Lens: ask the falcon before you tap."
+
+| Seconds | Show on screen |
+|---|---|
+| 0 to 8 | The scam SMS on a phone, or the home page |
+| 8 to 15 | Home page: the input box and the link, message, email and QR tabs |
+| 15 to 32 | /voice: «يا صقر», the numbered steps, then «خطِر» with the alert sound |
+| 32 to 42 | /campaigns: a campaign card and the hunting feed |
+| 42 to 50 | /history: open one check, then the evidence pack button |
+| 50 to 56 | /results: the KPIs |
+| 56 to 60 | Logo and tagline |
+
+If the hunting feed is not switched on for the recording, say «ويقدر يرصد النطاقات المزيّفة» instead of «ويرصد النطاقات المزيّفة قبل لا يبلّغ عنها أحد».
+
 ## Exact numbers to quote if asked (all from published files)
 
 - Frozen test split, address only: On our frozen test split: 95.0% of phishing links caught, 0.0% of legitimate links wrongly flagged, and 0 official sites marked Dangerous.
