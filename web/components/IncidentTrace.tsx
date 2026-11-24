@@ -11,6 +11,7 @@ import { trT, type TraceKey } from "@/lib/i18n-trace";
 import { usePrefs } from "@/lib/prefs";
 import { IncidentOperatorLinks } from "./OperatorLinks";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
+import { EvidencePackButton } from "./EvidencePackButton";
 import { Icon, SeverityMark, type IconName } from "./Icon";
 
 const useTT = () => {
@@ -152,7 +153,7 @@ function Header({ incident }: { incident: Incident }) {
             <h3>{tt("tr.verdicts")}</h3>
             {incident.linked_verdicts.length === 0 ? <p className="muted">{t("i.none")}</p> : (
               <ul className="ind" data-testid="trace-verdicts">
-                {incident.linked_verdicts.map((v) => <li key={v}><span className="mono" translate="no">{v}</span></li>)}
+                {incident.linked_verdicts.map((v) => <li key={v}><span className="mono" translate="no">{v}</span>{incident.source === "synthetic" ? null : <> <EvidencePackButton verdictId={v} final compact /></>}</li>)}
               </ul>
             )}
           </details>

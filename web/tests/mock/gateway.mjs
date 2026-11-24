@@ -224,6 +224,13 @@ async function api(req, res, path) {
       }
       return;
     }
+    const pack = /^\/v1\/verdicts\/([^/]+)\/evidence-pack$/.exec(path);
+    if (pack && hboard.verdictDocs?.[pack[1]]) {
+      if (!hkey) return problem(req, res, 401, "unauthorized", "Unauthorized");
+      if (!hAuthed) return problem(req, res, 403, "forbidden", "Forbidden");
+      res.writeHead(200, { "content-type": "application/zip", "content-disposition": `attachment; filename="evidence-${pack[1]}.zip"` });
+      return res.end(Buffer.from("PK\x05\x06" + "\0".repeat(18), "latin1"));
+    }
     const doc = /^\/v1\/verdicts\/([^/]+)$/.exec(path);
     if (doc && hboard.verdictDocs?.[doc[1]]) {
       if (!hAuthed) return problem(req, res, 401, "unauthorized", "Unauthorized");

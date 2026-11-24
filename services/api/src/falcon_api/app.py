@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
-from falcon_api import admin, history, integration, voice
+from falcon_api import admin, evidence_pack, history, integration, voice
 from falcon_api import hunt as hunt_api
 from falcon_api.auth import (
     AuditLog,
@@ -347,6 +347,9 @@ def build_app(
     # ---- concurrent SSE caps (in-process; one API replica) -----------------------------------
     slots: dict[str, dict[str, float]] = {}
     app.state.stream_slots = slots  # exposed for tests and diagnostics
+    # Operator evidence pack: the sandbox snapshot volume, mounted read-only, internal network only.
+    snapshot_dir = os.environ.get("FL_SNAPSHOT_DIR", "").strip()
+    app.state.screenshot_fetch = evidence_pack.snapshot_fetcher(snapshot_dir) if snapshot_dir else None
 
     def slot_bucket(request: Request) -> tuple[str, int]:
         p = principal_of(request)
@@ -799,6 +802,49 @@ def build_app(
             raise Problem(404, "verdict-not-found", "Verdict not found")
         await jobs().note_final(doc)
         return JSONResponse(public_doc(doc, is_authed(request)), status_code=200 if doc.get("final") else 202)
+
+    @app.get(
+        "/v1/verdicts/{verdict_id}/evidence-pack",
+        tags=["verdicts"],
+        responses={
+            **PROBLEM_RESPONSES,
+            200: {
+                "content": {"application/zip": {}},
+                "description": "ZIP: evidence.json, takedown.txt, stix.json, manifest.json, screenshot.png if captured",
+            },
+            404: {"description": "Unknown verdict id (problem+json)"},
+            409: {"description": "Verdict is not final yet (problem+json)"},
+        },
+    )
+    async def get_evidence_pack(
+        verdict_id: VerdictId, _p: Annotated[Principal, Depends(require("operator"))]
+    ) -> Response:
+        """Police evidence pack for one final verdict. Operator scope only; no public variant."""
+        try:
+            doc = await jobs().latest(verdict_id)
+        except (RedisError, StoreUnavailableError) as exc:
+            raise Problem(503, "queue-unavailable", "Queue unavailable") from exc
+        if doc is None:
+            raise Problem(404, "verdict-not-found", "Verdict not found")
+        if not doc.get("final"):
+            raise Problem(409, "verdict-not-final", "Verdict is not final yet")
+        shot: bytes | None = None
+        fetch = getattr(app.state, "screenshot_fetch", None)
+        sha = evidence_pack.screenshot_sha(doc)
+        if fetch is not None and sha:
+            try:
+                shot = await fetch(sha)
+            except Exception:  # noqa: BLE001 - a missing screenshot is a gap, never a failed download
+                log.warning("screenshot fetch failed for %s", verdict_id)
+        body = evidence_pack.build_pack(doc, screenshot=shot)
+        return Response(
+            body,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="evidence-{verdict_id}.zip"',
+                "Cache-Control": "no-store",
+            },
+        )
 
     async def known_verdict(verdict_id: VerdictId) -> str:
         try:

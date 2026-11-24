@@ -327,3 +327,13 @@ def test_display_host_property_random_combinations() -> None:
         assert rest.startswith(_host_of(c)), (url, out)
         assert "@" not in rest.split("/")[0].split("?")[0], (url, out)
     assert checked > 1000
+
+
+def test_page_screenshot_evidence_is_hash_only_and_weightless() -> None:
+    sha = "ab" * 32
+    f = benign_features().model_copy(update={"screenshot_sha256": sha})
+    ev = _by_signal(page_evidence(f, "falcon-demo-bank.test", REG))["page.screenshot"]
+    assert ev.observed == {"sha256": sha, "stored": True} and ev.weight == 0
+    bad = benign_features().model_copy(update={"screenshot_sha256": "../../x"})
+    assert "page.screenshot" not in _by_signal(page_evidence(bad, "falcon-demo-bank.test", REG))
+    assert "page.screenshot" not in _by_signal(page_evidence(benign_features(), "falcon-demo-bank.test", REG))
