@@ -65,12 +65,17 @@ export function arbiterKeys(v: Verdict | null): string[] {
 export const speakArbiter = (lang: Lang, v: Verdict | null): string => spoken(lang, arbiterKeys(v));
 
 /** The closing utterance: counts, what to do, and a wrap-up that names what the Sentinel actually did. */
-export const finalKeys = (outcomes: readonly Outcome[], sentinel: "found" | "watching"): string[] => finalClips(countOutcomes(outcomes), sentinel);
-export const speakFinal = (lang: Lang, outcomes: readonly Outcome[], sentinel: "found" | "watching"): string => spoken(lang, finalKeys(outcomes, sentinel));
+export const finalKeys = (outcomes: readonly Outcome[], sentinel: "found" | "watching" | "unavailable" | "none"): string[] => finalClips(countOutcomes(outcomes), sentinel);
+export const speakFinal = (lang: Lang, outcomes: readonly Outcome[], sentinel: "found" | "watching" | "unavailable" | "none"): string => spoken(lang, finalKeys(outcomes, sentinel));
 
 /** The hand-over line, said when the results are handed to the Sentinel. */
 export const speakHandover = (lang: Lang): string => spoken(lang, ["sentinel.handover"]);
 /** Said only on timeout. */
+export const speakUnavailable = (lang: Lang): string => spoken(lang, ["sentinel.unavailable"]);
+/** Said when no check completed, instead of the hand-over. */
+export const speakNothingChecked = (lang: Lang): string => spoken(lang, ["nothing_checked"]);
+export const speakMicDenied = (lang: Lang): string => spoken(lang, ["mic.denied"]);
+export const speakVoiceUnavailable = (lang: Lang): string => spoken(lang, ["voice.unavailable"]);
 export const speakWatching = (lang: Lang): string => spoken(lang, ["sentinel.watching"]);
 /** One spoken line per fact the incident shows (empty list when it shows nothing speakable). */
 export const findingKeys = (f: SentinelFinding): string[] => sentinelFindingClips(f);

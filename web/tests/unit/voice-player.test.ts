@@ -189,4 +189,50 @@ describe("voice player", () => {
     expect(a.maxActive()).toBe(1);
     expect(a.log.filter((x) => x === "start")).toHaveLength(2);
   });
+
+  it("stop() cancels speech, and a late event from the cancelled run cannot affect the next run", async () => {
+    vi.stubGlobal("SpeechSynthesisUtterance", Utt);
+    const a = mockAudio();
+    const utts: Utt[] = [];
+    const cancel = vi.fn();
+    const synth = { speak: (u: Utt) => void utts.push(u), cancel } as unknown as SpeechSynthesis;
+    const p = createVoicePlayer({
+      lang: "ar_ae",
+      gapMs: 1,
+      fetchImpl: mockFetch(),
+      audioContext: () => a.ctx,
+      synth,
+      fallbackText: (id) => `t:${id}`,
+    });
+    await p.ready;
+    const run1 = p.play(["ar_ae.nope1"]);
+    await new Promise((r) => setTimeout(r, 2));
+    const stale = utts[0] as Utt;
+    const staleErr = stale.onerror;
+    const staleEnd = stale.onend;
+    p.stop();
+    await run1;
+    expect(cancel).toHaveBeenCalled();
+    let run2Done = false;
+    const run2 = p.play(["ar_ae.nope2"]).then(() => (run2Done = true));
+    await new Promise((r) => setTimeout(r, 2));
+    staleErr?.();
+    staleEnd?.();
+    await new Promise((r) => setTimeout(r, 2));
+    expect(run2Done).toBe(false);
+    p.stop();
+    await run2;
+    expect(run2Done).toBe(true);
+  });
+
+  it("stop() during a clip calls source.stop()", async () => {
+    const a = mockAudio();
+    const p = createVoicePlayer({ lang: "ar_ae", fetchImpl: mockFetch(), audioContext: () => a.ctx, synth: null });
+    await p.ready;
+    const run = p.play(["ar_ae.a"]);
+    await new Promise((r) => setTimeout(r, 2));
+    p.stop();
+    await run;
+    expect(a.log).toEqual(["start", "stop"]);
+  });
 });

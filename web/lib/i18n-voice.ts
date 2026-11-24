@@ -102,6 +102,9 @@ const ar = {
   "voice.sev.low": "منخفضة",
   "voice.sum.inv": "وكيل «المحقّق» فحص كل رسالة.",
   "voice.sum.sen.found": "وربطها «الحارس» في حادثة واحدة، ولا يُرسل شيء دون موافقة ضابط.",
+  "sentinel.unavailable": "تعذّر الوصول إلى «الحارس» الآن، فلا نستطيع القول إن كانت هناك حملة.",
+  "voice.nothing_checked": "لم يكتمل أي فحص، فلم نسلّم شيئاً إلى «الحارس».",
+  "voice.unavailable.msg": "خدمة الصوت غير متاحة الآن. استخدم مربع اللصق أدناه.",
   "voice.region": "المساعد الصوتي",
   "voice.live": "حالة المساعد",
 } as const;
@@ -204,6 +207,9 @@ const en: Record<VoiceKey, string> = {
   "voice.sev.low": "Low",
   "voice.sum.inv": "The Investigator agent checked every message.",
   "voice.sum.sen.found": "The Sentinel linked them into one incident, and nothing is sent without an officer's approval.",
+  "sentinel.unavailable": "The Sentinel could not be reached right now, so we cannot say whether there is a campaign.",
+  "voice.nothing_checked": "No check could be completed, so nothing was handed to the Sentinel.",
+  "voice.unavailable.msg": "The voice service is unavailable right now. Use the paste box below.",
   "voice.region": "Voice assistant",
   "voice.live": "Assistant status",
 };
