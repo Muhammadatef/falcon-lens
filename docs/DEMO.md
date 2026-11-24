@@ -27,7 +27,7 @@ make submission      # then read submission/CHECKLIST.md, section "Capabilities 
 | Scenario 1 | gate G1 recorded as passed in `STATUS.md`; snapshot replay in the sandbox (task T-021) | G1 not recorded; T-021 not merged |
 | Scenarios 2, 5 | gate G1; the sandbox and the Falcon Demo Bank fixture hosts (merged in #28) | G1 not recorded |
 | Scenarios 3, 4 | gate G1; the worker handling message and email inputs | the worker answers these kinds with "not supported yet" |
-| Scenario 6 | gate G1; the quarantined extractor wired into the cascade; `make redteam` for the proof shot | the extractor hook is not wired; `make redteam` prints "not yet implemented" |
+| Scenario 6 | gate G1; the quarantined extractor wired into the cascade; `make redteam` for the proof shot | the extractor hook is not wired |
 | Sentinel scene | `make replay` and the Sentinel agent (both merged); the operator board at `/ops` (PR #35) | the board is not merged; the scene works from the terminal only |
 | Command-line scene | gate G1; MCP tools (PR #30); `make tunnel` (merged) | the MCP server on `main` has no tools |
 | Phone scene | gate G1; the web app with the share target (PR #35); `make tunnel` (merged) | PR #35 is open |
