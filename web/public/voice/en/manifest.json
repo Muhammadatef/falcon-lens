@@ -1954,8 +1954,8 @@
   {
     "id": "en.faq.data_stored",
     "file": "en.faq.data_stored.mp3",
-    "text": "Your voice is processed on this device and isn't kept. From a check we keep only a defanged copy of the link, the evidence and the result. Your message text isn't kept unless you choose to report it.",
-    "ms": 11728,
+    "text": "Your voice is processed on our own server and isn't kept. From a check we keep only a defanged copy of the link, the evidence and the result. Your message text isn't kept unless you choose to report it.",
+    "ms": 12044,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },
