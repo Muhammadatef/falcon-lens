@@ -90,8 +90,15 @@ def decode(raw: bytes, content_type: str) -> np.ndarray:
     return np.frombuffer(r.stdout, dtype="<i2").astype(np.float32) / 32768.0
 
 
-def detect_lang(audio: np.ndarray) -> str:
-    """Whisper language ID on the mel (en only when English is the top guess; otherwise Arabic). Hold _lock."""
+def pick_lang(top: str | None, prob: float, hint: str | None) -> str:
+    """Detector wins when it says ar/en with p >= 0.5; the hint only breaks ties (never forces); else Arabic."""
+    if top in ("ar", "en") and prob >= 0.5:
+        return str(top)
+    return hint if hint in ("ar", "en") else "ar"
+
+
+def detect_lang(audio: np.ndarray, hint: str | None = None) -> str:
+    """Whisper language ID on the mel, resolved with pick_lang. Hold _lock."""
     import mlx.core as mx
     from mlx_whisper.audio import N_FRAMES, log_mel_spectrogram, pad_or_trim
     from mlx_whisper.transcribe import ModelHolder
@@ -99,7 +106,10 @@ def detect_lang(audio: np.ndarray) -> str:
     model = ModelHolder.get_model(WHISPER, mx.float16)
     mel = log_mel_spectrogram(audio, n_mels=model.dims.n_mels)
     _, probs = model.detect_language(pad_or_trim(mel, N_FRAMES, axis=-2).astype(mx.float16))
-    return "en" if probs and max(probs, key=lambda k: probs[k]) == "en" else "ar"
+    if not probs:
+        return pick_lang(None, 0.0, hint)
+    top = max(probs, key=lambda k: probs[k])
+    return pick_lang(top, float(probs[top]), hint)
 
 
 def transcribe(audio: np.ndarray, lang: str | None) -> tuple[str, str]:
@@ -108,7 +118,7 @@ def transcribe(audio: np.ndarray, lang: str | None) -> tuple[str, str]:
     seconds = len(audio) / SAMPLE_RATE
     cap_words = max(8, int(seconds * 4.5) + 1)
     with _lock:
-        language = lang or detect_lang(audio)
+        language = detect_lang(audio, lang)
         r = mlx_whisper.transcribe(
             audio,
             path_or_hf_repo=WHISPER,

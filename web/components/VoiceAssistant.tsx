@@ -493,6 +493,7 @@ export function VoiceAssistant() {
       try {
         const form = new FormData();
         form.append("audio", audio, "utterance");
+        // Tie-breaker only: the server detects the language per utterance and never forces this one.
         if (lastLang.current) form.append("lang_hint", lastLang.current);
         const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin", cache: "no-store" });
         if (run.current !== token) return;
