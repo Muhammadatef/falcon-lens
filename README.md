@@ -42,265 +42,230 @@
 </div>
 
 > [!IMPORTANT]
-> **This is a hackathon prototype that is still being built.** The pictures on this page show how the product is designed to work. The section [What is built today](#what-is-built-today) says honestly which parts exist now. Falcon Lens is an independent entry for the Abu Dhabi Police x 42 "ScamShield AI" challenge. It is **not affiliated with or endorsed by Abu Dhabi Police**.
+> **Hackathon prototype, state of the `main` branch on Tuesday 24 November 2026.** This page describes only what is merged. Where a figure is shown, it is copied from a saved evaluation file and the file is named next to it. Falcon Lens is an independent entry for the Abu Dhabi Police x 42 "ScamShield AI" challenge. It is **not affiliated with or endorsed by Abu Dhabi Police**, and nothing here is connected to any police system.
 
 ## On this page
 
+- [What it checks today](#what-it-checks-today)
 - [What Falcon Lens offers Abu Dhabi Police](#what-falcon-lens-offers-abu-dhabi-police--ما-تقدمه-عدسة-الصقر-لشرطة-أبوظبي)
 - [How it works in four steps](#how-it-works-in-four-steps)
-- [The two AI helpers](#the-two-ai-helpers)
-- [How the two AI agents work](#how-the-two-ai-agents-work--كيف-يعمل-الوكيلان)
-- [What makes it different](#what-makes-it-different)
-- [Words you may meet](#words-you-may-meet)
-- [Where people use it](#where-people-use-it)
-- [What is built today](#what-is-built-today)
+- [The two AI agents](#the-two-ai-agents)
+- [Website tour](#website-tour)
 - [Results](#results)
-- [Privacy and care](#privacy-and-care)
-- [What comes next](#what-comes-next)
+- [Observability](#observability)
+- [Security and privacy](#security-and-privacy)
+- [Integration](#integration)
+- [Run it](#run-it)
+- [Engineering process](#engineering-process)
+- [Team](#team)
+- [Roadmap](#roadmap)
 - [For engineers](#for-engineers)
 - [Licence](#licence)
 - [Independence and defensive use](#independence-and-defensive-use)
 
+## What it checks today
+
+| Input | What happens | Notes |
+|---|---|---|
+| **Links** | Address checks (T0, T1), then a passive visit in a sealed browser (T2) when the address alone cannot settle it. | Measured, see [Results](#results). |
+| **Messages (SMS, WhatsApp)** | The text is read for scam intent, urgency and requested data. A message with **no link at all** can still be flagged (PR #88). | Message-text results are on **synthetic** messages only. Small sets, wide intervals. |
+| **Emails (`.eml`)** | Headers, sender mismatch, links and text are checked. | Merged. No separate measured figure yet. |
+| **Images and QR codes** | The QR link is judged like a pasted link (PR #98). Optional OCR reads the text in a picture and does not degrade the check when absent. | Merged. No separate measured figure yet. |
+
+**When a page cannot be read fully, the check fails closed** (PR #80, PR #101). The sealed browser has a fixed time budget. A page that answers only in part is marked `partial`, a page that gives nothing is marked `timeout` or `not rendered`, and neither is ever turned into a clean result. The verdict then carries a visible "degraded" label that says why: the address has no website, the page did not load in time, or only part of it was read. A static, no-JavaScript read is used as a bounded fallback.
+
+Falcon Lens never says "safe". The lowest result is **No warning signs found** (<span dir="rtl">لم نجد علامات تحذير</span>), always with a caution reminder.
+
 ## What Falcon Lens offers Abu Dhabi Police | ما تقدمه عدسة الصقر لشرطة أبوظبي
 
-These are capabilities a police or security team could use. They are listed as an independent prototype's offer, not as a service already in use. "Built" means the code and its tests are in the main code line (pull request numbers in brackets). It does not mean a connection to any police system exists.
+These are capabilities a police or security team could use. They are an independent prototype's offer, not a service in use. "Built" means the code and its tests are on `main`. It does not mean a connection to any police system exists.
 
 | Capability | What it gives the police | State |
 |---|---|---|
-| **Public protection<br>حماية الجمهور** | Residents check a link, a text or WhatsApp message, an email or a QR code in Arabic, in seconds. It works as a web app that can sit on the phone's home screen with a share button, and as a Chrome extension that checks a page before it opens. | **Built** for links (#34, #35). **In progress** for messages, emails and pictures: the individual checks are merged, and joining them into one flow is open (#47). |
-| **Campaign detection<br>كشف الحملات** | The Sentinel watches every check around the clock and links similar ones into one campaign. It flags new look-alike addresses among the checks it sees, and prepares takedown and police-report drafts that wait for a human officer. | **Built** (#2, #6). It reads the checks people send. It does not yet scan the internet for new domains by itself. |
-| **Brand-new fake pages<br>الصفحات المزيفة الجديدة** | A page that claims to be a bank or a service but does not sit on that organisation's real address is flagged, even if no warning list knows it yet. No blocklist is needed. | **Built** (rule and sealed browser, #28). **Not measured yet**: no catch-rate figure exists. |
-| **Operator board<br>لوحة المشغّل** | A screen of campaigns and incidents, with approve and reject for every draft. Every action goes to an append-only audit log. | **Built** (#35). |
-| **Intelligence sharing<br>تبادل المعلومات** | Incidents can be exported in the standard STIX 2.1 format or pushed to signed webhooks. | **Built** (#30). Ready to connect, not connected. |
-| **Integration<br>الربط مع الأنظمة** | A REST API (v1) for apps and an MCP server for AI assistants, with API keys. | **Built** (#30). Ready to connect, not connected. |
-| **Data sovereignty<br>السيادة على البيانات** | The AI can run fully on local models on machines inside the UAE, with no message or page content sent out. Personal details are masked before anything goes to a cloud AI service. | **Built** (model routing, #19; local worker, #46). End-to-end wiring of the AI steps is **in progress** (#47). Accuracy in local mode is not measured yet. |
-| **Observability<br>المراقبة** | Live dashboards and alerts show how the system is running, with a runbook entry for each alert. | **Built** (#14). |
-| **Measured quality<br>جودة مقاسة** | Every figure comes from a saved test result, copied by a script. Nobody types a number by hand. | **Built**, and honest about scope: only the link-address stage is measured so far. See [Results](#results). |
+| **Public protection<br>حماية الجمهور** | Residents check a link, a message, an email or a QR code in Arabic or English, in seconds. A web app that can sit on the phone's home screen, and a Chrome extension. | **Built** (links, messages, emails, images). |
+| **Campaign detection<br>كشف الحملات** | The Sentinel links similar checks into one campaign and drafts takedown and police-report texts that wait for a human officer. | **Built.** It works on the checks it receives. It does not scan the internet for new domains. |
+| **Brand-new fake pages<br>الصفحات المزيفة الجديدة** | A page that claims to be a bank or service but is not on that organisation's real address is flagged without any blocklist. | **Built.** Measured on **synthetic** fixtures only, see [Results](#results). |
+| **Operator board<br>لوحة المشغّل** | Campaigns and incidents with approve and reject for every draft, and a step-by-step trace of each incident. Every action goes to an append-only audit log. | **Built** (`/ops`, `/incidents/[id]`). |
+| **Intelligence sharing<br>تبادل المعلومات** | STIX 2.1 export and HMAC-signed webhooks. | **Built.** Ready to connect, not connected. |
+| **Integration<br>الربط مع الأنظمة** | REST API v1 (OpenAPI) and an MCP server, with scoped API keys. | **Built.** Ready to connect, not connected. |
+| **Data sovereignty<br>السيادة على البيانات** | The AI can run on local models only, with no message or page content sent out. Personal details are masked before any cloud call. | **Built.** Local-versus-cloud comparison is on synthetic fixtures only. |
+| **Observability<br>المراقبة** | Dashboards, alerts and a runbook entry per alert, plus AI tracing. | **Built**, see [Observability](#observability). |
+| **Measured quality<br>جودة مقاسة** | Every figure comes from a saved evaluation file. | **Built.** Gaps are listed under [Not measured yet](#not-measured-yet). |
 
 Falcon Lens is independent. It uses no police logos and does not imply endorsement.
 
 ## How it works in four steps
 
 <p align="center">
-  <img src="docs/assets/how-it-works.svg" width="520" alt="How Falcon Lens works in four steps. One: you paste or share something suspicious. Two: we look at the address. Three: we open the page in a sealed browser and compare what it claims with who really owns the address. Four: you get a clear answer, dangerous, suspicious or no warning signs found, with what to do now.">
+  <img src="docs/assets/how-it-works.svg" width="520" alt="How Falcon Lens works in four steps. One: you paste or share something suspicious. Two: we look at the address. Three: we open the page in a sealed browser and compare what it claims with who really owns the address. Four: you get a clear answer with reasons and what to do now.">
 </p>
 
-1. **You paste or share it.** A link, a text message, a WhatsApp message, an email, or a picture such as a QR code. Nothing else is asked of you. Falcon Lens never asks for your name, bank details or ID.
-2. **We look at the address.** Is it on a list of known scams? Is it dressed up to look like a real organisation, for example with one letter swapped? Was it registered only days ago? Clear cases can be settled here, without going any further.
-3. **We open the page in a sealed browser.** The page is opened far away from your phone, in a closed-off browser that cannot reach anything else. We only look. We never type, never log in and never press a button. Then we compare what the page claims to be with who really owns the address. A page that carries a bank's name and asks for a password, but does not sit on the bank's own address, is flagged, even if it appeared an hour ago.
-4. **You get a clear answer.** One of three results, in Arabic and English, each with the reasons behind it and what to do now, including what to do if you already clicked:
+1. **You paste or share it.** A link, a message, an email, or a picture such as a QR code. Falcon Lens never asks for your name, bank details or ID.
+2. **We look at the address.** Is it on a list of known scams? Is it dressed up as a real organisation? Was it registered only days ago? Clear cases are settled here.
+3. **We open the page in a sealed browser.** One normal, passive visit, far from your phone. We never type, never log in and never press a button. We compare what the page claims to be with whose address it really is.
+4. **You get a clear answer** in Arabic and English, with reasons and what to do now, including what to do if you already clicked:
 
    | Result | In Arabic | What it means |
    |---|---|---|
-   | Dangerous | خطِر | We found strong signs of a scam. Do not open it. |
-   | Suspicious | مشبوه | Something does not add up, or we could not finish every check. Treat it with care. |
+   | Dangerous | «خطِر» | Strong signs of a scam. Do not open it. |
+   | Suspicious | مشبوه | Something does not add up, or a check could not finish. Treat it with care. |
    | No warning signs found | لم نجد علامات تحذير | We looked and found nothing wrong. Stay careful all the same. |
 
-   Falcon Lens never calls a link "safe". Nobody can promise that, so we say only what we saw.
-
-## The two AI helpers
+## The two AI agents
 
 <p align="center">
-  <img src="docs/assets/ai-agents.svg" width="520" alt="The two AI helpers. The Investigator looks closer at unclear cases; it cannot change the score, because fixed code decides. The Sentinel watches every check around the clock, links similar checks to spot a campaign, and drafts takedown requests that wait for a person to approve.">
+  <img src="docs/assets/ai-agents.svg" width="520" alt="The two AI agents. The Investigator looks closer at unclear cases and cannot change the score, because fixed code decides. The Sentinel watches every check around the clock, links similar checks to single campaigns, and drafts reports that a person must approve.">
 </p>
 
-**The Investigator | المحقّق** looks closer at one unclear case.
-
-- It is called only when the fixed rules cannot settle a case.
-- It may use a short list of approved tools, a limited number of times, to collect more facts.
-- A scam page cannot give it orders. Text on a page is treated as something to examine, never as an instruction. An attempt to instruct it counts against the page.
-- It cannot change the score. It adds facts and writes the explanation. Fixed code decides the result.
-
-**The Sentinel | الحارس** watches every check, around the clock.
-
-- It links checks that look alike, so that many fake pages copying one bank are seen as a single campaign.
-- It can block a known-bad link inside our own system straight away. Every block expires and can be undone.
-- It drafts takedown requests and police reports in Arabic and English.
-- It sends nothing itself. A person must read the draft and approve it first. Every action is written to an append-only record (it cannot be changed by the application).
-
-## How the two AI agents work | كيف يعمل الوكيلان
-
-Each picture follows one agent from start to finish. The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a **human gate** (amber). The steps light up in turn. If your device is set to reduce motion, the picture stays still.
-
-<p align="center">
-  <img src="docs/assets/agent-investigator-steps.svg" width="390" alt="The Investigator, step by step. One: something to check arrives. Two: fixed rules go first. Three: a reader with no tools reads the page text in a sealed room. Four: it looks closer only when unsure, with at most six checked lookups. Five: code, not AI, decides the score. Six: the AI writes the reasons and every reason must point to evidence. Seven: you get a clear answer in Arabic and English.">
-</p>
-
-**The Investigator | المحقّق.** When the fixed rules cannot settle a case, the Investigator takes a closer look. The part that reads the page has no tools, so text on a scam page cannot give it orders. It may then run a small, fixed number of approved lookups. Fixed code, never the AI, sets the score, and the AI's written reasons are thrown out unless each one points to evidence.
-
-<p align="center">
-  <img src="docs/assets/agent-sentinel-steps.svg" width="390" alt="The Sentinel, step by step. One: it listens to every check. Two: it groups similar ones into a campaign. Three: rules decide it is an incident. Four: AI writes a bilingual summary. Five: it blocks internally, and every block can be undone. Six: it prepares a takedown and waits for a human. Seven: an officer approves or rejects, and the action is recorded in an append-only log.">
-</p>
-
-**The Sentinel | الحارس.** The Sentinel listens to every finished check and groups similar ones, so many fake pages copying one bank are seen as a single campaign. Written rules decide when that is an incident. It may block a known-bad link inside our own system, and that block can be undone. Anything that would leave the system, such as a takedown request or a police report, is only a draft until an officer approves it.
-
-**Why DSPy and LangGraph.** The Sentinel is a LangGraph graph because its steps must be visible, resumable after a restart and stopped by a human before anything leaves the system. The Investigator is deliberately not LangGraph: it is a short, bounded loop of at most six typed tool calls. DSPy defines the typed contract of each AI role and tunes its prompt offline against our own checks (this part is still in progress). AI-call tracing with Arize Phoenix is wired in the stack and shown as In progress until the services start the tracer. The website has the whole system as one clickable diagram on the AI agents page and in the technical docs; the details are in [docs/TECHNICAL.md](docs/TECHNICAL.md).
-
-## What makes it different
-
-| | In plain words | Honest note |
+| | Investigator | Sentinel |
 |---|---|---|
-| **It can catch brand-new fake pages** | Most tools wait until a fake page lands on a warning list. Falcon Lens also asks a simple question: does this page claim to be an organisation whose real address is somewhere else? | The rule is built. The sealed browser it relies on is built and merged. Its catch rate on brand-new pages is not measured yet. |
-| **Code decides, not AI** | The result comes from fixed rules and a fixed formula. AI helps to read and to explain. It cannot raise or lower a score, so a scam page cannot talk its way out. | Built. |
-| **A person approves anything that leaves** | The system may protect its own users on its own. A takedown request or a police report is only ever a draft until a person approves it. | The pause is built, and so is the operator's approve and reject screen. Nothing is connected to any outside organisation. |
-| **It can run fully on your own machines** | In its local mode the AI runs on your own computer, and no message or page content is sent to an outside AI service. | Built. Its accuracy in this mode is not measured yet. |
-| **Every number is traceable** | Any figure on this page is copied by a script from a saved test result. Nobody types a number by hand. | See [Results](#results). |
+| **Job** | Judges **one** input. | Watches **all** checks, around the clock. |
+| **How** | Tiered cascade T0 to T3 and a **deterministic arbiter**. The LLM is used only in the uncertain band (T3), with a short list of approved tools and a fixed call limit. | A **LangGraph** agent: correlation, then incidents, then campaigns. Rules decide when something is an incident. |
+| **LLM limits** | It **never sets or changes the score**. Page text is spotlighted (delimited and marked) and is treated as evidence, never as an instruction. | The LLM writes bilingual summaries only. A verifier drops any claim that does not cite real evidence. |
+| **Output** | Verdict, evidence list, reasons, what to do now. | Incidents and campaigns. Takedown and police-report **drafts wait for a human to approve** before anything leaves the system. Blocks are internal, expire and can be undone. |
+| **Code** | [`packages/falcon_core/src/falcon_core/cascade`](packages/falcon_core/src/falcon_core/cascade), [`.../agent`](packages/falcon_core/src/falcon_core/agent), [`.../scoring`](packages/falcon_core/src/falcon_core/scoring), [`services/worker`](services/worker) | [`services/sentinel`](services/sentinel) (`graph.py`, `rules.yaml`, `sentinel_core/`), tools in [`.../tools`](packages/falcon_core/src/falcon_core/tools) |
 
-## Words you may meet
+### How each agent runs
 
-| Word | Meaning |
+The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a **human gate** (amber). The steps light up in turn, and stay still if your device is set to reduce motion.
+
+<p align="center">
+  <img src="docs/assets/agent-investigator-steps.svg" width="390" alt="The Investigator, step by step. One: something to check arrives. Two: fixed rules go first. Three: a reader with no tools reads the page text in a sealed room. Four: it looks closer only when the rules cannot decide. Five: fixed code sets the result.">
+</p>
+
+<p align="center">
+  <img src="docs/assets/agent-sentinel-steps.svg" width="390" alt="The Sentinel, step by step. One: it listens to every check. Two: it groups similar ones into a campaign. Three: rules decide it is an incident. Four: AI writes a bilingual summary. Five: it drafts a report and waits for a person to approve.">
+</p>
+
+**DSPy.** DSPy defines the typed contract of each AI role. The offline optimiser **ran** on five roles, on **synthetic** data, and **no optimised prompt was adopted** (every artifact says `adopted: false`, decision "not adopted (within noise)"). The shipped prompts are the hand-written ones. See [`evals/results/published/dspy/`](evals/results/published/dspy). **LangGraph.** The Sentinel is a graph because its steps must be visible, resumable and stopped by a human before anything leaves the system. The Investigator is deliberately a short bounded loop, not a graph.
+
+## Website tour
+
+| Route | What it shows |
 |---|---|
-| **Phishing** | A fake message or page that pretends to be a bank, a courier or a government service in order to steal passwords, card numbers or one-time codes. |
-| **Sandbox** | The sealed browser from step three. A closed room where a suspicious page can be opened and watched without being able to touch anything else. |
-| **Zero-day** | A fake page so new that no warning list has heard of it yet. |
-| **Campaign** | Many fake pages or messages made by the same people, usually copying the same organisation. |
-| **Takedown** | A request to the company hosting a fake page to remove it. |
-| **API** | A doorway that lets another program, such as a police app, ask Falcon Lens to check something and read the answer. |
-| **MCP** | A newer kind of doorway made for AI assistants, so that an organisation's own assistant can ask Falcon Lens for a check. |
+| `/` | The check box (link, message, email, image) with a live, step-by-step result. |
+| `/agents` | Both agents as one clickable diagram. |
+| `/campaigns` | The public campaign board, with an explainer of what a campaign is. |
+| `/results` | Measured results, labelled real or synthetic, straight from the evaluation files. |
+| `/authorities` | What a police or security team can use, and what is "ready to connect". |
+| `/privacy` | What is collected, what is not, and why. |
+| `/docs/*` | Technical documentation pages. |
+| `/ops` | Operator board: campaigns and incidents, approve or reject each draft (operator key). |
+| `/incidents/[id]` | The trace of one incident: evidence, rules, draft actions. |
 
-## Where people use it
-
-| For | How |
-|---|---|
-| Residents | A web app designed in Arabic first, which can sit on the phone's home screen and, on Android, appear in the share menu. A Chrome extension that checks a page before it opens. |
-| Operators, such as a police or security team | A board that shows campaigns and incidents, with approve and reject for every draft. |
-| Other systems | Doorways for apps and AI assistants (an API and MCP), and a standard format for sharing threat information. These are **ready to connect, not connected**. No outside organisation is linked to Falcon Lens. |
-
-## What is built today
-
-The project is developed in the open, one reviewed piece at a time. This is the state of the main code line on Monday 23 November 2026.
-
-| State | Parts |
-|---|---|
-| **Built and merged** | Checks on the address of a link. The fixed rules that decide the result. The service that receives a check and streams back the answer. Both AI helpers. The Chrome extension. The sealed browser. The web app, including the operator's board. The doorways for other systems (API, MCP, standard sharing format). The submission package. Monitoring dashboards. The testing tools that produce the results below. Demo tools. The attack-simulation test suite (PR #41). Joining the checks into one flow (PR #44). A local task worker (PR #46). |
-| **Built in part** | Checks for text messages, emails and pictures: the individual checks are merged, and they are not yet joined into the full flow. |
-| **Built, waiting for review** | Automatic improvement of the AI helper's instructions, done offline (PR #45). Wiring the AI steps and the message and email checks into the full flow (PR #47). |
-
-Two cautions. First, "built and merged" means the code and its tests are in the main code line. It does not mean a resident can use the whole product from start to finish today. The project's own checkpoint list, [`STATUS.md`](STATUS.md), does not yet record a passed end-to-end checkpoint, so this page does not claim one. Second, the list above goes out of date quickly. The exact, piece-by-piece status is in the [technical reference](docs/TECHNICAL.md#status).
+All pages are Arabic first (right-to-left) with English, and the app can be installed on a phone. The demo link is in the submission form, not in this file, because it changes.
 
 ## Results
 
-Every figure below is copied by a script from a saved test result. No number on this page is typed by hand.
+Every figure below is copied from the artifact named next to it. Nothing is typed by hand. **REAL** means real collected items. **SYNTHETIC** means invented fixtures (the invented brand "Falcon Demo Bank") or templates.
 
-**How to read it.**
+| Area | Result | n | Data | Artifact |
+|---|---|---|---|---|
+| **Link address stage, test** (kept aside) | accuracy 0.978571 (95% CI 0.95 to 1.0), recall 0.95 (0.888889 to 1.0), false-alarm rate (FPR) 0.0 (0.0 to 0.0), ROC-AUC 0.995417 | 140 | REAL | [`20261123T122549Z.json`](evals/results/published/20261123T122549Z.json) |
+| **Link address stage, val** (used for tuning) | accuracy 0.97561 (0.955285 to 0.99187), recall 0.971831 (0.940732 to 0.993197), FPR 0.019231 (0.0 to 0.05) | 246 | REAL | same file |
+| **Held-out fresh real sites, full stack** | false-alarm rate **0.265** (95% CI 0.205 to 0.325); on pages that serve a web page 0.1489 (0.0922 to 0.2128, n=141); one false "dangerous". **The 0.02 target is not met.** | 200 | REAL | [`fp_regress/38dbd64b1fd4_20261123T163104Z.json`](evals/results/published/fp_regress/38dbd64b1fd4_20261123T163104Z.json) |
+| **Red-team (injection and evasion)** | **harmful 1 of 113** (95% CI 0.0016 to 0.0484) with the model answering **0 of 113** at production time limits; with extended limits **harmful 1 of 113, model answered 90 of 113**. The one harmful case is a pipeline error, not a lowered label. | 113 | SYNTHETIC | [`redteam_shipped_72aa9ea7_20261123T135615Z.json`](evals/results/published/redteam/redteam_shipped_72aa9ea7_20261123T135615Z.json), [`..._T143553Z.json`](evals/results/published/redteam/redteam_shipped_72aa9ea7_20261123T143553Z.json) |
+| **Link-less scam messages** (shipped) | test recall 0.6818 (0.4732 to 0.8364), FPR 0.0625 (0.0111 to 0.2833); rules alone reach recall 0.0455 | 22 scam, 16 legit | SYNTHETIC | [`message_text_d80de23eb52f_20261123T175212Z.json`](evals/results/published/message_text/message_text_d80de23eb52f_20261123T175212Z.json) |
+| **Brand-new look-alike pages** | flagged dangerous 12 of 12 (0.7575 to 1.0); benign controls warned 4 of 8, so read warning rates next to that row. No AI layer in this run. | 12 / 8 | SYNTHETIC | [`brand_new_pages_58c5380c_20261123T140938Z.json`](evals/results/published/brand_new_pages/brand_new_pages_58c5380c_20261123T140938Z.json) |
+| **AI cost per check** (cloud route) | mean 0.00409 USD (0.002606 to 0.005629); local route has zero marginal API cost, energy not measured | 38 cloud, 42 local | SYNTHETIC | [`cost_per_check_33179245_20261123T160925Z.json`](evals/results/published/cost_per_check/cost_per_check_33179245_20261123T160925Z.json) |
 
-- **What was tested so far.** Only the first stage: judging a link by its address, on real collected links. The line marked `scope` in the table says this in the test's own words.
-- **What was not tested yet.** The sealed-browser stage, the AI helpers, messages, and brand-new fake pages. They are listed under "Not evaluated" below the table. No figure is shown for them, and none should be assumed.
-- **Two sets of links.** Lines starting with `val` come from the set used to tune the rules. Lines starting with `test` come from a set that was kept aside and never used for tuning, so they are the fairer measure.
-- **The values are fractions.** One means all, zero means none. The right-hand column says what each line measures and which direction is better.
-- **The sets are small.** The lines ending in `ci95` give the likely range, and a wide range means the figure could move as more links are tested.
+How to read it. The 95% CI is the likely range, and small sets give wide ranges. The link-address rows score **URLs only**, not the full cascade with the page visit. The message-path rows inside the headline file wrap real URLs in synthetic message templates, so they are mixed by construction and are not quoted here. The newest red-team run and the false-alarm run are the ones named above; earlier runs are kept in the same folders.
 
-<!-- metrics:start -->
-Source artifact: [`evals/results/published/20261123T122549Z.json`](evals/results/published/20261123T122549Z.json). Values are copied verbatim.
+### Not measured yet
 
-| Provenance | Value |
+- **Sandbox detection recall on real phishing pages.** The artifact says `not_evaluated`: no labelled page snapshots exist, and visiting live phishing pages is out of scope ([`sandbox_t2_58c5380c_20261123T140938Z.json`](evals/results/published/sandbox_t2/sandbox_t2_58c5380c_20261123T140938Z.json)).
+- **Arabic clarity by a native reader.** Automated phone-fit checks ran; the human rating is `pending_human_rating` ([`arabic_clarity_58c5380c_20261123T140938Z.json`](evals/results/published/arabic_clarity/arabic_clarity_58c5380c_20261123T140938Z.json)).
+- **Local-model energy use** is `not_evaluated` (cost artifact above).
+- **Brand-new pages on real data.** The measured set is synthetic only.
+- **Any prompt improvement from DSPy.** The optimiser ran and nothing was adopted.
+- The headline file lists `zero_day`, `faithfulness`, `injection_attack_success_rate` and others as not evaluated **in that file**. Separate artifacts above cover some of them on synthetic data only.
+
+## Observability
+
+- **Prometheus** metrics with the `fl_` prefix from every service (`/metrics`), and alert rules ([`infra/prometheus/rules/`](infra/prometheus/rules)).
+- **Grafana**: 7 provisioned dashboards in [`infra/grafana/dashboards/`](infra/grafana/dashboards) (command overview, detection quality, pipeline performance, AI operations, security, Sentinel, model quality).
+- **Alertmanager** routes the alerts, and [`docs/RUNBOOK.md`](docs/RUNBOOK.md) has one entry per alert. **Loki** collects structured JSON logs that carry `verdict_id`.
+- **Arize Phoenix** receives OpenTelemetry traces of the cascade, tools and LLM calls. They are **metadata only**: the collector deletes prompt and output attributes, and page text and URLs are never recorded.
+- Demo and replay data on dashboards is labelled as such. See [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md).
+
+## Security and privacy
+
+| Area | What is in place |
 |---|---|
-| `scope` | `offline T1 + arbiter on URLs; real data only; temporal_cut false (single poll)` |
-| `created_at` | `2026-11-23T12:25:49Z` |
-| `git_sha` | `fc577d7a5d2f59366f35da287a9be106fe6bb03c-dirty` |
-| `dataset_hash` | `3467e9f6b9f930c23a3a001f7126330bd0d129b32e01f40678e003b03bb07ac2` |
-| `temporal_cut` | `false` |
-| `seeds` | `{"bootstrap": 20261122, "model": 20261122, "n_bootstrap": 1000, "split": 20261122}` |
-| `model_ids.llm_cloud` | `not_evaluated` |
-| `model_ids.llm_sovereign` | `not_evaluated` |
-| `model_ids.t1.fit_date` | `2026-11-23` |
-| `model_ids.t1.git_sha` | `d7f8d9ae627d6eb1594d3ce3eeb54c80a4fd5c81` |
-| `model_ids.t1.model_id` | `t1_hgb` |
-| `model_ids.t1.model_sha256` | `138b39f5fb22e6cfa291c5d6b2d36a5ec901fb2a06f32802c35c7bec61b34631` |
-| `model_ids.t1.sklearn_version` | `1.9.1` |
+| **SSRF guard and egress proxy** | Every outbound address is checked before and after redirects; outbound page fetches go through a filtering egress proxy. |
+| **Sandbox** | A sealed browser on an isolated network. One passive visit: no form is ever submitted, no credential is ever entered. |
+| **Prompt injection** | All untrusted text is spotlighted (delimited and datamarked) before any model sees it. An injection detector counts an attempt against the page. The reader model has no tools. |
+| **Rate limits** | Each API key has its own per-minute limit, with `429` and `Retry-After`. Invalid-key attempts are limited per IP. |
+| **Redaction** | Phone numbers, Emirates ID numbers, card numbers and emails are masked before logging or any cloud call. Only a fingerprint and the result are stored. |
+| **Audit** | Append-only audit log for keyed calls and operator actions. |
+| **Secrets** | Environment only. `gitleaks` runs in pre-commit and CI. The repo holds no live phishing URLs, page snapshots or brand logos. |
 
-| Metric | Value | In plain words |
-|---|---|---|
-| `test.accuracy` | 0.978571 |  |
-| `test.accuracy_ci95` | [0.95, 1.0] |  |
-| `test.ece` | 0.101203 | How far our stated confidence is from what really happened. Closer to zero is better. |
-| `test.ece_ci95` | [0.086972, 0.127847] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.f1` | 0.974359 | A single figure that balances recall and precision. Higher is better. |
-| `test.f1_ci95` | [0.941176, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.fpr` | 0.0 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
-| `test.fpr_ci95` | [0.0, 0.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.message_path.dangerous_recall` | 0.0 |  |
-| `test.message_path.dangerous_recall_ci95` | [0.0, 0.0] |  |
-| `test.message_path.fpr` | 0.0 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
-| `test.message_path.fpr_ci95` | [0.0, 0.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.message_path.n` | 560 | How many checks are in this set. |
-| `test.message_path.recall` | 0.95 | Of the real scam checks in the set, the share we flagged. Higher is better. |
-| `test.message_path.recall_ci95` | [0.922128, 0.974901] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.n` | 140 | How many checks are in this set. |
-| `test.official_false_dangerous` | 0 | Verified official sites wrongly marked dangerous. The target is zero. |
-| `test.pr_auc` | 0.995528 | How well scams are ranked above genuine checks overall. Higher is better. |
-| `test.pr_auc_ci95` | [0.983989, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.precision` | 1.0 | Of the checks we flagged, the share that really were scams. Higher is better. |
-| `test.precision_ci95` | [1.0, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.recall` | 0.95 | Of the real scam checks in the set, the share we flagged. Higher is better. |
-| `test.recall_ci95` | [0.888889, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `test.roc_auc` | 0.995417 |  |
-| `test.roc_auc_ci95` | [0.983348, 1.0] |  |
-| `val.accuracy` | 0.97561 |  |
-| `val.accuracy_ci95` | [0.955285, 0.99187] |  |
-| `val.ece` | 0.130744 | How far our stated confidence is from what really happened. Closer to zero is better. |
-| `val.ece_ci95` | [0.11339, 0.153559] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.f1` | 0.978723 | A single figure that balances recall and precision. Higher is better. |
-| `val.f1_ci95` | [0.961832, 0.993245] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.fpr` | 0.019231 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
-| `val.fpr_ci95` | [0.0, 0.05] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.message_path.dangerous_recall` | 0.0 |  |
-| `val.message_path.dangerous_recall_ci95` | [0.0, 0.0] |  |
-| `val.message_path.fpr` | 0.019231 | Of the genuine checks in the set, the share we flagged by mistake. Closer to zero is better. |
-| `val.message_path.fpr_ci95` | [0.007426, 0.031544] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.message_path.n` | 984 | How many checks are in this set. |
-| `val.message_path.recall` | 0.971831 | Of the real scam checks in the set, the share we flagged. Higher is better. |
-| `val.message_path.recall_ci95` | [0.958619, 0.983814] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.n` | 246 | How many checks are in this set. |
-| `val.official_false_dangerous` | 0 | Verified official sites wrongly marked dangerous. The target is zero. |
-| `val.pr_auc` | 0.985673 | How well scams are ranked above genuine checks overall. Higher is better. |
-| `val.pr_auc_ci95` | [0.966129, 0.997895] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.precision` | 0.985714 | Of the checks we flagged, the share that really were scams. Higher is better. |
-| `val.precision_ci95` | [0.963501, 1.0] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.recall` | 0.971831 | Of the real scam checks in the set, the share we flagged. Higher is better. |
-| `val.recall_ci95` | [0.940732, 0.993197] | Likely range for the line above if the test were repeated (lower and upper bound). |
-| `val.roc_auc` | 0.981751 |  |
-| `val.roc_auc_ci95` | [0.962073, 0.995888] |  |
+Details: [`docs/PRIVACY.md`](docs/PRIVACY.md), [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
-Not evaluated in this artifact, so no figure is shown for them: `arabic_clarity`, `cost_per_check_llm`, `faithfulness`, `flip_rate_3_runs`, `injection_attack_success_rate`, `llm_tier_T3`, `sandbox_tier_T2`, `zero_day`, `synthetic`, `cloud_route`, `sovereign_route`.
-<!-- metrics:end -->
+## Integration
 
-## Privacy and care
+**Ready to connect, not connected.** The doorways exist; no outside organisation is linked to Falcon Lens.
 
-- **It asks for nothing personal.** No name, no bank details, no ID.
-- **It keeps very little.** It stores a fingerprint of what was checked and the result. The text of a message or email is not kept unless you choose to report it.
-- **It hides personal details.** Phone numbers, Emirates ID numbers, card numbers and email addresses are masked before anything is logged or sent to an outside AI service.
-- **It can stay local.** In local mode no message or page content leaves the machine. Look-ups about a web address still go out, and they carry the address only. They can be switched off.
-- **It is built to be attacked.** The checker opens pages made by criminals, so the sealed browser has no way into the rest of the system, and web addresses are always shown in a form that cannot be clicked by accident.
-- **It only defends.** It never imitates a real organisation, never fills in a form on a suspicious page, and never contacts real people.
+| Doorway | What it is |
+|---|---|
+| **REST v1** | `POST /v1/check/{url,message,email,image}`, verdicts, reports, feedback, campaigns and incidents. Contract in [`contracts/openapi.yaml`](contracts/openapi.yaml), drift-checked in CI. |
+| **SSE** | `GET /v1/verdicts/{id}/events` streams each tier's partial verdict as it finishes. |
+| **MCP server** | Streamable HTTP, tools for checks and reads; every tool calls the public REST API with a least-privilege key. |
+| **STIX 2.1 export** | `GET /v1/intel/stix` for keys with the `intel` scope. |
+| **Webhooks** | HMAC-SHA256 signed campaign alerts with a replay window. |
 
-The full detail is in [`docs/PRIVACY.md`](docs/PRIVACY.md) and [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
+Scoped API keys are stored as argon2id hashes. Full guide: [`docs/INTEGRATION.md`](docs/INTEGRATION.md).
 
-## What comes next
+## Run it
 
-- **Finish the full flow** for messages, emails and pictures, and join every check into one flow.
-- **Measure what is not measured yet**: brand-new fake pages, the AI helpers, the local mode, and resistance to manipulation.
-- **A licence for the scam list.** The prototype uses the OpenPhish community list, which allows research use only. A real deployment needs an OpenPhish licence.
-- **More warning lists**, once access keys are available.
-- **A real connection to a police or security system** would need an agreement with that organisation. Today the doorways exist and nothing is connected.
+Requirements: Docker with Compose, and [`uv`](https://docs.astral.sh/uv/) for the tests. Ollama on the host is optional and enables the local model route.
 
-The engineering roadmap is in the [technical reference](docs/TECHNICAL.md#roadmap).
+```bash
+git clone <this repository> && cd Eaglelens
+cp .env.example .env     # fill the values the file explains
+make up                  # start the stack and wait until every service is healthy
+make smoke               # end-to-end assertions against the running stack
+make demo                # the six scenarios and the Sentinel scene
+```
+
+Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `demo-reset` `seed` `replay` `eval` `eval-gate` `redteam` `redteam-shipped` `scan` `openapi` `regress-legit` `tunnel` `submission` `ci-local`. Run `make help` for the full list. Scenarios and video shot list: [`docs/DEMO.md`](docs/DEMO.md).
+
+## Engineering process
+
+- **Hierarchy L0 to L4**: owner, lead session, supervisor, builders, local models ([`docs/HIERARCHY.md`](docs/HIERARCHY.md)). Builders work on feature branches and open a pull request. A supervisor reviews it and writes a report in [`reviews/`](reviews) (47 reports). Only approved PRs are merged, and the author never approves their own work.
+- **100 pull requests merged** on `main` (from `gh pr list --state merged`, 24 November 2026).
+- **Local CI**: `make ci-local` runs every CI job on the developer's machine, in parallel, before a PR is opened.
+- Local models do bulk work only through one script, and a sample of every batch is audited.
+- Contracts in [`contracts/`](contracts) are the single source of truth. Assumptions are logged one per line in [`DECISIONS.md`](DECISIONS.md).
+
+## Team
+
+- Mohamed Atef (Leader)
+- Abdulrahman Alseiari
+- MokhmadSalakh Salamov
+
+## Roadmap
+
+Unfinished only:
+
+- **Operator history view** of both agents' checks (open pull request).
+- **Real-data measurement** of brand-new fake pages, and of sandbox detection on labelled phishing snapshots.
+- **Native-speaker rating** of the Arabic verdict text.
+- **A licence for the scam list.** The prototype uses the OpenPhish community list, which allows research use only.
+- **More warning feeds**, once access keys are available.
+- **A real connection** to a police or security system needs an agreement with that organisation.
 
 ## For engineers
 
-All technical detail lives in one place: **[`docs/TECHNICAL.md`](docs/TECHNICAL.md)**. Nothing was removed from the earlier README; it was moved there.
+All technical detail lives in **[`docs/TECHNICAL.md`](docs/TECHNICAL.md)**.
 
 | You want | Go to |
 |---|---|
-| Services, networks and the request path | [System architecture](docs/TECHNICAL.md#system-architecture), with the [detailed architecture diagram](docs/assets/architecture.svg) |
-| The Investigator's guardrails | [The Investigator](docs/TECHNICAL.md#the-investigator-the-agent-inside-one-check), with the [detailed diagram](docs/assets/investigator.svg) |
-| The Sentinel pipeline | [The Sentinel](docs/TECHNICAL.md#the-sentinel-the-always-on-backend-agent), with the [detailed diagram](docs/assets/sentinel.svg) |
-| Scoring, hard rules and bands | [How scoring works](docs/TECHNICAL.md#how-scoring-works) and [`docs/SCORING.md`](docs/SCORING.md) |
-| Threat model and data handling | [Security and privacy](docs/TECHNICAL.md#security-and-privacy) |
-| Commands, addresses and ports | [Run it](docs/TECHNICAL.md#run-it) |
-| What each script does | [`docs/SCRIPTS.md`](docs/SCRIPTS.md) (added by PR #40, not yet merged) |
-| Repository layout and contracts | [Project layout](docs/TECHNICAL.md#project-layout) and [`contracts/`](contracts) |
-| Feature-by-feature status with pull request numbers | [Features](docs/TECHNICAL.md#features) and [Status](docs/TECHNICAL.md#status) |
+| Services, networks and the request path | [System architecture](docs/TECHNICAL.md#system-architecture), with the [architecture diagram](docs/assets/architecture.svg) |
+| The Investigator's guardrails | [The Investigator](docs/TECHNICAL.md#the-investigator-the-agent-inside-one-check), with the [diagram](docs/assets/investigator.svg) |
+| The Sentinel pipeline | [The Sentinel](docs/TECHNICAL.md#the-sentinel-the-always-on-backend-agent), with the [diagram](docs/assets/sentinel.svg) |
+| Scoring, hard rules and bands | [`docs/SCORING.md`](docs/SCORING.md) |
+| What each script does | [`docs/SCRIPTS.md`](docs/SCRIPTS.md) |
 | Evaluation method | [`docs/EVALS.md`](docs/EVALS.md) |
 | Connecting another system | [`docs/INTEGRATION.md`](docs/INTEGRATION.md) |
 
