@@ -214,3 +214,20 @@ def test_helpers() -> None:
     names = [(e.name, e.url) for e in parse_engines("http://host.docker.internal:8093, http://voice:8000/")]
     assert names == [("native", "http://host.docker.internal:8093"), ("container", "http://voice:8000")]
     assert isinstance(SttEngine("x", "http://x").usable, bool)
+
+
+async def test_hint_is_passed_through_but_result_lang_follows_detection() -> None:
+    seen: list[str] = []
+
+    def engine(req: httpx.Request) -> httpx.Response:
+        seen.append(req.url.params.get("lang", ""))
+        return httpx.Response(200, json=stt_reply(text="هاي فالكون افحص الرابط", lang="ar"))
+
+    c, key = await make_client(Engines(nat=engine, con=ok()))
+    async with c:
+        r = await c.post(
+            "/v1/voice/utterance", files=files(wav_bytes(1)), data={"lang_hint": "en"}, headers={"X-API-Key": key}
+        )
+    assert r.status_code == 200
+    assert seen == ["en"]
+    assert r.json()["lang"] == "ar"

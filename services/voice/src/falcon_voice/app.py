@@ -37,6 +37,17 @@ SAMPLE_RATE = 16000
 PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا فالكون. عدسة الصقر."}
 
 
+MIN_LANG_PROB = 0.5
+
+
+def choose_lang(detected: str | None, prob: float, hint: str | None) -> str:
+    """Per-utterance language: the detector wins when it is sure and says ar/en. The hint only breaks ties
+    (never forces); with neither, Arabic (the product is Arabic-first)."""
+    if detected in ("ar", "en") and prob >= MIN_LANG_PROB:
+        return str(detected)
+    return hint if hint in ("ar", "en") else "ar"
+
+
 FORMATS = {"wav": "wav", "ogg": "ogg", "webm": "matroska,webm"}
 
 
@@ -119,6 +130,14 @@ class Engine:
     def load_in_background(self) -> None:
         threading.Thread(target=self.load, name="whisper-load", daemon=True).start()
 
+    def _detect(self, audio: np.ndarray) -> tuple[str | None, float]:
+        """Whisper language ID on this utterance (hold _lock). Never raises: unknown -> (None, 0)."""
+        try:
+            code, prob, _all = self.model.detect_language(audio)
+            return (str(code) if code else None), float(prob)
+        except Exception:  # noqa: BLE001 - detection is advisory; fall back to hint / Arabic
+            return None, 0.0
+
     def transcribe(self, raw: bytes, lang: str | None) -> SttResult:
         audio = decode(raw)
         seconds = len(audio) / SAMPLE_RATE
@@ -130,10 +149,12 @@ class Engine:
             raise ModelUnavailableError(self.error or "loading")
         t0 = time.perf_counter()
         with self._lock:
-            segments, info = self.model.transcribe(
+            detected, prob = self._detect(audio)
+            used = choose_lang(detected, prob, lang)
+            segments, _info = self.model.transcribe(
                 audio,
-                language=lang,
-                initial_prompt=PROMPTS.get(lang or "", PROMPTS["en"]) if lang else None,
+                language=used,
+                initial_prompt=PROMPTS[used],
                 beam_size=1,
                 temperature=0.0,
                 condition_on_previous_text=False,
@@ -144,7 +165,7 @@ class Engine:
         text = clean_transcript("".join(str(s["text"]) for s in segs), seconds, segs)
         return SttResult(
             text=text,
-            lang=str(info.language) if info.language else lang,
+            lang=used,
             ms=round((time.perf_counter() - t0) * 1000),
             duration_ms=round(seconds * 1000),
             model=f"faster-whisper-{self.name}",

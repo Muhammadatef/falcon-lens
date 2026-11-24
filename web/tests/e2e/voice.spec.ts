@@ -192,6 +192,23 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b|\bT[0-3]\b/i);
   });
 
+  test("per-utterance language: an Arabic utterance after an English one is answered with ar_ae clips (English page)", async ({ page, request, context, baseURL }) => {
+    await setup(page, request);
+    await setPrefs(context, baseURL!, { lang: "en" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "help-en");
+    await expect(page.getByTestId("voice-caption")).toHaveText(EN["voice.say.help"]);
+    await expect(page.getByTestId("voice-state")).toHaveText(EN["voice.state.listening"], { timeout: 10_000 });
+    const before = (await spoken(page)).length;
+    await say(page, "help-ar");
+    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.help"]);
+    const ar = (await spoken(page)).slice(before);
+    expect(ar.length).toBeGreaterThan(0);
+    expect(ar.every((s) => s.lang === "ar-SA")).toBe(true);
+    expect(ar.map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["help"]!);
+  });
+
   test("Sentinel timeout: no matching incident means 'still watching', never an invented campaign", async ({ page, request, context, baseURL }) => {
     await setup(page, request);
     await useBoards(context, request, baseURL!, { incidents: [] });
