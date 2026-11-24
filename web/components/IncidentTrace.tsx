@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flatSteps, liveRun, parseAgentTrace, type AgentTrace, type NodeName, type TraceInterrupt, type TraceStep, type TraceTool } from "@/lib/agent-trace";
-import { decideAction } from "@/lib/api";
 import { loadOne, type OneLoad } from "@/lib/agent-trace-api";
 import { parseIncident, type Incident } from "@/lib/contracts";
 import { formatTime, pick, translateMaybe } from "@/lib/i18n";
@@ -17,30 +16,19 @@ const useTT = () => {
   return (key: TraceKey, vars?: Record<string, string | number>) => trT(lang, key, vars);
 };
 
-const KEY_STORE = "fl_operator_key";
 const POLL_RUNNING_MS = 2500;
 const POLL_WAITING_MS = 5000;
 const NODE_ICON: Record<NodeName, IconName> = { enrich: "globe", compare: "scale", assess: "eye", summarise: "list", propose: "flag", act: "hand" };
 const MODE_ICON: Record<TraceTool["mode"], IconName> = { read: "eye", internal_auto: "refresh", external_draft: "hand" };
 
-type View = { state: "loading" } | { state: "not_found" } | { state: "not_connected" } | { state: "unauthorized" } | { state: "ok"; incident: Incident; trace: AgentTrace };
+type View = { state: "loading" } | { state: "not_found" } | { state: "not_connected" } | { state: "ok"; incident: Incident; trace: AgentTrace };
 
 export function IncidentTrace({ incidentId, demo }: { incidentId: string; demo: boolean }) {
   const { t } = usePrefs();
   const tt = useTT();
   const [view, setView] = useState<View>({ state: "loading" });
-  const [key, setKey] = useState<string | null>(null);
   const [live, setLive] = useState(false);
-  const [notice, setNotice] = useState("");
-  const l = { href: demo ? "/ops?demo=1" : "/ops" };
-
-  useEffect(() => {
-    try {
-      setKey(window.sessionStorage.getItem(KEY_STORE) ?? "");
-    } catch {
-      setKey("");
-    }
-  }, []);
+  const l = { href: demo ? "/history?demo=1&tab=incidents" : "/history?tab=incidents" };
 
   const fetchAll = useCallback(
     async (signal: AbortSignal): Promise<View> => {
@@ -49,24 +37,19 @@ export function IncidentTrace({ incidentId, demo }: { incidentId: string; demo: 
         const { DEMO_TRACE } = await import("@/lib/demo-trace");
         return { state: "ok", incident: DEMO_INCIDENT, trace: DEMO_TRACE };
       }
-      const k = key || undefined;
-      const [inc, tr]: [OneLoad<Incident>, OneLoad<AgentTrace>] = await Promise.all([
-        loadOne(`/v1/incidents/${incidentId}`, parseIncident, k, signal),
-        loadOne(`/v1/incidents/${incidentId}/trace`, parseAgentTrace, k, signal),
-      ]);
-      if (inc.state === "unauthorized" || tr.state === "unauthorized") return { state: "unauthorized" };
-      if (inc.state === "not_found" || tr.state === "not_found") return { state: "not_found" };
-      if (inc.state !== "ok" || tr.state !== "ok") return { state: "not_connected" };
-      return { state: "ok", incident: inc.value, trace: tr.value };
+      // One same-origin, key-free call: the server adds its own read key and returns the allow-listed projection.
+      const both: OneLoad<{ incident: Incident; trace: AgentTrace }> = await loadOne(`/api/public/incidents/${incidentId}`, parsePublicIncident, undefined, signal);
+      if (both.state === "not_found") return { state: "not_found" };
+      if (both.state !== "ok") return { state: "not_connected" };
+      return { state: "ok", incident: both.value.incident, trace: both.value.trace };
     },
-    [demo, incidentId, key],
+    [demo, incidentId],
   );
 
   // Poll while the agent is working or waiting; stop once the run has settled. Failures keep the last good view.
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const refresh = useRef<() => void>(() => undefined);
   useEffect(() => {
-    if (key === null) return;
     const abort = new AbortController();
     let cancelled = false;
     const tick = async () => {
@@ -88,16 +71,7 @@ export function IncidentTrace({ incidentId, demo }: { incidentId: string; demo: 
       abort.abort();
       clearTimeout(timer.current);
     };
-  }, [fetchAll, key, demo]);
-
-  const decide = async (actionId: string, decision: "approve" | "reject") => {
-    if (demo) return setNotice(t("ops.demo.decide"));
-    if (!key) return setNotice(t("ops.needkey"));
-    const problem = await decideAction(incidentId, actionId, decision, key);
-    if (problem) return setNotice(t("ops.decide.failed"));
-    setNotice("");
-    refresh.current();
-  };
+  }, [fetchAll, demo]);
 
   return (
     <>
@@ -114,13 +88,6 @@ export function IncidentTrace({ incidentId, demo }: { incidentId: string; demo: 
             <p className="sec-sub">{tt("tr.sub")}</p>
             {view.state === "loading" ? (
               <div className="card state" role="status" data-testid="trace-loading"><p>{tt("tr.loading")}</p><div className="sk" /><div className="sk" /></div>
-            ) : view.state === "unauthorized" ? (
-              <div className="card state" role="status" data-testid="trace-unauthorized">
-                <Icon name="key" size={40} />
-                <h2 className="h3">{t("ops.unauth.title")}</h2>
-                <p className="muted">{t("ops.unauth.body")}</p>
-                <Link className="btn" href={l.href}>{t("ops.key.save")}</Link>
-              </div>
             ) : view.state === "not_found" ? (
               <div className="card state" role="status" data-testid="trace-not-found">
                 <Icon name="unplug" size={40} />
@@ -136,7 +103,7 @@ export function IncidentTrace({ incidentId, demo }: { incidentId: string; demo: 
             ) : (
               <>
                 <Header incident={view.incident} />
-                <Timeline incident={view.incident} trace={view.trace} canDecide={Boolean(key) || demo} onDecide={decide} notice={notice} />
+                <Timeline incident={view.incident} trace={view.trace} demo={demo} />
               </>
             )}
           </div>
@@ -192,7 +159,7 @@ function Header({ incident }: { incident: Incident }) {
   );
 }
 
-function Timeline({ incident, trace, canDecide, onDecide, notice }: { incident: Incident; trace: AgentTrace; canDecide: boolean; onDecide: (actionId: string, decision: "approve" | "reject") => void; notice: string }) {
+function Timeline({ incident, trace, demo }: { incident: Incident; trace: AgentTrace; demo: boolean }) {
   const tt = useTT();
   const steps = flatSteps(trace);
   if (steps.length === 0) return <div className="card state" role="status" data-testid="trace-empty"><p>{tt("tr.empty")}</p></div>;
@@ -210,7 +177,7 @@ function Timeline({ incident, trace, canDecide, onDecide, notice }: { incident: 
           <li key={step.seq} className="trace-item" data-node={step.node} data-status={step.status} data-testid="trace-step">
             {head ? <p className="trace-run small" data-testid="trace-run">{tt("tr.run", { n: runNo.get(run.run_id) ?? 0 })} · {tt(`tr.status.${run.status}`)}</p> : null}
             {waiting ? (
-              <WaitCard step={step} interrupt={run.interrupt} actions={pending} active={step.seq === lastSeq && pending.length > 0} canDecide={canDecide} onDecide={onDecide} notice={notice} />
+              <WaitCard step={step} interrupt={run.interrupt} actions={pending} active={step.seq === lastSeq && pending.length > 0} demo={demo} />
             ) : (
               <StepCard step={step} />
             )}
@@ -253,7 +220,7 @@ function StepCard({ step }: { step: TraceStep }) {
         <span className="pill mono" data-testid="step-duration">{step.duration_ms} ms</span>
         <span className={step.status === "failed" ? "pill pill--bad" : step.status === "running" ? "pill pill--live pill--brand" : "pill"} data-testid="step-status">{tt(`tr.status.${step.status}`)}</span>
       </div>
-      <p dir="auto" className="trace-sum"><UntrustedText value={text} /></p>
+      {text ? <p dir="auto" className="trace-sum"><UntrustedText value={text} /></p> : null}
       <ToolChips tools={step.tools} />
       {step.generated_by ? <p className="small" data-testid="step-generated" data-by={step.generated_by}>{tt(`tr.gen.${step.generated_by}` as TraceKey)}</p> : null}
       {llm ? (
@@ -274,12 +241,12 @@ function StepCard({ step }: { step: TraceStep }) {
   );
 }
 
-function WaitCard({ step, interrupt, actions, active, canDecide, onDecide, notice }: { step: TraceStep; interrupt: TraceInterrupt | null; actions: { action_id: string; tool: string }[]; active: boolean; canDecide: boolean; onDecide: (id: string, d: "approve" | "reject") => void; notice: string }) {
-  const { t, lang } = usePrefs();
+function WaitCard({ step, interrupt, actions, active, demo }: { step: TraceStep; interrupt: TraceInterrupt | null; actions: { action_id: string; tool: string }[]; active: boolean; demo: boolean }) {
+  const { lang } = usePrefs();
   const tt = useTT();
-  const decided = interrupt?.decision ?? null;
+  const l = { href: demo ? "/ops?demo=1" : "/ops" };
   return (
-    <div className="card trace-card trace-wait" data-testid="trace-interrupt" data-decided={decided ?? undefined}>
+    <div className="card trace-card trace-wait" data-testid="trace-interrupt">
       <div className="trace-top">
         <span className="trace-dot"><Icon name="hand" size={22} /></span>
         <h3>{tt("tr.wait.title")}</h3>
@@ -289,22 +256,24 @@ function WaitCard({ step, interrupt, actions, active, canDecide, onDecide, notic
       <p>{tt("tr.wait.body")}</p>
       <ToolChips tools={step.tools} />
       {interrupt ? <p className="small"><span className="mono" translate="no">{translateMaybe(lang, "tool", interrupt.tool)}</span>{interrupt.pending_count && interrupt.pending_count > 1 ? ` (${interrupt.pending_count})` : ""}</p> : null}
-      {decided ? <p className="pill" data-testid="trace-decision">{tt(decided === "approved" ? "tr.decided.approved" : "tr.decided.rejected")}{interrupt?.decided_by ? <> · <span className="mono" translate="no">{interrupt.decided_by}</span></> : null}</p> : null}
       {active ? (
         <div className="op-btns">
-          {actions.map((a) => (
-            <div className="op" key={a.action_id}>
-              <b translate="no">{translateMaybe(lang, "tool", a.tool)}</b>
-              <div className="op-btns">
-                <button className="btn btn--sm" type="button" data-testid="approve" disabled={!canDecide} onClick={() => onDecide(a.action_id, "approve")}>{t("approve")}</button>
-                <button className="btn btn--sm" type="button" data-testid="reject" disabled={!canDecide} onClick={() => onDecide(a.action_id, "reject")}>{t("reject")}</button>
-              </div>
-            </div>
-          ))}
-          {!canDecide ? <p className="small">{tt("tr.wait.nokey")}</p> : null}
-          {notice ? <p className="small" role="status" data-testid="trace-notice">{notice}</p> : null}
+          <ul className="chips" data-testid="trace-pending-actions">
+            {actions.map((a) => <li key={a.action_id} className="chip chip--external_draft" translate="no">{translateMaybe(lang, "tool", a.tool)}</li>)}
+          </ul>
+          <p className="small" data-testid="trace-readonly">{tt("tr.wait.nokey")}</p>
+          <Link className="btn btn--sm" href={l.href} data-testid="trace-ops-link">{tt("tr.wait.ops")}</Link>
         </div>
       ) : null}
     </div>
   );
+}
+
+/** Body of `/api/public/incidents/{id}`: `{ incident, trace }`, both already allow-listed server-side and re-checked by the strict guards. */
+function parsePublicIncident(raw: unknown): { incident: Incident; trace: AgentTrace } | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const body = raw as { incident?: unknown; trace?: unknown };
+  const incident = parseIncident(body.incident);
+  const trace = parseAgentTrace(body.trace);
+  return incident && trace ? { incident, trace } : null;
 }

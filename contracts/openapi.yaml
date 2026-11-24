@@ -2137,8 +2137,8 @@ paths:
       - intake
   /v1/verdicts:
     get:
-      description: 'Operator history of Investigator checks, newest first. Summaries only: no raw input,
-        no personal data.'
+      description: 'History of Investigator checks (read scope), newest first. Summaries only: no raw
+        input, no personal data.'
       operationId: list_verdicts_v1_verdicts_get
       parameters:
       - description: Opaque cursor from `next_cursor`.

@@ -11,10 +11,9 @@ import { usePrefs } from "@/lib/prefs";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
 import { Icon, PolarityMark } from "./Icon";
 
-const KEY_STORE = "fl_operator_key";
 const POLL_MS = 3000;
 
-type View = { state: "loading" } | { state: "not_found" } | { state: "not_connected" } | { state: "unauthorized" } | { state: "ok"; verdict: Verdict };
+type View = { state: "loading" } | { state: "not_found" } | { state: "not_connected" } | { state: "ok"; verdict: Verdict };
 
 const useH = () => {
   const { lang } = usePrefs();
@@ -26,20 +25,10 @@ export function CheckTrace({ verdictId, demo }: { verdictId: string; demo: boole
   const { t } = usePrefs();
   const h = useH();
   const [view, setView] = useState<View>({ state: "loading" });
-  const [key, setKey] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const l = { href: demo ? "/history?demo=1" : "/history" };
 
   useEffect(() => {
-    try {
-      setKey(window.sessionStorage.getItem(KEY_STORE) ?? "");
-    } catch {
-      setKey("");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (key === null) return;
     let cancelled = false;
     const abort = new AbortController();
     const tick = async () => {
@@ -49,8 +38,8 @@ export function CheckTrace({ verdictId, demo }: { verdictId: string; demo: boole
         const v = DEMO_CHECKS[verdictId];
         next = v ? { state: "ok", verdict: v } : { state: "not_found" };
       } else {
-        const r: OneLoad<Verdict> = await loadOne(`/v1/verdicts/${verdictId}`, parseVerdict, key || undefined, abort.signal);
-        next = r.state === "ok" ? { state: "ok", verdict: r.value } : { state: r.state };
+        const r: OneLoad<Verdict> = await loadOne(`/api/public/checks/${verdictId}`, parseVerdict, undefined, abort.signal);
+        next = r.state === "ok" ? { state: "ok", verdict: r.value } : r.state === "unauthorized" ? { state: "not_connected" } : { state: r.state };
       }
       if (cancelled) return;
       setView((prev) => (next.state === "not_connected" && prev.state === "ok" ? prev : next));
@@ -62,7 +51,7 @@ export function CheckTrace({ verdictId, demo }: { verdictId: string; demo: boole
       abort.abort();
       clearTimeout(timer.current);
     };
-  }, [key, demo, verdictId]);
+  }, [demo, verdictId]);
 
   return (
     <>
@@ -79,13 +68,6 @@ export function CheckTrace({ verdictId, demo }: { verdictId: string; demo: boole
             <p className="sec-sub">{h("ck.sub")}</p>
             {view.state === "loading" ? (
               <div className="card state" role="status" data-testid="check-loading"><p>{h("ck.loading")}</p><div className="sk" /><div className="sk" /></div>
-            ) : view.state === "unauthorized" ? (
-              <div className="card state" role="status" data-testid="check-unauthorized">
-                <Icon name="key" size={40} />
-                <h2 className="h3">{t("ops.unauth.title")}</h2>
-                <p className="muted">{t("ops.unauth.body")}</p>
-                <Link className="btn" href={l.href}>{t("ops.key.save")}</Link>
-              </div>
             ) : view.state === "not_found" ? (
               <div className="card state" role="status" data-testid="check-not-found">
                 <Icon name="unplug" size={40} />

@@ -14,14 +14,10 @@ const traceOf = (id: string, mutate?: (steps: Steps) => void, runPatch: Record<s
 };
 
 test.describe("incident agent trace page", () => {
-  test("renders the six nodes, tool modes, model route, and the human-approval interrupt", async ({ page, context, request, baseURL }) => {
+  test("opens without any key: six nodes, tool modes, model route, and a read-only human-approval interrupt", async ({ page, context, request, baseURL }) => {
     const id = newIncidentId();
-    const key = await useBoards(context, request, baseURL!, { incidents: [incident(id)], traces: { [id]: [traceOf(id)] }, requireKey: "op-test-key" });
-    await page.goto("/ops");
-    await page.getByTestId("key-input").fill("op-test-key");
-    await page.getByTestId("key-input").press("Enter");
-    await page.getByTestId("trace-link").click();
-    await expect(page).toHaveURL(new RegExp(`/incidents/${id}$`));
+    await useBoards(context, request, baseURL!, { incidents: [incident(id)], traces: { [id]: [traceOf(id)] } });
+    await page.goto(`/incidents/${id}`);
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
 
     await expect(page.getByTestId("trace-incident")).toContainText("falcon-demo-bank-secure[.]test");
@@ -36,11 +32,12 @@ test.describe("incident agent trace page", () => {
     await expect(page.getByTestId("step-duration").first()).toContainText("212 ms");
 
     await expect(page.getByTestId("trace-interrupt")).toContainText("بانتظار قرار بشري");
-    await page.getByTestId("approve").click();
-    await expect
-      .poll(async () => (await (await request.get(`/__mock/boards?key=${key}`)).json()).decisions)
-      .toEqual([{ incident: id, action: "act_takedown_001", decision: "approve" }]);
-    expect(page.url()).not.toContain("op-test-key");
+    // Public and read only: no approve/reject here, only a pointer to the key-protected operator page.
+    await expect(page.getByTestId("approve")).toHaveCount(0);
+    await expect(page.getByTestId("reject")).toHaveCount(0);
+    await expect(page.getByTestId("trace-readonly")).toBeVisible();
+    await expect(page.getByTestId("trace-ops-link")).toHaveAttribute("href", "/ops");
+    await expect(page.locator("main")).not.toContainText("SECRET");
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });
 
@@ -73,8 +70,7 @@ test.describe("incident agent trace page", () => {
     await useBoards(context, request, baseURL!, { incidents: [inc], traces: { [id]: [trace] } });
     await page.goto(`/incidents/${id}`);
     await expect(page.getByTestId("trace-step")).toHaveCount(6);
-    await expect(page.getByTestId("trace-timeline")).toContainText(XSS.img);
-    await expect(page.locator("main img, main script, main svg[onload], main a:not([data-testid='trace-back'])")).toHaveCount(0);
+    await expect(page.locator("main img, main script, main svg[onload], main a:not([data-testid='trace-back']):not([data-testid='trace-ops-link'])")).toHaveCount(0);
     expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
   });
 
@@ -118,13 +114,11 @@ test.describe("incident agent trace page", () => {
     expect(await page.getByTestId("trace-step").first().evaluate((e) => getComputedStyle(e).animationName)).toBe("none");
   });
 
-  test("a missing key shows the key prompt, an unknown incident shows not-found, a bad id is a 404 page", async ({ page, context, request, baseURL }) => {
-    await useBoards(context, request, baseURL!, { incidents: [], requireKey: "k" });
-    await page.goto(`/incidents/${newIncidentId()}`);
-    await expect(page.getByTestId("trace-unauthorized")).toBeVisible();
+  test("an unknown incident shows not-found, a bad id is a 404 page; no key prompt on this page", async ({ page, context, request, baseURL }) => {
     await useBoards(context, request, baseURL!, { incidents: [] });
     await page.goto(`/incidents/${newIncidentId()}`);
     await expect(page.getByTestId("trace-not-found")).toBeVisible();
+    await expect(page.getByTestId("key-input")).toHaveCount(0);
     const bad = await page.goto("/incidents/not-an-id");
     expect(bad?.status()).toBe(404);
   });
@@ -133,7 +127,7 @@ test.describe("incident agent trace page", () => {
     await page.goto(`/incidents/${DEMO_INCIDENT.incident_id}?demo=1`);
     await expect(page.getByTestId("demo-ribbon")).toBeVisible();
     await expect(page.getByTestId("trace-step")).toHaveCount(6);
-    await page.getByTestId("approve").click();
-    await expect(page.getByTestId("trace-notice")).toContainText("لم يُرسَل أي شيء");
+    await expect(page.getByTestId("approve")).toHaveCount(0);
+    await expect(page.getByTestId("trace-readonly")).toBeVisible();
   });
 });

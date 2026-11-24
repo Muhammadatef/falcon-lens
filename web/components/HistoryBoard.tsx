@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { traceHref } from "@/lib/agent-trace";
 import { parseIncident, type Incident } from "@/lib/contracts";
 import { checkHref, parseSummary, type VerdictSummary } from "@/lib/history";
@@ -12,7 +12,6 @@ import { useLiveList, type ListLoad } from "@/lib/use-live-list";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
 import { Icon, SeverityMark } from "./Icon";
 
-const KEY_STORE = "fl_operator_key";
 export type HistoryTab = "checks" | "incidents";
 
 const useH = () => {
@@ -23,51 +22,16 @@ const useH = () => {
 const byCreated = (a: VerdictSummary, b: VerdictSummary) => b.created_at.localeCompare(a.created_at);
 const byUpdated = (a: Incident, b: Incident) => b.updated_at.localeCompare(a.updated_at);
 
-/** Operator history of both agents: Investigator checks and Sentinel incidents, past and live. */
+/** Public, read-only history of both agents: Investigator checks and Sentinel incidents, past and live. */
 export function HistoryBoard({ demo, initialTab }: { demo: boolean; initialTab: HistoryTab }) {
   const { t } = usePrefs();
   const h = useH();
   const [tab, setTab] = useState<HistoryTab>(initialTab);
-  const [key, setKey] = useState("");
-  const [draftKey, setDraftKey] = useState("");
-  const [ready, setReady] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const tabRefs = useRef<Record<HistoryTab, HTMLButtonElement | null>>({ checks: null, incidents: null });
 
-  useEffect(() => {
-    try {
-      setKey(window.sessionStorage.getItem(KEY_STORE) ?? "");
-    } catch {
-      /* storage blocked: key stays in memory */
-    }
-    setReady(true);
-  }, []);
-
-  const saveKey = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const next = draftKey.trim();
-    if (!next) return;
-    try {
-      window.sessionStorage.setItem(KEY_STORE, next);
-    } catch {
-      /* in-memory only */
-    }
-    setKey(next);
-    setDraftKey("");
-    setAttempt((n) => n + 1);
-  };
-  const forgetKey = () => {
-    try {
-      window.sessionStorage.removeItem(KEY_STORE);
-    } catch {
-      /* nothing stored */
-    }
-    setKey("");
-    setAttempt((n) => n + 1);
-  };
-
-  const checks = useLiveList<VerdictSummary>({ enabled: ready && !demo && tab === "checks", keyValue: key, attempt, listPath: "/v1/verdicts", streamPath: "/v1/verdicts/stream", event: "verdict", parse: parseSummary, idOf: (s) => s.verdict_id, compare: byCreated });
-  const incidents = useLiveList<Incident>({ enabled: ready && !demo && tab === "incidents", keyValue: key, attempt, listPath: "/v1/incidents", streamPath: "/v1/incidents/stream", event: "incident", parse: parseIncident, idOf: (i) => i.incident_id, compare: byUpdated });
+  const checks = useLiveList<VerdictSummary>({ enabled: !demo && tab === "checks", attempt, listPath: "/api/public/checks", streamPath: "/api/public/checks/stream", event: "verdict", parse: parseSummary, idOf: (s) => s.verdict_id, compare: byCreated });
+  const incidents = useLiveList<Incident>({ enabled: !demo && tab === "incidents", attempt, listPath: "/api/public/incidents", streamPath: "/api/public/incidents/stream", event: "incident", parse: parseIncident, idOf: (i) => i.incident_id, compare: byUpdated });
   const active = tab === "checks" ? checks : incidents;
 
   const onTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
@@ -92,18 +56,6 @@ export function HistoryBoard({ demo, initialTab }: { demo: boolean; initialTab: 
               {!demo && active.load.state === "ok" ? <span className={active.live ? "pill pill--live pill--brand" : "pill"} data-testid="history-live">{t(active.live ? "board.live" : "board.paused")}</span> : null}
             </div>
             <p className="sec-sub">{h("hs.sub")}</p>
-
-            {!demo ? (
-              <form className="card keybox" onSubmit={saveKey} data-testid="key-form">
-                <label htmlFor="operator-key"><Icon name="key" size={20} />{t("ops.key.label")}</label>
-                <div className="keybox-row">
-                  <input id="operator-key" className="mono" type="password" autoComplete="off" spellCheck={false} dir="ltr" value={draftKey} placeholder={key ? "••••••••" : ""} onChange={(e) => setDraftKey(e.target.value)} data-testid="key-input" />
-                  <button className="btn btn--sm" type="submit">{t("ops.key.save")}</button>
-                  {key ? <button className="btn btn--sm" type="button" onClick={forgetKey}>{t("ops.key.clear")}</button> : null}
-                </div>
-                <p className="small">{t("ops.key.hint")}</p>
-              </form>
-            ) : null}
 
             <div className="hs-tabs" role="tablist" aria-label={h("hs.tabs")}>
               {(["checks", "incidents"] as const).map((id) => (
@@ -173,15 +125,6 @@ function Panel<T>(p: PanelProps<T>) {
   const demoLoad = useDemo<T>(p.demo, p.label === "hs.checks.list" ? "checks" : "incidents");
   const load: ListLoad<T> = p.demo ? (demoLoad ?? { state: "loading" }) : p.load;
   if (load.state === "loading") return <div className="card state" role="status" data-testid="history-loading"><p>{h("hs.loading")}</p><div className="sk" /><div className="sk" /></div>;
-  if (load.state === "unauthorized") {
-    return (
-      <div className="card state" role="status" data-testid="history-unauthorized">
-        <Icon name="key" size={40} />
-        <h2 className="h3">{t("ops.unauth.title")}</h2>
-        <p className="muted">{t("ops.unauth.body")}</p>
-      </div>
-    );
-  }
   if (load.state === "not_connected") {
     return (
       <div className="card state" role="status" data-testid="history-not-connected">
@@ -270,6 +213,7 @@ function IncidentRow({ i, demo }: { i: Incident; demo: boolean }) {
       <div className="hs-meta">
         <span className="pill">{translateMaybe(lang, "type", i.type)}</span>
         <span className="small mono" dir="ltr" translate="no">{i.incident_id.slice(-8)}</span>
+        <span className="small" data-testid="incident-counts">{h("hs.inc.counts", { v: i.linked_verdicts.length, i: i.indicators.length, a: i.actions.length })}</span>
         {i.rule_ids.map((r) => <span key={r} className="small mono" translate="no">rule:{r}</span>)}
       </div>
     </li>
