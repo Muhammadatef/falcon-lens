@@ -7,7 +7,7 @@ For a native Emirati reviewer. Left: the line the assistant SPEAKS. Right: its E
 Rules for the lines: short, natural Emirati speech, respectful to an elderly listener, never the word for "safe",
 never asking for personal, bank or ID details, no phone numbers.
 
-Lines: 233. Digits are written out in words (`num.0` to `num.100`).
+Lines: 259. Digits are written out in words (`num.0` to `num.100`).
 
 | Emirati line | English meaning | Reviewer / OK |
 |---|---|---|
@@ -244,3 +244,29 @@ Lines: 233. Digits are written out in words (`num.0` to `num.100`).
 | ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة. | I couldn't read what you copied. Paste it in the box on the screen. |  |
 | صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط. | Something went wrong. Try again, and don't open any link. |  |
 | يزاك الله خير. الله يحفظك. | Thank you. Take care. |  |
+| البنك ما يطلب منك الرمز أبداً. لا تعطيه لأي أحد، حتى لو قال إنه من البنك. | Your bank never asks for your one-time code. Never share it with anyone, even if they say they are the bank. |  |
+| لا تخاف، بس تصرّف بسرعة. لا تدخل أي بيانات، وكلّم بنكك، وغيّر أرقامك السرية. | Don't panic, but act fast. Don't enter any details, call your bank, and change your passcodes. |  |
+| كلّم بنكك الحين على الرقم اللي ورا بطاقتك، وقل لهم يوقفون البطاقة. وبعدها بلّغ عن اللي صار. | Call your bank right now on the number on your card and ask them to block it. Then report what happened. |  |
+| الشرطة ما تطلب فلوس بالتلفون. سكّر المكالمة، وبلّغ من القنوات الرسمية. | The police never ask for money over the phone. Hang up, and report it through the official channels. |  |
+| رسالة رسوم التوصيل غالباً نصب. لا تضغط الرابط، واسأل شركة الشحن من تطبيقها الرسمي. | A delivery fee message is often a scam. Don't tap the link, and ask the courier through its official app. |  |
+| ما تربح جايزة في سحب ما دخلته. لا ترد على الرسالة، ولا تدفع رسوم عشان تستلمها. | You can't win a draw you never entered. Don't reply, and never pay a fee to collect a prize. |  |
+| أي عرض يوعدك بربح سريع ومضمون هو نصب غالباً. لا تحوّل فلوس، واسأل جهة مرخصة. | An offer promising fast, guaranteed profit is usually a scam. Don't transfer money, and ask a licensed firm. |  |
+| الوظيفة الحقيقية ما تطلب منك فلوس قبل لا تبدأ. تأكد من الشركة من موقعها الرسمي. | A real job never asks you to pay before you start. Check the company on its official website. |  |
+| بلّغ من القنوات الرسمية للجهات المختصة في الدولة. واحتفظ بالرسالة، ولا تحذفها. | Report it through the official channels of the authorities. Keep the message, and don't delete it. |  |
+| أنا عدسة الصقر. أفحص الرسائل والروابط، وأقول لك إذا فيها علامات نصب، وأعطيك الأدلة. | I'm Falcon Lens. I check messages and links for scam signs, and show you the evidence. |  |
+| بصير يفحص الرسالة، ودرع يربط البلاغات المتشابهة. وما يطلع أي بلاغ أو تنبيه للجهات من غير موافقة شخص. | Baseer checks the message, Dir links similar reports. No alert or report goes out without a person's approval. |  |
+| صوتك ينعالج على سيرفرنا وما ينحفظ. من الفحص نحفظ بس نسخة معطّلة من الرابط والأدلة ونتيجة الفحص. ونص رسالتك ما ينحفظ، إلا إذا اخترت تبلّغ عنها. | Your voice is processed on our own server and isn't kept. From a check we keep only a defanged copy of the link, the evidence and the result. Your message text isn't kept unless you choose to report it. |  |
+| البنك ما يرسل لك رابط عشان تحدّث بياناتك. افتح تطبيق البنك بنفسك، أو كلّمه. | Your bank doesn't send links to update your details. Open your bank app yourself, or call it. |  |
+| إذا واحد من ربعك يطلب فلوس برسالة، كلّمه بالتلفون أول. يمكن حسابه انسرق. | If a friend asks for money by message, call them first. Their account may have been hacked. |  |
+| اتصال عن قريب محتاج فلوس بسرعة؟ سكّر، وكلّم قريبك على رقمه اللي تعرفه. | A call saying a relative urgently needs money? Hang up and call your relative on the number you know. |  |
+| لا تحمّل برنامج ولا تشارك شاشتك مع أحد يتصل فيك. هذي طريقة النصابين عشان يدخلون جهازك. | Never install an app or share your screen for a caller. That's how scammers get into your phone. |  |
+| لا تمسح رمز كيو آر من مصدر ما تعرفه. افتح الموقع بنفسك بدل ما تمسحه. | Don't scan a QR code from a source you don't know. Open the website yourself instead. |  |
+| الأسعار الرخيصة مرة ممكن تكون فخ. اشتر من مواقع تعرفها، وادفع بطريقة فيها حماية. | Prices that look too good can be a trap. Buy from sites you know, and pay by a method with protection. |  |
+| كلّم بنكك فوراً، يمكن يقدرون يوقفون التحويل. وبلّغ من القنوات الرسمية، وكل ما أسرعت أحسن. | Call your bank immediately, they may be able to stop the transfer. Then report it through the official channels. |  |
+| غيّر رقمك السري الحين، وكلّم بنكك. وفعّل التحقق بخطوتين. | Change your passcode right now and call your bank. Then turn on two-step verification. |  |
+| علامات النصب: استعجال، وتهديد، ورابط غريب، وطلب رمز أو فلوس. إذا شفت وحدة منها، وقّف. | Scam signs: urgency, threats, a strange link, or a request for a code or money. If you see one, stop. |  |
+| ما فيه نظام يكشف كل شي. أنا أعطيك علامات وأدلة، وإذا شكيت، كلّم بنكك. | No system catches everything. I show you signs and evidence, and if in doubt, call your bank. |  |
+| هذا خارج شغلي. أنا أساعدك تكشف رسائل النصب. قل: يا صقر، افحص رسائلي. | That's outside what I do. I help you spot scam messages. Say: Hey Falcon, check my messages. |  |
+| ما أقدر أساعدك في هذا. أنا متخصص بالنصب والاحتيال. انسخ رسالتك، وقل: يا صقر، افحصها. | I can't help with that. I only handle scams and fraud. Copy your message and say: Hey Falcon, check it. |  |
+| سؤالك حلو، بس مو من اختصاصي. اسألني عن رسائل النصب، أو قل: يا صقر، ساعدني. | Good question, but not my area. Ask me about scam messages, or say: Hey Falcon, help me. |  |
+| لحظة… | One moment… |  |

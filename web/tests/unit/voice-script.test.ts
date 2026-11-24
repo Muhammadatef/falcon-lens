@@ -5,6 +5,7 @@ import {
   CLIPS,
   SCRIPT,
   SCRIPT_KEYS,
+  isFaqKey,
   arbiterClips,
   checkingClips,
   finalClips,
@@ -40,7 +41,7 @@ describe("voice script", () => {
   });
 
   it("every Arabic line is a short sentence (12 words at most) and not formal-only for key lines", () => {
-    for (const c of CLIPS.filter((x) => x.lang === "ar_ae")) expect(wordCount(c.text), c.id).toBeLessThanOrEqual(12);
+    for (const c of CLIPS.filter((x) => x.lang === "ar_ae")) expect(wordCount(c.text), c.id).toBeLessThanOrEqual(isFaqKey(c.key) ? 28 : 12);
     expect(SCRIPT.ar_ae["wake.ack"]).toBe("هلا، سامعك.");
     expect(SCRIPT.ar_ae["found.1"]).toContain("مسج وحدة");
     expect(SCRIPT.ar_ae["found.2"]).toContain("مسجين");
@@ -90,10 +91,15 @@ describe("voice script", () => {
   });
 
   it("the generated yaml matches the script (run node scripts/gen-voice-script.mjs if this fails)", () => {
-    const yaml = readFileSync(new URL("../../../packages/falcon_core/src/falcon_core/i18n/voice_script.yaml", import.meta.url), "utf8");
-    expect(yaml).toContain(`clip_count: ${CLIPS.length}`);
-    const found = [...yaml.matchAll(/^ {2}- \{id: ("[^"]+"), lang: \w+, text: (".*")\}$/gm)].map((m) => ({ id: JSON.parse(m[1]!) as string, text: JSON.parse(m[2]!) as string }));
-    expect(found).toEqual(CLIPS.map((c) => ({ id: c.id, text: c.text })));
+    const read = (f: string) => readFileSync(new URL(`../../../packages/falcon_core/src/falcon_core/i18n/${f}`, import.meta.url), "utf8");
+    const core = read("voice_script.yaml");
+    const faq = read("voice_faq.yaml");
+    const list = (yaml: string) => [...yaml.matchAll(/^ {2}- \{id: ("[^"]+"), lang: \w+, text: (".*")\}$/gm)].map((m) => ({ id: JSON.parse(m[1]!) as string, text: JSON.parse(m[2]!) as string }));
+    const isFaq = (c: { key: string }) => isFaqKey(c.key);
+    expect(core).toContain(`clip_count: ${CLIPS.filter((c) => !isFaq(c)).length}`);
+    expect(faq).toContain(`clip_count: ${CLIPS.filter(isFaq).length}`);
+    expect(list(core)).toEqual(CLIPS.filter((c) => !isFaq(c)).map((c) => ({ id: c.id, text: c.text })));
+    expect(list(faq)).toEqual(CLIPS.filter(isFaq).map((c) => ({ id: c.id, text: c.text })));
   });
 
   it("the review doc lists every Emirati line with an empty reviewer column", () => {

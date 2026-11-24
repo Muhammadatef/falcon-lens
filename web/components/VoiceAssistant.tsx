@@ -33,7 +33,7 @@ import {
   type VoiceReply,
 } from "@/lib/voice";
 import { arbiterKeys, checkingKeys, finalKeys, findingKeys, foundKeys, spoken, stepKeys } from "@/lib/voice-speech";
-import { SCRIPT, clipId, toVoiceLang } from "@/lib/voice-script";
+import { ACK_KEY, SCRIPT, clipId, offTopicKey, toVoiceLang } from "@/lib/voice-script";
 import { createVoicePlayer, type VoiceLang, type VoicePlayer } from "@/lib/voice-player";
 import type { SentinelFinding } from "@/lib/voice-script";
 import { UntrustedText } from "./Chrome";
@@ -63,6 +63,8 @@ interface Spoken {
   kind: "msg" | "final";
 }
 
+/** How long after a bare wake phrase the next utterance counts as the command. */
+const FOLLOW_UP_MS = 8000;
 const POLL_MS = 1100;
 const POLL_MAX = 45;
 const CLIPBOARD_MS = 10_000;
@@ -225,6 +227,10 @@ export function VoiceAssistant() {
   const abort = useRef<AbortController | null>(null);
   const failures = useRef(0);
   const lastLang = useRef<"ar" | "en" | null>(null);
+  /** After a bare wake phrase the next utterance is a command even without the wake phrase, until this time. */
+  const followUntil = useRef(0);
+  /** Rotates the three polite off-topic redirects (random start, then in order). */
+  const offTopicAt = useRef(Math.floor(Math.random() * 3));
 
   const vt = useCallback((key: VoiceKey, vars?: Record<string, string>) => voiceText(pageLang, key, vars), [pageLang]);
 
@@ -446,6 +452,13 @@ export function VoiceAssistant() {
       if (reply.lang === "ar" || reply.lang === "en") lastLang.current = reply.lang;
       setHeard(reply.transcript);
       setPhase("heard");
+      // A scam-safety question gets its pre-recorded answer at once: the caption is the spoken text, shown as soon as STT returns.
+      if (reply.intent === "faq" || reply.intent === "off_topic") {
+        const key = reply.intent === "faq" && reply.answerId ? reply.answerId : offTopicKey(offTopicAt.current++);
+        await say(SCRIPT[toVoiceLang(lang)][key] ?? "", lang, token, [key]);
+        backToListening(token);
+        return;
+      }
       await sleep(450);
       if (run.current !== token) return;
       if (reply.intent === "stop") {
@@ -454,7 +467,11 @@ export function VoiceAssistant() {
         return;
       }
       enqueue({ text: spoken(lang, ["wake.ack"]), keys: ["wake.ack"], lang, kind: "msg" }, token);
-      if (reply.intent === "help") await say(voiceText(lang, "voice.say.help"), lang, token, ["help"]);
+      if (reply.intent === "none" && !reply.command.trim()) {
+        // Only the wake phrase: the next utterance (within a few seconds) is the command, no wake phrase needed.
+        await drain();
+        followUntil.current = Date.now() + FOLLOW_UP_MS;
+      } else if (reply.intent === "help") await say(voiceText(lang, "voice.say.help"), lang, token, ["help"]);
       else if (reply.intent === "check_clipboard" || reply.intent === "check_text") {
         const typed = reply.intent === "check_text" ? reply.command.trim() : "";
         const text = typed.length >= 8 ? typed : await readClipboard();
@@ -469,7 +486,7 @@ export function VoiceAssistant() {
       } else await say(voiceText(lang, "voice.say.none"), lang, token, ["didnt"]);
       backToListening(token);
     },
-    [backToListening, enqueue, playKeys, runChecks, say, stopAll],
+    [backToListening, drain, enqueue, playKeys, runChecks, say, stopAll],
   );
 
   /** A voice-service failure: spoken once per streak, shown always, with exponential back-off (1 s, 2 s, 4 s ... 15 s). */
@@ -497,6 +514,13 @@ export function VoiceAssistant() {
         form.append("audio", audio, "utterance");
         // Tie-breaker only: the server detects the language per utterance and never forces this one.
         if (lastLang.current) form.append("lang_hint", lastLang.current);
+        if (Date.now() < followUntil.current) {
+          // Follows a wake phrase: say "One moment" now, while the transcript is still on its way.
+          form.append("follow_up", "1");
+          const l: Lang = lastLang.current ?? langRef.current;
+          setCaption(SCRIPT[toVoiceLang(l)][ACK_KEY] ?? "");
+          void playKeys(l, [ACK_KEY]);
+        }
         const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin", cache: "no-store" });
         if (run.current !== token) return;
         if (!res.ok) return await voiceFailed(token, res.status);
@@ -504,6 +528,7 @@ export function VoiceAssistant() {
         const reply = parseVoiceReply(await res.json().catch(() => null));
         if (!reply) return await voiceFailed(token, 502);
         failures.current = 0;
+        followUntil.current = 0;
         setProblem(null);
         if (reply.transcript) setHeard(reply.transcript);
         if (!reply.wake) return backToListening(token); // not for us: stay quietly in "listening"
@@ -512,7 +537,7 @@ export function VoiceAssistant() {
         if (run.current === token) await voiceFailed(token, 0);
       }
     },
-    [backToListening, onWake, voiceFailed],
+    [backToListening, onWake, playKeys, voiceFailed],
   );
 
   const start = useCallback(async () => {

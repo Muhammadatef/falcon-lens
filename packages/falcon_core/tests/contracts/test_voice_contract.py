@@ -18,6 +18,7 @@ OK = {
     "wake": True,
     "intent": "none",
     "command": "",
+    "answer_id": None,
     "duration_ms": 1200,
     "model": "native:whisper-large-v3-turbo",
 }
@@ -37,7 +38,15 @@ def test_pydantic_matches_schema_fields() -> None:
 
 @pytest.mark.parametrize(
     "bad",
-    [{"transcript": "x" * 301}, {"lang": "fr"}, {"intent": "buy"}, {"duration_ms": -1}, {"extra": 1}],
+    [
+        {"transcript": "x" * 301},
+        {"lang": "fr"},
+        {"intent": "buy"},
+        {"answer_id": "otp"},
+        {"answer_id": "faq.OTP"},
+        {"duration_ms": -1},
+        {"extra": 1},
+    ],
 )
 def test_rejects_invalid(bad: dict[str, object]) -> None:
     with pytest.raises(ValidationError):

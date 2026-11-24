@@ -12,8 +12,10 @@ from falcon_core.i18n import load_catalog
 from falcon_core.scoring import load_params
 from falcon_core.scoring.reasons import all_template_keys
 
-# voice_script.yaml is the spoken-line script for the voice assistant (its own tests live in web/), not a UI catalog.
-CATALOG_FILES = sorted(p for p in Path(i18n.__file__).parent.glob("*.yaml") if p.name != "voice_script.yaml")
+# voice_script.yaml and voice_faq.yaml are the spoken-line scripts for the voice assistant (its own tests live in web/), not a UI catalog.
+CATALOG_FILES = sorted(
+    p for p in Path(i18n.__file__).parent.glob("*.yaml") if p.name not in {"voice_script.yaml", "voice_faq.yaml"}
+)
 # "safe" in any case, and the Arabic word for it with or without the madda.
 FORBIDDEN = [
     re.compile(r"safe", re.IGNORECASE),

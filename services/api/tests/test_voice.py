@@ -202,7 +202,7 @@ async def test_privacy_no_transcript_in_logs_or_metrics(caplog: pytest.LogCaptur
         metrics = (await c.get("/metrics")).text
     assert SECRET_WORDS not in metrics
     assert all(SECRET_WORDS not in str(rec.__dict__) for rec in caplog.records)
-    assert 'fl_voice_utterances_total{engine="native",intent="none",lang="en",wake="true"} 1.0' in metrics
+    assert 'fl_voice_utterances_total{engine="native",intent="off_topic",lang="en",wake="true"} 1.0' in metrics
     assert "fl_voice_latency_seconds_bucket" in metrics
 
 

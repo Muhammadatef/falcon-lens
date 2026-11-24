@@ -44,6 +44,7 @@ export async function POST(request: Request): Promise<Response> {
   out.append("audio", audio, "utterance");
   const hint = form.get("lang_hint");
   if (hint === "ar" || hint === "en") out.append("lang_hint", hint);
+  if (form.get("follow_up") === "1") out.append("follow_up", "1");
 
   const headers = upstreamHeaders(request, "application/json");
   if (!headers) return notConnected(503);
@@ -57,7 +58,8 @@ export async function POST(request: Request): Promise<Response> {
     // The utterance span's trace context (a W3C id, no content): the browser sends it with the checks it starts.
     const tp = upstream.headers.get("traceparent") ?? "";
     const link: Record<string, string> = /^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/.test(tp) ? { traceparent: tp } : {};
-    return Response.json(reply, { headers: { "Cache-Control": "no-store", ...link } });
+    const { answerId, ...rest } = reply; // the browser contract keeps the API field name
+    return Response.json({ ...rest, answer_id: answerId }, { headers: { "Cache-Control": "no-store", ...link } });
   } catch {
     return notConnected(502);
   }

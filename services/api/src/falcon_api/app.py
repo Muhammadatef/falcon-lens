@@ -51,6 +51,7 @@ from falcon_core import __version__
 from falcon_core.config import Settings, get_settings
 from falcon_core.contracts.verdict import Verdict
 from falcon_core.service import create_app
+from falcon_core.voice.faq_semantic import FaqSemantic
 
 log = logging.getLogger("falcon.api")
 
@@ -174,6 +175,7 @@ def build_app(
     sentinel: SentinelClient | None = None,
     webhook_transport: httpx.AsyncBaseTransport | None = None,
     stt_router: voice.SttRouter | None = None,
+    faq_semantic: FaqSemantic | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
     state: dict[str, Any] = {
@@ -751,6 +753,7 @@ def build_app(
         client_ip=client_ip,
         registry=registry,
         router_factory=(lambda: stt_router) if stt_router else None,
+        faq_semantic=faq_semantic,
     )
 
     VerdictId = Annotated[str, Path(pattern=VERDICT_ID_RE)]

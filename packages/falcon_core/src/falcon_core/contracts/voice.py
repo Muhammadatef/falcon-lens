@@ -13,8 +13,9 @@ class VoiceUtterance(BaseModel):
     transcript: str = Field(max_length=300)
     lang: Literal["ar", "en", "other"]
     wake: bool
-    intent: Literal["check_clipboard", "check_text", "help", "stop", "none"]
+    intent: Literal["check_clipboard", "check_text", "help", "stop", "faq", "off_topic", "none"]
     command: str = Field(max_length=300)
+    answer_id: str | None = Field(pattern=r"^faq\.[a-z_]+$")
     duration_ms: int = Field(ge=0)
     model: str
 

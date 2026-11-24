@@ -83,6 +83,36 @@ async function installDeviceMocks(page: Page) {
   });
 }
 
+/**
+ * Plays the pre-generated clips for real (manifest and file names), with no audio device: fetch of a clip returns its own
+ * file name, decodeAudioData keeps it, and starting a source records it in __clips. The Arabic manifest is generated from
+ * the script (the recorded Arabic files are not committed). speechSynthesis stays installed so a fallback would be seen.
+ */
+async function installClipMocks(page: Page) {
+  const manifest = (lang: "ar_ae" | "en") => JSON.stringify(Object.entries(SCRIPT[lang]).map(([k, text]) => ({ id: `${lang}.${k}`, file: `${lang}.${k}.mp3`, text, ms: 500, engine: "mock", voice: "mock" })));
+  await page.route("**/voice/ar_ae/manifest.json", (r) => r.fulfill({ contentType: "application/json", body: manifest("ar_ae") }));
+  await page.route("**/voice/en/manifest.json", (r) => r.fulfill({ contentType: "application/json", body: manifest("en") }));
+  await page.addInitScript(() => {
+    const w = window as any;
+    w.__clips = [];
+    const realFetch = window.fetch.bind(window);
+    window.fetch = ((input: any, init?: any) => {
+      const url = typeof input === "string" ? input : input.url;
+      const m = /\/voice\/(?:ar_ae|en)\/([^/]+\.mp3)$/.exec(url);
+      return m ? Promise.resolve(new Response(new TextEncoder().encode(m[1]))) : realFetch(input, init);
+    }) as typeof fetch;
+    const Base = w.AudioContext;
+    w.AudioContext = class extends Base {
+      destination = {};
+      decodeAudioData(buf: ArrayBuffer) { return Promise.resolve({ file: new TextDecoder().decode(buf) }); }
+      createBufferSource() {
+        return { buffer: null as any, onended: null as null | (() => void), connect() {}, stop() {}, start() { w.__clips.push(this.buffer.file); setTimeout(() => this.onended?.(), 20); } };
+      }
+    };
+  });
+}
+const clips = (page: Page): Promise<string[]> => page.evaluate(() => (window as any).__clips);
+
 /** Speaks one utterance: loud for ~1 s, then silent until the detector ends it. */
 async function say(page: Page, voice: string) {
   await page.evaluate((v) => { (window as any).__voice = v; (window as any).__level = 0.3; }, voice);
@@ -406,10 +436,10 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["help"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
     await say(page, "none-ar");
-    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["didnt"]!);
     const tok = await page.evaluate(() => (window as any).__tok as string);
-    const calls = ((await (await request.get("/__mock/voice")).json()) as { calls: { marker: string | null; langHint: string | null }[] }).calls.filter((c) => c.marker === tok);
-    expect(calls.map((c) => c.langHint)).toEqual([null, "ar"]);
+    const mine = async () => ((await (await request.get("/__mock/voice")).json()) as { calls: { marker: string | null; langHint: string | null }[] }).calls.filter((c) => c.marker === tok);
+    await expect.poll(async () => (await mine()).length).toBe(2);
+    expect((await mine()).map((c) => c.langHint)).toEqual([null, "ar"]);
   });
 
   test("stop intent by voice turns listening off; help and 'just Hey Falcon' are answered aloud", async ({ page, request }) => {
@@ -420,12 +450,71 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["help"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
     await say(page, "none-ar");
-    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["didnt"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
-    expect((await spoken(page)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["didnt"]!);
+    const afterBare = (await spoken(page)).map((s) => s.text).join(" ");
+    expect(afterBare).toContain(SCRIPT.ar_ae["wake.ack"]!); // just the wake phrase: "I'm listening", then the next utterance is the command
+    expect(afterBare).not.toContain(SCRIPT.ar_ae["didnt"]!);
     await say(page, "stop");
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.stopped"]);
     await expect(page.getByTestId("voice-on")).toBeVisible();
+  });
+
+  test("FAQ by voice: the caption is exactly the spoken text and only pre-recorded clips play (Arabic and English), nothing from speechSynthesis", async ({ page, request, context, baseURL }) => {
+    await setup(page, request);
+    await installClipMocks(page);
+    await setPrefs(context, baseURL!, { lang: "en" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "faq-otp-ar");
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["faq.otp"]!);
+    await expect(page.getByTestId("voice-state")).toHaveText(EN["voice.state.listening"], { timeout: 10_000 });
+    expect(await clips(page)).toEqual(["ar_ae.faq.otp.mp3"]); // no "wake.ack" first: the answer comes straight away
+    await say(page, "faq-clicked-en");
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.en["faq.clicked_link"]!);
+    await expect(page.getByTestId("voice-state")).toHaveText(EN["voice.state.listening"], { timeout: 10_000 });
+    expect(await clips(page)).toEqual(["ar_ae.faq.otp.mp3", "en.faq.clicked_link.mp3"]);
+    expect(await spoken(page)).toEqual([]); // zero speechSynthesis
+    expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b/i);
+  });
+
+  test("off-topic and an injection attempt get one of the three fixed redirects, in the speaker's language", async ({ page, request }) => {
+    await setup(page, request);
+    await installClipMocks(page);
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    const redirects = (lang: "ar_ae" | "en") => [1, 2, 3].map((i) => SCRIPT[lang][`offtopic.${i}`]!);
+    await say(page, "offtopic-en");
+    await expect.poll(async () => redirects("en").includes((await page.getByTestId("voice-caption").textContent()) ?? "")).toBe(true);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
+    await say(page, "offtopic-ar");
+    await expect.poll(async () => redirects("ar_ae").includes((await page.getByTestId("voice-caption").textContent()) ?? "")).toBe(true);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
+    const played = await clips(page);
+    expect(played.length).toBe(2);
+    expect(played[0]).toMatch(/^en\.offtopic\.[123]\.mp3$/);
+    expect(played[1]).toMatch(/^ar_ae\.offtopic\.[123]\.mp3$/);
+    expect(await spoken(page)).toEqual([]);
+  });
+
+  test("a bare wake phrase is acknowledged, then the next utterance is a command; 'One moment' plays before the transcript returns", async ({ page, request }) => {
+    await setup(page, request);
+    await installClipMocks(page);
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "none-ar");
+    await expect.poll(() => clips(page)).toEqual(["ar_ae.wake.ack.mp3"]);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
+    await say(page, "faq-follow-ar");
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["faq.clicked_link"]!);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
+    await expect.poll(() => clips(page)).toEqual(["ar_ae.wake.ack.mp3", "ar_ae.ack.moment.mp3", "ar_ae.faq.clicked_link.mp3"]);
+    const tok = await page.evaluate(() => (window as any).__tok as string);
+    const calls = ((await (await request.get("/__mock/voice")).json()) as { calls: { marker: string | null; followUp: string | null }[] }).calls.filter((c) => c.marker === tok);
+    expect(calls.map((c) => c.followUp)).toEqual([null, "1"]);
+    // The window closes after the answer: the next utterance is a normal one.
+    await say(page, "noise");
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR));
+    expect(await clips(page)).toHaveLength(3);
   });
 
   test("clipboard denied: a big paste box appears, Falcon says so aloud, and pasted text is checked", async ({ page, request }) => {
