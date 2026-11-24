@@ -175,7 +175,7 @@ function CheckRow({ s, demo }: { s: VerdictSummary; demo: boolean }) {
         <SourceBadge source={s.source} />
         {s.channel === "voice" ? <span className="pill" data-testid="voice-badge" lang={lang} title={h("ck.channel.voice")}><Icon name="mic" size={14} />{h("hs.channel.voice")}</span> : null}
         {s.degraded ? <span className="pill pill--wait">{h("hs.degraded")}</span> : null}
-        <RowTraceLink traceId={s.trace_id} />
+        <RowTraceLink verdictId={s.verdict_id} />
         <time className="small hs-time" dateTime={s.created_at}>{formatTime(lang, s.created_at, true)}</time>
       </div>
       <h2 className="hs-title">

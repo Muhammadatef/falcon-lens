@@ -84,7 +84,7 @@ export function CheckTrace({ verdictId, demo }: { verdictId: string; demo: boole
               </div>
             ) : (
               <>
-                <OperatorLinks id={view.verdict.verdict_id} kind="verdict" traceId={view.verdict.trace_id} createdAt={view.verdict.created_at} latencyMs={view.verdict.latency_ms} />
+                <OperatorLinks id={view.verdict.verdict_id} createdAt={view.verdict.created_at} latencyMs={view.verdict.latency_ms} />
                 <Body verdict={view.verdict} />
               </>
             )}

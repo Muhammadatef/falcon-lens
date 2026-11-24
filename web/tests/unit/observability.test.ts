@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { parseSummary } from "../../lib/history";
 import {
   DEFAULT_PHOENIX_PROJECT_ID,
   DEFAULTS,
@@ -11,7 +10,7 @@ import {
   parseConfig,
   phoenixTraceUrl,
 } from "../../lib/observability";
-import { toPublicCheckSummary, toPublicTrace } from "../../lib/public-history";
+import { toPublicCheck, toPublicCheckSummary, toPublicTrace } from "../../lib/public-history";
 
 const CFG = configFromEnv({});
 const VID = "vd_01KB0DEM0DATA0000000000001";
@@ -65,19 +64,20 @@ describe("observability links", () => {
   });
 });
 
-describe("trace_id passes the projections only when it is 32 hex", () => {
+describe("trace_id never reaches a public projection (operators get it from /api/ops/*)", () => {
   const base = { verdict_id: VID, created_at: "2026-11-24T10:00:00Z", input_type: "url", verdict: "dangerous", risk_score: 90, degraded: false, degraded_reasons: [], tier_reached: "T2", model_route: "none", source: "live", agent: {} };
-  it("history summary and public summary", () => {
-    expect(parseSummary({ ...base, trace_id: TID })?.trace_id).toBe(TID);
-    expect(parseSummary({ ...base, trace_id: "<script>" })?.trace_id).toBeUndefined();
-    expect(toPublicCheckSummary({ ...base, trace_id: TID })?.trace_id).toBe(TID);
-    expect(toPublicCheckSummary({ ...base, trace_id: "nope" })?.trace_id).toBeUndefined();
+  it("public check summary drops it", () => {
+    expect(toPublicCheckSummary({ ...base, trace_id: TID })).not.toHaveProperty("trace_id");
   });
-  it("public agent trace runs", () => {
+  it("public check document drops it", () => {
+    const doc = toPublicCheck({ ...base, trace_id: TID, calibrated_probability: 0.9, evidence: [], reasons: [], final: true, latency_ms: 5 });
+    expect(doc).not.toBeNull();
+    expect(doc).not.toHaveProperty("trace_id");
+  });
+  it("public agent trace runs drop it", () => {
     const inc = "inc_01KB0DEM0DATA0000000000001";
-    const run = { run_id: "run_1", started_at: "2026-11-24T10:00:00Z", finished_at: null, status: "completed", steps: [], interrupt: null };
-    const out = toPublicTrace({ incident_id: inc, runs: [{ ...run, trace_id: TID }, { ...run, run_id: "run_2", trace_id: "bad" }] }) as { runs: { trace_id?: string }[] };
-    expect(out.runs[0]!.trace_id).toBe(TID);
-    expect(out.runs[1]!.trace_id).toBeUndefined();
+    const run = { run_id: "run_1", started_at: "2026-11-24T10:00:00Z", finished_at: null, status: "completed", steps: [], interrupt: null, trace_id: TID };
+    const out = toPublicTrace({ incident_id: inc, runs: [run] }) as { runs: Record<string, unknown>[] };
+    expect(out.runs[0]).not.toHaveProperty("trace_id");
   });
 });

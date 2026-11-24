@@ -3,29 +3,22 @@
 import { obT } from "@/lib/i18n-obs";
 import { checkWindow, grafanaLogsUrl, grafanaOverviewUrl, phoenixHomeUrl, phoenixTraceUrl, prometheusAlertsUrl, grafanaHomeUrl, type TimeWindow } from "@/lib/observability";
 import { usePrefs } from "@/lib/prefs";
-import { useOperatorObs } from "@/lib/use-obs";
+import { useIncidentTrace, useOperatorObs, useVerdictTraceId } from "@/lib/use-obs";
 
-interface Props {
+interface ViewProps {
   /** `vd_...` for a check, `inc_...` for an incident. */
   id: string;
   kind: "verdict" | "incident";
-  /** W3C trace id from the verdict or the latest agent run; absent when tracing was off. */
-  traceId?: string;
-  /** When the check finished (ISO) and how long it took, for the Grafana time range. */
-  createdAt?: string;
-  latencyMs?: number;
-  /** Incidents: explicit window (epoch ms). */
-  window?: TimeWindow | null;
+  traceId?: string | null;
+  window: TimeWindow | null;
 }
 
 const LIST = { display: "flex", flexWrap: "wrap", gap: "0.5rem 1.25rem", listStyle: "none", padding: 0, margin: 0 } as const;
 
-/** Operator-only deep links to this check's / incident's trace in Phoenix and its logs and dashboard in Grafana. Renders nothing for the public. */
-export function OperatorLinks({ id, kind, traceId, createdAt, latencyMs, window: win }: Props) {
+function LinksView({ id, kind, traceId, window: range }: ViewProps) {
   const { lang } = usePrefs();
   const cfg = useOperatorObs();
   if (!cfg) return null;
-  const range = win ?? (createdAt ? checkWindow(createdAt, latencyMs ?? 0) : null);
   const trace = phoenixTraceUrl(cfg, traceId);
   const logs = grafanaLogsUrl(cfg, id, range, kind);
   return (
@@ -48,19 +41,23 @@ export function OperatorLinks({ id, kind, traceId, createdAt, latencyMs, window:
   );
 }
 
-/** Incident page: links for the latest agent run that carries a trace id; Grafana window spans all runs. */
-export function IncidentOperatorLinks({ incidentId, runs }: { incidentId: string; runs: { trace_id?: string; started_at: string; finished_at: string | null }[] }) {
-  const starts = runs.map((r) => Date.parse(r.started_at)).filter(Number.isFinite);
-  const ends = runs.map((r) => Date.parse(r.finished_at ?? r.started_at)).filter(Number.isFinite);
-  const win = starts.length && ends.length ? { from: Math.min(...starts) - 60_000, to: Math.max(...ends) + 120_000 } : null;
-  const traceId = [...runs].reverse().find((r) => r.trace_id)?.trace_id;
-  return <OperatorLinks id={incidentId} kind="incident" traceId={traceId} window={win} />;
+/** Operator-only deep links for one check. The trace id comes from the operator route, never from public data. Renders nothing for the public. */
+export function OperatorLinks({ id, createdAt, latencyMs }: { id: string; createdAt?: string; latencyMs?: number }) {
+  const traceId = useVerdictTraceId(id);
+  return <LinksView id={id} kind="verdict" traceId={traceId} window={createdAt ? checkWindow(createdAt, latencyMs ?? 0) : null} />;
+}
+
+/** Incident page: links for the latest agent run that carries a trace id; the Grafana window spans all runs. */
+export function IncidentOperatorLinks({ incidentId }: { incidentId: string }) {
+  const info = useIncidentTrace(incidentId);
+  return <LinksView id={incidentId} kind="incident" traceId={info?.traceId} window={info?.window ?? null} />;
 }
 
 /** Small trace icon for a /history row (operators only). */
-export function RowTraceLink({ traceId }: { traceId?: string }) {
+export function RowTraceLink({ verdictId }: { verdictId: string }) {
   const { lang } = usePrefs();
   const cfg = useOperatorObs();
+  const traceId = useVerdictTraceId(verdictId);
   const href = cfg ? phoenixTraceUrl(cfg, traceId) : null;
   if (!href) return null;
   const label = obT(lang, "ob.row");

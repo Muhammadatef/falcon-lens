@@ -105,7 +105,7 @@ export function IncidentTrace({ incidentId, demo }: { incidentId: string; demo: 
             ) : (
               <>
                 <Header incident={view.incident} />
-                <IncidentOperatorLinks incidentId={view.incident.incident_id} runs={view.trace.runs} />
+                <IncidentOperatorLinks incidentId={view.incident.incident_id} />
                 <Timeline incident={view.incident} trace={view.trace} demo={demo} />
               </>
             )}

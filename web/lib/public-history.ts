@@ -27,8 +27,6 @@ const code = (v: unknown): string | null => (typeof v === "string" && CODE_RE.te
 const codes = (v: unknown, max = 8): string[] => (Array.isArray(v) ? v.map(code).filter((c): c is string => c !== null).slice(0, max) : []);
 const iso = (v: unknown): string => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:?\d{2})?$/.test(v) ? v : "");
 
-/** A W3C trace id is 32 hex characters and nothing else: safe to pass through (it only opens a trace for an operator who is logged in to Phoenix). */
-const traceIdOf = (v: unknown): { trace_id?: string } => (typeof v === "string" && /^[0-9a-f]{32}$/.test(v) ? { trace_id: v } : {});
 const VERDICT_ID = /^vd_[0-9A-HJKMNP-TV-Z]{26}$/;
 const INCIDENT_ID = /^inc_[0-9A-HJKMNP-TV-Z]{26}$/;
 const EVIDENCE_ID = /^ev_[0-9A-Za-z_]{1,64}$/;
@@ -147,7 +145,6 @@ export interface PublicCheckSummary {
   model_route: (typeof ROUTES)[number];
   source: (typeof SOURCES)[number];
   channel: PublicChannel | null;
-  trace_id?: string;
   agent: { tiers_run: (typeof TIERS)[number][]; extractor_ran: boolean; investigator_ran: boolean; tool_calls: number; llm_calls: number };
 }
 
@@ -177,7 +174,6 @@ export function toPublicCheckSummary(raw: unknown): PublicCheckSummary | null {
     model_route: oneOf(raw.model_route, ROUTES) ?? "none",
     source: oneOf(raw.source, SOURCES) ?? "live",
     channel: oneOf(raw.channel, CHANNELS),
-    ...traceIdOf(raw.trace_id),
     agent: {
       tiers_run: tiers.length ? tiers : TIERS.slice(0, TIERS.indexOf(tier) + 1),
       extractor_ran: a.extractor_ran === true,
@@ -263,7 +259,6 @@ export function toPublicCheck(raw: unknown): Obj | null {
     trace,
     source: oneOf(raw.source, SOURCES) ?? "live",
     ...(oneOf(raw.channel, CHANNELS) ? { channel: oneOf(raw.channel, CHANNELS) } : {}),
-    ...traceIdOf(raw.trace_id),
     latency_ms: Math.round(num(raw.latency_ms, 0, 1e7)),
     created_at: iso(raw.created_at),
   };
@@ -389,7 +384,6 @@ export function toPublicTrace(raw: unknown): Obj | null {
     .map((r) => {
       const intr = isObj(r.interrupt) ? r.interrupt : null;
       return {
-        ...traceIdOf(r.trace_id),
         run_id: typeof r.run_id === "string" && /^[\w.:-]{1,80}$/.test(r.run_id) ? r.run_id : "run",
         started_at: iso(r.started_at),
         finished_at: iso(r.finished_at) || null,

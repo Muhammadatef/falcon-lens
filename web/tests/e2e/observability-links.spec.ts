@@ -79,12 +79,17 @@ test.describe("operator observability links", () => {
       expect(await page.locator("body").innerHTML()).not.toContain(PHOENIX);
     }
     expect(asked).toEqual([]);
+    // The public API never carries the trace id, and the operator routes refuse anonymous callers.
+    expect(await (await request.get(`/api/public/checks/${id}`)).text()).not.toContain(TID);
+    expect(await (await request.get(`/api/public/checks`)).text()).not.toContain(TID);
+    expect(await (await request.get(`/api/public/incidents/${inc}`)).text()).not.toContain(TID);
+    for (const path of ["/api/obs-config", `/api/ops/trace-ids?verdicts=${id}`, `/api/ops/incident-traces?incidents=${inc}`]) expect((await request.get(path)).status()).toBe(401);
   });
 
   test("history rows: operator gets a small trace icon per check that has a trace id", async ({ page, context, request, baseURL }) => {
     const a = newVerdictId();
     const b = newVerdictId();
-    await useBoards(context, request, baseURL!, { verdicts: [summary(a, { trace_id: TID }), summary(b, { created_at: "2026-11-24T09:00:00Z" })] });
+    await useBoards(context, request, baseURL!, { verdicts: [summary(a), summary(b, { created_at: "2026-11-24T09:00:00Z" })], verdictDocs: { [a]: { ...DEMO_DANGEROUS, verdict_id: a, trace_id: TID }, [b]: { ...DEMO_DANGEROUS, verdict_id: b } } });
     await asOperator(page);
     await page.goto("/history");
     await expect(page.getByTestId("check-row")).toHaveCount(2);
