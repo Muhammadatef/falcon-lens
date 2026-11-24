@@ -80,6 +80,12 @@ def get_tracer() -> trace.Tracer:
     return trace.get_tracer(_TRACER_NAME)
 
 
+def current_trace_id() -> str | None:
+    """W3C trace id (32 lowercase hex) of the active span; None when tracing is off (no valid span)."""
+    ctx = trace.get_current_span().get_span_context()
+    return format(ctx.trace_id, "032x") if ctx.is_valid else None
+
+
 @contextmanager
 def verdict_context(verdict_id: str) -> Iterator[None]:
     """Bind verdict_id for logs and spans created inside the block."""

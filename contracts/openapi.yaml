@@ -1289,6 +1289,12 @@ components:
             $ref: '#/components/schemas/falcon_core__contracts__agent_trace__TraceStep'
           title: Steps
           type: array
+        trace_id:
+          anyOf:
+          - pattern: ^[0-9a-f]{32}$
+            type: string
+          - type: 'null'
+          title: Trace Id
       required:
       - run_id
       - started_at
@@ -1492,6 +1498,12 @@ components:
             type: array
           - type: 'null'
           title: Trace
+        trace_id:
+          anyOf:
+          - pattern: ^[0-9a-f]{32}$
+            type: string
+          - type: 'null'
+          title: Trace Id
         verdict:
           enum:
           - dangerous
@@ -1610,6 +1622,14 @@ components:
           - T3
           title: Tier Reached
           type: string
+        trace_id:
+          anyOf:
+          - pattern: ^[0-9a-f]{32}$
+            type: string
+          - type: 'null'
+          description: OpenTelemetry trace id of the check; null when tracing was off. Metadata for operator
+            links.
+          title: Trace Id
         verdict:
           enum:
           - dangerous

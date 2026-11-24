@@ -52,6 +52,8 @@ export interface TraceInterrupt {
 }
 export interface TraceRun {
   run_id: string;
+  /** OpenTelemetry trace id of the run (contracts/agent_trace.schema.json), when tracing was on. */
+  trace_id?: string;
   started_at: string;
   finished_at: string | null;
   status: RunStatus;
@@ -133,6 +135,7 @@ export function parseAgentTrace(raw: unknown): AgentTrace | null {
     if (!isObj(r) || typeof r.run_id !== "string") continue;
     runs.push({
       run_id: r.run_id,
+      ...(typeof r.trace_id === "string" && /^[0-9a-f]{32}$/.test(r.trace_id) ? { trace_id: r.trace_id } : {}),
       started_at: str(r.started_at),
       finished_at: typeof r.finished_at === "string" ? r.finished_at : null,
       status: oneOf(r.status, STATUSES) ?? "running",

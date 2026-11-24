@@ -11,6 +11,7 @@ import { usePrefs } from "@/lib/prefs";
 import { readSse } from "@/lib/sse";
 import { HuntOpsPanel } from "./HuntOpsPanel";
 import { LlmRoutePanel } from "./LlmRoutePanel";
+import { MonitoringCard } from "./OperatorLinks";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
 import { Icon, SeverityMark } from "./Icon";
 
@@ -163,6 +164,7 @@ export function IncidentBoard({ demo }: { demo: boolean }) {
             ) : null}
 
             {!demo && key ? <LlmRoutePanel operatorKey={key} /> : null}
+            {!demo && key ? <MonitoringCard /> : null}
             {!demo && key ? <HuntOpsPanel operatorKey={key} /> : null}
 
             {load.state === "loading" ? (

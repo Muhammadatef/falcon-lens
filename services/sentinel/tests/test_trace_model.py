@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
+import pytest
 from graph_helpers import make_env
 from jsonschema import Draft202012Validator
 
+from falcon_core.telemetry import tracing
 from falcon_sentinel.llm import RouterLLM, StubLLM
 from falcon_sentinel.trace import assemble_trace
 
@@ -31,6 +34,17 @@ async def _llm_steps(env: Any, iid: str) -> list[dict[str, Any]]:
     Draft202012Validator(json.loads(SCHEMA.read_text())).validate(doc)
     (run,) = doc["runs"]
     return [s["llm"] for s in run["steps"] if s["llm"]]
+
+
+async def test_run_records_the_triage_span_trace_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    provider = tracing.build_provider("t")
+    monkeypatch.setattr(tracing, "get_tracer", lambda: provider.get_tracer("t"))
+    env = await make_env()
+    iid = env.campaign_id()
+    await env.runner(StubLLM()).run(iid)
+    doc = assemble_trace(iid, await env.repo.trace_list(iid))
+    Draft202012Validator(json.loads(SCHEMA.read_text())).validate(doc)
+    assert re.fullmatch(r"[0-9a-f]{32}", doc["runs"][0]["trace_id"])
 
 
 async def test_trace_records_the_actual_model_id() -> None:
