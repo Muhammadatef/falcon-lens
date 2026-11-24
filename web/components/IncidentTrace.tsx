@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flatSteps, liveRun, parseAgentTrace, type AgentTrace, type NodeName, type TraceInterrupt, type TraceStep, type TraceTool } from "@/lib/agent-trace";
+import { arLinkedChecks } from "@/lib/ar-count";
 import { loadOne, type OneLoad } from "@/lib/agent-trace-api";
 import { parseIncident, type Incident } from "@/lib/contracts";
 import { formatTime, pick, translateMaybe } from "@/lib/i18n";
@@ -113,6 +114,12 @@ export function IncidentTrace({ incidentId, demo }: { incidentId: string; demo: 
   );
 }
 
+function linkedLine(lang: string, n: number, tt: (k: TraceKey, v?: Record<string, string | number>) => string): string {
+  if (n <= 0) return tt("tr.verdicts.zero");
+  if (lang === "ar") return tt("tr.verdicts.n", { n: arLinkedChecks(n) });
+  return n === 1 ? tt("tr.verdicts.one") : tt("tr.verdicts.n", { n });
+}
+
 function Header({ incident }: { incident: Incident }) {
   const { t, lang } = usePrefs();
   const tt = useTT();
@@ -131,7 +138,7 @@ function Header({ incident }: { incident: Incident }) {
       <div className="inc-grid">
         <div>
           {reason ? <p dir="auto">{reason}</p> : null}
-          <p className="small" data-testid="trace-linked-count">{tt("tr.verdicts.n", { n: incident.linked_verdicts.length })}</p>
+          <p className="small" data-testid="trace-linked-count">{linkedLine(lang, incident.linked_verdicts.length, tt)}</p>
           <details className="tech-details" data-testid="trace-technical">
             <summary>{tt("tr.technical")}</summary>
             <div className="kv">

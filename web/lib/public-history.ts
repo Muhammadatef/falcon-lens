@@ -12,6 +12,7 @@
  * The output keeps the contract shapes (verdict, incident, agent trace) with the private parts emptied, so the
  * existing guards (`parseVerdict`, `parseIncident`, `parseAgentTrace`) and components work unchanged.
  */
+import { arCount, CHECKS, DOMAINS } from "./ar-count";
 import { BRAND_NAMES } from "./brand-names";
 import { defang } from "./defang";
 
@@ -281,21 +282,34 @@ export function publicIncidentTitle(type: unknown, brandId: unknown): { ar: stri
   }
 }
 
-/** One fixed sentence per Sentinel rule (services/sentinel/rules.yaml R1..R5). `{c}` = linked checks, `{d}` = distinct domains. */
-const RULE_LINES: Readonly<Record<string, { ar: string; en: string }>> = {
-  R1: { ar: "ظهرت {c} فحوصات مرتبطة على {d} نطاقات جديدة بالبصمة نفسها خلال فترة قصيرة.", en: "{c} linked checks on {d} new domains with the same page fingerprint in a short window." },
-  R2: { ar: "أُعيد استخدام عُدّة الصفحة نفسها في {c} فحوصات على {d} نطاقات.", en: "The same page kit was reused in {c} checks across {d} domains." },
-  R3: { ar: "ارتفع عدد البلاغات المتشابهة: {c} فحوصات مرتبطة.", en: "A burst of similar reports: {c} linked checks." },
-  R4: { ar: "تغيّرت سمعة نطاق كان يبدو سليمًا: {c} فحوصات مرتبطة.", en: "A domain's reputation changed: {c} linked checks." },
-  R5: { ar: "ملاحظة جودة على نتائج الفحص: {c} فحوصات مرتبطة.", en: "A quality note on check results: {c} linked checks." },
+type Line = (n: number) => { ar: string; en: string };
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+/**
+ * One fixed sentence per Sentinel rule, worded after the rule's real condition (services/sentinel/rules.yaml).
+ * R1/R2 count distinct domains (what the rule counts). R3/R5 count reports and feedback, which the public
+ * projection does not carry, so those lines have no number. A count of 0 is omitted.
+ */
+const RULE_LINES: Readonly<Record<string, Line>> = {
+  R1: (d) => ({
+    ar: d > 0 ? `رُصد ${arCount(d, DOMAINS)} جديدًا تشبه علامة واحدة خلال ساعة.` : "رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة.",
+    en: d > 0 ? `${plural(d, "new lookalike domain", "new lookalike domains")} for one brand within an hour.` : "New lookalike domains for one brand within an hour.",
+  }),
+  R2: (d) => ({
+    ar: d > 0 ? `ظهر ${arCount(d, DOMAINS)} بالبصمة نفسها للصفحة خلال 7 أيام.` : "ظهرت نطاقات بالبصمة نفسها للصفحة خلال 7 أيام.",
+    en: d > 0 ? `${plural(d, "domain", "domains")} with the same page fingerprint within 7 days.` : "Domains with the same page fingerprint within 7 days.",
+  }),
+  R3: () => ({ ar: "وردت عدة بلاغات متشابهة خلال 30 دقيقة.", en: "Several similar scam reports arrived within 30 minutes." }),
+  R4: () => ({ ar: "نطاق لم تظهر عليه علامات تحذير سابقًا صار حكمه الآن «خطير».", en: "A domain that earlier showed no warning signs now has a dangerous verdict." }),
+  R5: () => ({ ar: "وردت عدة ملاحظات بأن الإشارة نفسها أعطت إنذارًا خاطئًا خلال ساعة.", en: "Several feedback reports say the same signal raised a false alarm within an hour." }),
 };
-const GENERIC_REASON = { ar: "ربط الحارس {c} فحوصات مرتبطة بهذه الحادثة.", en: "Sentinel linked {c} checks to this incident." };
 
 /** Public severity line from the rule ids and counts only; free text is never used. Unknown rule: generic line. */
 export function publicSeverityLine(ruleIds: readonly string[], linked: number, domains: number): { ar: string; en: string } {
-  const line = ruleIds.map((r) => RULE_LINES[r]).find((l) => l !== undefined) ?? GENERIC_REASON;
-  const fill = (x: string) => x.replace("{c}", String(linked)).replace("{d}", String(domains));
-  return { ar: fill(line.ar), en: fill(line.en) };
+  const rule = ruleIds.find((r) => Object.hasOwn(RULE_LINES, r));
+  if (rule) return RULE_LINES[rule]!(domains);
+  return linked > 0
+    ? { ar: `ربط الحارس ${arCount(linked, CHECKS)} بهذه الحادثة.`, en: `Sentinel linked ${plural(linked, "check", "checks")} to this incident.` }
+    : { ar: "سجّل الحارس هذه الحادثة.", en: "Sentinel recorded this incident." };
 }
 
 const INDICATOR_KINDS = new Set(["domain", "url", "host"]);
