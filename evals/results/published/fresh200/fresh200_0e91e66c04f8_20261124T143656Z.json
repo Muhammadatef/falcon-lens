@@ -13,7 +13,7 @@
     "legit_uae": 20,
     "phishing": 100
   },
-  "created_at": "2026-11-24T14:24:43Z",
+  "created_at": "2026-11-24T14:36:56Z",
   "definitions": {
     "caught": "verdict suspicious or dangerous (any_warning); dangerous_only counts dangerous alone",
     "ci": "Wilson 95% for proportions; percentile bootstrap 95% (2000 resamples, seed 7) for precision, F1, accuracy and recall/FPR",
@@ -157,8 +157,11 @@
     "excluded_canonical_urls": 1896,
     "excluded_registered_domains": 12914
   },
-  "git_sha": "d02374b2c6a42d07af54c3f4c1cf8e00266c9cb5",
-  "http_429": 0,
+  "git_sha": "0e91e66c04f870ef06b69d65191e5715982846f3-dirty",
+  "http_429": {
+    "raw.jsonl": 240,
+    "raw2.jsonl": 172
+  },
   "kind": "fresh200_live",
   "n_errors": 0,
   "n_submitted": 200,

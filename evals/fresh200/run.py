@@ -24,6 +24,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -37,6 +38,17 @@ MAX_429_RETRIES = 12
 PRIV = private_dir() / "evals" / "fresh200"
 _lock = threading.Lock()
 HTTP_429 = [0]
+
+
+def ca_bundle() -> str:
+    """The gateway's local root CA (Caddy ``tls internal``), so the API key is never sent over an unverified TLS link.
+
+    Export it once: ``docker exec falcon-gateway-1 cat /data/caddy/pki/authorities/local/root.crt > data/private/falcon-local-ca.crt``.
+    """
+    p = Path(os.environ.get("FL_CA_BUNDLE", str(private_dir() / "falcon-local-ca.crt")))
+    if not p.exists():
+        raise SystemExit(f"local CA bundle {p} is missing: export the gateway root CA (see ca_bundle docstring)")
+    return str(p)
 
 
 def api_key() -> str:
@@ -65,7 +77,7 @@ def check_one(base: str, key: str, row: dict[str, Any]) -> dict[str, Any]:
     base_row: dict[str, Any] = {k: row[k] for k in ("url", "label", "group", "domain") if k in row}
     t0 = time.monotonic()
     try:
-        with httpx.Client(base_url=base, verify=False, timeout=20, headers={"X-API-Key": key}) as c:  # noqa: S501 - local CA
+        with httpx.Client(base_url=base, verify=ca_bundle(), timeout=20, headers={"X-API-Key": key}) as c:
             r = _req(c, "POST", "/v1/check/url", json={"url": row["url"]})
             r.raise_for_status()
             vid = r.json()["verdict_id"]
@@ -120,12 +132,17 @@ def submit(a: argparse.Namespace) -> int:
     with ThreadPoolExecutor(max_workers=min(a.workers, 4)) as ex:
         list(ex.map(one, todo))
     print(f"http_429={HTTP_429[0]}")
+    stats_path = PRIV / "run_stats.json"
+    stats = json.loads(stats_path.read_text()) if stats_path.exists() else {}
+    stats[a.raw] = {"http_429": stats.get(a.raw, {}).get("http_429", 0) + HTTP_429[0]}
+    stats_path.write_text(json.dumps(stats, indent=2) + "\n")
     return 0
 
 
 def publish(_: argparse.Namespace) -> int:
     raw_rows = [json.loads(ln) for ln in (PRIV / "raw.jsonl").read_text().splitlines()]
     meta = json.loads((PRIV / "build_meta.json").read_text())
+    run_stats = json.loads((PRIV / "run_stats.json").read_text())
     ok = [r for r in raw_rows if "error" not in r]
     errs = [r for r in raw_rows if "error" in r]
     summary = summarise(ok)
@@ -187,7 +204,7 @@ def publish(_: argparse.Namespace) -> int:
             "reached_ai_step": "tier_reached T3 (the investigator, used only for the uncertain band); llm_evidence_present is any llm.* evidence",
             "ci": "Wilson 95% for proportions; percentile bootstrap 95% (2000 resamples, seed 7) for precision, F1, accuracy and recall/FPR",
         },
-        "http_429": HTTP_429[0],
+        "http_429": {k: v["http_429"] for k, v in run_stats.items()},
         "results": summary,
         "results_second_source": summary2,
         "second_source": {
