@@ -1,0 +1,50 @@
+{
+  "label": "TEST FIXTURE, not a real site",
+  "note": "Hand-written in crt.sh JSON row shape (HUNTER.md section 9). Names only invented falcon-demo-bank*.test hosts served by the internal fixtures container. No real certificate, issuer or brand. not_before_offset_s is a fixture-only extension: not_before = load time minus the offset, so the demo can say 'a certificate was issued a minute ago'.",
+  "rows": [
+    {
+      "common_name": "falcon-demo-bank-secure.test",
+      "id": 1001,
+      "issuer_ca_id": 1,
+      "issuer_name": "C=ZZ, O=Falcon Demo Test CA, CN=TEST FIXTURE CA",
+      "name_value": "falcon-demo-bank-secure.test\nwww.falcon-demo-bank-secure.test",
+      "not_after": "2027-02-22T00:00:00",
+      "not_before_offset_s": 60,
+      "result_count": 2,
+      "serial_number": "0f0000000000000000000000000001"
+    },
+    {
+      "common_name": "falcon-demo-bank-login.test",
+      "id": 1002,
+      "issuer_ca_id": 1,
+      "issuer_name": "C=ZZ, O=Falcon Demo Test CA, CN=TEST FIXTURE CA",
+      "name_value": "falcon-demo-bank-login.test",
+      "not_after": "2027-02-22T00:00:00",
+      "not_before_offset_s": 300,
+      "result_count": 1,
+      "serial_number": "0f0000000000000000000000000002"
+    },
+    {
+      "common_name": "falcon-demo-bank-cloak.test",
+      "id": 1003,
+      "issuer_ca_id": 1,
+      "issuer_name": "C=ZZ, O=Falcon Demo Test CA, CN=TEST FIXTURE CA",
+      "name_value": "falcon-demo-bank-cloak.test",
+      "not_after": "2027-02-22T00:00:00",
+      "not_before_offset_s": 900,
+      "result_count": 1,
+      "serial_number": "0f0000000000000000000000000003"
+    },
+    {
+      "common_name": "falcon-demo-bank.test",
+      "id": 1004,
+      "issuer_ca_id": 1,
+      "issuer_name": "C=ZZ, O=Falcon Demo Test CA, CN=TEST FIXTURE CA",
+      "name_value": "falcon-demo-bank.test",
+      "not_after": "2027-02-22T00:00:00",
+      "not_before_offset_s": 86400,
+      "result_count": 1,
+      "serial_number": "0f0000000000000000000000000004"
+    }
+  ]
+}

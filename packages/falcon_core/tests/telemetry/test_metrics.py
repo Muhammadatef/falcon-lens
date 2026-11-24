@@ -38,7 +38,7 @@ def _registered() -> dict[str, tuple[str, ...]]:
 
 
 def test_doc_parses_all_sections() -> None:
-    assert len(_doc_metrics()) == 51
+    assert len(_doc_metrics()) == 62
 
 
 def test_every_documented_metric_exists_exactly() -> None:
@@ -92,6 +92,17 @@ def test_labels_match_doc() -> None:
     m.SENTINEL_TEXT.labels("assess", "llm").inc()
     m.APPROVAL_TURNAROUND.labels("approve").observe(60)
     m.INCIDENT_STATUS.labels("open").set(1)
+    m.HUNT_CYCLES.labels("ok", "fixture").inc()
+    m.HUNT_SOURCE_REQUESTS.labels("dns", "ok", "live").inc()
+    m.HUNT_CANDIDATES.labels("ct", "fixture").inc()
+    m.HUNT_SUBMITTED.labels("fixture").inc()
+    m.HUNT_CONFIRMED.labels("dangerous", "fixture").inc()
+    m.HUNT_ALREADY_KNOWN.labels("live").inc()
+    m.HUNT_QUOTA_REMAINING.labels("hour", "live").set(1)
+    m.HUNT_ENABLED.labels("live").set(0)
+    m.HUNT_LAST_SUCCESS.labels("dns", "live").set(1)
+    m.HUNT_TIME_TO_DETECTION.labels("cert_not_before", "fixture").observe(60)
+    m.HUNT_LEAD.labels("live").observe(60)
     with m.timed_stage("t0"):
         pass
     registered = _registered()

@@ -87,6 +87,9 @@ class Candidate:
     incident_id: str | None = None
     time_to_detection_s: float | None = None
     time_to_detection_basis: str | None = None
+    checked_at: datetime | None = None  # last DNS / CT check (recheck scheduling)
+    first_user_seen: datetime | None = None  # first person check of the same domain after the hunt verdict (lead)
+    scheme: str = "https"  # how the cascade is asked to visit it (fixture hosts are plain http)
     candidate_id: str = field(default="")
 
     def __post_init__(self) -> None:

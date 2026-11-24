@@ -51,6 +51,10 @@ from falcon_core.tools.sentinel import ToolContext
 from .consumer import Consumer
 from .db import IncidentCache, PgRepo
 from .graph import ApprovalError, Deps, TriageRunner, set_default_runner
+from .hunt.link import HuntLinker
+from .hunt.runtime import maybe_start
+from .hunt.settings import HuntSettings
+from .hunt.store import PgHuntStore
 from .llm import LLMClient, RouterLLM, StubLLM
 from .metrics import REQUEUE_FAILURES, SentinelMetrics
 from .trace import assemble_trace
@@ -84,6 +88,8 @@ class Runtime:
     runner: TriageRunner | None = None
     cache: IncidentCache | None = None
     repo: PgRepo | None = None
+    hunt_store: PgHuntStore | None = None
+    hunt_settings: HuntSettings | None = None
 
 
 rt = Runtime()
@@ -166,6 +172,14 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
                 if inc and inc["status"] == "open":
                     queue.put_nowait(i)
 
+        hunt_settings = HuntSettings.from_env()
+        hunt_store = PgHuntStore(
+            repo.pool,
+            owner_dsn=os.environ.get("FL_DATABASE_OWNER_URL") or None,
+            app_role=os.environ.get("FL_SENTINEL_DB_ROLE") or None,
+        )
+        await hunt_store.init()  # tables exist even while hunting is off, so verdict linking never fails
+        rt.hunt_store, rt.hunt_settings = hunt_store, hunt_settings
         consumer = Consumer(
             client,
             repo,
@@ -173,6 +187,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             Sentinel(cache, official_domains=official_domains()),
             CONSUMER,
             on_incidents,
+            hunt=HuntLinker(hunt_store),
         )
         await consumer.setup()
         try:
@@ -185,6 +200,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             asyncio.create_task(triage_loop(consumer, runner, queue)),
             asyncio.create_task(retry_stuck_loop(runner)),
         ]
+        hunt_task = await maybe_start(stack, hunt_settings, hunt_store, client)  # None unless FL_HUNT_ENABLED
+        if hunt_task is not None:
+            tasks.append(hunt_task)
         try:
             yield
         finally:

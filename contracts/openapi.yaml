@@ -443,11 +443,13 @@ components:
             - api
             - mcp
             - voice
+            - hunt
             type: string
           - type: 'null'
           description: 'Optional: which client asks (web, extension, api, mcp, voice). Metadata for History,
             metrics and the Sentinel; it never changes the verdict. A repeated identical input answers
-            from the cache with the first channel.'
+            from the cache with the first channel. `hunt` is reserved for the Sentinel hunt mode: accepted
+            only from a key with the `hunt` scope (else 422).'
           title: Channel
         text:
           description: Message text (max 8 KB UTF-8).
@@ -894,11 +896,13 @@ components:
             - api
             - mcp
             - voice
+            - hunt
             type: string
           - type: 'null'
           description: 'Optional: which client asks (web, extension, api, mcp, voice). Metadata for History,
             metrics and the Sentinel; it never changes the verdict. A repeated identical input answers
-            from the cache with the first channel.'
+            from the cache with the first channel. `hunt` is reserved for the Sentinel hunt mode: accepted
+            only from a key with the `hunt` scope (else 422).'
           title: Channel
         url:
           description: URL to check (max 4 KB). Never fetched by the API.
@@ -1090,6 +1094,7 @@ components:
             - api
             - mcp
             - voice
+            - hunt
             type: string
           - type: 'null'
           description: Which client asked for the check; null when it did not say.
@@ -1352,8 +1357,8 @@ components:
       type: object
   securitySchemes:
     APIKeyHeader:
-      description: 'Integration key (scopes: check, read, operator, intel). `Authorization: Bearer <key>`
-        also works.'
+      description: 'Integration key (scopes: check, read, operator, intel, hunt). `Authorization: Bearer
+        <key>` also ok.'
       in: header
       name: X-API-Key
       type: apiKey

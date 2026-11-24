@@ -117,7 +117,7 @@ def build_doc(
         "latency_ms": 5,
         "created_at": datetime.now(UTC).isoformat(),
     }
-    if channel in {"web", "extension", "api", "mcp", "voice"}:
+    if channel in {"web", "extension", "api", "mcp", "voice", "hunt"}:
         doc["channel"] = channel
     if verdict == "no_warning_signs" and not doc["degraded"]:
         doc["actions"]["caution"] = {

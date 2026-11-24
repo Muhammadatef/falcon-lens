@@ -266,7 +266,7 @@ def test_hunt_yaml_defaults() -> None:
     assert s["fixture"].default_enabled is False
     for k in ("search", "ads", "maps"):
         assert s[k].default_enabled is False
-    assert s["permutation"].default_enabled and s["ct_lookup"].default_enabled
+    assert s["permutation"].default_enabled and not s["ct_lookup"].default_enabled
 
 
 def test_migration_declares_tables() -> None:
