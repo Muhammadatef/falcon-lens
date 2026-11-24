@@ -2,7 +2,7 @@
 # Every SPOKEN line of the Hey Falcon assistant. ar_ae = Emirati spoken Arabic (screen text stays formal MSA).
 # Every spoken output is a concatenation of the clips below; ids are stable: <lang>.<key>.
 version: 1
-clip_count: 494
+clip_count: 622
 languages: [ar_ae, en]
 ar_ae:
   "wake.ack": "هلا، سامعك."
@@ -50,7 +50,71 @@ ar_ae:
   "investigator.address": "أشوف عنوان الموقع، يمكن فيه تشابه مخادع."
   "investigator.page": "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي."
   "investigator.ai_second_look_local": "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي."
-  "investigator.ai_second_look_cloud": "نظرة ثانية بالذكاء الاصطناعي، بموديل كلود."
+  "investigator.ai_second_look_cloud": "نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي."
+  "find.none": "ما لقينا شي ملفت في هذه الطبقة."
+  "investigator.wording": "أقرا صياغة المسج، وأدوّر على الاستعجال والضغط."
+  "find.listed": "الرابط مسجّل في قائمة نصب معروفة."
+  "find.combosquat": "العنوان يضيف كلمة لاسم جهة معروفة."
+  "find.typosquat": "العنوان قريب مرة من اسم جهة معروفة، بس حروفه مغيّرة."
+  "find.homograph": "العنوان فيه حروف تشبه غيرها عشان تخدعك."
+  "find.hidden_chars": "العنوان فيه رموز مخفية."
+  "find.ip_host": "العنوان أرقام بدل اسم موقع."
+  "find.free_host": "الموقع على استضافة مجانية أو نفق مؤقت."
+  "find.brand_in_path": "اسم جهة معروفة محطوط في العنوان، والموقع مو لها."
+  "find.userinfo": "العنوان فيه حيلة تخفي الوجهة الحقيقية."
+  "find.open_redirect": "الرابط يحوّلك لموقع ثاني."
+  "find.redirects": "الرابط يمر بعدة تحويلات."
+  "find.shortener": "الرابط مختصر ويخفي وجهته."
+  "find.cred_form": "الصفحة تطلب كلمة السر والرمز."
+  "find.cross_post": "اللي تكتبه يروح لخادم ثاني."
+  "find.cloaking": "الصفحة تعرض شي مختلف لأدوات الفحص."
+  "find.hotlinked": "الصفحة تسحب صور جهة معروفة من موقعها الأصلي."
+  "find.favicon": "أيقونة الموقع منسوخة من جهة معروفة."
+  "find.brand_url_mismatch": "الرابط مو من الجهة اللي تذكرها الرسالة."
+  "find.scam_intent": "الرسالة تطلب رمز أو فلوس بأسلوب النصابين."
+  "find.script_match": "الرسالة تشبه نص نصب معروف."
+  "find.urgency": "الرسالة تستعجلك."
+  "find.secrecy": "الرسالة تطلب منك تخبي الموضوع."
+  "find.otp_request": "الرسالة تطلب رمز التحقق."
+  "find.remote_access": "الرسالة تطلب تحميل برنامج أو مشاركة شاشتك."
+  "find.payment_request": "الرسالة تطلب دفع أو تحويل فلوس."
+  "find.authority": "الرسالة تدّعي إنها من جهة رسمية."
+  "find.prize": "الرسالة توعدك بجايزة."
+  "find.job": "الرسالة تعرض وظيفة مشبوهة."
+  "find.investment": "الرسالة تعرض ربح سريع."
+  "find.delivery_fee": "الرسالة تطلب رسوم توصيل."
+  "find.fine": "الرسالة تتكلم عن مخالفة وتطلب دفع."
+  "find.email_auth": "الإيميل فشل في فحص هوية المرسل."
+  "find.display_spoof": "اسم المرسل يتظاهر بجهة معروفة."
+  "find.reply_to": "الرد يروح لعنوان غير عنوان المرسل."
+  "find.link_text": "الرابط المكتوب غير الرابط الحقيقي."
+  "find.qr_link": "في الصورة رمز كيو آر يودّي لرابط."
+  "find.incomplete": "ما قدرنا نفتح الصفحة كامل."
+  "find.age.0": "النطاق مسجّل اليوم."
+  "find.age.1": "النطاق مسجّل قبل يوم واحد."
+  "find.age.2": "النطاق مسجّل قبل يومين."
+  "find.age.lead": "النطاق مسجّل قبل"
+  "find.age.days": "يوم."
+  "find.cert.0": "شهادة الموقع صدرت اليوم."
+  "find.cert.1": "شهادة الموقع صدرت قبل يوم واحد."
+  "find.cert.2": "شهادة الموقع صدرت قبل يومين."
+  "find.cert.lead": "شهادة الموقع صدرت قبل"
+  "find.cert.days": "يوم."
+  "brand.falcon_demo_bank": "بنك الصقر التجريبي"
+  "brand.emirates_post": "بريد الإمارات"
+  "brand.etisalat_by_eand": "اتصالات"
+  "brand.salik": "سالك"
+  "brand.dewa": "كهرباء ومياه دبي"
+  "brand.fab": "بنك أبوظبي الأول"
+  "brand.adcb": "بنك أبوظبي التجاري"
+  "brand.emirates_nbd": "بنك الإمارات دبي الوطني"
+  "brand.mashreq": "بنك المشرق"
+  "brand.rakbank": "بنك رأس الخيمة الوطني"
+  "brand.uae_pass": "الهوية الرقمية"
+  "find.brand.a": "تدّعي إنها"
+  "find.brand.b": "والنطاق مو لهم."
+  "find.brand.generic": "تدّعي إنها جهة معروفة والنطاق مو لهم."
+  "sentinel.campaign": "والحملة تنتحل اسم"
   "investigator.rules_only": "القواعد حكمت، من غير ذكاء اصطناعي."
   "investigator.arbiter_result.dangerous": "الحكم النهائي: المسج خطر!"
   "investigator.arbiter_result.suspicious": "الحكم النهائي: المسج مشكوك فيه."
@@ -298,7 +362,71 @@ en:
   "investigator.address": "Checking the web address for look-alike tricks."
   "investigator.page": "Opening the page in our isolated browser. Nothing is typed."
   "investigator.ai_second_look_local": "AI second look, with our local model."
-  "investigator.ai_second_look_cloud": "AI second look, with Claude."
+  "investigator.ai_second_look_cloud": "AI second look, with a cloud language model."
+  "find.none": "Nothing notable at this layer."
+  "investigator.wording": "Reading the wording for urgency and pressure."
+  "find.listed": "The link is on a known scam list."
+  "find.combosquat": "The address adds a word to a well-known name."
+  "find.typosquat": "The address is a near-copy of a well-known name."
+  "find.homograph": "The address uses look-alike letters to fool you."
+  "find.hidden_chars": "The address contains hidden characters."
+  "find.ip_host": "The address is a number instead of a site name."
+  "find.free_host": "The site sits on free hosting or a temporary tunnel."
+  "find.brand_in_path": "A well-known name is placed in the address, but the site is not theirs."
+  "find.userinfo": "The address uses a trick to hide where it really goes."
+  "find.open_redirect": "The link bounces you to another site."
+  "find.redirects": "The link goes through several redirects."
+  "find.shortener": "The link is shortened and hides its destination."
+  "find.cred_form": "The page asks for a password and a code."
+  "find.cross_post": "What you type goes to a different server."
+  "find.cloaking": "The page shows something different to scanners."
+  "find.hotlinked": "The page pulls a well-known brand's images from its real site."
+  "find.favicon": "The site icon is copied from a well-known brand."
+  "find.brand_url_mismatch": "The link is not from the organisation the message names."
+  "find.scam_intent": "The message asks for a code or money the way scammers do."
+  "find.script_match": "The message matches a known scam script."
+  "find.urgency": "The message rushes you."
+  "find.secrecy": "The message asks you to keep it secret."
+  "find.otp_request": "The message asks for your verification code."
+  "find.remote_access": "The message asks you to install an app or share your screen."
+  "find.payment_request": "The message asks you to pay or transfer money."
+  "find.authority": "The message claims to come from an official body."
+  "find.prize": "The message promises you a prize."
+  "find.job": "The message offers a dubious job."
+  "find.investment": "The message offers fast profit."
+  "find.delivery_fee": "The message asks for a delivery fee."
+  "find.fine": "The message talks about a fine and asks for payment."
+  "find.email_auth": "The email failed the sender identity check."
+  "find.display_spoof": "The sender name pretends to be a well-known body."
+  "find.reply_to": "Replies go to a different address than the sender's."
+  "find.link_text": "The link shown is not the real link."
+  "find.qr_link": "The image has a QR code that leads to a link."
+  "find.incomplete": "We couldn't open the page fully."
+  "find.age.0": "The domain was registered today."
+  "find.age.1": "The domain was registered one day ago."
+  "find.age.2": "The domain was registered two days ago."
+  "find.age.lead": "The domain was registered"
+  "find.age.days": "days ago."
+  "find.cert.0": "The site certificate was issued today."
+  "find.cert.1": "The site certificate was issued one day ago."
+  "find.cert.2": "The site certificate was issued two days ago."
+  "find.cert.lead": "The site certificate was issued"
+  "find.cert.days": "days ago."
+  "brand.falcon_demo_bank": "Falcon Demo Bank"
+  "brand.emirates_post": "Emirates Post"
+  "brand.etisalat_by_eand": "Etisalat"
+  "brand.salik": "Salik"
+  "brand.dewa": "Dubai Electricity and Water"
+  "brand.fab": "First Abu Dhabi Bank"
+  "brand.adcb": "Abu Dhabi Commercial Bank"
+  "brand.emirates_nbd": "Emirates NBD"
+  "brand.mashreq": "Mashreq"
+  "brand.rakbank": "RAKBANK"
+  "brand.uae_pass": "UAE PASS"
+  "find.brand.a": "It claims to be"
+  "find.brand.b": "but the domain is not theirs."
+  "find.brand.generic": "It claims to be a well-known body, but the domain is not theirs."
+  "sentinel.campaign": "The campaign imitates"
   "investigator.rules_only": "The rules decided, without AI."
   "investigator.arbiter_result.dangerous": "The arbiter's decision: dangerous."
   "investigator.arbiter_result.suspicious": "The arbiter's decision: suspicious."
@@ -546,7 +674,71 @@ clips:
   - {id: "ar_ae.investigator.address", lang: ar_ae, text: "أشوف عنوان الموقع، يمكن فيه تشابه مخادع."}
   - {id: "ar_ae.investigator.page", lang: ar_ae, text: "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي."}
   - {id: "ar_ae.investigator.ai_second_look_local", lang: ar_ae, text: "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي."}
-  - {id: "ar_ae.investigator.ai_second_look_cloud", lang: ar_ae, text: "نظرة ثانية بالذكاء الاصطناعي، بموديل كلود."}
+  - {id: "ar_ae.investigator.ai_second_look_cloud", lang: ar_ae, text: "نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي."}
+  - {id: "ar_ae.find.none", lang: ar_ae, text: "ما لقينا شي ملفت في هذه الطبقة."}
+  - {id: "ar_ae.investigator.wording", lang: ar_ae, text: "أقرا صياغة المسج، وأدوّر على الاستعجال والضغط."}
+  - {id: "ar_ae.find.listed", lang: ar_ae, text: "الرابط مسجّل في قائمة نصب معروفة."}
+  - {id: "ar_ae.find.combosquat", lang: ar_ae, text: "العنوان يضيف كلمة لاسم جهة معروفة."}
+  - {id: "ar_ae.find.typosquat", lang: ar_ae, text: "العنوان قريب مرة من اسم جهة معروفة، بس حروفه مغيّرة."}
+  - {id: "ar_ae.find.homograph", lang: ar_ae, text: "العنوان فيه حروف تشبه غيرها عشان تخدعك."}
+  - {id: "ar_ae.find.hidden_chars", lang: ar_ae, text: "العنوان فيه رموز مخفية."}
+  - {id: "ar_ae.find.ip_host", lang: ar_ae, text: "العنوان أرقام بدل اسم موقع."}
+  - {id: "ar_ae.find.free_host", lang: ar_ae, text: "الموقع على استضافة مجانية أو نفق مؤقت."}
+  - {id: "ar_ae.find.brand_in_path", lang: ar_ae, text: "اسم جهة معروفة محطوط في العنوان، والموقع مو لها."}
+  - {id: "ar_ae.find.userinfo", lang: ar_ae, text: "العنوان فيه حيلة تخفي الوجهة الحقيقية."}
+  - {id: "ar_ae.find.open_redirect", lang: ar_ae, text: "الرابط يحوّلك لموقع ثاني."}
+  - {id: "ar_ae.find.redirects", lang: ar_ae, text: "الرابط يمر بعدة تحويلات."}
+  - {id: "ar_ae.find.shortener", lang: ar_ae, text: "الرابط مختصر ويخفي وجهته."}
+  - {id: "ar_ae.find.cred_form", lang: ar_ae, text: "الصفحة تطلب كلمة السر والرمز."}
+  - {id: "ar_ae.find.cross_post", lang: ar_ae, text: "اللي تكتبه يروح لخادم ثاني."}
+  - {id: "ar_ae.find.cloaking", lang: ar_ae, text: "الصفحة تعرض شي مختلف لأدوات الفحص."}
+  - {id: "ar_ae.find.hotlinked", lang: ar_ae, text: "الصفحة تسحب صور جهة معروفة من موقعها الأصلي."}
+  - {id: "ar_ae.find.favicon", lang: ar_ae, text: "أيقونة الموقع منسوخة من جهة معروفة."}
+  - {id: "ar_ae.find.brand_url_mismatch", lang: ar_ae, text: "الرابط مو من الجهة اللي تذكرها الرسالة."}
+  - {id: "ar_ae.find.scam_intent", lang: ar_ae, text: "الرسالة تطلب رمز أو فلوس بأسلوب النصابين."}
+  - {id: "ar_ae.find.script_match", lang: ar_ae, text: "الرسالة تشبه نص نصب معروف."}
+  - {id: "ar_ae.find.urgency", lang: ar_ae, text: "الرسالة تستعجلك."}
+  - {id: "ar_ae.find.secrecy", lang: ar_ae, text: "الرسالة تطلب منك تخبي الموضوع."}
+  - {id: "ar_ae.find.otp_request", lang: ar_ae, text: "الرسالة تطلب رمز التحقق."}
+  - {id: "ar_ae.find.remote_access", lang: ar_ae, text: "الرسالة تطلب تحميل برنامج أو مشاركة شاشتك."}
+  - {id: "ar_ae.find.payment_request", lang: ar_ae, text: "الرسالة تطلب دفع أو تحويل فلوس."}
+  - {id: "ar_ae.find.authority", lang: ar_ae, text: "الرسالة تدّعي إنها من جهة رسمية."}
+  - {id: "ar_ae.find.prize", lang: ar_ae, text: "الرسالة توعدك بجايزة."}
+  - {id: "ar_ae.find.job", lang: ar_ae, text: "الرسالة تعرض وظيفة مشبوهة."}
+  - {id: "ar_ae.find.investment", lang: ar_ae, text: "الرسالة تعرض ربح سريع."}
+  - {id: "ar_ae.find.delivery_fee", lang: ar_ae, text: "الرسالة تطلب رسوم توصيل."}
+  - {id: "ar_ae.find.fine", lang: ar_ae, text: "الرسالة تتكلم عن مخالفة وتطلب دفع."}
+  - {id: "ar_ae.find.email_auth", lang: ar_ae, text: "الإيميل فشل في فحص هوية المرسل."}
+  - {id: "ar_ae.find.display_spoof", lang: ar_ae, text: "اسم المرسل يتظاهر بجهة معروفة."}
+  - {id: "ar_ae.find.reply_to", lang: ar_ae, text: "الرد يروح لعنوان غير عنوان المرسل."}
+  - {id: "ar_ae.find.link_text", lang: ar_ae, text: "الرابط المكتوب غير الرابط الحقيقي."}
+  - {id: "ar_ae.find.qr_link", lang: ar_ae, text: "في الصورة رمز كيو آر يودّي لرابط."}
+  - {id: "ar_ae.find.incomplete", lang: ar_ae, text: "ما قدرنا نفتح الصفحة كامل."}
+  - {id: "ar_ae.find.age.0", lang: ar_ae, text: "النطاق مسجّل اليوم."}
+  - {id: "ar_ae.find.age.1", lang: ar_ae, text: "النطاق مسجّل قبل يوم واحد."}
+  - {id: "ar_ae.find.age.2", lang: ar_ae, text: "النطاق مسجّل قبل يومين."}
+  - {id: "ar_ae.find.age.lead", lang: ar_ae, text: "النطاق مسجّل قبل"}
+  - {id: "ar_ae.find.age.days", lang: ar_ae, text: "يوم."}
+  - {id: "ar_ae.find.cert.0", lang: ar_ae, text: "شهادة الموقع صدرت اليوم."}
+  - {id: "ar_ae.find.cert.1", lang: ar_ae, text: "شهادة الموقع صدرت قبل يوم واحد."}
+  - {id: "ar_ae.find.cert.2", lang: ar_ae, text: "شهادة الموقع صدرت قبل يومين."}
+  - {id: "ar_ae.find.cert.lead", lang: ar_ae, text: "شهادة الموقع صدرت قبل"}
+  - {id: "ar_ae.find.cert.days", lang: ar_ae, text: "يوم."}
+  - {id: "ar_ae.brand.falcon_demo_bank", lang: ar_ae, text: "بنك الصقر التجريبي"}
+  - {id: "ar_ae.brand.emirates_post", lang: ar_ae, text: "بريد الإمارات"}
+  - {id: "ar_ae.brand.etisalat_by_eand", lang: ar_ae, text: "اتصالات"}
+  - {id: "ar_ae.brand.salik", lang: ar_ae, text: "سالك"}
+  - {id: "ar_ae.brand.dewa", lang: ar_ae, text: "كهرباء ومياه دبي"}
+  - {id: "ar_ae.brand.fab", lang: ar_ae, text: "بنك أبوظبي الأول"}
+  - {id: "ar_ae.brand.adcb", lang: ar_ae, text: "بنك أبوظبي التجاري"}
+  - {id: "ar_ae.brand.emirates_nbd", lang: ar_ae, text: "بنك الإمارات دبي الوطني"}
+  - {id: "ar_ae.brand.mashreq", lang: ar_ae, text: "بنك المشرق"}
+  - {id: "ar_ae.brand.rakbank", lang: ar_ae, text: "بنك رأس الخيمة الوطني"}
+  - {id: "ar_ae.brand.uae_pass", lang: ar_ae, text: "الهوية الرقمية"}
+  - {id: "ar_ae.find.brand.a", lang: ar_ae, text: "تدّعي إنها"}
+  - {id: "ar_ae.find.brand.b", lang: ar_ae, text: "والنطاق مو لهم."}
+  - {id: "ar_ae.find.brand.generic", lang: ar_ae, text: "تدّعي إنها جهة معروفة والنطاق مو لهم."}
+  - {id: "ar_ae.sentinel.campaign", lang: ar_ae, text: "والحملة تنتحل اسم"}
   - {id: "ar_ae.investigator.rules_only", lang: ar_ae, text: "القواعد حكمت، من غير ذكاء اصطناعي."}
   - {id: "ar_ae.investigator.arbiter_result.dangerous", lang: ar_ae, text: "الحكم النهائي: المسج خطر!"}
   - {id: "ar_ae.investigator.arbiter_result.suspicious", lang: ar_ae, text: "الحكم النهائي: المسج مشكوك فيه."}
@@ -793,7 +985,71 @@ clips:
   - {id: "en.investigator.address", lang: en, text: "Checking the web address for look-alike tricks."}
   - {id: "en.investigator.page", lang: en, text: "Opening the page in our isolated browser. Nothing is typed."}
   - {id: "en.investigator.ai_second_look_local", lang: en, text: "AI second look, with our local model."}
-  - {id: "en.investigator.ai_second_look_cloud", lang: en, text: "AI second look, with Claude."}
+  - {id: "en.investigator.ai_second_look_cloud", lang: en, text: "AI second look, with a cloud language model."}
+  - {id: "en.find.none", lang: en, text: "Nothing notable at this layer."}
+  - {id: "en.investigator.wording", lang: en, text: "Reading the wording for urgency and pressure."}
+  - {id: "en.find.listed", lang: en, text: "The link is on a known scam list."}
+  - {id: "en.find.combosquat", lang: en, text: "The address adds a word to a well-known name."}
+  - {id: "en.find.typosquat", lang: en, text: "The address is a near-copy of a well-known name."}
+  - {id: "en.find.homograph", lang: en, text: "The address uses look-alike letters to fool you."}
+  - {id: "en.find.hidden_chars", lang: en, text: "The address contains hidden characters."}
+  - {id: "en.find.ip_host", lang: en, text: "The address is a number instead of a site name."}
+  - {id: "en.find.free_host", lang: en, text: "The site sits on free hosting or a temporary tunnel."}
+  - {id: "en.find.brand_in_path", lang: en, text: "A well-known name is placed in the address, but the site is not theirs."}
+  - {id: "en.find.userinfo", lang: en, text: "The address uses a trick to hide where it really goes."}
+  - {id: "en.find.open_redirect", lang: en, text: "The link bounces you to another site."}
+  - {id: "en.find.redirects", lang: en, text: "The link goes through several redirects."}
+  - {id: "en.find.shortener", lang: en, text: "The link is shortened and hides its destination."}
+  - {id: "en.find.cred_form", lang: en, text: "The page asks for a password and a code."}
+  - {id: "en.find.cross_post", lang: en, text: "What you type goes to a different server."}
+  - {id: "en.find.cloaking", lang: en, text: "The page shows something different to scanners."}
+  - {id: "en.find.hotlinked", lang: en, text: "The page pulls a well-known brand's images from its real site."}
+  - {id: "en.find.favicon", lang: en, text: "The site icon is copied from a well-known brand."}
+  - {id: "en.find.brand_url_mismatch", lang: en, text: "The link is not from the organisation the message names."}
+  - {id: "en.find.scam_intent", lang: en, text: "The message asks for a code or money the way scammers do."}
+  - {id: "en.find.script_match", lang: en, text: "The message matches a known scam script."}
+  - {id: "en.find.urgency", lang: en, text: "The message rushes you."}
+  - {id: "en.find.secrecy", lang: en, text: "The message asks you to keep it secret."}
+  - {id: "en.find.otp_request", lang: en, text: "The message asks for your verification code."}
+  - {id: "en.find.remote_access", lang: en, text: "The message asks you to install an app or share your screen."}
+  - {id: "en.find.payment_request", lang: en, text: "The message asks you to pay or transfer money."}
+  - {id: "en.find.authority", lang: en, text: "The message claims to come from an official body."}
+  - {id: "en.find.prize", lang: en, text: "The message promises you a prize."}
+  - {id: "en.find.job", lang: en, text: "The message offers a dubious job."}
+  - {id: "en.find.investment", lang: en, text: "The message offers fast profit."}
+  - {id: "en.find.delivery_fee", lang: en, text: "The message asks for a delivery fee."}
+  - {id: "en.find.fine", lang: en, text: "The message talks about a fine and asks for payment."}
+  - {id: "en.find.email_auth", lang: en, text: "The email failed the sender identity check."}
+  - {id: "en.find.display_spoof", lang: en, text: "The sender name pretends to be a well-known body."}
+  - {id: "en.find.reply_to", lang: en, text: "Replies go to a different address than the sender's."}
+  - {id: "en.find.link_text", lang: en, text: "The link shown is not the real link."}
+  - {id: "en.find.qr_link", lang: en, text: "The image has a QR code that leads to a link."}
+  - {id: "en.find.incomplete", lang: en, text: "We couldn't open the page fully."}
+  - {id: "en.find.age.0", lang: en, text: "The domain was registered today."}
+  - {id: "en.find.age.1", lang: en, text: "The domain was registered one day ago."}
+  - {id: "en.find.age.2", lang: en, text: "The domain was registered two days ago."}
+  - {id: "en.find.age.lead", lang: en, text: "The domain was registered"}
+  - {id: "en.find.age.days", lang: en, text: "days ago."}
+  - {id: "en.find.cert.0", lang: en, text: "The site certificate was issued today."}
+  - {id: "en.find.cert.1", lang: en, text: "The site certificate was issued one day ago."}
+  - {id: "en.find.cert.2", lang: en, text: "The site certificate was issued two days ago."}
+  - {id: "en.find.cert.lead", lang: en, text: "The site certificate was issued"}
+  - {id: "en.find.cert.days", lang: en, text: "days ago."}
+  - {id: "en.brand.falcon_demo_bank", lang: en, text: "Falcon Demo Bank"}
+  - {id: "en.brand.emirates_post", lang: en, text: "Emirates Post"}
+  - {id: "en.brand.etisalat_by_eand", lang: en, text: "Etisalat"}
+  - {id: "en.brand.salik", lang: en, text: "Salik"}
+  - {id: "en.brand.dewa", lang: en, text: "Dubai Electricity and Water"}
+  - {id: "en.brand.fab", lang: en, text: "First Abu Dhabi Bank"}
+  - {id: "en.brand.adcb", lang: en, text: "Abu Dhabi Commercial Bank"}
+  - {id: "en.brand.emirates_nbd", lang: en, text: "Emirates NBD"}
+  - {id: "en.brand.mashreq", lang: en, text: "Mashreq"}
+  - {id: "en.brand.rakbank", lang: en, text: "RAKBANK"}
+  - {id: "en.brand.uae_pass", lang: en, text: "UAE PASS"}
+  - {id: "en.find.brand.a", lang: en, text: "It claims to be"}
+  - {id: "en.find.brand.b", lang: en, text: "but the domain is not theirs."}
+  - {id: "en.find.brand.generic", lang: en, text: "It claims to be a well-known body, but the domain is not theirs."}
+  - {id: "en.sentinel.campaign", lang: en, text: "The campaign imitates"}
   - {id: "en.investigator.rules_only", lang: en, text: "The rules decided, without AI."}
   - {id: "en.investigator.arbiter_result.dangerous", lang: en, text: "The arbiter's decision: dangerous."}
   - {id: "en.investigator.arbiter_result.suspicious", lang: en, text: "The arbiter's decision: suspicious."}

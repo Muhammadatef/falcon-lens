@@ -32,7 +32,7 @@ import {
   type SentinelStep,
   type VoiceReply,
 } from "@/lib/voice";
-import { checkingKeys, finalKeys, findingKeys, foundKeys, spoken, stepKeys } from "@/lib/voice-speech";
+import { campaignBrand, checkingKeys, finalKeys, findingGroups, foundKeys, spoken, stepGroups, stepKeys } from "@/lib/voice-speech";
 import { ACK_KEY, SCRIPT, SFX_KEYS, clipId, isSfx, messageResultKeys, offTopicKey, toVoiceLang, type ResultTone } from "@/lib/voice-script";
 import { createVoicePlayer, type VoiceLang, type VoicePlayer } from "@/lib/voice-player";
 import type { SentinelFinding } from "@/lib/voice-script";
@@ -389,18 +389,14 @@ export function VoiceAssistant() {
             (setTiers(tierRows(v, item.kind, lang, false)), true) &&
             newProgressSteps(v, item.kind, seen).forEach((st) => {
               if (st === "ai") {
-                const ai = aiStepText(lang, v);
-                if (!ai) return;
+                if (!aiStepText(lang, v)) return;
                 aiShown = true;
-                const aiLine = stepKeys(st, v);
-                addStep(aiLine.length ? spoken(lang, aiLine) : ai, lang);
-              } else {
-                const own = stepKeys(st, v);
-                // A step with no spoken line is not listed: the written steps are exactly what Falcon says.
-                if (own.length) addStep(spoken(lang, own), lang);
               }
-              const line = stepKeys(st, v);
-              if (line.length) enqueue({ text: spoken(lang, line), keys: line, lang, kind: "msg" }, token);
+              // Each line is one spoken clip sequence AND one written step: the tier intro, then what this check found there.
+              for (const keys of stepGroups(st, v)) {
+                addStep(spoken(lang, keys), lang);
+                enqueue({ text: spoken(lang, keys), keys, lang, kind: "msg" }, token);
+              }
             }),
           alive,
           ctl.signal,
@@ -446,10 +442,10 @@ export function VoiceAssistant() {
           const inc = result.incident;
           setIncident(inc);
           // Screen and speech say exactly what the incident shows: nothing more.
-          const facts: SentinelFinding = { linked: inc.linked, linkStep: result.steps.includes("linked"), summary: result.steps.includes("summary"), drafted: result.steps.includes("draft"), awaiting: result.steps.includes("awaiting_approval") };
-          for (const key of findingKeys(facts)) {
-            addStep(spoken(lang, [key]), lang);
-            enqueue({ text: spoken(lang, [key]), keys: [key], lang, kind: "final" }, token);
+          const facts: SentinelFinding = { linked: inc.linked, linkStep: result.steps.includes("linked"), summary: result.steps.includes("summary"), drafted: result.steps.includes("draft"), awaiting: result.steps.includes("awaiting_approval"), brand: campaignBrand(outcomes) };
+          for (const keys of findingGroups(facts)) {
+            addStep(spoken(lang, keys), lang);
+            enqueue({ text: spoken(lang, keys), keys, lang, kind: "final" }, token);
           }
         } else if (result.kind === "timeout") {
           sentinel = "watching";

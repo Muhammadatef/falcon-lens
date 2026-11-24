@@ -121,6 +121,79 @@ export const faqKey = (name: string): string => `faq.${name}`;
 /** The FAQ answer keys the API may return (validated before anything is played). */
 export const FAQ_KEYS: readonly string[] = FAQ.map(([n]) => faqKey(n));
 
+
+/**
+ * What THIS check found: one short spoken line per evidence code (the real signal names from falcon_core). A code that
+ * is not in this table is never spoken (no raw or untrusted text ever reaches speech). Several codes may share a line.
+ */
+type Finding = readonly [codes: readonly string[], key: string, ar_ae: string, en: string];
+const FINDINGS: readonly Finding[] = [
+  [["rep.openphish", "rep.urlhaus", "rep.gsb", "rep.feed_hit"], "find.listed", "الرابط مسجّل في قائمة نصب معروفة.", "The link is on a known scam list."],
+  [["url.combosquat"], "find.combosquat", "العنوان يضيف كلمة لاسم جهة معروفة.", "The address adds a word to a well-known name."],
+  [["url.typosquat"], "find.typosquat", "العنوان قريب مرة من اسم جهة معروفة، بس حروفه مغيّرة.", "The address is a near-copy of a well-known name."],
+  [["url.homograph"], "find.homograph", "العنوان فيه حروف تشبه غيرها عشان تخدعك.", "The address uses look-alike letters to fool you."],
+  [["url.bidi_or_zero_width"], "find.hidden_chars", "العنوان فيه رموز مخفية.", "The address contains hidden characters."],
+  [["url.raw_ip_host"], "find.ip_host", "العنوان أرقام بدل اسم موقع.", "The address is a number instead of a site name."],
+  [["url.free_host_or_tunnel"], "find.free_host", "الموقع على استضافة مجانية أو نفق مؤقت.", "The site sits on free hosting or a temporary tunnel."],
+  [["url.brand_in_subdomain_or_path"], "find.brand_in_path", "اسم جهة معروفة محطوط في العنوان، والموقع مو لها.", "A well-known name is placed in the address, but the site is not theirs."],
+  [["url.userinfo_trick"], "find.userinfo", "العنوان فيه حيلة تخفي الوجهة الحقيقية.", "The address uses a trick to hide where it really goes."],
+  [["url.open_redirect_abuse"], "find.open_redirect", "الرابط يحوّلك لموقع ثاني.", "The link bounces you to another site."],
+  [["url.redirect_chain"], "find.redirects", "الرابط يمر بعدة تحويلات.", "The link goes through several redirects."],
+  [["url.shortener"], "find.shortener", "الرابط مختصر ويخفي وجهته.", "The link is shortened and hides its destination."],
+  [["page.cred_form"], "find.cred_form", "الصفحة تطلب كلمة السر والرمز.", "The page asks for a password and a code."],
+  [["page.cross_origin_post"], "find.cross_post", "اللي تكتبه يروح لخادم ثاني.", "What you type goes to a different server."],
+  [["page.cloaking"], "find.cloaking", "الصفحة تعرض شي مختلف لأدوات الفحص.", "The page shows something different to scanners."],
+  [["page.hotlinked_brand_assets"], "find.hotlinked", "الصفحة تسحب صور جهة معروفة من موقعها الأصلي.", "The page pulls a well-known brand's images from its real site."],
+  [["visual.favicon_match_brand"], "find.favicon", "أيقونة الموقع منسوخة من جهة معروفة.", "The site icon is copied from a well-known brand."],
+  [["message.brand_url_mismatch"], "find.brand_url_mismatch", "الرابط مو من الجهة اللي تذكرها الرسالة.", "The link is not from the organisation the message names."],
+  [["message.scam_intent"], "find.scam_intent", "الرسالة تطلب رمز أو فلوس بأسلوب النصابين.", "The message asks for a code or money the way scammers do."],
+  [["message.script_match"], "find.script_match", "الرسالة تشبه نص نصب معروف.", "The message matches a known scam script."],
+  [["message.rule.urgency"], "find.urgency", "الرسالة تستعجلك.", "The message rushes you."],
+  [["message.rule.secrecy"], "find.secrecy", "الرسالة تطلب منك تخبي الموضوع.", "The message asks you to keep it secret."],
+  [["message.rule.otp_request"], "find.otp_request", "الرسالة تطلب رمز التحقق.", "The message asks for your verification code."],
+  [["message.rule.remote_access"], "find.remote_access", "الرسالة تطلب تحميل برنامج أو مشاركة شاشتك.", "The message asks you to install an app or share your screen."],
+  [["message.rule.payment"], "find.payment_request", "الرسالة تطلب دفع أو تحويل فلوس.", "The message asks you to pay or transfer money."],
+  [["message.rule.authority"], "find.authority", "الرسالة تدّعي إنها من جهة رسمية.", "The message claims to come from an official body."],
+  [["message.rule.prize"], "find.prize", "الرسالة توعدك بجايزة.", "The message promises you a prize."],
+  [["message.rule.job"], "find.job", "الرسالة تعرض وظيفة مشبوهة.", "The message offers a dubious job."],
+  [["message.rule.investment"], "find.investment", "الرسالة تعرض ربح سريع.", "The message offers fast profit."],
+  [["message.rule.delivery_fee"], "find.delivery_fee", "الرسالة تطلب رسوم توصيل.", "The message asks for a delivery fee."],
+  [["message.rule.fine"], "find.fine", "الرسالة تتكلم عن مخالفة وتطلب دفع.", "The message talks about a fine and asks for payment."],
+  [["email.auth_fail"], "find.email_auth", "الإيميل فشل في فحص هوية المرسل.", "The email failed the sender identity check."],
+  [["email.display_name_impersonation"], "find.display_spoof", "اسم المرسل يتظاهر بجهة معروفة.", "The sender name pretends to be a well-known body."],
+  [["email.reply_to_mismatch"], "find.reply_to", "الرد يروح لعنوان غير عنوان المرسل.", "Replies go to a different address than the sender's."],
+  [["email.link_text_mismatch"], "find.link_text", "الرابط المكتوب غير الرابط الحقيقي.", "The link shown is not the real link."],
+  [["image.qr_decoded", "qr.ae"], "find.qr_link", "في الصورة رمز كيو آر يودّي لرابط.", "The image has a QR code that leads to a link."],
+  [["message.contains_url"], "find.contains_url", "في الرسالة رابط.", "The message contains a link."],
+  [["message.contains_phone"], "find.contains_phone", "في الرسالة رقم تتصل عليه.", "The message has a number to call."],
+  [["email.return_path_mismatch"], "find.return_path", "مسار الإرجاع غير عنوان المرسل.", "The return path differs from the sender's address."],
+  [["email.attachment"], "find.attachment", "المرفق ممكن يحمل رابط أو شي مشبوه.", "The attachment may carry a link or something suspicious."],
+];
+/** The page could not be fully opened: said even when it carries no weight. */
+const INCOMPLETE_CODES: readonly string[] = ["sandbox.not_rendered", "sandbox.unreachable", "sandbox.partial_render", "page.truncated", "page.static_fallback", "page.cloaking_inconclusive"];
+/** Brands that may be spoken by name (invented demo brand plus a few registry brands); any other brand is spoken as "a well-known body". */
+const BRAND_CLIPS: readonly (readonly [id: string, ar_ae: string, en: string])[] = [
+  ["falcon_demo_bank", "بنك الصقر التجريبي", "Falcon Demo Bank"],
+  ["emirates_post", "بريد الإمارات", "Emirates Post"],
+  ["etisalat_by_eand", "اتصالات", "Etisalat"],
+  ["salik", "سالك", "Salik"],
+  ["dewa", "كهرباء ومياه دبي", "Dubai Electricity and Water"],
+  ["fab", "بنك أبوظبي الأول", "First Abu Dhabi Bank"],
+  ["adcb", "بنك أبوظبي التجاري", "Abu Dhabi Commercial Bank"],
+  ["emirates_nbd", "بنك الإمارات دبي الوطني", "Emirates NBD"],
+  ["mashreq", "بنك المشرق", "Mashreq"],
+  ["rakbank", "بنك رأس الخيمة الوطني", "RAKBANK"],
+  ["uae_pass", "الهوية الرقمية", "UAE PASS"],
+];
+const BRAND_IDS: ReadonlySet<string> = new Set(BRAND_CLIPS.map(([id]) => id));
+/** Informational codes (weight 0) that still earn a spoken line. */
+const INFO_CODES: readonly string[] = ["message.contains_url", "message.contains_phone", "image.qr_decoded", "email.attachment"];
+/** Every evidence code that has a spoken line (the written table in lib/findings.ts must cover all of them). */
+export const SPOKEN_CODES: readonly string[] = [...FINDINGS.flatMap(([codes]) => codes), ...INCOMPLETE_CODES, "domain.age_days", "domain.cert_age_days", "brand.claimed_not_owned"];
+const CODE_KEY: ReadonlyMap<string, string> = new Map(FINDINGS.flatMap(([codes, key]) => codes.map((c) => [c, key] as const)));
+/** Day counts that have their own wording (0, 1, 2); other counts up to 100 use "before N days" with the exact number clip. */
+const AGE_SPECIAL: readonly Pair[] = [["اليوم.", "today."], ["قبل يوم واحد.", "one day ago."], ["قبل يومين.", "two days ago."]];
+
 export const ARBITER_VERDICTS = ["dangerous", "suspicious", "no_warning_signs", "could_not_check"] as const;
 
 function build(): Record<VoiceLang, Record<string, string>> {
@@ -142,7 +215,23 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("investigator.address", "أشوف عنوان الموقع، يمكن فيه تشابه مخادع.", "Checking the web address for look-alike tricks.");
   put("investigator.page", "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي.", "Opening the page in our isolated browser. Nothing is typed.");
   put("investigator.ai_second_look_local", "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي.", "AI second look, with our local model.");
-  put("investigator.ai_second_look_cloud", "نظرة ثانية بالذكاء الاصطناعي، بموديل كلود.", "AI second look, with Claude.");
+  put("investigator.ai_second_look_cloud", "نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي.", "AI second look, with a cloud language model.");
+
+  // What this check found (see FINDINGS), spoken under each tier.
+  put("find.none", "ما لقينا شي ملفت في هذه الطبقة.", "Nothing notable at this layer.");
+  put("investigator.wording", "أقرا صياغة المسج، وأدوّر على الاستعجال والضغط.", "Reading the wording for urgency and pressure.");
+  for (const [, key, a, e] of FINDINGS) put(key, a, e);
+  put("find.incomplete", "ما قدرنا نفتح الصفحة كامل.", "We couldn't open the page fully.");
+  for (const [kind, ar0, en0] of [["age", "النطاق مسجّل", "The domain was registered"], ["cert", "شهادة الموقع صدرت", "The site certificate was issued"]] as const) {
+    AGE_SPECIAL.forEach(([a, e], i) => put(`find.${kind}.${i}`, `${ar0} ${a}`, `${en0} ${e}`));
+    put(`find.${kind}.lead`, `${ar0} قبل`, `${en0}`);
+    put(`find.${kind}.days`, "يوم.", "days ago.");
+  }
+  for (const [id, a, e] of BRAND_CLIPS) put(`brand.${id}`, a, e);
+  put("find.brand.a", "تدّعي إنها", "It claims to be");
+  put("find.brand.b", "والنطاق مو لهم.", "but the domain is not theirs.");
+  put("find.brand.generic", "تدّعي إنها جهة معروفة والنطاق مو لهم.", "It claims to be a well-known body, but the domain is not theirs.");
+  put("sentinel.campaign", "والحملة تنتحل اسم", "The campaign imitates");
   put("investigator.rules_only", "القواعد حكمت، من غير ذكاء اصطناعي.", "The rules decided, without AI.");
   put("investigator.arbiter_result.dangerous", "الحكم النهائي: المسج خطر!", "The arbiter's decision: dangerous.");
   put("investigator.arbiter_result.suspicious", "الحكم النهائي: المسج مشكوك فيه.", "The arbiter's decision: suspicious.");
@@ -252,8 +341,64 @@ export const checkingClips = (i: number, total: number): string[] => (total <= 1
 /** The Investigator agent starts on message i. */
 export const investigatorStartClips = (i: number): string[] => [`investigator.start.${clampN(i)}`];
 
-export type InvestigatorStep = "lists" | "address" | "page" | "ai_second_look_local" | "ai_second_look_cloud" | "rules_only";
+export type InvestigatorStep = "lists" | "address" | "wording" | "page" | "ai_second_look_local" | "ai_second_look_cloud" | "rules_only";
 export const investigatorStepClips = (step: InvestigatorStep): string[] => [`investigator.${step}`];
+
+
+/** The slice of an evidence item that speech may look at. Free text (display, strings inside observed) is never spoken. */
+export interface FindingEvidence {
+  signal: string;
+  observed?: unknown;
+  weight: number;
+  polarity?: string;
+  tier: string;
+  error?: string | null;
+}
+const isObjLike = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const BRAND_ID = /^[a-z0-9_]{2,40}$/;
+
+/** "claims to be {brand}": the brand is named only when it has its own clip, else a generic body. */
+export function brandClaimClips(brandId: unknown): string[] {
+  return typeof brandId === "string" && BRAND_ID.test(brandId) && BRAND_IDS.has(brandId) ? ["find.brand.a", `brand.${brandId}`, "find.brand.b"] : ["find.brand.generic"];
+}
+
+/** The clip keys for ONE evidence item, or null when it has no spoken line (unknown code, trust or neutral, errored). */
+export function findingKeysFor(e: FindingEvidence, verdictBrandId?: string | null): string[] | null {
+  if (INCOMPLETE_CODES.includes(e.signal)) return ["find.incomplete"];
+  if (e.error || e.polarity === "trust" || (!(e.weight > 0) && !INFO_CODES.includes(e.signal))) return null;
+  if (e.signal === "domain.age_days" || e.signal === "domain.cert_age_days") {
+    const kind = e.signal === "domain.age_days" ? "age" : "cert";
+    const n = typeof e.observed === "number" && Number.isFinite(e.observed) ? Math.round(e.observed) : -1;
+    if (n < 0 || n > 100) return null; // older than 100 days is not a warning sign; the exact number clips stop at one hundred
+    return n <= 2 ? [`find.${kind}.${n}`] : [`find.${kind}.lead`, `num.${n}`, `find.${kind}.days`];
+  }
+  if (e.signal === "brand.claimed_not_owned") {
+    const id = isObjLike(e.observed) && typeof e.observed.brand_id === "string" ? e.observed.brand_id : verdictBrandId;
+    return brandClaimClips(id);
+  }
+  const key = CODE_KEY.get(e.signal);
+  return key ? [key] : null;
+}
+
+/**
+ * What one tier found: up to two strongest findings (by weight), spoken from real evidence only. A tier that ran with
+ * nothing speakable says so ("nothing notable at this layer"); the AI tier (T3) never does.
+ */
+export function tierFindingGroups(evidence: readonly FindingEvidence[], tier: "T0" | "T1" | "T2" | "T3", verdictBrandId?: string | null): string[][] {
+  const out: string[][] = [];
+  const seen = new Set<string>();
+  const ranked = evidence.filter((e) => e.tier === tier).sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
+  for (const e of ranked) {
+    const keys = findingKeysFor(e, verdictBrandId);
+    if (!keys) continue;
+    const id = keys.join("|");
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(keys);
+    if (out.length === 2) break;
+  }
+  return out.length || tier === "T3" ? out : [["find.none"]];
+}
 
 /** A score 0..100 spoken as words from exact number clips. */
 export function scoreClips(score: number): string[] {
@@ -314,19 +459,25 @@ export interface SentinelFinding {
   summary: boolean;
   /** The incident holds an external takedown draft. */
   drafted: boolean;
+  /** Registry id of the brand the linked checks impersonate, when known (named only when it has a clip). */
+  brand?: string | null;
   /** That draft is awaiting an officer's approval. */
   awaiting: boolean;
 }
 
 /** Spoken ONLY for what the incident shows: nothing is said that the data does not prove. */
-export function sentinelFindingClips(f: SentinelFinding): string[] {
-  const out: string[] = [];
-  if (f.linkStep && f.linked >= 2) out.push(`sentinel.linked.${Math.min(10, Math.floor(f.linked))}`);
-  if (f.summary) out.push("sentinel.summary");
-  if (f.drafted) out.push("sentinel.draft");
-  if (f.drafted && f.awaiting) out.push("sentinel.awaiting_approval");
+export function sentinelFindingGroups(f: SentinelFinding): string[][] {
+  const out: string[][] = [];
+  if (f.linkStep && f.linked >= 2) {
+    out.push([`sentinel.linked.${Math.min(10, Math.floor(f.linked))}`]);
+    if (typeof f.brand === "string" && BRAND_IDS.has(f.brand)) out.push(["sentinel.campaign", `brand.${f.brand}`]);
+  }
+  if (f.summary) out.push(["sentinel.summary"]);
+  if (f.drafted) out.push(["sentinel.draft"]);
+  if (f.drafted && f.awaiting) out.push(["sentinel.awaiting_approval"]);
   return out;
 }
+export const sentinelFindingClips = (f: SentinelFinding): string[] => sentinelFindingGroups(f).flat();
 
 /**
  * The closing utterance: summary, what to do, then the one-line wrap-up that names what actually happened:

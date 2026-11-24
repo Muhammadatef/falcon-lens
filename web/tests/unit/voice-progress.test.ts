@@ -36,6 +36,6 @@ describe("tier rows come from the verdict, never invented", () => {
     expect(tierRows(DEMO_DANGEROUS, "url", "en", true).some((r) => r.tier === "T2")).toBe(true);
   });
   it("one short line per tier", () => {
-    for (const r of tierRows(DEMO_DANGEROUS, "url", "ar", true)) if (r.found) expect(r.found.length).toBeLessThanOrEqual(90);
+    for (const r of tierRows(DEMO_DANGEROUS, "url", "ar", true)) if (r.found) expect(r.found.length).toBeLessThanOrEqual(240);
   });
 });

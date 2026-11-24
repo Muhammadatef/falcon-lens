@@ -379,6 +379,72 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect(said).not.toContain(SCRIPT.ar_ae["investigator.rules_only"]!);
   });
 
+  for (const [voice, lang, script] of [["check-ar", "ar_ae", SCRIPT.ar_ae], ["check-en", "en", SCRIPT.en]] as const) {
+    test(`each check narrates what IT found, from its own evidence (${lang}): a look-alike bank page and a parcel SMS differ`, async ({ page, request }) => {
+      const t = token();
+      const bankId = newVerdictId();
+      const smsId = newVerdictId();
+      const e = (id: string, signal: string, family: string, tier: "T0" | "T1" | "T2", weight: number, observed: unknown) =>
+        ({ id: `ev_${id}`, signal, family, observed, weight, polarity: weight > 0 ? "risk" : "neutral", source: "computed", tier, display: { ar: "نص عرض خاص <b>x</b>", en: "display <b>x</b>" } }) as any;
+      const bank = withId(DEMO_DANGEROUS, bankId, { model_route: "none" });
+      const sms = withId(DEMO_DANGEROUS, smsId, {
+        input_type: "message", canonical_url: undefined, verdict: "dangerous", risk_score: 88, tier_reached: "T1", model_route: "none", impersonated_brand: null, trace: [], reasons: [],
+        evidence: [
+          e("rep0sms01", "rep.openphish", "reputation", "T0", 0, false),
+          e("sms0fee01", "message.rule.delivery_fee", "message", "T1", 1.4, { rule: "delivery_fee" }),
+          e("sms0urg01", "message.rule.urgency", "message", "T1", 0.9, { rule: "urgency" }),
+          e("sms0age01", "domain.age_days", "domain", "T1", 0.5, 12),
+          e("sms0unk01", "evil.unknown_code", "message", "T1", 9, "<img src=x onerror=alert(1)>"),
+        ],
+      });
+      await registerScenario(request, { match: `${t}1`, verdictId: bankId, steps: [{ delayMs: 200, verdict: { ...bank, tier_reached: "T2", final: true } }] });
+      await registerScenario(request, { match: `${t}2`, verdictId: smsId, steps: [{ delayMs: 200, verdict: { ...sms, final: true } }] });
+      await installMocks(page);
+      await page.addInitScript((c) => { (window as any).__clip = c; }, [`Your account is suspended, verify now ${t}1 https://falcon-demo-bank-secure.test/login`, `Parcel fee unpaid, pay today ${t}2`].join("\n\n"));
+      await page.goto("/voice");
+      await page.getByTestId("voice-on").click();
+      await say(page, voice);
+      await expect(page.getByTestId("voice-card")).toHaveCount(2);
+      await narrationDone(page);
+      const steps = await page.getByTestId("voice-step").allTextContents();
+      const said = (await spoken(page)).map((s) => s.text);
+      const line = (keys: string[]) => keys.map((k) => script[k]!).join(" ");
+      // The bank page: its own combosquat, age (as 'N days' from the number clips), cred form, cross-origin post and brand claim.
+      for (const k of [["find.age.2"], ["find.combosquat"], ["find.cross_post"], ["find.brand.a", "brand.falcon_demo_bank", "find.brand.b"]]) {
+        const text = line(k);
+        expect(steps.some((s) => s.includes(text)), `step: ${text}`).toBe(true);
+        expect(said.join(" "), `spoken: ${text}`).toContain(text);
+      }
+      // The parcel SMS: its own findings, the age spoken through the exact number clips, and nothing from the bank page.
+      const smsAge = line(["find.age.lead", "num.12", "find.age.days"]);
+      for (const text of [line(["find.delivery_fee"]), line(["find.urgency"]), smsAge]) {
+        expect(steps.some((s) => s.includes(text)), `step: ${text}`).toBe(true);
+        expect(said.join(" "), `spoken: ${text}`).toContain(text);
+      }
+      expect(steps.join(" ")).not.toContain("unknown");
+      expect(steps.join(" ")).not.toContain("<img");
+      expect(steps.join(" ")).not.toContain(script["find.homograph"]!);
+      // Captions are exactly what was spoken: every finding line shown was also played, in the same order.
+      const shown = steps.filter((s) => Object.keys(script).some((k) => k.startsWith("find.") && s.includes(script[k]!)));
+      expect(shown.length).toBeGreaterThanOrEqual(5);
+      let from = 0;
+      for (const s of shown) {
+        const at = said.findIndex((x, i) => i >= from && s.includes(x));
+        expect(at, `caption not spoken in order: ${s}`).toBeGreaterThanOrEqual(0);
+        from = at + 1;
+      }
+      // The two checks sit in different steps: the SMS lines never appear in the bank's section and vice versa.
+      const iBank = steps.findIndex((s) => s.includes(line(["find.combosquat"])));
+      const iSms = steps.findIndex((s) => s.includes(line(["find.delivery_fee"])));
+      expect(iBank).toBeGreaterThanOrEqual(0);
+      expect(iSms).toBeGreaterThan(iBank);
+      // The progress panel (showing the last message, the SMS) lists the same finding lines under its tier.
+      const t1 = page.locator('[data-testid="voice-tier"][data-tier="T1"]');
+      await expect(t1).toContainText(line(["find.delivery_fee"]));
+      await expect(t1).toContainText(line(["find.urgency"]));
+    });
+  }
+
   test("nothing checked: no hand-over to the Sentinel, an honest line instead", async ({ page, request }) => {
     await installMocks(page);
     await page.addInitScript(() => { (window as any).__clip = "Unregistered message that the mock cannot check at all"; });

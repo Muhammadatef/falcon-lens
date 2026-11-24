@@ -362,8 +362,520 @@
   {
     "id": "en.investigator.ai_second_look_cloud",
     "file": "en.investigator.ai_second_look_cloud.mp3",
-    "text": "AI second look, with Claude.",
-    "ms": 1413,
+    "text": "AI second look, with a cloud language model.",
+    "ms": 2443,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.none",
+    "file": "en.find.none.mp3",
+    "text": "Nothing notable at this layer.",
+    "ms": 1427,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.investigator.wording",
+    "file": "en.investigator.wording.mp3",
+    "text": "Reading the wording for urgency and pressure.",
+    "ms": 2068,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.listed",
+    "file": "en.find.listed.mp3",
+    "text": "The link is on a known scam list.",
+    "ms": 1547,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.combosquat",
+    "file": "en.find.combosquat.mp3",
+    "text": "The address adds a word to a well-known name.",
+    "ms": 2140,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.typosquat",
+    "file": "en.find.typosquat.mp3",
+    "text": "The address is a near-copy of a well-known name.",
+    "ms": 2294,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.homograph",
+    "file": "en.find.homograph.mp3",
+    "text": "The address uses look-alike letters to fool you.",
+    "ms": 2409,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.hidden_chars",
+    "file": "en.find.hidden_chars.mp3",
+    "text": "The address contains hidden characters.",
+    "ms": 1885,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.ip_host",
+    "file": "en.find.ip_host.mp3",
+    "text": "The address is a number instead of a site name.",
+    "ms": 2448,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.free_host",
+    "file": "en.find.free_host.mp3",
+    "text": "The site sits on free hosting or a temporary tunnel.",
+    "ms": 2762,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.brand_in_path",
+    "file": "en.find.brand_in_path.mp3",
+    "text": "A well-known name is placed in the address, but the site is not theirs.",
+    "ms": 3853,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.userinfo",
+    "file": "en.find.userinfo.mp3",
+    "text": "The address uses a trick to hide where it really goes.",
+    "ms": 2614,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.open_redirect",
+    "file": "en.find.open_redirect.mp3",
+    "text": "The link bounces you to another site.",
+    "ms": 1741,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.redirects",
+    "file": "en.find.redirects.mp3",
+    "text": "The link goes through several redirects.",
+    "ms": 1902,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.shortener",
+    "file": "en.find.shortener.mp3",
+    "text": "The link is shortened and hides its destination.",
+    "ms": 2279,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cred_form",
+    "file": "en.find.cred_form.mp3",
+    "text": "The page asks for a password and a code.",
+    "ms": 1965,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cross_post",
+    "file": "en.find.cross_post.mp3",
+    "text": "What you type goes to a different server.",
+    "ms": 1814,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cloaking",
+    "file": "en.find.cloaking.mp3",
+    "text": "The page shows something different to scanners.",
+    "ms": 2045,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.hotlinked",
+    "file": "en.find.hotlinked.mp3",
+    "text": "The page pulls a well-known brand's images from its real site.",
+    "ms": 3164,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.favicon",
+    "file": "en.find.favicon.mp3",
+    "text": "The site icon is copied from a well-known brand.",
+    "ms": 2410,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.brand_url_mismatch",
+    "file": "en.find.brand_url_mismatch.mp3",
+    "text": "The link is not from the organisation the message names.",
+    "ms": 2910,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.scam_intent",
+    "file": "en.find.scam_intent.mp3",
+    "text": "The message asks for a code or money the way scammers do.",
+    "ms": 2928,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.script_match",
+    "file": "en.find.script_match.mp3",
+    "text": "The message matches a known scam script.",
+    "ms": 1949,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.urgency",
+    "file": "en.find.urgency.mp3",
+    "text": "The message rushes you.",
+    "ms": 1119,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.secrecy",
+    "file": "en.find.secrecy.mp3",
+    "text": "The message asks you to keep it secret.",
+    "ms": 1709,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.otp_request",
+    "file": "en.find.otp_request.mp3",
+    "text": "The message asks for your verification code.",
+    "ms": 2216,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.remote_access",
+    "file": "en.find.remote_access.mp3",
+    "text": "The message asks you to install an app or share your screen.",
+    "ms": 2737,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.payment_request",
+    "file": "en.find.payment_request.mp3",
+    "text": "The message asks you to pay or transfer money.",
+    "ms": 2232,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.authority",
+    "file": "en.find.authority.mp3",
+    "text": "The message claims to come from an official body.",
+    "ms": 2261,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.prize",
+    "file": "en.find.prize.mp3",
+    "text": "The message promises you a prize.",
+    "ms": 1590,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.job",
+    "file": "en.find.job.mp3",
+    "text": "The message offers a dubious job.",
+    "ms": 1731,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.investment",
+    "file": "en.find.investment.mp3",
+    "text": "The message offers fast profit.",
+    "ms": 1605,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.delivery_fee",
+    "file": "en.find.delivery_fee.mp3",
+    "text": "The message asks for a delivery fee.",
+    "ms": 1707,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.fine",
+    "file": "en.find.fine.mp3",
+    "text": "The message talks about a fine and asks for payment.",
+    "ms": 2461,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.email_auth",
+    "file": "en.find.email_auth.mp3",
+    "text": "The email failed the sender identity check.",
+    "ms": 2156,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.display_spoof",
+    "file": "en.find.display_spoof.mp3",
+    "text": "The sender name pretends to be a well-known body.",
+    "ms": 2431,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.reply_to",
+    "file": "en.find.reply_to.mp3",
+    "text": "Replies go to a different address than the sender's.",
+    "ms": 2494,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.link_text",
+    "file": "en.find.link_text.mp3",
+    "text": "The link shown is not the real link.",
+    "ms": 1698,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.qr_link",
+    "file": "en.find.qr_link.mp3",
+    "text": "The image has a QR code that leads to a link.",
+    "ms": 2405,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.incomplete",
+    "file": "en.find.incomplete.mp3",
+    "text": "We couldn't open the page fully.",
+    "ms": 1411,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.age.0",
+    "file": "en.find.age.0.mp3",
+    "text": "The domain was registered today.",
+    "ms": 1557,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.age.1",
+    "file": "en.find.age.1.mp3",
+    "text": "The domain was registered one day ago.",
+    "ms": 1888,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.age.2",
+    "file": "en.find.age.2.mp3",
+    "text": "The domain was registered two days ago.",
+    "ms": 1938,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.age.lead",
+    "file": "en.find.age.lead.mp3",
+    "text": "The domain was registered",
+    "ms": 1233,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.age.days",
+    "file": "en.find.age.days.mp3",
+    "text": "days ago.",
+    "ms": 715,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cert.0",
+    "file": "en.find.cert.0.mp3",
+    "text": "The site certificate was issued today.",
+    "ms": 1836,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cert.1",
+    "file": "en.find.cert.1.mp3",
+    "text": "The site certificate was issued one day ago.",
+    "ms": 2293,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cert.2",
+    "file": "en.find.cert.2.mp3",
+    "text": "The site certificate was issued two days ago.",
+    "ms": 2289,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cert.lead",
+    "file": "en.find.cert.lead.mp3",
+    "text": "The site certificate was issued",
+    "ms": 1476,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.cert.days",
+    "file": "en.find.cert.days.mp3",
+    "text": "days ago.",
+    "ms": 715,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.falcon_demo_bank",
+    "file": "en.brand.falcon_demo_bank.mp3",
+    "text": "Falcon Demo Bank",
+    "ms": 1063,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.emirates_post",
+    "file": "en.brand.emirates_post.mp3",
+    "text": "Emirates Post",
+    "ms": 889,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.etisalat_by_eand",
+    "file": "en.brand.etisalat_by_eand.mp3",
+    "text": "Etisalat",
+    "ms": 710,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.salik",
+    "file": "en.brand.salik.mp3",
+    "text": "Salik",
+    "ms": 588,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.dewa",
+    "file": "en.brand.dewa.mp3",
+    "text": "Dubai Electricity and Water",
+    "ms": 1432,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.fab",
+    "file": "en.brand.fab.mp3",
+    "text": "First Abu Dhabi Bank",
+    "ms": 1273,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.adcb",
+    "file": "en.brand.adcb.mp3",
+    "text": "Abu Dhabi Commercial Bank",
+    "ms": 1325,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.emirates_nbd",
+    "file": "en.brand.emirates_nbd.mp3",
+    "text": "Emirates NBD",
+    "ms": 999,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.mashreq",
+    "file": "en.brand.mashreq.mp3",
+    "text": "Mashreq",
+    "ms": 621,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.rakbank",
+    "file": "en.brand.rakbank.mp3",
+    "text": "RAKBANK",
+    "ms": 1083,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.brand.uae_pass",
+    "file": "en.brand.uae_pass.mp3",
+    "text": "UAE PASS",
+    "ms": 846,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.brand.a",
+    "file": "en.find.brand.a.mp3",
+    "text": "It claims to be",
+    "ms": 948,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.brand.b",
+    "file": "en.find.brand.b.mp3",
+    "text": "but the domain is not theirs.",
+    "ms": 1386,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.brand.generic",
+    "file": "en.find.brand.generic.mp3",
+    "text": "It claims to be a well-known body, but the domain is not theirs.",
+    "ms": 3561,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.sentinel.campaign",
+    "file": "en.sentinel.campaign.mp3",
+    "text": "The campaign imitates",
+    "ms": 1107,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },

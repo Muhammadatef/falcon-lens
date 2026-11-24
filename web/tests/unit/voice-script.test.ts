@@ -36,7 +36,9 @@ describe("voice script", () => {
       expect(c.text.length, c.id).toBeGreaterThan(2);
       expect(c.text.toLowerCase(), c.id).not.toMatch(/\bsafe(ly|r|st)?\b|آمن/);
       expect(c.text, c.id).not.toMatch(/[0-9٠-٩{}]|undefined/);
-      expect(c.text.toLowerCase(), c.id).not.toMatch(/password|iban|emirates id|رقم الهوية|كلمة السر/);
+      // The assistant never ASKS for these; a finding line may only DESCRIBE what a scam page does ("find.*").
+      if (!c.key.startsWith("find.")) expect(c.text.toLowerCase(), c.id).not.toMatch(/password|iban|emirates id|رقم الهوية|كلمة السر/);
+      expect(c.text, c.id).not.toMatch(/claude|anthropic|كلود/i);
     }
   });
 

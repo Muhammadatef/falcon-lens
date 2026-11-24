@@ -6,6 +6,7 @@
  */
 import type { Lang, Verdict } from "./contracts";
 import { newProgressSteps, type ProgressStep } from "./voice";
+import { tierFoundText } from "./voice-speech";
 
 export type StageId = "heard" | "understand" | "investigate" | "link" | "answer" | "reply";
 export interface Stage {
@@ -37,7 +38,7 @@ export interface TierRow {
   tier: TierId;
   step: ProgressStep;
   status: "done" | "skipped";
-  /** What the tier found, in one short line (the strongest evidence it produced). */
+  /** What this check found at the tier: exactly the finding lines that are spoken (see voice-speech stepGroups). */
   found?: string;
 }
 
@@ -55,20 +56,10 @@ export function tierRows(v: Verdict, kind: "url" | "message", lang: Lang, final:
   for (const tier of ORDER) {
     if (tier === "T2" && kind !== "url") continue;
     const step = byTier.get(tier);
-    if (step) rows.push({ tier, step, status: "done", found: foundLine(v, tier, lang) });
+    if (step) rows.push({ tier, step, status: "done", found: tierFoundText(lang, step, v) });
     else if (final) rows.push({ tier, step: tier === "T0" ? "lists" : tier === "T1" ? (kind === "url" ? "lookalike" : "wording") : tier === "T2" ? "browser" : "ai", status: "skipped" });
   }
   return rows;
-}
-
-function foundLine(v: Verdict, tier: TierId, lang: Lang): string | undefined {
-  const best = v.evidence
-    .filter((e) => e.tier === tier && !e.error)
-    .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight))[0];
-  const text = best?.display?.[lang] ?? best?.display?.[lang === "ar" ? "en" : "ar"];
-  if (!text) return undefined;
-  const one = text.replace(/\s+/g, " ").trim();
-  return one.length > 90 ? `${one.slice(0, 89)}…` : one;
 }
 
 /** "3.2" for 3240 ms. */
