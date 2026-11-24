@@ -68,15 +68,15 @@ Read as one paragraph, calmly, in about sixty seconds. The cues in brackets say 
 
 English subtitles: "Every day our families get a message saying 'your account is suspended, update your details', and many older people lose their money in seconds. That is why we built Falcon Lens. Paste a link, a message or an email, scan a QR code, or just say 'Hey Falcon, check what I copied'. Watch Baseer check step by step: scam lists, the domain's age, the page in an isolated browser, and an AI second look; then it tells you in an Emirati voice: 'Dangerous, don't tap the link', with the reasons. Dir' links similar reports into one campaign and spots fake domains before anyone reports them. Every check has a full record and an evidence file ready for the authorities, and nothing goes out without an officer's approval. Our results are published with their numbers and limits. And everything can run locally, inside the country. Falcon Lens: ask the falcon before you tap."
 
-| Seconds | Show on screen |
+| Time | Show on screen |
 |---|---|
-| 0 to 8 | The scam SMS on a phone, or the home page |
-| 8 to 15 | Home page: the input box and the link, message, email and QR tabs |
-| 15 to 32 | /voice: «يا صقر», the numbered steps, then «خطِر» with the alert sound |
-| 32 to 42 | /campaigns: a campaign card and the hunting feed |
-| 42 to 50 | /history: open one check, then the evidence pack button |
-| 50 to 56 | /results: the KPIs |
-| 56 to 60 | Logo and tagline |
+| 0:00 to 0:08 | The scam SMS on a phone, or the home page |
+| 0:08 to 0:15 | Home page: the input box and the link, message, email and QR tabs |
+| 0:15 to 0:32 | /voice: «يا صقر», the numbered steps, then «خطِر» with the alert sound |
+| 0:32 to 0:42 | /campaigns: a campaign card and the hunting feed |
+| 0:42 to 0:50 | /history: open one check, then the evidence pack button |
+| 0:50 to 0:56 | /results: the KPIs |
+| 0:56 to 1:00 | Logo and tagline |
 
 If the hunting feed is not switched on for the recording, say «ويقدر يرصد النطاقات المزيّفة» instead of «ويرصد النطاقات المزيّفة قبل لا يبلّغ عنها أحد».
 
