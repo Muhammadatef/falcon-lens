@@ -182,12 +182,44 @@ class Silma(Engine):
         return to_mono(data), int(sr)
 
 
+class Polly(Engine):
+    """Amazon Polly neural voice (ar-AE Zayd by default). Used ONLY offline to pre-generate clips from our
+    own script text: no user data is ever sent, and nothing calls AWS at runtime. Credentials come from the
+    environment (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION), never from the repo."""
+
+    name = "polly"
+    VOICES = {"ar_ae": ("Zayd", "ar-AE"), "ar": ("Zayd", "ar-AE"), "en": ("Matthew", "en-US")}
+    _client: Any = None
+
+    def label(self, lang: str) -> str:
+        return self.voice or self.VOICES.get(lang, self.VOICES["ar_ae"])[0]
+
+    def synth(self, text: str, lang: str) -> tuple[Wave, int]:
+        import boto3  # optional extra "polly"
+
+        if Polly._client is None:
+            Polly._client = boto3.client("polly", region_name=os.environ.get("AWS_REGION") or "us-east-1")
+        code = self.VOICES.get(lang, self.VOICES["ar_ae"])[1]
+        rate = 16000  # Polly PCM supports 8000 or 16000 only; generate.py resamples to the clip rate
+        r = Polly._client.synthesize_speech(
+            Text=text,
+            VoiceId=self.label(lang),
+            Engine="neural",
+            OutputFormat="pcm",
+            SampleRate=str(rate),
+            LanguageCode=code,
+        )
+        pcm = np.frombuffer(r["AudioStream"].read(), dtype="<i2").astype(np.float32) / 32768.0
+        return pcm, rate
+
+
 ENGINES: dict[str, Callable[..., Engine]] = {
     "macos": MacOS,
     "kokoro": Kokoro,
     "chatterbox": Chatterbox,
     "voicetut": VoiceTut,
     "silma": Silma,
+    "polly": Polly,
 }
 
 
