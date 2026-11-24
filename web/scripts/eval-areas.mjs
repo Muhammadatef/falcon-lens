@@ -133,10 +133,12 @@ export function syncEvalAreas(web, published) {
     if (newest) {
       const rows = {};
       for (const b of ["extended", "production"]) {
-        const r = runs.filter(({ d }) => d.llm_budget === b).at(-1)?.d.summary.overall;
+        const hit = runs.filter(({ d }) => d.llm_budget === b).at(-1);
+        const r = hit?.d.summary.overall;
         if (!r) continue;
-        rows[`${b}_harmful`] = count(r.harmful, r.cases);
-        rows[`${b}_answered`] = count(r.llm_ran, r.cases);
+        // Each row cites the artifact it came from (the extended and production runs are separate files).
+        rows[`${b}_harmful`] = { ...count(r.harmful, r.cases), artifact: hit.f };
+        rows[`${b}_answered`] = { ...count(r.llm_ran, r.cases), artifact: hit.f };
       }
       add("redteam", newest, () => rows, { runs: runs.map(({ f, d }) => ({ artifact: f, budget: str(d.llm_budget), date: dateOf(d) })) });
     }

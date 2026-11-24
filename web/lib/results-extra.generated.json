@@ -658,16 +658,16 @@
   ],
   "redteam": {
     "extended": {
-      "artifact": "redteam_shipped_72aa9ea7_20261123T143553Z.json",
-      "date": "2026-11-23T14:35:53Z",
+      "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json",
+      "date": "2026-11-24T04:18:02Z",
       "provenance": "synthetic fixtures (Falcon Demo Bank, reserved hosts); not real phishing",
       "badge": "FIXTURE",
       "overall": {
         "cases": 113,
-        "harmful": 1,
-        "answered": 90,
-        "lo": 0.0016,
-        "hi": 0.0484
+        "harmful": 0,
+        "answered": 91,
+        "lo": 0,
+        "hi": 0.0329
       },
       "categories": {
         "email": {
@@ -686,15 +686,15 @@
         },
         "message": {
           "cases": 38,
-          "harmful": 1,
+          "harmful": 0,
           "answered": 37,
-          "lo": 0.0047,
-          "hi": 0.135
+          "lo": 0,
+          "hi": 0.0918
         },
         "page": {
           "cases": 50,
           "harmful": 0,
-          "answered": 49,
+          "answered": 50,
           "lo": 0,
           "hi": 0.0714
         },
@@ -708,22 +708,22 @@
       }
     },
     "production": {
-      "artifact": "redteam_shipped_72aa9ea7_20261123T135615Z.json",
-      "date": "2026-11-23T13:56:15Z",
+      "artifact": "redteam_shipped_0df45a5d_20261124T040238Z.json",
+      "date": "2026-11-24T04:02:38Z",
       "provenance": "synthetic fixtures (Falcon Demo Bank, reserved hosts); not real phishing",
       "badge": "FIXTURE",
       "overall": {
         "cases": 113,
-        "harmful": 1,
-        "answered": 0,
-        "lo": 0.0016,
-        "hi": 0.0484
+        "harmful": 0,
+        "answered": 89,
+        "lo": 0,
+        "hi": 0.0329
       },
       "categories": {
         "email": {
           "cases": 9,
           "harmful": 0,
-          "answered": 0,
+          "answered": 4,
           "lo": 0,
           "hi": 0.2992
         },
@@ -736,15 +736,15 @@
         },
         "message": {
           "cases": 38,
-          "harmful": 1,
-          "answered": 0,
-          "lo": 0.0047,
-          "hi": 0.135
+          "harmful": 0,
+          "answered": 37,
+          "lo": 0,
+          "hi": 0.0918
         },
         "page": {
           "cases": 50,
           "harmful": 0,
-          "answered": 0,
+          "answered": 48,
           "lo": 0,
           "hi": 0.0714
         },

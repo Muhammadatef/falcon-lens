@@ -458,44 +458,48 @@
       "notEvaluated": []
     },
     "redteam": {
-      "artifact": "redteam_shipped_72aa9ea7_20261123T143553Z.json",
-      "date": "2026-11-23T14:35:53Z",
+      "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json",
+      "date": "2026-11-24T04:18:02Z",
       "provenance": "synthetic fixtures (Falcon Demo Bank, reserved hosts); not real phishing",
       "route": "local",
       "model": "inkling-2-mini-chat",
-      "caveat": "1/113 harmful at extended local-model deadlines (model answered 90/113; 1 failed calls). At production deadlines the model answered 0/113 (116 failed calls) with 1 harmful. Never quote the harmful count without the answered count.",
+      "caveat": "0/113 harmful at extended local-model deadlines (model answered 91/113; 0 failed calls). At production deadlines the model answered 89/113 (27 failed calls) with 0 harmful. Never quote the harmful count without the answered count.",
       "rows": {
         "extended_harmful": {
-          "kind": "count",
-          "value": 1,
-          "k": null,
-          "n": 113,
-          "lo": null,
-          "hi": null
-        },
-        "extended_answered": {
-          "kind": "count",
-          "value": 90,
-          "k": null,
-          "n": 113,
-          "lo": null,
-          "hi": null
-        },
-        "production_harmful": {
-          "kind": "count",
-          "value": 1,
-          "k": null,
-          "n": 113,
-          "lo": null,
-          "hi": null
-        },
-        "production_answered": {
           "kind": "count",
           "value": 0,
           "k": null,
           "n": 113,
           "lo": null,
-          "hi": null
+          "hi": null,
+          "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json"
+        },
+        "extended_answered": {
+          "kind": "count",
+          "value": 91,
+          "k": null,
+          "n": 113,
+          "lo": null,
+          "hi": null,
+          "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json"
+        },
+        "production_harmful": {
+          "kind": "count",
+          "value": 0,
+          "k": null,
+          "n": 113,
+          "lo": null,
+          "hi": null,
+          "artifact": "redteam_shipped_0df45a5d_20261124T040238Z.json"
+        },
+        "production_answered": {
+          "kind": "count",
+          "value": 89,
+          "k": null,
+          "n": 113,
+          "lo": null,
+          "hi": null,
+          "artifact": "redteam_shipped_0df45a5d_20261124T040238Z.json"
         }
       },
       "notEvaluated": [],
@@ -509,6 +513,16 @@
           "artifact": "redteam_shipped_72aa9ea7_20261123T143553Z.json",
           "budget": "extended",
           "date": "2026-11-23T14:35:53Z"
+        },
+        {
+          "artifact": "redteam_shipped_0df45a5d_20261124T040238Z.json",
+          "budget": "production",
+          "date": "2026-11-24T04:02:38Z"
+        },
+        {
+          "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json",
+          "budget": "extended",
+          "date": "2026-11-24T04:18:02Z"
         }
       ]
     },

@@ -85,13 +85,19 @@ describe("results areas (every displayed number exists in the bundled JSON)", ()
       else if (v && typeof v === "object") Object.values(v).forEach((x) => nums(x, acc));
       return acc;
     };
-    const file = bundled as unknown as { areas: Record<string, { artifact: string; rows: Record<string, { value: number; k: number | null; n: number | null; lo: number | null; hi: number | null }> }> };
+    const file = bundled as unknown as { areas: Record<string, { artifact: string; rows: Record<string, { value: number; k: number | null; n: number | null; lo: number | null; hi: number | null; artifact?: string }> }> };
     for (const [id, a] of Object.entries(file.areas)) {
-      const path = join(published, id.startsWith("fit_") ? "fits" : id, a.artifact);
-      expect(existsSync(path), path).toBe(true);
-      const source = nums(JSON.parse(readFileSync(path, "utf8")), new Set());
+      const dir = join(published, id.startsWith("fit_") ? "fits" : id);
+      const load = (name: string) => {
+        const path = join(dir, name);
+        expect(existsSync(path), path).toBe(true);
+        return nums(JSON.parse(readFileSync(path, "utf8")), new Set());
+      };
+      load(a.artifact);
       for (const [key, r] of Object.entries(a.rows)) {
-        for (const v of [r.value, r.k, r.lo, r.hi]) if (v !== null) expect(source.has(v), `${id}.${key}=${v}`).toBe(true);
+        // A row cites its own artifact when it differs from the area's (red team: extended and production are separate files).
+        const source = load(r.artifact ?? a.artifact);
+        for (const v of [r.value, r.k, r.lo, r.hi]) if (v !== null) expect(source.has(v), `${id}.${key}=${v} in ${r.artifact ?? a.artifact}`).toBe(true);
       }
     }
     expect(readdirSync(published).length).toBeGreaterThan(0);
