@@ -43,6 +43,7 @@ def verdict_ev(
     simhash: int | None = None,
     type_: str = "verdict.created",
     key: str | None = None,
+    channel: str | None = None,
 ) -> Event:
     fp: dict[str, Any] = {
         "asn": "AS64500",
@@ -63,6 +64,7 @@ def verdict_ev(
             "brand_id": brand,
             "fingerprints": fp,
             "top_signals": [],
+            **({"channel": channel} if channel else {}),
         },
         k,
         vid="vrd_" + hashlib.md5(k.encode()).hexdigest()[:8],

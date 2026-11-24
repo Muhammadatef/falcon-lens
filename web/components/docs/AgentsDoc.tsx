@@ -6,6 +6,7 @@ import { ARCH, type AgentBlock, type ArchContent } from "@/lib/arch-content";
 import { dt } from "@/lib/i18n-docs";
 import { flag } from "@/lib/cap-flag";
 import { ArchDiagram } from "@/components/arch/ArchDiagram";
+import { VoiceAgentsSection } from "@/components/VoiceAgentsSection";
 import { WhyDspyLanggraph } from "@/components/arch/WhyDspyLanggraph";
 import { at } from "@/lib/i18n-arch";
 
@@ -130,6 +131,8 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
       <Agent id="sentinel" block={c.sentinel} c={c} caps={caps} lang={lang} badge={flag(caps, "sentinel_agent")}>
         <Fig id="sentinel" lang={lang} />
       </Agent>
+
+      <VoiceAgentsSection lang={lang} caps={caps} view="tech" />
 
       <WhyDspyLanggraph lang={lang} dspyLive={flag(caps, "dspy_compiled_prompts")} tracingLive={flag(caps, "llm_tracing")} />
 

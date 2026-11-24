@@ -1459,6 +1459,256 @@
       }
     },
     {
+      "id": 23,
+      "type": "row",
+      "title": "Voice assistant | المساعد الصوتي",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Utterances by wake / intent / language | الأوامر الصوتية",
+      "description": "Spoken requests the API answered, split by whether the wake phrase was heard, the intent and the language. Transcripts are never a label. Thresholds: none: composition view. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [
+        {
+          "title": "Runbook: voice-errors",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#voice-errors",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (wake, intent, lang) (rate(fl_voice_utterances_total[$__rate_interval]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "wake={{wake}} · {{intent}} · {{lang}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 24,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 41
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Speech latency p50 / p95 by engine | زمن التعرف على الكلام",
+      "description": "Time from upload to answer, speech recognition included; native = the Mac GPU engine, container = the fallback. Thresholds: none: compare the two engines; the native engine is expected to be faster. No data: the service has not emitted this metric yet: it appears after the first event of its kind.",
+      "links": [
+        {
+          "title": "Runbook: voice-native-down",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#voice-native-down",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le, engine) (rate(fl_voice_latency_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p50 · {{engine}}"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, engine) (rate(fl_voice_latency_seconds_bucket[$__rate_interval])))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "p95 · {{engine}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 25,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 41
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "Voice errors by reason, 1 h | أخطاء الصوت حسب السبب",
+      "description": "Voice requests that failed, by reason code (stt_unavailable, rate_limited, bad_type, too_large, too_long, undecodable). Thresholds: none: any count needs a look; the alert fires above 20% over 5 minutes. No data: no voice request failed in this range, which is the healthy state.",
+      "links": [
+        {
+          "title": "Runbook: voice-errors",
+          "url": "https://github.com/Muhammadatef/falcon-lens/blob/main/docs/RUNBOOK.md#voice-errors",
+          "targetBlank": true
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (reason) (increase(fl_voice_errors_total[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{reason}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "noValue": "No voice errors",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#D4AF37"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 26,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 49
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "Voice-started checks by verdict, 1 h | فحوص بدأت بالصوت",
+      "description": "Final verdicts of checks started by the voice assistant (channel=voice), counted by the worker. Thresholds: none: counts. No data: no check was started by voice in this range.",
+      "links": [],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (verdict) (increase(fl_voice_checks_total[1h]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "legendFormat": "{{verdict}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "noValue": "No voice checks",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#D4AF37"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        }
+      },
+      "id": 27,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 49
+      }
+    },
+    {
       "type": "logs",
       "title": "Service logs | سجلات الخدمات",
       "description": "All service logs from Loki (JSON, each line carries verdict_id). Thresholds: none. No data: Loki or the log shipper (alloy) is down.",
@@ -1482,16 +1732,16 @@
         "enableLogDetails": true,
         "sortOrder": "Descending"
       },
-      "id": 23,
+      "id": 28,
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 56
       }
     },
     {
-      "id": 24,
+      "id": 29,
       "type": "row",
       "title": "By input type | حسب نوع المدخل",
       "collapsed": false,
@@ -1499,7 +1749,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 65
       },
       "panels": []
     },
@@ -1590,12 +1840,12 @@
           "sort": "desc"
         }
       },
-      "id": 25,
+      "id": 30,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 50
+        "y": 66
       }
     },
     {
@@ -1686,12 +1936,12 @@
           "sort": "desc"
         }
       },
-      "id": 26,
+      "id": 31,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 50
+        "y": 66
       }
     }
   ]

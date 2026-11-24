@@ -822,6 +822,7 @@ def overview() -> Board:
         12,
         7,
     )
+    voice_row(b)
     b.add(
         logs(
             "Service logs | سجلات الخدمات",
@@ -849,6 +850,84 @@ HARD_RULES = (
     ("H5", "dangerous link in message | رابط خطر"),
     ("H6", "OTP / remote-access ask | طلب رمز"),
 )
+
+
+def voice_row(b: Board) -> None:
+    """Voice assistant | المساعد الصوتي: every query is a real metric of the voice route or of the worker."""
+    b.row("Voice assistant | المساعد الصوتي")
+    b.add(
+        ts(
+            "Utterances by wake / intent / language | الأوامر الصوتية",
+            [
+                target(
+                    f"sum by (wake, intent, lang) (rate(fl_voice_utterances_total[{RI}]))",
+                    "wake={{wake}} · {{intent}} · {{lang}}",
+                )
+            ],
+            desc(
+                "Spoken requests the API answered, split by whether the wake phrase was heard, the intent and the "
+                "language. Transcripts are never a label.",
+                "none: composition view",
+                ND_NEW,
+            ),
+            unit="ops",
+            stack=True,
+            rb="voice-errors",
+        ),
+        12,
+        8,
+    )
+    b.add(
+        ts(
+            "Speech latency p50 / p95 by engine | زمن التعرف على الكلام",
+            [
+                target(q(f"rate(fl_voice_latency_seconds_bucket[{RI}])", 0.5, ", engine"), "p50 · {{engine}}"),
+                target(q(f"rate(fl_voice_latency_seconds_bucket[{RI}])", 0.95, ", engine"), "p95 · {{engine}}", "B"),
+            ],
+            desc(
+                "Time from upload to answer, speech recognition included; native = the Mac GPU engine, "
+                "container = the fallback.",
+                "none: compare the two engines; the native engine is expected to be faster",
+                ND_NEW,
+            ),
+            unit="s",
+            rb="voice-native-down",
+        ),
+        12,
+        8,
+    )
+    b.add(
+        bargauge(
+            "Voice errors by reason, 1 h | أخطاء الصوت حسب السبب",
+            "sum by (reason) (increase(fl_voice_errors_total[1h]))",
+            "{{reason}}",
+            desc(
+                "Voice requests that failed, by reason code (stt_unavailable, rate_limited, bad_type, too_large, "
+                "too_long, undecodable).",
+                "none: any count needs a look; the alert fires above 20% over 5 minutes",
+                "no voice request failed in this range, which is the healthy state",
+            ),
+            rb="voice-errors",
+            nodata="No voice errors",
+        ),
+        12,
+        7,
+    )
+    b.add(
+        bargauge(
+            "Voice-started checks by verdict, 1 h | فحوص بدأت بالصوت",
+            "sum by (verdict) (increase(fl_voice_checks_total[1h]))",
+            "{{verdict}}",
+            desc(
+                "Final verdicts of checks started by the voice assistant (channel=voice), counted by the worker.",
+                "none: counts",
+                "no check was started by voice in this range",
+            ),
+            nodata="No voice checks",
+        ),
+        12,
+        7,
+    )
 
 
 def detection() -> Board:

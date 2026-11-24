@@ -16,6 +16,7 @@
   "mcp": true,
   "stix": true,
   "observability": true,
+  "voice_assistant": true,
   "t1_measured_model": true,
   "dspy_compiled_prompts": false,
   "llm_tracing": true

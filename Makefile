@@ -4,11 +4,11 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: demo-mode-check demo-mode-on demo-mode-off voice-rehearsal redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
+.PHONY: voice-e2e demo-mode-check demo-mode-on demo-mode-off voice-rehearsal redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
 
 help: ## List every make target with a one-line description (this list)
 	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
-	@grep -hE '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
 	@echo "Parallel stacks: COMPOSE_PROJECT_NAME=x FL_GATEWAY_PORT=.. FL_PROMETHEUS_PORT=.. FL_GRAFANA_PORT=.. make up"
 
 up: ## Start core + obs, wait until every service is healthy
@@ -168,6 +168,8 @@ voice-native-stop: ## stop the native voice STT started by `make voice-native`
 	@scripts/voice_native.sh stop
 voice-native-status: ## is the native voice STT up and warm?
 	@curl -fsS --max-time 3 http://127.0.0.1:$(VOICE_PORT)/readyz && echo || echo "voice-native not ready (log: work/voice-native/voice-native.log)"
+voice-e2e: ## LIVE end-to-end of "Hey Falcon" with a real browser against a running stack (macOS `say`); BASE_URL, PROM_URL, PHOENIX_URL; writes reviews/VOICE-E2E-<date>.md
+	uv run python scripts/voice_e2e.py $(if $(LANGS),--langs $(LANGS),)
 voice-bench: ## synthetic (macOS say) latency + wake accuracy for running engines; ENGINES="native=http://127.0.0.1:8093 container=http://127.0.0.1:18094"
 	uv run python scripts/voice_bench.py $(foreach e,$(or $(ENGINES),native=http://127.0.0.1:$(VOICE_PORT)),--engine $(e))
 

@@ -54,7 +54,10 @@ export async function POST(request: Request): Promise<Response> {
     if (!upstream.ok) return notConnected(502);
     const reply = parseVoiceReply(await upstream.json());
     if (!reply) return notConnected(502);
-    return Response.json(reply, { headers: { "Cache-Control": "no-store" } });
+    // The utterance span's trace context (a W3C id, no content): the browser sends it with the checks it starts.
+    const tp = upstream.headers.get("traceparent") ?? "";
+    const link: Record<string, string> = /^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/.test(tp) ? { traceparent: tp } : {};
+    return Response.json(reply, { headers: { "Cache-Control": "no-store", ...link } });
   } catch {
     return notConnected(502);
   }

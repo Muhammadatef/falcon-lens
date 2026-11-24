@@ -78,7 +78,14 @@ def classify(url: str, in_feed: bool) -> tuple[str, list[dict[str, Any]], bool, 
 
 
 def build_doc(
-    verdict_id: str, input_type: str, url: str | None, source: str, *, final: bool, in_feed: bool
+    verdict_id: str,
+    input_type: str,
+    url: str | None,
+    source: str,
+    *,
+    final: bool,
+    in_feed: bool,
+    channel: str | None = None,
 ) -> dict[str, Any]:
     verdict, evidence, degraded, reasons_deg = classify(url or "", in_feed)
     if not final:  # T0 partial: never a confident answer
@@ -110,6 +117,8 @@ def build_doc(
         "latency_ms": 5,
         "created_at": datetime.now(UTC).isoformat(),
     }
+    if channel in {"web", "extension", "api", "mcp", "voice"}:
+        doc["channel"] = channel
     if verdict == "no_warning_signs" and not doc["degraded"]:
         doc["actions"]["caution"] = {
             "ar": ["ابقَ حذراً دائماً"],
@@ -158,6 +167,7 @@ async def handle(r: Any, fields: dict[str, str], dsn: str | None) -> None:
             fields.get("source", "live"),
             final=final,
             in_feed=in_feed,
+            channel=fields.get("channel"),
         )
         raw = json.dumps(doc)
         if final:

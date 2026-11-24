@@ -37,6 +37,19 @@ async def test_url_accepted_enqueues_job(client: httpx.AsyncClient, redis: Any) 
     assert json.loads(fields["payload_json"])["url"] == "http://fixtures/a"
 
 
+async def test_channel_is_carried_to_the_job_and_validated(client: httpx.AsyncClient, redis: Any) -> None:
+    r = await client.post("/v1/check/url", json={"url": "http://fixtures/voice", "channel": "voice"})
+    assert r.status_code == 202
+    (entry,) = await redis.xrange(STREAM)
+    assert entry[1]["channel"] == "voice"
+    m = await client.post("/v1/check/message", json={"text": "hello fixture", "channel": "mcp"})
+    assert m.status_code == 202
+    assert (await redis.xrange(STREAM))[1][1]["channel"] == "mcp"
+    bad = await client.post("/v1/check/url", json={"url": "http://fixtures/b", "channel": "telegram"})
+    assert bad.status_code == 422
+    assert "telegram" not in bad.text
+
+
 async def test_single_flight_same_canonical_url(client: httpx.AsyncClient, redis: Any) -> None:
     rs = await asyncio.gather(post_url(client, "http://Fixtures/a#x"), post_url(client, "HTTP://fixtures:80/a"))
     assert rs[0].json()["verdict_id"] == rs[1].json()["verdict_id"]
