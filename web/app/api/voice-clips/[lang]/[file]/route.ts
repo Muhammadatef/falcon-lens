@@ -45,7 +45,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ lang: string; 
       const manifest = file === "manifest.json";
       return new Response(new Uint8Array(body), {
         headers: {
-          "Content-Type": TYPES[path.extname(file)],
+          "Content-Type": TYPES[path.extname(file)] ?? "application/octet-stream",
           // the manifest is revalidated; audio is cached for a day (regenerated clips keep their id)
           "Cache-Control": manifest ? "no-cache" : "public, max-age=86400",
           "X-Content-Type-Options": "nosniff",
