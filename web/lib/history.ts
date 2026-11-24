@@ -3,7 +3,7 @@
  * contracts/openapi.yaml `GET /v1/verdicts`). Everything from the network goes through `parseSummary`, so a hostile
  * payload can never put a non-string into the tree. The summary carries no raw input and no personal data.
  */
-import { TIERS, VERDICTS, VERDICT_ID_RE, type DataSource, type InputType, type Tier, type VerdictLabel } from "./contracts";
+import { CHANNEL_VALUES, TIERS, VERDICTS, VERDICT_ID_RE, type Channel, type DataSource, type InputType, type Tier, type VerdictLabel } from "./contracts";
 
 export interface AgentSummary {
   tiers_run: Tier[];
@@ -26,6 +26,8 @@ export interface VerdictSummary {
   tier_reached: Tier;
   model_route: "cloud" | "local" | "none";
   source: DataSource;
+  /** Which client asked; absent when the check did not say. */
+  channel?: Channel;
   agent: AgentSummary;
 }
 
@@ -56,6 +58,7 @@ export function parseSummary(raw: unknown): VerdictSummary | null {
     tier_reached: tier,
     model_route: oneOf(raw.model_route, ["cloud", "local", "none"] as const) ?? "none",
     source: oneOf(raw.source, ["live", "replay", "synthetic", "fixture"] as const) ?? "live",
+    ...(oneOf(raw.channel, CHANNEL_VALUES) ? { channel: oneOf(raw.channel, CHANNEL_VALUES) as Channel } : {}),
     agent: {
       tiers_run: tiers.length ? tiers : TIERS.slice(0, TIERS.indexOf(tier) + 1),
       extractor_ran: a.extractor_ran === true,

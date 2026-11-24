@@ -51,6 +51,7 @@
       }
     },
     "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"] },
+    "channels": { "type": "array", "uniqueItems": true, "items": { "type": "string", "enum": ["web", "extension", "api", "mcp", "voice"] }, "description": "Optional. Channels of the linked checks (from the verdict events); a bounded enum, never a user identity." },
     "created_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" }
   }

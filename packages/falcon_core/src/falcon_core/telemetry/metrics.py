@@ -46,6 +46,9 @@ CHECKS = _c("checks_total", "Checks completed", ("input_type", "verdict", "tier"
 STAGE_LATENCY = _h("stage_latency_seconds", "Latency per pipeline stage", STAGE_LATENCY_BUCKETS, ("stage",))
 ESCALATIONS = _c("escalations_total", "Tier escalations", ("from", "to"))
 CACHE_HITS = _c("cache_hits_total", "Cache hits", ("layer",))
+VOICE_CHECKS = _c(
+    "voice_checks_total", "Final verdicts of checks started by the voice assistant (channel=voice)", ("verdict",)
+)
 # Health
 TOOL_ERRORS = _c("tool_errors_total", "Tool/signal errors", ("tool", "reason"))
 SANDBOX_TIMEOUTS = _c("sandbox_timeouts_total", "Sandbox visits that timed out")

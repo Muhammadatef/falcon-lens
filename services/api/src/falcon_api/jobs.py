@@ -8,7 +8,7 @@ import logging
 import time
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
@@ -89,6 +89,7 @@ class Jobs:
         fingerprint: str,
         source: str,
         blob_b64: str | None = None,
+        channel: str | None = None,
     ) -> tuple[str, str]:
         """Return (verdict_id, state) with state in {"queued", "attached", "cached"}."""
         try:
@@ -107,15 +108,18 @@ class Jobs:
             await self.r.set(f"fl:job:{verdict_id}", fingerprint, ex=JOB_TTL_S)
             if blob_b64 is not None:
                 await self.r.set(f"fl:blob:{verdict_id}", blob_b64, ex=BLOB_TTL_S)
+            fields: dict[str, str] = {
+                "verdict_id": verdict_id,
+                "input_type": input_type,
+                "payload_json": json.dumps(payload, separators=(",", ":")),
+                "submitted_at": datetime.now(UTC).isoformat(),
+                "source": source,
+            }
+            if channel:
+                fields["channel"] = channel
             await self.r.xadd(
                 STREAM,
-                {
-                    "verdict_id": verdict_id,
-                    "input_type": input_type,
-                    "payload_json": json.dumps(payload, separators=(",", ":")),
-                    "submitted_at": datetime.now(UTC).isoformat(),
-                    "source": source,
-                },
+                cast(Any, fields),
                 maxlen=STREAM_MAXLEN,
                 approximate=True,
             )
