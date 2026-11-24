@@ -36,6 +36,9 @@ def test_dead_pages_reported_separately():
     live = _r(1, "dangerous")
     dead = _r(1, "suspicious", degraded=True, reasons=["dns_failure"])
     assert metrics.is_live(live) and not metrics.is_live(dead)
+    assert not metrics.is_live(_r(1, "suspicious", reasons=["not_rendered:dns_failure"]))
+    assert not metrics.is_live(_r(1, "suspicious", reasons=["sandbox_unavailable:timeout"]))
+    assert metrics.is_live(_r(1, "suspicious", reasons=["partial_render"]))
     s = metrics.summarise([live, dead, _r(0, "no_warning_signs", "legit_uae")])
     assert s["groups"]["phishing_dead_in_sandbox"]["n"] == 1
     assert s["groups"]["phishing_live_in_sandbox"]["n"] == 1

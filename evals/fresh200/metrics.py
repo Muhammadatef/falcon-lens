@@ -49,10 +49,14 @@ def bootstrap(
 
 
 def is_live(r: dict[str, Any]) -> bool:
-    """Was the page opened in the sandbox? False when the sandbox reported a render failure for the target."""
+    """Was the page opened in the sandbox? False when the sandbox reported a render failure for the target.
+
+    Degraded reasons come bare (``dns_failure``) or prefixed (``not_rendered:dns_failure``,
+    ``sandbox_unavailable:timeout``); the part after the last colon is compared with RENDER_FAIL.
+    """
     if "sandbox.not_rendered" in r.get("signals", []):
         return False
-    return not (set(r.get("degraded_reasons", [])) & RENDER_FAIL)
+    return not any(x.rsplit(":", 1)[-1] in RENDER_FAIL for x in r.get("degraded_reasons", []))
 
 
 def _flag(r: dict[str, Any], dangerous_only: bool) -> bool:
