@@ -813,7 +813,6 @@ def build(a: Artifacts) -> list[Block]:
                 "A native reader's rating of the Arabic text, sandbox recall on labelled phishing pages, and bringing the live false-alarm rate down to its target.",
                 "Sign-in (SSO) to restrict the read-only History, which is public until then.",
                 "Adopting DSPy-optimised prompts: the optimiser ran for every model role and none was adopted, because the gains are within noise.",
-                "A business-oriented redesign of the web app (open pull requests).",
                 "Active discovery of new look-alike domains.",
                 "A licensed scam-list feed, and additional warning lists once keys exist.",
                 "Automated data retention, and a switch to turn off external look-ups in sovereign mode.",
