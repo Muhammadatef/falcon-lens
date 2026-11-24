@@ -268,7 +268,8 @@ class Traceable:
         """
         self.values: list[Decimal] = []
         self.strings: set[str] = {name.lower() for name in names if name}
-        for leaf in claimed:  # only the values evidence.py reads (evidence.Evidence.claimed_values), not whole artifacts
+        # Only the values evidence.py reads (evidence.Evidence.claimed_values), not whole artifacts.
+        for leaf in claimed:
             value = _decimal(json.dumps(leaf))
             if value is not None and value.is_finite():
                 self.values.append(value)
@@ -329,7 +330,9 @@ class Traceable:
 def traceable_for(loaded: artifact_mod.Artifact | None, published: Path | None = None) -> Traceable:
     root = published or artifact_mod.PUBLISHED
     extra = artifact_mod.load_fp_regress(root)
-    more = tuple(evidence_mod.load(root).claimed_values())  # only the figures the documents quote from the other families
+    more = tuple(
+        evidence_mod.load(root).claimed_values()
+    )  # only the figures the documents quote from the other families
     if loaded is None:
         return Traceable(None, extra=extra, claimed=more)
     return Traceable(loaded.data, names=(loaded.path.name, loaded.path.stem), extra=extra, claimed=more)

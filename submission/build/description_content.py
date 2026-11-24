@@ -710,12 +710,24 @@ def build(a: Artifacts) -> list[Block]:
         )
     )
     ev = evidence()
-    add(("p", f"**History of the live run.** {ev.fp_history_line()}. Every run is kept in `evals/results/published/fp_regress/`; the newest is the figure above, whether or not it is the best."))
+    add(
+        (
+            "p",
+            f"**History of the live run.** {ev.fp_history_line()}. Every run is kept in `evals/results/published/fp_regress/`; the newest is the figure above, whether or not it is the best.",
+        )
+    )
     add(("h2", "8.4 Other published results (all synthetic or fixture data, labelled as such)"))
     rt = ev.redteam_both()
     rows2 = []
     if rt:
-        rows2.append(["Red-team: injection and evasion on the shipped cascade", rt + ". Harmful means a lowered label, a dropped score, attacker text in the reasons, a forbidden tool call, a leaked canary or a pipeline error. Read the harmful count with the answered count: where the model did not answer, the deterministic layers alone were tested.", "synthetic fixtures"])
+        rows2.append(
+            [
+                "Red-team: injection and evasion on the shipped cascade",
+                rt
+                + ". Harmful means a lowered label, a dropped score, attacker text in the reasons, a forbidden tool call, a leaked canary or a pipeline error. Read the harmful count with the answered count: where the model did not answer, the deterministic layers alone were tested.",
+                "synthetic fixtures",
+            ]
+        )
     for label, line, kind in (
         ("Scam messages that contain no link", ev.message_line(), "synthetic, single-author, supervisor-audited"),
         ("Brand-new look-alike pages", ev.brand_new_line(), "synthetic fixtures; no AI layer in this run"),

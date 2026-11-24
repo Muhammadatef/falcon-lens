@@ -684,7 +684,19 @@ def slide_evidence(f: Facts) -> Slide:
             tb(MARGIN + 4.2, y, 7.7, row_h, p(text, 13, "muted"), anchor="m"),
         )
         y += row_h + gap
-    s.add(tb(MARGIN, y + 0.02, 12.1, 0.5, p("Every row is copied by code from its own published file. Synthetic means invented fixtures and templates, never real scam pages. Read each harmful count together with the answered count.", 12, "faint")))
+    s.add(
+        tb(
+            MARGIN,
+            y + 0.02,
+            12.1,
+            0.5,
+            p(
+                "Every row is copied by code from its own published file. Synthetic means invented fixtures and templates, never real scam pages. Read each harmful count together with the answered count.",
+                12,
+                "faint",
+            ),
+        )
+    )
     s.notes = (
         "Each row comes from its own published evaluation file in the repository, and the figures are copied by code. "
         "The red-team row always states how many cases the model answered next to the harmful count, because where the model did not answer, only the deterministic layers were tested. "
