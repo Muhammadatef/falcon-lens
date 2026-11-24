@@ -1118,6 +1118,7 @@ components:
       - wake
       - intent
       - command
+      - answer_id
       - duration_ms
       - model
       title: VoiceUtterance
