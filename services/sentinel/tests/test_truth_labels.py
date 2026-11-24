@@ -55,3 +55,11 @@ def test_effective_source() -> None:
     assert effective_source("live", [], HOSTS) == "live"
     assert effective_source("live", ["falcon-demo-bank-secure.test"], frozenset()) == "live"
     assert effective_source("replay", ["falcon-demo-bank-secure.test"], HOSTS) == "replay"
+
+
+def test_real_public_domain_in_the_allow_list_stays_live() -> None:
+    hosts = frozenset({"real-bank.com", "fixtures", "demo.test"})
+    assert effective_source("live", ["real-bank.com"], hosts) == "live"
+    assert effective_source("live", ["a.real-bank.com"], hosts) == "live"
+    assert effective_source("live", ["fixtures", "demo.test"], hosts) == "fixture"
+    assert not is_fixture_domain("real-bank.com", hosts)

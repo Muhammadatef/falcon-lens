@@ -81,8 +81,16 @@ class SentinelClient:
 _ACTION_PRIVATE = ("draft", "args", "approved_by")
 
 
+def relabel_incident(inc: dict[str, Any]) -> dict[str, Any]:
+    """Read-time provenance: an incident whose domains are all internal fixture hosts is a fixture, not live."""
+    doms = [str(i.get("value_defanged", "")) for i in inc.get("indicators", []) if i.get("kind") in ("domain", "url")]
+    src = effective_source(str(inc.get("source", "live")), doms)
+    return inc if src == inc.get("source", "live") else {**inc, "source": src}
+
+
 def view_incident(inc: dict[str, Any], *, operator: bool) -> dict[str, Any]:
     """Operators see everything; other scopes never see takedown drafts, action args or approver names."""
+    inc = relabel_incident(inc)
     if operator:
         return inc
     out = dict(inc)

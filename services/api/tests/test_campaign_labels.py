@@ -39,3 +39,11 @@ def test_mixed_or_real_domains_stay_live_and_replay_stays_replay() -> None:
 
 def test_shared_platform_suffix_is_not_counted_as_an_indicator() -> None:
     assert campaign_of(_inc("live", "pages[.]dev", "evil-login[.]pages[.]dev"))["count"] == 1
+
+
+def test_incident_view_relabels_fixtures_and_keeps_others() -> None:
+    from falcon_api.intel import view_incident
+
+    assert view_incident(_inc("live", "falcon-demo-bank-secure[.]test"), operator=True)["source"] == "fixture"
+    assert view_incident(_inc("live", "falcon-demo-bank-secure[.]test"), operator=False)["source"] == "fixture"
+    assert view_incident(_inc("live", "x-pay[.]example"), operator=False)["source"] == "live"

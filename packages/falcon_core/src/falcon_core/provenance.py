@@ -34,10 +34,19 @@ def fixture_hosts(env: Mapping[str, str] | None = None) -> frozenset[str]:
     return frozenset(h.strip().lower() for h in e.get("FL_SSRF_ALLOW_HOSTS", "").split(",") if h.strip())
 
 
+RESERVED_TLDS = frozenset({"test", "example", "invalid", "localhost"})
+
+
+def is_reserved_name(host: str) -> bool:
+    """RFC 2606 / 6761 test names (.test .example .invalid .localhost) or a single-label name such as `fixtures`."""
+    return "." not in host or host.rsplit(".", 1)[-1] in RESERVED_TLDS
+
+
 def is_fixture_domain(value: str, hosts: frozenset[str] | None = None) -> bool:
+    """In the fixture allow-list AND a reserved or test name: a real public domain is never a fixture."""
     hs = fixture_hosts() if hosts is None else hosts
     h = _host(value)
-    return bool(h) and any(h == f or h.endswith("." + f) for f in hs)
+    return bool(h) and is_reserved_name(h) and any(h == f or h.endswith("." + f) for f in hs)
 
 
 def effective_source(source: str, domains: Iterable[str], hosts: frozenset[str] | None = None) -> str:
