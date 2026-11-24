@@ -176,3 +176,63 @@ def test_curated_tool_groups_only_show_generated_tools() -> None:
     deck = load("build_deck")
     facts = deck.Facts(None, None, {}, "u", [("Backend", ["FastAPI"])], [])
     assert dict(deck.shown_tools(facts)) == {"Backend": ["FastAPI"]}
+
+
+def test_deck_spoken_lines_are_the_run_sheet_lines() -> None:
+    """Slides 3, 5, 7 and 14 speak the run-sheet word for word (DECK_DESIGN.md section 4)."""
+    deck = load("build_deck")
+    template = (ROOT / "submission" / "build" / "demo_template.md").read_text(encoding="utf-8")
+    for line in (
+        deck.PROBLEM_EN,
+        deck.PROBLEM_AR,
+        deck.SOLUTION_EN,
+        deck.SOLUTION_AR,
+        deck.DEMO_EN,
+        deck.DEMO_AR,
+        deck.CLOSE_EN,
+        deck.CLOSE_AR,
+        deck.HOOK_FAIL_AR,
+    ):
+        assert line.replace("«", "").replace("»", "") in template.replace("«", "").replace("»", "")
+
+
+def test_keynote_visible_motion_vocabulary() -> None:
+    """Every build uses an effect Keynote imports as a visible build, and lasts long enough to be seen."""
+    deck = load("build_deck")
+    motion = sys.modules["deck_motion"]
+    slides = deck.build_slides(deck.gather(ROOT), {})
+    steps = [m for s in slides for m in s.motion]
+    assert len(steps) >= 100
+    assert {m.effect for m in steps} <= set(motion.EFFECTS)
+    assert min(m.dur for m in steps) >= 500
+    assert max(m.dur for m in steps) <= motion.MAX_EFFECT_MS
+    assert sum(m.effect.startswith(("fly", "zoom", "wipe")) for m in steps) > len(steps) / 2
+    assert [m.trigger for m in slides[1].motion] == ["click"] * 8  # the agenda: one item per click
+
+
+def test_video_timing_is_a_play_command_plus_a_media_node() -> None:
+    load("build_deck")
+    motion = sys.modules["deck_motion"]
+    from lxml import etree
+
+    for auto in (False, True):
+        root = etree.fromstring(motion.media_timing_xml(7, 65600, auto))
+        ns = {"p": motion.NS_P}
+        assert root.xpath("//p:cmd[@cmd='playFrom(0.0)']//p:spTgt/@spid", namespaces=ns) == ["7"]
+        assert root.xpath("//p:video//p:spTgt/@spid", namespaces=ns) == ["7"]
+        assert bool(root.xpath("//p:cond[@evt='onBegin']", namespaces=ns)) is auto
+
+
+def test_presentation_html_is_self_contained(tmp_path: Path) -> None:
+    deck = load("build_deck")
+    present = load("deck_present")
+    slides = deck.build_slides(deck.gather(ROOT), {})
+    out = tmp_path / "deck.html"
+    present.write(deck, slides, out, ROOT)
+    page = out.read_text(encoding="utf-8")
+    assert page.count('<section class="slide"') == len(slides)
+    assert "file://" not in page and 'src="http' not in page and 'href="http' not in page
+    assert "prefers-reduced-motion" in page
+    beats = present.beats(slides[1].motion)
+    assert len(beats) == 8 and not beats[0]["auto"]
+    assert present.beats(slides[0].motion)[0]["auto"]

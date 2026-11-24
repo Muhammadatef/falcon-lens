@@ -10,11 +10,11 @@ The product is an independent project. Never imply that Abu Dhabi Police approve
 
 | Item | State on main |
 |---|---|
-| Police evidence pack download (screenshot, WHOIS and RDAP, hosting, timestamps, hash manifest, takedown draft, STIX) | PLANNED, not on main |
-| Batch URL checker (`make batch FILE=...`) | PLANNED, not on main |
-| Proactive hunter (new look-alike domains from certificate logs) | PLANNED, not on main |
-| Official-number registry and fake-helpline flag | PLANNED, not on main |
-| Voice and Check page speak the real per-check findings | PLANNED, not on main |
+| Police evidence pack download (screenshot, WHOIS and RDAP, hosting, timestamps, hash manifest, takedown draft, STIX) | on main |
+| Batch URL checker (`make batch FILE=...`) | on main |
+| Proactive hunter (new look-alike domains from certificate logs) | on main |
+| Official-number registry and fake-helpline flag | on main |
+| Voice and Check page speak the real per-check findings | on main |
 | Operator route selector on /ops | on main |
 
 Beats marked PLANNED are cut from the live demo and said once, under "next thirty days". If a PR merges before Thursday, rebuild with `make submission` and the beat switches on by itself.
@@ -28,7 +28,7 @@ Beats marked PLANNED are cut from the live demo and said once, under "next thirt
 | 0:55 to 2:40 | Live demo on the Mac Studio | All five |
 | 2:40 to 3:00 | Close: criteria recap and pilot path | Feasibility and presentation |
 
-Deck slides follow the same order: title, hook, problem and solution, demo agenda, then one slide per criterion, limits, next thirty days, team, close. In the three minutes you only show the first four slides and the closing slide; the criterion slides are for questions and for the judges to read.
+Deck slides follow the same order (fourteen slides): title, agenda, hook video, problem, solution, architecture, live demo, then one slide per criterion, pilot path and limits, and the close with the team. In the three minutes you show slides one to seven and then slide fourteen; the criterion slides are for questions and for the judges to read. The agenda builds item by item on a click, so click once per item while the team is introduced, then once more to start the hook.
 
 ### 0:00 to 0:25 Hook video (twenty-five seconds)
 
@@ -38,7 +38,7 @@ Deck slides follow the same order: title, hook, problem and solution, demo agend
 
 ### 0:25 to 0:55 Problem and solution in one breath
 
-- **On screen.** The problem-and-solution slide: the three-layer picture (voice, two agents, platform).
+- **On screen.** The problem slide, then the solution slide (one click builds the verdict plates), then the architecture slide (one click for the flow down the three layers: voice, two agents, platform).
 - **Say (English).** "A blocklist lists a scam page only after somebody reports it, so a page that is new today is on no list today, and the warning is rarely in the language people read. Falcon Lens is two AI agents. Baseer, the Investigator, judges one message, link or email, and fixed code, not the AI, sets the score. Dir', the Sentinel, watches around the clock, links checks into campaigns and drafts takedowns that wait for a human. You simply talk to it: Hey Falcon. And it runs sovereign, on local models, on this machine."
 - **Say (Arabic).** «القائمة السوداء لا تُدرج الصفحة إلا بعد أن يبلّغ عنها أحد، فالصفحة الجديدة اليوم ليست في أي قائمة. «عدسة الصقر» وكيلان بالذكاء الاصطناعي: «بصير» يحكم على رسالة أو رابط أو بريد واحد، والدرجة يحدّدها كود ثابت لا نموذج لغوي. و«درع» يراقب على مدار الساعة ويربط الفحوص في حملات ويُعدّ مسودات الإزالة بانتظار موافقة إنسان. وتخاطبه بصوتك: «يا صقر». ويعمل محلياً بالكامل على هذا الجهاز.»
 
@@ -49,19 +49,19 @@ Open `https://localhost:8443` (or `https://falconlens.app` if the tunnel is up).
 | Time | On screen | Say | Criterion |
 |---|---|---|---|
 | 0:55 to 1:00 | Switch from the deck to the browser; the home page in Arabic with the voice control. | EN: "This is live, on our machine." AR: «هذا عرض مباشر على جهازنا.» | Feasibility |
-| 1:00 to 1:35 | The demo SMS (demo-kit item **M1**, the Arabic SMS) is already copied. The teammate speaks Arabic. Live numbered steps appear: «سمعتك» then «أفهم طلبك» then «بصير: القوائم» then «العنوان» then «الصفحة» then «الذكاء الاصطناعي» then «درع». The result plate turns red «خطِر», the alert sound plays, and the falcon voice (Zayd) speaks the result. The falcon speaks the result; speaking the real per-check findings is PLANNED, not on main, so do not promise it. | Teammate: «يا صقر، شيّك اللي نسخته». Presenter, over the steps: EN "Each step is real: the lists, the address, the page in a sealed browser, then the AI for the unclear part, then the Sentinel." AR: «كل خطوة حقيقية: القوائم، العنوان، الصفحة في متصفح معزول، ثم الذكاء الاصطناعي، ثم درع.» | Detection, explainability, UAE |
+| 1:00 to 1:35 | The demo SMS (demo-kit item **M1**, the Arabic SMS) is already copied. The teammate speaks Arabic. Live numbered steps appear: «سمعتك» then «أفهم طلبك» then «بصير: القوائم» then «العنوان» then «الصفحة» then «الذكاء الاصطناعي» then «درع». The result plate turns red «خطِر», the alert sound plays, and the falcon voice (Zayd) speaks the result. The falcon speaks the real findings of this check. | Teammate: «يا صقر، شيّك اللي نسخته». Presenter, over the steps: EN "Each step is real: the lists, the address, the page in a sealed browser, then the AI for the unclear part, then the Sentinel." AR: «كل خطوة حقيقية: القوائم، العنوان، الصفحة في متصفح معزول، ثم الذكاء الاصطناعي، ثم درع.» | Detection, explainability, UAE |
 | 1:35 to 1:55 | The owner speaks English; the same voice control. The FAQ answer is shown and spoken. | Owner: "Hey Falcon, someone called saying he's from the bank and asked for my code." Presenter after the answer: EN "A short, sourced answer, in the language you asked in." AR: «جواب قصير ومسنَد، وبلغتك.» | UAE, explainability |
-| 1:55 to 2:10 | `/history`: open the trace of the check just made (steps, signals, the arbiter's rule). The evidence pack download is PLANNED, not on main: do not click it; say it once under next thirty days. | EN: "Every check keeps its trace. The incident exports as STIX; the one-click evidence pack is next." AR: «لكل فحص أثره. ويُصدَّر الحادث بصيغة STIX، وحزمة الأدلة بنقرة واحدة هي الخطوة التالية.» | Explainability |
+| 1:55 to 2:10 | `/history`: open the trace of the check just made (steps, signals, the arbiter's rule). Then click the evidence pack download and open its manifest: screenshot, WHOIS and RDAP, hosting and ASN, UTC timestamps, SHA-256 hashes, takedown draft, STIX. | EN: "Every check keeps its trace. One click gives the evidence pack: screenshot, WHOIS, hosting, UTC times and a hash manifest, with a takedown draft." AR: «لكل فحص أثره. ونقرة واحدة تعطيك حزمة الأدلة: لقطة الشاشة وWHOIS والاستضافة والتوقيت وبصمات الملفات ومسودة الإزالة.» | Explainability |
 | 2:10 to 2:25 | `/campaigns`: a campaign card with its linked checks (Dir' linking a campaign; replay label in frame). Then `/results`: the KPIs, and the fresh two-hundred-site test block. If `/results` does not show the fresh two-hundred-site block, go back to the detection slide and read its not-on-feed row. | EN: "One check protects one person. Dir' links similar checks into a campaign. And these are our numbers, with their limits: on hosts from a feed our stack does not query, 100 of 100 warned, only 1 of 100 Dangerous (the rest Suspicious), and 48 of 100 could not complete every check." AR: «فحص واحد يحمي شخصاً، و«درع» يربط المتشابه في حملة. وهذه أرقامنا مع حدودها.» | Early detection, honesty |
-| 2:25 to 2:40 | `/ops` (operator key typed off camera): the route selector, cloud model with local fallback, or local only (Inkling or Qwen). The proactive hunter is PLANNED (its core code is on main, its runtime is not): do not demo it; say it once under next thirty days. | EN: "The operator chooses the route: a cloud model with a local fallback, or fully local. Same checks, same arbiter." AR: «المشغّل يختار المسار: نموذج سحابي مع بديل محلي، أو محلي بالكامل.» | Feasibility, sovereignty |
+| 2:25 to 2:40 | `/ops` (operator key typed off camera): the route selector, cloud model with local fallback, or local only (Inkling or Qwen). Then one line on the proactive hunter: new look-alike domains found from certificate logs appear on `/campaigns`. | EN: "The operator chooses the route: a cloud model with a local fallback, or fully local. Same checks, same arbiter." AR: «المشغّل يختار المسار: نموذج سحابي مع بديل محلي، أو محلي بالكامل.» | Feasibility, sovereignty |
 
 If a beat runs long, drop `/ops` first, then the English question. Never narrate a verdict before it is on screen. Do not show the operator key.
 
 ### 2:40 to 3:00 Close: criteria recap and pilot path
 
-- **On screen.** The closing slide, or the browser home page with the independence line.
-- **Say (English).** "Detection with a fixed arbiter and honest numbers. Look-alikes that are on no list. Reasons, a trace and an evidence pack a police analyst can use. Arabic voice and UAE brands. Live, sovereign, and a pilot path: the same stack inside your network, in shadow mode first. Ready to connect, not connected. Check before you tap."
-- **Say (Arabic).** «كشف بحكَم ثابت وأرقام صادقة، ومواقع منتحلة لم تُدرج في أي قائمة، وأسباب وأثر وحزمة أدلة يستعملها المحلل، وصوت عربي وعلامات إماراتية. نظام حي وسيادي، ومسار تجريبي: المنظومة نفسها داخل شبكتكم في وضع المراقبة أولاً. جاهز للربط وغير مربوط. افحص قبل أن تضغط.»
+- **On screen.** The closing slide (slide fourteen: tagline, five recap chips, team names), reached by the jump cue under "Before you go on stage".
+- **Say (English).** "Detection with a fixed arbiter and honest numbers. Look-alikes that are on no list. Reasons, a trace and an evidence pack a police analyst can use. Arabic voice and UAE brands. Live, sovereign, and a pilot path: the same stack inside your network, in shadow mode first. Ready to connect, not connected. Ask the falcon before you tap."
+- **Say (Arabic).** «كشف بحكَم ثابت وأرقام صادقة، ومواقع منتحلة لم تُدرج في أي قائمة، وأسباب وأثر وحزمة أدلة يستعملها المحلل، وصوت عربي وعلامات إماراتية. نظام حي وسيادي، ومسار تجريبي: المنظومة نفسها داخل شبكتكم في وضع المراقبة أولاً. جاهز للربط وغير مربوط. اسأل الصقر قبل لا تضغط.»
 
 ## One-minute narration for the demo video (Emirati Arabic)
 
@@ -113,11 +113,11 @@ If the hunting feed is not switched on for the recording, say «ويقدر ير�
 
 ## Questions and answers (ten likely, with honest one-line answers)
 
-1. **How will you do on our hidden URL set?** "We do not know yet, so give us the file: the batch checker is PLANNED, not on main; today we would submit them through the API one at a time. Our own numbers are the frozen test split and the fresh test, with their limits."
+1. **How will you do on our hidden URL set?** "We do not know yet, so give us the file: `make batch FILE=urls.txt` runs it live in two modes, strict (Suspicious counts as flagged) and lenient (only Dangerous), and prints a results table. Our own numbers are the frozen test split and the fresh test, with their limits."
 2. **What about false positives on banks and government sites?** "On the frozen test split no official site was marked Dangerous; on the live full stack the false-alarm rate is above our target (26.5% on 200 held-out sites, against a target of 2.0%), mostly checks that could not finish, and that is our first fix."
 3. **Do redirects, shorteners and cloaking fool it?** "The sandbox follows redirects and the final page is judged, and a cloaking check compares two loads of the page; we have not published a separate score for each, so we do not quote one."
 4. **Do you cover search results, ads and Google Maps?** "Ready, needs a key: the connectors are written, no key is configured, so we show no result for them."
-5. **Can it catch brand-new look-alike domains?** "Yes for pages people send us: flagged Dangerous 12 of 12 look-alike pages on hosts in no feed, synthetic. The hunter that goes looking for them ourselves is next-thirty-days work, not shipped."
+5. **Can it catch brand-new look-alike domains?** "Yes for pages people send us: flagged Dangerous 12 of 12 look-alike pages on hosts in no feed, synthetic. A scheduled hunter also finds new look-alike domains from certificate logs."
 6. **Does an LLM decide the verdict?** "No. The model reads and explains; a fixed arbiter sets the score; page text is quarantined; the red-team found no harm, and we state how many cases the model answered."
 7. **What about data sovereignty?** "Every model call can stay on the machine: Inkling-2-Mini: 7 of 7 scenarios passed, 0 calls to a cloud model; Qwen: 7 of 7 scenarios passed, 0 calls to a cloud model; the run is marked failed because the Sentinel summary fell back to a template. Lookups about the checked site, such as RDAP and the sandbox's one passive visit, still use the internet through our egress proxy."
 8. **Does it scale?** "By design: Redis streams and stateless workers, so you add workers. It is proven on one machine only, and we say so."
@@ -133,6 +133,7 @@ If the hunting feed is not switched on for the recording, say «ويقدر ير�
 5. Sound: test the alert sound and the falcon voice through the room speakers, and test the microphone at the stage distance.
 6. Do Not Disturb on. Quit chat, mail and calendar. Never show `.env`, the operator key or the terminal history.
 7. Rehearse twice with a timer. The close must start with twenty seconds left.
+8. Jump from the browser to the close slide (slide fourteen) with twenty seconds left: in slideshow mode type the slide index and press Return, or keep the deck window on slide fourteen in a second space.
 
 ## Do and do not
 

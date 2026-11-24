@@ -21,7 +21,7 @@ Beats marked PLANNED are cut from the live demo and said once, under "next thirt
 | 0:55 to 2:40 | Live demo on the Mac Studio | All five |
 | 2:40 to 3:00 | Close: criteria recap and pilot path | Feasibility and presentation |
 
-Deck slides follow the same order: title, hook, problem and solution, demo agenda, then one slide per criterion, limits, next thirty days, team, close. In the three minutes you only show the first four slides and the closing slide; the criterion slides are for questions and for the judges to read.
+Deck slides follow the same order (fourteen slides): title, agenda, hook video, problem, solution, architecture, live demo, then one slide per criterion, pilot path and limits, and the close with the team. In the three minutes you show slides one to seven and then slide fourteen; the criterion slides are for questions and for the judges to read. The agenda builds item by item on a click, so click once per item while the team is introduced, then once more to start the hook.
 
 ### 0:00 to 0:25 Hook video (twenty-five seconds)
 
@@ -31,7 +31,7 @@ Deck slides follow the same order: title, hook, problem and solution, demo agend
 
 ### 0:25 to 0:55 Problem and solution in one breath
 
-- **On screen.** The problem-and-solution slide: the three-layer picture (voice, two agents, platform).
+- **On screen.** The problem slide, then the solution slide (one click builds the verdict plates), then the architecture slide (one click for the flow down the three layers: voice, two agents, platform).
 - **Say (English).** "A blocklist lists a scam page only after somebody reports it, so a page that is new today is on no list today, and the warning is rarely in the language people read. Falcon Lens is two AI agents. Baseer, the Investigator, judges one message, link or email, and fixed code, not the AI, sets the score. Dir', the Sentinel, watches around the clock, links checks into campaigns and drafts takedowns that wait for a human. You simply talk to it: Hey Falcon. And it runs sovereign, on local models, on this machine."
 - **Say (Arabic).** «القائمة السوداء لا تُدرج الصفحة إلا بعد أن يبلّغ عنها أحد، فالصفحة الجديدة اليوم ليست في أي قائمة. «عدسة الصقر» وكيلان بالذكاء الاصطناعي: «بصير» يحكم على رسالة أو رابط أو بريد واحد، والدرجة يحدّدها كود ثابت لا نموذج لغوي. و«درع» يراقب على مدار الساعة ويربط الفحوص في حملات ويُعدّ مسودات الإزالة بانتظار موافقة إنسان. وتخاطبه بصوتك: «يا صقر». ويعمل محلياً بالكامل على هذا الجهاز.»
 
@@ -52,9 +52,9 @@ If a beat runs long, drop `/ops` first, then the English question. Never narrate
 
 ### 2:40 to 3:00 Close: criteria recap and pilot path
 
-- **On screen.** The closing slide, or the browser home page with the independence line.
-- **Say (English).** "Detection with a fixed arbiter and honest numbers. Look-alikes that are on no list. Reasons, a trace and an evidence pack a police analyst can use. Arabic voice and UAE brands. Live, sovereign, and a pilot path: the same stack inside your network, in shadow mode first. Ready to connect, not connected. Check before you tap."
-- **Say (Arabic).** «كشف بحكَم ثابت وأرقام صادقة، ومواقع منتحلة لم تُدرج في أي قائمة، وأسباب وأثر وحزمة أدلة يستعملها المحلل، وصوت عربي وعلامات إماراتية. نظام حي وسيادي، ومسار تجريبي: المنظومة نفسها داخل شبكتكم في وضع المراقبة أولاً. جاهز للربط وغير مربوط. افحص قبل أن تضغط.»
+- **On screen.** The closing slide (slide fourteen: tagline, five recap chips, team names), reached by the jump cue under "Before you go on stage".
+- **Say (English).** "Detection with a fixed arbiter and honest numbers. Look-alikes that are on no list. Reasons, a trace and an evidence pack a police analyst can use. Arabic voice and UAE brands. Live, sovereign, and a pilot path: the same stack inside your network, in shadow mode first. Ready to connect, not connected. Ask the falcon before you tap."
+- **Say (Arabic).** «كشف بحكَم ثابت وأرقام صادقة، ومواقع منتحلة لم تُدرج في أي قائمة، وأسباب وأثر وحزمة أدلة يستعملها المحلل، وصوت عربي وعلامات إماراتية. نظام حي وسيادي، ومسار تجريبي: المنظومة نفسها داخل شبكتكم في وضع المراقبة أولاً. جاهز للربط وغير مربوط. اسأل الصقر قبل لا تضغط.»
 
 ## One-minute narration for the demo video (Emirati Arabic)
 
@@ -126,6 +126,7 @@ If the hunting feed is not switched on for the recording, say «ويقدر ير�
 5. Sound: test the alert sound and the falcon voice through the room speakers, and test the microphone at the stage distance.
 6. Do Not Disturb on. Quit chat, mail and calendar. Never show `.env`, the operator key or the terminal history.
 7. Rehearse twice with a timer. The close must start with twenty seconds left.
+8. Jump from the browser to the close slide (slide fourteen) with twenty seconds left: in slideshow mode type the slide index and press Return, or keep the deck window on slide fourteen in a second space.
 
 ## Do and do not
 
