@@ -1,0 +1,1971 @@
+{
+  "caveats": [
+    "Legit labels are not hand-audited: a Tranco site is labelled legit when it served a page and was on no keyless public blocklist (Phishing.Database ACTIVE list, OpenPhish feed); Google Safe Browsing was not used (no key configured).",
+    "Phishing labels are the feed's own: a listed URL may already be dead or taken down; those are reported separately.",
+    "Main-set phishing came from the OpenPhish feed that the live stack also ingests: a reputation lookup (T0) can catch these without any model. Read the main-set recall as feed-coverage plus pipeline, and use results_second_source (hosts from a feed the stack does not query) and the no_reputation_hit groups for the model's own detection.",
+    "The same feed supplied the earlier training data, so the main phishing sample is not independent of it.",
+    "23 URLs of the main set were submitted once in a discarded pilot of this same run before two extra fields were recorded; the raw rows were thrown away and all 200 were resubmitted, so those 23 may have been served from the verdict cache (latency).",
+    "A request that hits the per-key rate limit waits for Retry-After and retries; latency_s includes that wait, http_429 counts the retries.",
+    "Single run on one day, n=200; intervals are wide for subsets. Not a test-split result and not tuned on."
+  ],
+  "composition": {
+    "legit_global": 80,
+    "legit_uae": 20,
+    "phishing": 100
+  },
+  "created_at": "2026-11-24T14:36:56Z",
+  "definitions": {
+    "caught": "verdict suspicious or dangerous (any_warning); dangerous_only counts dangerous alone",
+    "ci": "Wilson 95% for proportions; percentile bootstrap 95% (2000 resamples, seed 7) for precision, F1, accuracy and recall/FPR",
+    "live_in_sandbox": "no sandbox.not_rendered evidence and no render-failure degraded reason (timeout, dns_failure, tls_error, http_403_empty, empty_response)",
+    "reached_ai_step": "tier_reached T3 (the investigator, used only for the uncertain band); llm_evidence_present is any llm.* evidence"
+  },
+  "error_examples_defanged": {
+    "dangerous_on_legit": [],
+    "false_alarms_on_legit": [
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "partial_render"
+        ],
+        "group": "legit_global",
+        "risk_score": 67,
+        "tier": "T2",
+        "url": "hxxps://sat24[.]com/",
+        "verdict": "suspicious"
+      },
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "partial_render"
+        ],
+        "group": "legit_global",
+        "risk_score": 33,
+        "tier": "T2",
+        "url": "hxxps://tomsguide[.]com/",
+        "verdict": "suspicious"
+      },
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "sandbox_unavailable:timeout"
+        ],
+        "group": "legit_global",
+        "risk_score": 17,
+        "tier": "T2",
+        "url": "hxxps://greenhouse[.]io/",
+        "verdict": "suspicious"
+      },
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "partial_render"
+        ],
+        "group": "legit_global",
+        "risk_score": 3,
+        "tier": "T2",
+        "url": "hxxps://linuxserver[.]io/",
+        "verdict": "suspicious"
+      },
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "sandbox_unavailable:timeout"
+        ],
+        "group": "legit_global",
+        "risk_score": 1,
+        "tier": "T2",
+        "url": "hxxps://primis[.]tech/",
+        "verdict": "suspicious"
+      },
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "partial_render"
+        ],
+        "group": "legit_global",
+        "risk_score": 1,
+        "tier": "T2",
+        "url": "hxxps://pixlee[.]co/",
+        "verdict": "suspicious"
+      },
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "partial_render"
+        ],
+        "group": "legit_uae",
+        "risk_score": 1,
+        "tier": "T2",
+        "url": "hxxps://jumbo[.]ae/",
+        "verdict": "suspicious"
+      },
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "partial_render"
+        ],
+        "group": "legit_global",
+        "risk_score": 1,
+        "tier": "T2",
+        "url": "hxxps://youth[.]cn/",
+        "verdict": "suspicious"
+      },
+      {
+        "degraded": true,
+        "degraded_reasons": [
+          "sandbox_unavailable:timeout"
+        ],
+        "group": "legit_global",
+        "risk_score": 3,
+        "tier": "T2",
+        "url": "hxxps://moviessda[.]com/",
+        "verdict": "suspicious"
+      }
+    ],
+    "missed_phishing": []
+  },
+  "errors": [],
+  "exclusion_method": {
+    "against": "dataset items (train/val/test), every held-out legit set, legit_urls.csv, fp_regress artifacts, message_text, red-team, fixtures, brands.yaml, every text file of the repo, and the verdict store",
+    "build_stats": {
+      "legit_global": {
+        "blocklisted": 0,
+        "excluded_seen": 831,
+        "not_serving": 61,
+        "tranco_in_range": 48001
+      },
+      "legit_uae": {
+        "uae_by_category": {
+          "bank": 5,
+          "government": 5,
+          "news": 3,
+          "retail": 4,
+          "telco": 3
+        },
+        "uae_candidates_after_exclusion": 40,
+        "uae_failed_verification": 12
+      },
+      "phishing": {
+        "dropped_dup_domain": 3,
+        "dropped_seen_domain": 27,
+        "dropped_seen_url": 1,
+        "feed_rows": 1435
+      }
+    },
+    "dedupe": "canonical URL and registered domain (public-suffix list incl. private suffixes)",
+    "excluded_canonical_urls": 1896,
+    "excluded_registered_domains": 12914
+  },
+  "git_sha": "0e91e66c04f870ef06b69d65191e5715982846f3-dirty",
+  "http_429": {
+    "raw.jsonl": 240,
+    "raw2.jsonl": 172
+  },
+  "kind": "fresh200_live",
+  "n_errors": 0,
+  "n_submitted": 200,
+  "provenance": "real, collected 2026-11-24",
+  "results": {
+    "degraded_rate_all": {
+      "k": 109,
+      "n": 200,
+      "value": 0.545,
+      "wilson95": [
+        0.4758,
+        0.6125
+      ]
+    },
+    "groups": {
+      "legit_all": {
+        "dangerous": {
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "degraded": {
+          "k": 9,
+          "n": 100,
+          "value": 0.09,
+          "wilson95": [
+            0.0481,
+            0.1623
+          ]
+        },
+        "degraded_reasons": {
+          "partial_render": 6,
+          "sandbox_unavailable:timeout": 3
+        },
+        "latency_s": {
+          "max": 117.18,
+          "p50": 59.09,
+          "p95": 61.42
+        },
+        "llm_evidence_present": {
+          "k": 56,
+          "n": 100,
+          "value": 0.56,
+          "wilson95": [
+            0.4623,
+            0.6533
+          ]
+        },
+        "n": 100,
+        "reached_t3_investigator": {
+          "k": 1,
+          "n": 100,
+          "value": 0.01,
+          "wilson95": [
+            0.0018,
+            0.0545
+          ]
+        },
+        "server_latency_s": {
+          "p50": 5.44,
+          "p95": 8.74
+        },
+        "tier_mix": {
+          "T1": 39,
+          "T2": 60,
+          "T3": 1
+        },
+        "verdicts": {
+          "no_warning_signs": 91,
+          "suspicious": 9
+        },
+        "warned": {
+          "k": 9,
+          "n": 100,
+          "value": 0.09,
+          "wilson95": [
+            0.0481,
+            0.1623
+          ]
+        }
+      },
+      "legit_global": {
+        "dangerous": {
+          "k": 0,
+          "n": 80,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.0458
+          ]
+        },
+        "degraded": {
+          "k": 8,
+          "n": 80,
+          "value": 0.1,
+          "wilson95": [
+            0.0515,
+            0.1851
+          ]
+        },
+        "degraded_reasons": {
+          "partial_render": 5,
+          "sandbox_unavailable:timeout": 3
+        },
+        "latency_s": {
+          "max": 117.18,
+          "p50": 59.17,
+          "p95": 61.42
+        },
+        "llm_evidence_present": {
+          "k": 49,
+          "n": 80,
+          "value": 0.6125,
+          "wilson95": [
+            0.5029,
+            0.7118
+          ]
+        },
+        "n": 80,
+        "reached_t3_investigator": {
+          "k": 1,
+          "n": 80,
+          "value": 0.0125,
+          "wilson95": [
+            0.0022,
+            0.0675
+          ]
+        },
+        "server_latency_s": {
+          "p50": 6.58,
+          "p95": 8.84
+        },
+        "tier_mix": {
+          "T1": 26,
+          "T2": 53,
+          "T3": 1
+        },
+        "verdicts": {
+          "no_warning_signs": 72,
+          "suspicious": 8
+        },
+        "warned": {
+          "k": 8,
+          "n": 80,
+          "value": 0.1,
+          "wilson95": [
+            0.0515,
+            0.1851
+          ]
+        }
+      },
+      "legit_uae": {
+        "dangerous": {
+          "k": 0,
+          "n": 20,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "degraded": {
+          "k": 1,
+          "n": 20,
+          "value": 0.05,
+          "wilson95": [
+            0.0089,
+            0.2361
+          ]
+        },
+        "degraded_reasons": {
+          "partial_render": 1
+        },
+        "latency_s": {
+          "max": 94.63,
+          "p50": 57.08,
+          "p95": 60.27
+        },
+        "llm_evidence_present": {
+          "k": 7,
+          "n": 20,
+          "value": 0.35,
+          "wilson95": [
+            0.1812,
+            0.5671
+          ]
+        },
+        "n": 20,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 20,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "server_latency_s": {
+          "p50": 2.29,
+          "p95": 7.11
+        },
+        "tier_mix": {
+          "T1": 13,
+          "T2": 7
+        },
+        "verdicts": {
+          "no_warning_signs": 19,
+          "suspicious": 1
+        },
+        "warned": {
+          "k": 1,
+          "n": 20,
+          "value": 0.05,
+          "wilson95": [
+            0.0089,
+            0.2361
+          ]
+        }
+      },
+      "phishing_all": {
+        "dangerous": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        },
+        "degraded": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        },
+        "degraded_reasons": {
+          "t1_model_unavailable": 100
+        },
+        "latency_s": {
+          "max": 95.16,
+          "p50": 3.43,
+          "p95": 60.15
+        },
+        "llm_evidence_present": {
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "n": 100,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "server_latency_s": {
+          "p50": 0.12,
+          "p95": 0.4
+        },
+        "tier_mix": {
+          "T0": 100
+        },
+        "verdicts": {
+          "dangerous": 100
+        },
+        "warned": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      },
+      "phishing_dead_in_sandbox": {
+        "dangerous": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "degraded": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "degraded_reasons": {},
+        "latency_s": {
+          "max": 0.0,
+          "p50": 0.0,
+          "p95": 0.0
+        },
+        "llm_evidence_present": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "n": 0,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "server_latency_s": {
+          "p50": 0.0,
+          "p95": 0.0
+        },
+        "tier_mix": {},
+        "verdicts": {},
+        "warned": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "phishing_live_in_sandbox": {
+        "dangerous": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        },
+        "degraded": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        },
+        "degraded_reasons": {
+          "t1_model_unavailable": 100
+        },
+        "latency_s": {
+          "max": 95.16,
+          "p50": 3.43,
+          "p95": 60.15
+        },
+        "llm_evidence_present": {
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "n": 100,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "server_latency_s": {
+          "p50": 0.12,
+          "p95": 0.4
+        },
+        "tier_mix": {
+          "T0": 100
+        },
+        "verdicts": {
+          "dangerous": 100
+        },
+        "warned": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      },
+      "phishing_live_no_reputation_hit": {
+        "dangerous": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "degraded": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "degraded_reasons": {},
+        "latency_s": {
+          "max": 0.0,
+          "p50": 0.0,
+          "p95": 0.0
+        },
+        "llm_evidence_present": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "n": 0,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "server_latency_s": {
+          "p50": 0.0,
+          "p95": 0.0
+        },
+        "tier_mix": {},
+        "verdicts": {},
+        "warned": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "phishing_no_reputation_hit": {
+        "dangerous": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "degraded": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "degraded_reasons": {},
+        "latency_s": {
+          "max": 0.0,
+          "p50": 0.0,
+          "p95": 0.0
+        },
+        "llm_evidence_present": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "n": 0,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "server_latency_s": {
+          "p50": 0.0,
+          "p95": 0.0
+        },
+        "tier_mix": {},
+        "verdicts": {},
+        "warned": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "phishing_reputation_feed_hit": {
+        "dangerous": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        },
+        "degraded": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        },
+        "degraded_reasons": {
+          "t1_model_unavailable": 100
+        },
+        "latency_s": {
+          "max": 95.16,
+          "p50": 3.43,
+          "p95": 60.15
+        },
+        "llm_evidence_present": {
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "n": 100,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "server_latency_s": {
+          "p50": 0.12,
+          "p95": 0.4
+        },
+        "tier_mix": {
+          "T0": 100
+        },
+        "verdicts": {
+          "dangerous": 100
+        },
+        "warned": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      }
+    },
+    "latency_s_all": {
+      "p50": 58.05,
+      "p95": 60.8
+    },
+    "n_completed": 200,
+    "overall_all_phishing": {
+      "any_warning": {
+        "accuracy": {
+          "bootstrap95": [
+            0.925,
+            0.98
+          ],
+          "k": 191,
+          "n": 200,
+          "value": 0.955,
+          "wilson95": [
+            0.9167,
+            0.9761
+          ]
+        },
+        "counts": {
+          "fn": 0,
+          "fp": 9,
+          "tn": 91,
+          "tp": 100
+        },
+        "f1": {
+          "bootstrap95": [
+            0.9252,
+            0.9815
+          ],
+          "value": 0.9569
+        },
+        "false_positive_rate": {
+          "bootstrap95": [
+            0.04,
+            0.15
+          ],
+          "k": 9,
+          "n": 100,
+          "value": 0.09,
+          "wilson95": [
+            0.0481,
+            0.1623
+          ]
+        },
+        "precision": {
+          "bootstrap95": [
+            0.8609,
+            0.9636
+          ],
+          "k": 100,
+          "n": 109,
+          "value": 0.9174,
+          "wilson95": [
+            0.8505,
+            0.956
+          ]
+        },
+        "recall": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      },
+      "dangerous_only": {
+        "accuracy": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 200,
+          "n": 200,
+          "value": 1.0,
+          "wilson95": [
+            0.9812,
+            1.0
+          ]
+        },
+        "counts": {
+          "fn": 0,
+          "fp": 0,
+          "tn": 100,
+          "tp": 100
+        },
+        "f1": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "value": 1.0
+        },
+        "false_positive_rate": {
+          "bootstrap95": [
+            0.0,
+            0.0
+          ],
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "precision": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        },
+        "recall": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      }
+    },
+    "overall_live_phishing_only": {
+      "any_warning": {
+        "accuracy": {
+          "bootstrap95": [
+            0.925,
+            0.98
+          ],
+          "k": 191,
+          "n": 200,
+          "value": 0.955,
+          "wilson95": [
+            0.9167,
+            0.9761
+          ]
+        },
+        "counts": {
+          "fn": 0,
+          "fp": 9,
+          "tn": 91,
+          "tp": 100
+        },
+        "f1": {
+          "bootstrap95": [
+            0.9274,
+            0.9817
+          ],
+          "value": 0.9569
+        },
+        "false_positive_rate": {
+          "bootstrap95": [
+            0.04,
+            0.15
+          ],
+          "k": 9,
+          "n": 100,
+          "value": 0.09,
+          "wilson95": [
+            0.0481,
+            0.1623
+          ]
+        },
+        "precision": {
+          "bootstrap95": [
+            0.8646,
+            0.964
+          ],
+          "k": 100,
+          "n": 109,
+          "value": 0.9174,
+          "wilson95": [
+            0.8505,
+            0.956
+          ]
+        },
+        "recall": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      },
+      "dangerous_only": {
+        "accuracy": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 200,
+          "n": 200,
+          "value": 1.0,
+          "wilson95": [
+            0.9812,
+            1.0
+          ]
+        },
+        "counts": {
+          "fn": 0,
+          "fp": 0,
+          "tn": 100,
+          "tp": 100
+        },
+        "f1": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "value": 1.0
+        },
+        "false_positive_rate": {
+          "bootstrap95": [
+            0.0,
+            0.0
+          ],
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "precision": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        },
+        "recall": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      }
+    },
+    "server_latency_s_all": {
+      "p50": 0.29,
+      "p95": 7.8
+    }
+  },
+  "results_second_source": {
+    "degraded_rate_all": {
+      "k": 57,
+      "n": 200,
+      "value": 0.285,
+      "wilson95": [
+        0.2269,
+        0.3512
+      ]
+    },
+    "groups": {
+      "legit_all": {
+        "dangerous": {
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "degraded": {
+          "k": 9,
+          "n": 100,
+          "value": 0.09,
+          "wilson95": [
+            0.0481,
+            0.1623
+          ]
+        },
+        "degraded_reasons": {
+          "partial_render": 6,
+          "sandbox_unavailable:timeout": 3
+        },
+        "latency_s": {
+          "max": 117.18,
+          "p50": 59.09,
+          "p95": 61.42
+        },
+        "llm_evidence_present": {
+          "k": 56,
+          "n": 100,
+          "value": 0.56,
+          "wilson95": [
+            0.4623,
+            0.6533
+          ]
+        },
+        "n": 100,
+        "reached_t3_investigator": {
+          "k": 1,
+          "n": 100,
+          "value": 0.01,
+          "wilson95": [
+            0.0018,
+            0.0545
+          ]
+        },
+        "server_latency_s": {
+          "p50": 5.44,
+          "p95": 8.74
+        },
+        "tier_mix": {
+          "T1": 39,
+          "T2": 60,
+          "T3": 1
+        },
+        "verdicts": {
+          "no_warning_signs": 91,
+          "suspicious": 9
+        },
+        "warned": {
+          "k": 9,
+          "n": 100,
+          "value": 0.09,
+          "wilson95": [
+            0.0481,
+            0.1623
+          ]
+        }
+      },
+      "legit_global": {
+        "dangerous": {
+          "k": 0,
+          "n": 80,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.0458
+          ]
+        },
+        "degraded": {
+          "k": 8,
+          "n": 80,
+          "value": 0.1,
+          "wilson95": [
+            0.0515,
+            0.1851
+          ]
+        },
+        "degraded_reasons": {
+          "partial_render": 5,
+          "sandbox_unavailable:timeout": 3
+        },
+        "latency_s": {
+          "max": 117.18,
+          "p50": 59.17,
+          "p95": 61.42
+        },
+        "llm_evidence_present": {
+          "k": 49,
+          "n": 80,
+          "value": 0.6125,
+          "wilson95": [
+            0.5029,
+            0.7118
+          ]
+        },
+        "n": 80,
+        "reached_t3_investigator": {
+          "k": 1,
+          "n": 80,
+          "value": 0.0125,
+          "wilson95": [
+            0.0022,
+            0.0675
+          ]
+        },
+        "server_latency_s": {
+          "p50": 6.58,
+          "p95": 8.84
+        },
+        "tier_mix": {
+          "T1": 26,
+          "T2": 53,
+          "T3": 1
+        },
+        "verdicts": {
+          "no_warning_signs": 72,
+          "suspicious": 8
+        },
+        "warned": {
+          "k": 8,
+          "n": 80,
+          "value": 0.1,
+          "wilson95": [
+            0.0515,
+            0.1851
+          ]
+        }
+      },
+      "legit_uae": {
+        "dangerous": {
+          "k": 0,
+          "n": 20,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "degraded": {
+          "k": 1,
+          "n": 20,
+          "value": 0.05,
+          "wilson95": [
+            0.0089,
+            0.2361
+          ]
+        },
+        "degraded_reasons": {
+          "partial_render": 1
+        },
+        "latency_s": {
+          "max": 94.63,
+          "p50": 57.08,
+          "p95": 60.27
+        },
+        "llm_evidence_present": {
+          "k": 7,
+          "n": 20,
+          "value": 0.35,
+          "wilson95": [
+            0.1812,
+            0.5671
+          ]
+        },
+        "n": 20,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 20,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "server_latency_s": {
+          "p50": 2.29,
+          "p95": 7.11
+        },
+        "tier_mix": {
+          "T1": 13,
+          "T2": 7
+        },
+        "verdicts": {
+          "no_warning_signs": 19,
+          "suspicious": 1
+        },
+        "warned": {
+          "k": 1,
+          "n": 20,
+          "value": 0.05,
+          "wilson95": [
+            0.0089,
+            0.2361
+          ]
+        }
+      },
+      "phishing_all": {
+        "dangerous": {
+          "k": 1,
+          "n": 100,
+          "value": 0.01,
+          "wilson95": [
+            0.0018,
+            0.0545
+          ]
+        },
+        "degraded": {
+          "k": 48,
+          "n": 100,
+          "value": 0.48,
+          "wilson95": [
+            0.3846,
+            0.5768
+          ]
+        },
+        "degraded_reasons": {
+          "not_rendered:dns_failure": 41,
+          "partial_render": 1,
+          "sandbox_unavailable:dns_failure": 1,
+          "sandbox_unavailable:timeout": 5
+        },
+        "latency_s": {
+          "max": 61.9,
+          "p50": 60.11,
+          "p95": 60.29
+        },
+        "llm_evidence_present": {
+          "k": 53,
+          "n": 100,
+          "value": 0.53,
+          "wilson95": [
+            0.4329,
+            0.6249
+          ]
+        },
+        "n": 100,
+        "reached_t3_investigator": {
+          "k": 51,
+          "n": 100,
+          "value": 0.51,
+          "wilson95": [
+            0.4135,
+            0.6058
+          ]
+        },
+        "server_latency_s": {
+          "p50": 8.16,
+          "p95": 14.49
+        },
+        "tier_mix": {
+          "T1": 41,
+          "T2": 8,
+          "T3": 51
+        },
+        "verdicts": {
+          "dangerous": 1,
+          "suspicious": 99
+        },
+        "warned": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      },
+      "phishing_dead_in_sandbox": {
+        "dangerous": {
+          "k": 0,
+          "n": 47,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.0756
+          ]
+        },
+        "degraded": {
+          "k": 47,
+          "n": 47,
+          "value": 1.0,
+          "wilson95": [
+            0.9244,
+            1.0
+          ]
+        },
+        "degraded_reasons": {
+          "not_rendered:dns_failure": 41,
+          "sandbox_unavailable:dns_failure": 1,
+          "sandbox_unavailable:timeout": 5
+        },
+        "latency_s": {
+          "max": 60.23,
+          "p50": 59.2,
+          "p95": 60.2
+        },
+        "llm_evidence_present": {
+          "k": 0,
+          "n": 47,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.0756
+          ]
+        },
+        "n": 47,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 47,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.0756
+          ]
+        },
+        "server_latency_s": {
+          "p50": 0.93,
+          "p95": 5.97
+        },
+        "tier_mix": {
+          "T1": 41,
+          "T2": 6
+        },
+        "verdicts": {
+          "suspicious": 47
+        },
+        "warned": {
+          "k": 47,
+          "n": 47,
+          "value": 1.0,
+          "wilson95": [
+            0.9244,
+            1.0
+          ]
+        }
+      },
+      "phishing_live_in_sandbox": {
+        "dangerous": {
+          "k": 1,
+          "n": 53,
+          "value": 0.0189,
+          "wilson95": [
+            0.0033,
+            0.0994
+          ]
+        },
+        "degraded": {
+          "k": 1,
+          "n": 53,
+          "value": 0.0189,
+          "wilson95": [
+            0.0033,
+            0.0994
+          ]
+        },
+        "degraded_reasons": {
+          "partial_render": 1
+        },
+        "latency_s": {
+          "max": 61.9,
+          "p50": 60.12,
+          "p95": 60.38
+        },
+        "llm_evidence_present": {
+          "k": 53,
+          "n": 53,
+          "value": 1.0,
+          "wilson95": [
+            0.9324,
+            1.0
+          ]
+        },
+        "n": 53,
+        "reached_t3_investigator": {
+          "k": 51,
+          "n": 53,
+          "value": 0.9623,
+          "wilson95": [
+            0.8725,
+            0.9896
+          ]
+        },
+        "server_latency_s": {
+          "p50": 10.45,
+          "p95": 16.73
+        },
+        "tier_mix": {
+          "T2": 2,
+          "T3": 51
+        },
+        "verdicts": {
+          "dangerous": 1,
+          "suspicious": 52
+        },
+        "warned": {
+          "k": 53,
+          "n": 53,
+          "value": 1.0,
+          "wilson95": [
+            0.9324,
+            1.0
+          ]
+        }
+      },
+      "phishing_live_no_reputation_hit": {
+        "dangerous": {
+          "k": 1,
+          "n": 53,
+          "value": 0.0189,
+          "wilson95": [
+            0.0033,
+            0.0994
+          ]
+        },
+        "degraded": {
+          "k": 1,
+          "n": 53,
+          "value": 0.0189,
+          "wilson95": [
+            0.0033,
+            0.0994
+          ]
+        },
+        "degraded_reasons": {
+          "partial_render": 1
+        },
+        "latency_s": {
+          "max": 61.9,
+          "p50": 60.12,
+          "p95": 60.38
+        },
+        "llm_evidence_present": {
+          "k": 53,
+          "n": 53,
+          "value": 1.0,
+          "wilson95": [
+            0.9324,
+            1.0
+          ]
+        },
+        "n": 53,
+        "reached_t3_investigator": {
+          "k": 51,
+          "n": 53,
+          "value": 0.9623,
+          "wilson95": [
+            0.8725,
+            0.9896
+          ]
+        },
+        "server_latency_s": {
+          "p50": 10.45,
+          "p95": 16.73
+        },
+        "tier_mix": {
+          "T2": 2,
+          "T3": 51
+        },
+        "verdicts": {
+          "dangerous": 1,
+          "suspicious": 52
+        },
+        "warned": {
+          "k": 53,
+          "n": 53,
+          "value": 1.0,
+          "wilson95": [
+            0.9324,
+            1.0
+          ]
+        }
+      },
+      "phishing_no_reputation_hit": {
+        "dangerous": {
+          "k": 1,
+          "n": 100,
+          "value": 0.01,
+          "wilson95": [
+            0.0018,
+            0.0545
+          ]
+        },
+        "degraded": {
+          "k": 48,
+          "n": 100,
+          "value": 0.48,
+          "wilson95": [
+            0.3846,
+            0.5768
+          ]
+        },
+        "degraded_reasons": {
+          "not_rendered:dns_failure": 41,
+          "partial_render": 1,
+          "sandbox_unavailable:dns_failure": 1,
+          "sandbox_unavailable:timeout": 5
+        },
+        "latency_s": {
+          "max": 61.9,
+          "p50": 60.11,
+          "p95": 60.29
+        },
+        "llm_evidence_present": {
+          "k": 53,
+          "n": 100,
+          "value": 0.53,
+          "wilson95": [
+            0.4329,
+            0.6249
+          ]
+        },
+        "n": 100,
+        "reached_t3_investigator": {
+          "k": 51,
+          "n": 100,
+          "value": 0.51,
+          "wilson95": [
+            0.4135,
+            0.6058
+          ]
+        },
+        "server_latency_s": {
+          "p50": 8.16,
+          "p95": 14.49
+        },
+        "tier_mix": {
+          "T1": 41,
+          "T2": 8,
+          "T3": 51
+        },
+        "verdicts": {
+          "dangerous": 1,
+          "suspicious": 99
+        },
+        "warned": {
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      },
+      "phishing_reputation_feed_hit": {
+        "dangerous": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "degraded": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "degraded_reasons": {},
+        "latency_s": {
+          "max": 0.0,
+          "p50": 0.0,
+          "p95": 0.0
+        },
+        "llm_evidence_present": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "n": 0,
+        "reached_t3_investigator": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        },
+        "server_latency_s": {
+          "p50": 0.0,
+          "p95": 0.0
+        },
+        "tier_mix": {},
+        "verdicts": {},
+        "warned": {
+          "k": 0,
+          "n": 0,
+          "value": null,
+          "wilson95": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "latency_s_all": {
+      "p50": 59.31,
+      "p95": 60.85
+    },
+    "n_completed": 200,
+    "overall_all_phishing": {
+      "any_warning": {
+        "accuracy": {
+          "bootstrap95": [
+            0.925,
+            0.98
+          ],
+          "k": 191,
+          "n": 200,
+          "value": 0.955,
+          "wilson95": [
+            0.9167,
+            0.9761
+          ]
+        },
+        "counts": {
+          "fn": 0,
+          "fp": 9,
+          "tn": 91,
+          "tp": 100
+        },
+        "f1": {
+          "bootstrap95": [
+            0.9274,
+            0.9817
+          ],
+          "value": 0.9569
+        },
+        "false_positive_rate": {
+          "bootstrap95": [
+            0.04,
+            0.15
+          ],
+          "k": 9,
+          "n": 100,
+          "value": 0.09,
+          "wilson95": [
+            0.0481,
+            0.1623
+          ]
+        },
+        "precision": {
+          "bootstrap95": [
+            0.8646,
+            0.964
+          ],
+          "k": 100,
+          "n": 109,
+          "value": 0.9174,
+          "wilson95": [
+            0.8505,
+            0.956
+          ]
+        },
+        "recall": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 100,
+          "n": 100,
+          "value": 1.0,
+          "wilson95": [
+            0.963,
+            1.0
+          ]
+        }
+      },
+      "dangerous_only": {
+        "accuracy": {
+          "bootstrap95": [
+            0.435,
+            0.57
+          ],
+          "k": 101,
+          "n": 200,
+          "value": 0.505,
+          "wilson95": [
+            0.4363,
+            0.5735
+          ]
+        },
+        "counts": {
+          "fn": 99,
+          "fp": 0,
+          "tn": 100,
+          "tp": 1
+        },
+        "f1": {
+          "bootstrap95": [
+            0.0,
+            0.0632
+          ],
+          "value": 0.0198
+        },
+        "false_positive_rate": {
+          "bootstrap95": [
+            0.0,
+            0.0
+          ],
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "precision": {
+          "bootstrap95": [
+            0.0,
+            1.0
+          ],
+          "k": 1,
+          "n": 1,
+          "value": 1.0,
+          "wilson95": [
+            0.2065,
+            1.0
+          ]
+        },
+        "recall": {
+          "bootstrap95": [
+            0.0,
+            0.03
+          ],
+          "k": 1,
+          "n": 100,
+          "value": 0.01,
+          "wilson95": [
+            0.0018,
+            0.0545
+          ]
+        }
+      }
+    },
+    "overall_live_phishing_only": {
+      "any_warning": {
+        "accuracy": {
+          "bootstrap95": [
+            0.902,
+            0.9739
+          ],
+          "k": 144,
+          "n": 153,
+          "value": 0.9412,
+          "wilson95": [
+            0.892,
+            0.9687
+          ]
+        },
+        "counts": {
+          "fn": 0,
+          "fp": 9,
+          "tn": 91,
+          "tp": 53
+        },
+        "f1": {
+          "bootstrap95": [
+            0.8654,
+            0.9688
+          ],
+          "value": 0.9217
+        },
+        "false_positive_rate": {
+          "bootstrap95": [
+            0.04,
+            0.15
+          ],
+          "k": 9,
+          "n": 100,
+          "value": 0.09,
+          "wilson95": [
+            0.0481,
+            0.1623
+          ]
+        },
+        "precision": {
+          "bootstrap95": [
+            0.7627,
+            0.9394
+          ],
+          "k": 53,
+          "n": 62,
+          "value": 0.8548,
+          "wilson95": [
+            0.7466,
+            0.9217
+          ]
+        },
+        "recall": {
+          "bootstrap95": [
+            1.0,
+            1.0
+          ],
+          "k": 53,
+          "n": 53,
+          "value": 1.0,
+          "wilson95": [
+            0.9324,
+            1.0
+          ]
+        }
+      },
+      "dangerous_only": {
+        "accuracy": {
+          "bootstrap95": [
+            0.5817,
+            0.732
+          ],
+          "k": 101,
+          "n": 153,
+          "value": 0.6601,
+          "wilson95": [
+            0.582,
+            0.7304
+          ]
+        },
+        "counts": {
+          "fn": 52,
+          "fp": 0,
+          "tn": 100,
+          "tp": 1
+        },
+        "f1": {
+          "bootstrap95": [
+            0.0,
+            0.1154
+          ],
+          "value": 0.037
+        },
+        "false_positive_rate": {
+          "bootstrap95": [
+            0.0,
+            0.0
+          ],
+          "k": 0,
+          "n": 100,
+          "value": 0.0,
+          "wilson95": [
+            0.0,
+            0.037
+          ]
+        },
+        "precision": {
+          "bootstrap95": [
+            0.0,
+            1.0
+          ],
+          "k": 1,
+          "n": 1,
+          "value": 1.0,
+          "wilson95": [
+            0.2065,
+            1.0
+          ]
+        },
+        "recall": {
+          "bootstrap95": [
+            0.0,
+            0.0566
+          ],
+          "k": 1,
+          "n": 53,
+          "value": 0.0189,
+          "wilson95": [
+            0.0033,
+            0.0994
+          ]
+        }
+      }
+    },
+    "server_latency_s_all": {
+      "p50": 6.49,
+      "p95": 12.88
+    }
+  },
+  "second_source": {
+    "n_errors": 0,
+    "n_submitted": 100,
+    "what": "100 seeded-random hosts from the Phishing.Database ACTIVE domain list (MIT), not in the OpenPhish rows the live stack ingests; submitted as http://<host>/; legit rows are the same 100 as the main run"
+  },
+  "sources": {
+    "legit_global": "Tranco list Q2464 (2026-11-23), ranks 2000-50000, seeded random draw (seed 20261124)",
+    "legit_uae": "hand-listed official UAE/Gulf domains (government, banks, telcos, retail, news)",
+    "phishing": "OpenPhish community feed (keyless mirror), newest rows; first_seen 2026-11-24T13:01:32Z..2026-11-24T13:01:32Z; raw URLs kept private (feed bars redistribution)"
+  },
+  "target": "live stack (gateway on this host; same deployment as the public site), judge sandbox key, scope check"
+}
