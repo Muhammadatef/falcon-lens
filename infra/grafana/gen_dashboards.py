@@ -835,6 +835,7 @@ def overview() -> Board:
         24,
         9,
     )
+    kpi_overview(b)
     return b
 
 
@@ -1735,6 +1736,7 @@ def ai_ops() -> Board:
         8,
         7,
     )
+    kpi_ai_ops(b)
     return b
 
 
@@ -2231,6 +2233,7 @@ def sentinel() -> Board:
         24,
         9,
     )
+    kpi_sentinel(b)
     return b
 
 
@@ -2300,6 +2303,7 @@ def model_quality() -> Board:
         24,
         7,
     )
+    mq_real_vs_synthetic(b)
     for split, label in (("val", "Validation | التحقق"), ("test", "Test | الاختبار")):
         b.row(f"{label}: URL model + arbiter (real)")
         tiles = (
@@ -2583,6 +2587,10 @@ def model_quality() -> Board:
             12,
             5,
         )
+    mq_heldout_history(b)
+    mq_redteam_categories(b)
+    mq_ai_quality(b)
+    mq_message_dspy(b)
     b.row("All headline metrics with CI | كل المقاييس")
     cols = (
         ("A", "value", "fl_eval_metric"),
@@ -2633,6 +2641,1031 @@ def model_quality() -> Board:
         12,
     )
     return b
+
+
+# ------------------------------------------------------------------------------------------ KPI additions (v2)
+
+PROV_COLORS = {"real": BLUE, "synthetic": "#B57EDC", "fixture": MUTED, "mixed": GOLD}
+PROV_BADGE = {"real": "REAL", "synthetic": "SYNTHETIC", "fixture": "FIXTURE", "mixed": "MIXED"}
+PROV_LEGEND_NOTE = (
+    "Colour = provenance: blue real, purple synthetic, grey fixture (Falcon Demo Bank corpus), gold mixed. "
+    "The legend always ends with the provenance label of the artifact."
+)
+HEAD = "(?i)"
+
+
+def prov_overrides() -> list[dict[str, Any]]:
+    """Colour a series by the provenance label that every eval legend ends with (`... · real`)."""
+    return [
+        {
+            "matcher": {"id": "byRegexp", "options": f".*· {k}$"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": c}}],
+        }
+        for k, c in PROV_COLORS.items()
+    ]
+
+
+def latest(expr: str) -> str:
+    """Restrict an eval series to the newest artifact of its source."""
+    return expr + LATEST
+
+
+def prov_tile(
+    prov: str,
+    title: str,
+    metric: str,
+    source: str,
+    what: str,
+    thr: str,
+    steps: Steps | None = None,
+    unit: str = "percentunit",
+    split: str = "all",
+    rb: str | None = "eval-regression",
+    nodata: str = ND_EVAL,
+    decimals: int = 3,
+    ci_note: str = "CI = 95% interval stored in the artifact (blank when the artifact stores none).",
+) -> Panel:
+    """eval_tile with a provenance badge in the title and, without thresholds, a provenance colour."""
+    p = eval_tile(
+        f"[{PROV_BADGE[prov]}] {title}",
+        metric,
+        split,
+        what + f" Provenance: {PROV_BADGE[prov]}. " + PROV_LEGEND_NOTE,
+        thr,
+        steps,
+        source=source,
+        unit=unit,
+        rb=rb,
+        nodata=nodata,
+        decimals=decimals,
+        ci_note=ci_note,
+    )
+    if steps is None:
+        p["fieldConfig"]["defaults"]["color"] = {"mode": "fixed", "fixedColor": PROV_COLORS[prov]}
+    return p
+
+
+def eval_bars(
+    title: str,
+    expr: str,
+    legend: str,
+    d: str,
+    unit: str = "percentunit",
+    steps: Steps | None = None,
+    pmax: float | None = None,
+    rb: str | None = None,
+    nodata: str = ND_EVAL,
+) -> Panel:
+    """Bar gauge over latest-artifact eval series, coloured by provenance."""
+    p = bargauge(title, latest(expr), legend, d, unit=unit, steps=steps, rb=rb, nodata=nodata, pmax=pmax)
+    p["fieldConfig"]["overrides"] = prov_overrides()
+    return p
+
+
+def matrix(
+    title: str,
+    expr: str,
+    row: str,
+    col: str,
+    d: str,
+    kind: str = "barchart",
+    unit: str = "short",
+    steps: Steps | None = None,
+    rb: str | None = None,
+    nodata: str = ND_EVAL,
+    sort_by: str | None = None,
+    pmax: float | None = None,
+    renames: dict[str, str] | None = None,
+) -> Panel:
+    """Instant table query pivoted by Grafana's groupingToMatrix (rows = `row` label, columns = `col` label)."""
+    tr: list[dict[str, Any]] = []
+    if sort_by:
+        tr.append({"id": "sortBy", "options": {"fields": {}, "sort": [{"field": sort_by}]}})
+    tr.append({"id": "groupingToMatrix", "options": {"rowField": row, "columnField": col, "valueField": "Value"}})
+    if renames:
+        tr.append({"id": "organize", "options": {"renameByName": renames}})
+    t = {**target(expr, "", "A", True), "format": "table"}
+    defaults: dict[str, Any] = {"unit": unit, "noValue": nodata, "min": 0}
+    if pmax is not None:
+        defaults["max"] = pmax
+    if steps:
+        defaults["thresholds"] = _thresholds(steps)
+        defaults["custom"] = {"thresholdsStyle": {"mode": "line"}}
+    p: Panel = {
+        "type": kind,
+        "title": title,
+        "description": d,
+        "links": links(rb),
+        "datasource": PROM,
+        "targets": [t],
+        "transformations": tr,
+        "fieldConfig": {"defaults": defaults, "overrides": []},
+    }
+    if kind == "barchart":
+        p["options"] = {
+            "orientation": "auto",
+            "xTickLabelRotation": -25,
+            "showValue": "auto",
+            "stacking": "none",
+            "groupWidth": 0.75,
+            "barWidth": 0.9,
+            "legend": {"displayMode": "list", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "none"},
+        }
+    else:
+        p["options"] = {"showHeader": True}
+    return p
+
+
+def mq_real_vs_synthetic(b: Board) -> None:
+    """Model quality: REAL vs SYNTHETIC side by side (synthetic_split artifact) with counts."""
+    b.row("Real vs synthetic | حقيقي مقابل اصطناعي")
+    b.add(
+        markdown(
+            "Real vs synthetic | حقيقي مقابل اصطناعي",
+            "Left of each pair is **REAL** (frozen manifest items, scored offline by the shipped model); right is "
+            "**SYNTHETIC** (invented Falcon Demo Bank URL fixtures and synthetic messages). Source: the latest "
+            "`synthetic_split` artifact. The two are never averaged together. Synthetic rows measure plumbing, "
+            "not accuracy on real scams.",
+        ),
+        24,
+        3,
+    )
+    src_ = "synthetic_split"
+    pairs: tuple[tuple[str, str, str, str, str, Steps | None, Steps | None, str, str], ...] = (
+        (
+            "Recall, warning | الاستدعاء",
+            "recall_warning",
+            "Share of phishing items that received a warning (suspicious or dangerous).",
+            "real: green >= 90%, red below (docs/EVALS.md target); synthetic: none, fixtures are not a target set",
+            PCT_BANDS,
+            None,
+            "real_items_scored",
+            "synthetic_url_items_scored",
+            "pct",
+        ),
+        (
+            "False alarms, warning | الإنذار الكاذب",
+            "fpr_warning",
+            "Share of legitimate items that received a warning.",
+            "real: green <= 2%, red above (docs/EVALS.md target); synthetic: none",
+            FPR_BANDS,
+            None,
+            "real_items_scored",
+            "synthetic_url_items_scored",
+            "pct",
+        ),
+        (
+            "Precision, warning | الدقة",
+            "precision_warning",
+            "Share of warnings that were phishing.",
+            "none: docs/EVALS.md sets no precision target",
+            None,
+            None,
+            "real_items_scored",
+            "synthetic_url_items_scored",
+            "pct",
+        ),
+        (
+            "Recall, dangerous | استدعاء خطير",
+            "recall_dangerous",
+            "Share of phishing items rated dangerous (the top verdict).",
+            "none: docs/EVALS.md sets no target for the dangerous tier alone",
+            None,
+            None,
+            "real_items_scored",
+            "synthetic_url_items_scored",
+            "pct",
+        ),
+        (
+            "False dangerous | خطير كاذب",
+            "fpr_dangerous",
+            "Share of legitimate items rated dangerous (a false top verdict).",
+            "green 0%, red above: a legitimate site must never be called dangerous",
+            [(None, GREEN), (0.0001, RED)],
+            None,
+            "real_items_scored",
+            "synthetic_url_items_scored",
+            "pct",
+        ),
+    )
+    for title, metric, what, thr, real_steps, syn_steps, real_pfx, syn_pfx, _u in pairs:
+        b.add(
+            prov_tile(
+                "real",
+                title,
+                f"{real_pfx}.{metric}",
+                src_,
+                what + " Real manifest items, test split.",
+                thr,
+                real_steps,
+                split="test",
+            ),
+            6,
+            5,
+        )
+        b.add(
+            prov_tile(
+                "synthetic",
+                title,
+                f"{syn_pfx}.{metric}",
+                src_,
+                what + " Synthetic URL fixtures (Falcon Demo Bank).",
+                thr,
+                syn_steps,
+            ),
+            6,
+            5,
+        )
+    for title, metric, what in (
+        ("Message recall, warning | استدعاء الرسائل", "recall_warning", "Share of phishing messages warned."),
+        ("Message false alarms | إنذار كاذب للرسائل", "fpr_warning", "Share of legitimate messages warned."),
+    ):
+        b.add(
+            prov_tile(
+                "synthetic",
+                title,
+                f"synthetic_messages_scored.{metric}",
+                src_,
+                what + " Synthetic, link-free messages; small n, read the CI.",
+                "none: synthetic and small, no target is applied",
+            ),
+            6,
+            5,
+        )
+    b.add(
+        eval_bars(
+            "Item counts: real vs synthetic | أعداد العناصر",
+            r'fl_eval_metric{source="synthetic_split",metric=~"n\\.(real_val|real_test|synthetic_urls|synthetic_messages)"}',
+            "{{metric}} · {{provenance}}",
+            desc(
+                "Number of items behind each side of the comparison (latest synthetic_split artifact). Real counts come "
+                "from the frozen val/test splits; synthetic counts are the fixtures.",
+                "none: counts, shown so that a small synthetic n is never read as precise",
+                ND_EVAL,
+            ),
+            unit="short",
+        ),
+        12,
+        6,
+    )
+    b.add(
+        table(
+            "Real vs synthetic, every metric | كل المقاييس",
+            [target(latest('fl_eval_metric{source="synthetic_split"}'), "", "A")],
+            desc(
+                "All numbers of the latest synthetic_split artifact with their provenance label (real, synthetic or mixed). "
+                "Sort by provenance to read one side.",
+                "none: reference table",
+                ND_EVAL,
+            ),
+            transformations=[
+                {
+                    "id": "organize",
+                    "options": {
+                        "excludeByName": {
+                            "Time": True,
+                            "__name__": True,
+                            "job": True,
+                            "instance": True,
+                            "service": True,
+                            "source": True,
+                            "split": True,
+                        },
+                        "indexByName": {"provenance": 0, "metric": 1, "Value": 2, "artifact": 3},
+                        "renameByName": {"Value": "value"},
+                    },
+                },
+                {"id": "sortBy", "options": {"sort": [{"field": "provenance"}, {"field": "metric"}]}},
+            ],
+            nodata=ND_EVAL,
+        ),
+        12,
+        6,
+    )
+
+
+FP_ALL = r'metric=~"false_alarm_rate|false_alarm_rate_serves_web|false_alarm_rate_no_web_host"'
+FP_JOIN = " * on (source, artifact) group_left (created_at, set) fl_eval_artifact_info"
+FP_ROW = 'label_join({e}, "run", " · ", "created_at", "set")'
+
+
+def mq_heldout_history(b: Board) -> None:
+    """Model quality: every held-out real-site run, by set date."""
+    b.row("Held-out real-site history | سجل المواقع الحقيقية")
+    run = FP_ROW.format(e=f'fl_eval_metric{{source="fp_regress",{FP_ALL}}}' + FP_JOIN)
+    b.add(
+        matrix(
+            "False-alarm history by set date | الإنذار الكاذب حسب تاريخ المجموعة",
+            run,
+            "run",
+            "metric",
+            desc(
+                "One group of bars per published fp_regress run (x = artifact date · held-out set file): all sites, sites "
+                "that serve a web page, and DNS-only hosts. REAL held-out legitimate domains through the running stack. "
+                "Runs differ in code version and set, so read the trend, not one bar. The dashed line is the 2% target.",
+                "dashed line at 2% (docs/EVALS.md false-alarm target); bars above it are misses, not alerts here",
+                "no fp_regress artifact is published yet",
+            ),
+            unit="percentunit",
+            steps=FPR_BANDS,
+            rb="fp-spike",
+            sort_by="run",
+            pmax=1,
+            nodata="No fp_regress artifact is published yet",
+        ),
+        16,
+        9,
+    )
+    b.add(
+        matrix(
+            "Held-out counts per run | أعداد كل تشغيل",
+            FP_ROW.format(
+                e='fl_eval_metric{source="fp_regress",metric=~"false_dangerous|degraded|errors|verdict\\\\.dangerous"}'
+                + FP_JOIN
+            ),
+            "run",
+            "metric",
+            desc(
+                "Per run (REAL held-out sites): items rated dangerous although legitimate (false_dangerous), items that "
+                "ran degraded (sandbox or DNS unavailable) and errors. Counts, not rates.",
+                "none: counts; false_dangerous should be 0 (a legitimate site must never be called dangerous)",
+                "no fp_regress artifact is published yet",
+            ),
+            unit="short",
+            rb="fp-spike",
+            sort_by="run",
+            nodata="No fp_regress artifact is published yet",
+        ),
+        8,
+        9,
+    )
+
+
+def mq_redteam_categories(b: Board) -> None:
+    """Model quality: red-team per category with answered counts."""
+    b.row("Red team per category | الفريق الأحمر حسب الفئة")
+    rt = "redteam"
+    note = (
+        " SYNTHETIC injection cases against the reference pipeline. Never quote the harmful count without the "
+        "answered count: a model that did not answer cannot be fooled."
+    )
+    for title, metric, what, steps in (
+        (
+            "Harmful cases | حالات ضارة",
+            "harmful",
+            "Cases where the attack changed the outcome.",
+            [(None, GREEN), (1, RED)],
+        ),
+        (
+            "Cases answered by model | أجاب النموذج",
+            "answered",
+            "Cases where the language model actually replied.",
+            None,
+        ),
+        ("Cases run | الحالات", "cases", "Cases in the suite.", None),
+        ("Failed model calls | نداءات فاشلة", "llm_calls_failed", "Model calls that failed (timeout or error).", None),
+    ):
+        b.add(
+            prov_tile(
+                "synthetic",
+                title,
+                metric,
+                rt,
+                what + note,
+                "green 0, red above: the target is zero injection success" if steps else "none: a count",
+                steps,
+                unit="short",
+                rb="injection-spike",
+                nodata="no red-team artifact is published yet",
+                decimals=0,
+                ci_note="CI = none for counts.",
+            ),
+            6,
+            4,
+        )
+    b.add(
+        matrix(
+            "Red team by category: harmful vs answered vs cases | حسب الفئة",
+            latest(
+                'label_replace(fl_eval_metric{source="redteam",metric=~"(harmful|answered|cases)\\\\..+"},'
+                ' "category", "$1", "metric", ".*\\\\.(.*)")'
+            ),
+            "category",
+            "metric",
+            desc(
+                "Per case kind (page, message, email, url, image, t3_page): cases run, cases the model answered, and "
+                "harmful outcomes, from the latest red-team artifact. SYNTHETIC. Categories with 0 answered were decided "
+                "by deterministic code only.",
+                "none: counts; harmful must stay 0 (target zero injection success)",
+                "no red-team artifact is published yet",
+            ),
+            unit="short",
+            rb="injection-spike",
+            nodata="No red-team artifact is published yet",
+        ),
+        24,
+        8,
+    )
+
+
+def mq_ai_quality(b: Board) -> None:
+    """Model quality: faithfulness, stability, route agreement, cost, latency, T2, T3, brand-new pages."""
+    b.row("Faithfulness, stability, routes and cost | الأمانة والثبات والمسارات والتكلفة")
+    fa = "user_facing_reasons_template_only.offline_val_test_real_items.reasons_faithful"
+    tiles: tuple[tuple[str, str, str, str, str, str, str, Steps | None, str, str], ...] = (
+        (
+            "real",
+            "Reasons faithful, val | أمانة الأسباب",
+            fa,
+            "faithfulness",
+            "Share of template reasons whose cited evidence exists in the verdict (val, real URL items, offline).",
+            "green = 100%, red below: a reason that cites missing evidence is a bug",
+            "val",
+            [(None, RED), (1, GREEN)],
+            "percentunit",
+            "eval-regression",
+        ),
+        (
+            "real",
+            "Reasons faithful, test | أمانة الأسباب",
+            fa,
+            "faithfulness",
+            "Same on the test split.",
+            "green = 100%, red below",
+            "test",
+            [(None, RED), (1, GREEN)],
+            "percentunit",
+            "eval-regression",
+        ),
+        (
+            "synthetic",
+            "Sentinel summaries accepted, cloud | قبول ملخصات الحارس",
+            "sentinel_llm_summaries.cloud.summary_verifier_accept_rate",
+            "faithfulness",
+            "Share of Sentinel triage runs whose model summary passed the verifier (replayed incidents).",
+            "none: no target; a low value means the template fallback was used, not that anything was wrong",
+            "all",
+            None,
+            "percentunit",
+            "llm-fallback",
+        ),
+        (
+            "synthetic",
+            "Sentinel summaries accepted, local | قبول ملخصات الحارس",
+            "sentinel_llm_summaries.local.summary_verifier_accept_rate",
+            "faithfulness",
+            "Same for the local model; includes runs that timed out on the shared GPU.",
+            "none: no target",
+            "all",
+            None,
+            "percentunit",
+            "llm-fallback",
+        ),
+        (
+            "fixture",
+            "Label stability, 3 runs | ثبات الحكم",
+            "ai_layers_on.label_agreement_all_three_identical",
+            "stability",
+            "Share of fixture items whose label was identical in all three repeated runs with the AI layers on.",
+            "none: no target; deterministic control is 100% by construction",
+            "all",
+            None,
+            "percentunit",
+            "route-agreement-drop",
+        ),
+        (
+            "fixture",
+            "Pairwise agreement | اتفاق الأزواج",
+            "ai_layers_on.pairwise_label_agreement",
+            "stability",
+            "Share of run pairs that gave the same label (AI layers on).",
+            "none: no target",
+            "all",
+            None,
+            "percentunit",
+            "route-agreement-drop",
+        ),
+        (
+            "fixture",
+            "Route agreement: label | اتفاق المسارات: الحكم",
+            "verdict_agreement.exact_label",
+            "route_compare",
+            "Share of fixture items where local and cloud routes gave the same label.",
+            "none: no target; the live gauge route_agreement_ratio has its own alert",
+            "all",
+            None,
+            "percentunit",
+            "route-agreement-drop",
+        ),
+        (
+            "fixture",
+            "Route agreement: warning vs none | اتفاق التحذير",
+            "verdict_agreement.warning_vs_none",
+            "route_compare",
+            "Share of items where both routes agreed on warning versus no warning.",
+            "none: no target",
+            "all",
+            None,
+            "percentunit",
+            "route-agreement-drop",
+        ),
+    )
+    for prov, title, metric, source, what, thr, split, steps, unit, rb in tiles:
+        b.add(prov_tile(prov, title, metric, source, what, thr, steps, unit=unit, split=split, rb=rb), 6, 5)
+    b.add(
+        eval_bars(
+            "Extractor accuracy per route | دقة المستخرج حسب المسار",
+            r'fl_eval_metric{source="route_compare",metric=~"extractor_field_accuracy\\.(cloud|local)\\.field_accuracy\\.(all_four_fields_exact|claimed_brand_exact|language_exact|script_category_exact)"}',
+            "{{metric}} · {{provenance}}",
+            desc(
+                "Exact-match accuracy of the structured extractor against author labels, per route (route_compare "
+                "artifact, FIXTURE corpus, small n).",
+                "none: no target; compare routes, do not read as production accuracy",
+                ND_EVAL,
+            ),
+            pmax=1,
+        ),
+        12,
+        8,
+    )
+    b.add(
+        eval_bars(
+            "Cascade latency per route | زمن السلسلة حسب المسار",
+            r'fl_eval_metric{source="route_compare",metric=~"cascade_latency\\.(cloud|local)\\.p(50|95)_ms"}',
+            "{{metric}} · {{provenance}}",
+            desc(
+                "p50 and p95 end-to-end latency of the fixture cascade per route. Local includes waiting on a shared "
+                "GPU queue: read it as an upper bound.",
+                "none: no target here; the live latency SLO is on the Pipeline board",
+                ND_EVAL,
+            ),
+            unit="ms",
+        ),
+        12,
+        8,
+    )
+    for title, metric, what, unit, dec in (
+        (
+            "Eval spend, USD | تكلفة التقييم",
+            "total_spend_usd",
+            "Cloud spend of the cost_per_check run.",
+            "currencyUSD",
+            4,
+        ),
+        (
+            "Cloud cost per check | تكلفة الفحص السحابي",
+            "cloud_route.usd_per_check.mean",
+            "Mean cloud USD per check (tokens used x list prices).",
+            "currencyUSD",
+            5,
+        ),
+        (
+            "Cloud cost per 1000 checks | لكل ألف فحص",
+            "cloud_route.usd_per_1000_checks_at_mean",
+            "Same figure scaled to 1000 checks.",
+            "currencyUSD",
+            3,
+        ),
+        (
+            "Local marginal API cost | التكلفة المحلية",
+            "local_route.marginal_api_cost_usd_per_check",
+            "Zero API cost, not zero cost: energy is not measured.",
+            "currencyUSD",
+            3,
+        ),
+    ):
+        b.add(
+            prov_tile(
+                "fixture",
+                title,
+                metric,
+                "cost_per_check",
+                what + " Prompt sizes of the fixture corpus; a different corpus costs differently.",
+                "none: no budget target is set in docs/EVALS.md",
+                unit=unit,
+                decimals=dec,
+                rb=None,
+            ),
+            6,
+            4,
+        )
+    b.add(
+        eval_bars(
+            "Cost per check by final tier | التكلفة حسب المستوى",
+            r'fl_eval_metric{source="cost_per_check",metric=~"cloud_route\\.usd_per_check_by_final_tier\\.T[0-3]\\.mean"}',
+            "{{metric}} · {{provenance}}",
+            desc(
+                "Mean cloud USD per check split by the tier that produced the verdict (cost_per_check artifact, FIXTURE).",
+                "none: no target",
+                ND_EVAL,
+            ),
+            unit="currencyUSD",
+        ),
+        12,
+        6,
+    )
+    b.add(
+        eval_bars(
+            "T3 investigator by route | المحقق T3 حسب المسار",
+            r'fl_eval_metric{source="t3_investigator",metric=~"by_route\\.(cloud|local)\\.(reached_T3|forbidden_tool_call_rate)"}',
+            "{{metric}} · {{provenance}}",
+            desc(
+                "Share of fixture checks that reached the T3 investigator and the share that attempted a forbidden tool "
+                "call (t3_investigator artifact).",
+                "forbidden_tool_call_rate: green 0, red above; reached_T3 has no target",
+                ND_EVAL,
+            ),
+            pmax=1,
+            rb="injection-spike",
+        ),
+        12,
+        6,
+    )
+    b.add(
+        eval_bars(
+            "Sandbox T2 on real sites | فحص T2 على مواقع حقيقية",
+            r'fl_eval_metric{source="sandbox_t2",metric=~"real_site_render_health_held_out_legit\\.headline\\.(t2_render_clean_of_attempted|t2_reached_of_web|t2_degraded_of_web|false_positive_rate_all_items)"}',
+            "{{metric}} · {{provenance}}",
+            desc(
+                "Render health of held-out REAL legitimate sites in the sandbox: share rendered cleanly, share that "
+                "reached T2 and share degraded (sandbox_t2 artifact, headline run).",
+                "none: no target; degraded is expected for DNS-only hosts",
+                ND_EVAL,
+            ),
+            pmax=1,
+            rb="sandbox-failure",
+        ),
+        12,
+        6,
+    )
+    b.add(
+        eval_bars(
+            "Brand-new pages: warned and dangerous | صفحات جديدة",
+            r'fl_eval_metric{source="brand_new_pages",metric=~"groups\\..+\\.(warning_final|dangerous_final)"}',
+            "{{metric}} · {{provenance}}",
+            desc(
+                "Detection of pages on hosts in no feed, imitating the invented Falcon Demo Bank (brand_new_pages "
+                "artifact, FIXTURE). Read warning rates with the benign-control row.",
+                "none: fixtures, no target",
+                ND_EVAL,
+            ),
+            pmax=1,
+        ),
+        12,
+        6,
+    )
+
+
+def mq_message_dspy(b: Board) -> None:
+    """Model quality: message text (synthetic) and DSPy before/after."""
+    b.row("Message text and DSPy | نص الرسائل و DSPy")
+    base = r'fl_eval_metric{source="message_text",metric=~"metrics\\.message_text\\.(shipped|rules_only_before)\\.(recall|fpr)"}'
+    pat = "metrics\\\\.message_text\\\\.(.*)\\\\.(recall|fpr)"
+    expr = (
+        "label_join(label_replace(label_replace("
+        + latest(base)
+        + f', "kind", "$2", "metric", "{pat}"), "variant", "$1", "metric", "{pat}"),'
+        ' "row", " · ", "split", "variant")'
+    )
+    b.add(
+        matrix(
+            "[SYNTHETIC] Message text: recall and false alarms | رسائل اصطناعية",
+            expr,
+            "row",
+            "kind",
+            desc(
+                "Recall and false-alarm rate of the message path on SYNTHETIC, link-free messages (Falcon Demo Bank "
+                "and generic roles), latest message_text artifact: shipped model vs the rules-only baseline, per "
+                "split. Single-author set, small n: not a measure of accuracy on real scams. Purple = synthetic.",
+                "none: synthetic, small n, no target is applied",
+                "no message_text artifact is published yet",
+            ),
+            unit="percentunit",
+            rb="eval-regression",
+            sort_by="row",
+            pmax=1,
+            nodata="No message_text artifact is published yet",
+        ),
+        12,
+        8,
+    )
+    b.add(
+        eval_bars(
+            "[SYNTHETIC] Message text by language | حسب اللغة",
+            r'fl_eval_metric{source="message_text",metric=~"results\\.shipped\\.(recall|fpr)_by_language\\..+"}',
+            "{{metric}} · {{provenance}}",
+            desc(
+                "Shipped message model by language (English, MSA, Gulf Arabic, Arabizi) on SYNTHETIC messages, latest "
+                "message_text artifact. Per-language n is small.",
+                "none: synthetic, no target",
+                ND_EVAL,
+            ),
+            pmax=1,
+            rb="eval-regression",
+        ),
+        12,
+        8,
+    )
+    dspy_expr = (
+        'fl_eval_metric{source="dspy",metric=~"before_val\\\\.mean|after_val\\\\.mean|paired_diff\\\\.mean_diff|adopted"}'
+        " * on (source, artifact) group_left (role) fl_eval_artifact_info"
+    )
+    p = matrix(
+        "DSPy before / after, per role | قبل وبعد DSPy",
+        dspy_expr,
+        "role",
+        "metric",
+        desc(
+            "Per optimised role: mean task score on the validation split before and after DSPy, the paired difference "
+            "and whether the optimised prompt was adopted (1) or not (0). SYNTHETIC data, local route, small n: "
+            "'not adopted (within noise)' is the honest reading of a difference inside its interval. Artifacts: "
+            "evals/results/published/dspy/.",
+            "none: score in [0,1]; adopt only when the paired CI excludes 0",
+            "no dspy artifact is published yet",
+        ),
+        kind="table",
+        unit="short",
+        nodata="No dspy artifact is published yet",
+        renames={
+            "before_val.mean": "before",
+            "after_val.mean": "after",
+            "paired_diff.mean_diff": "difference",
+            "adopted": "adopted (1/0)",
+        },
+    )
+    p["fieldConfig"]["defaults"]["decimals"] = 3
+    p["fieldConfig"]["defaults"]["color"] = {"mode": "fixed", "fixedColor": PROV_COLORS["synthetic"]}
+    b.add(p, 24, 7)
+
+
+# ---- live dashboards: operational KPIs ----
+
+
+def kpi_overview(b: Board) -> None:
+    """Overview: checks and verdict mix by input type."""
+    b.row("By input type | حسب نوع المدخل")
+    b.add(
+        ts(
+            "Checks / min by input type | فحوصات حسب النوع",
+            [
+                target(
+                    src("sum by (input_type, source) (rate(fl_checks_total[$__rate_interval])) * 60"),
+                    "{{input_type}} · {{source}}",
+                )
+            ],
+            desc(
+                "Finished checks per minute by input type (link, message, email, image). Replayed checks are drawn "
+                "dashed orange.",
+                "none: volume, compare types with each other",
+                ND_TRAFFIC,
+            ),
+            unit="short",
+            replay=True,
+        ),
+        12,
+        8,
+    )
+    b.add(
+        ts(
+            "Verdict mix by input type | الأحكام حسب النوع",
+            [
+                target(
+                    src(
+                        "sum by (input_type, verdict, source) (increase(fl_checks_total[$__rate_interval]))"
+                        " / ignoring (verdict) group_left () sum by (input_type, source)"
+                        " (increase(fl_checks_total[$__rate_interval]))"
+                    ),
+                    "{{input_type}} · {{verdict}} · {{source}}",
+                )
+            ],
+            desc(
+                "Share of each verdict within an input type and source (over the window). Replayed series are dashed "
+                "orange.",
+                "none: a mix, not a target; a sudden shift in one type is the signal",
+                ND_TRAFFIC,
+            ),
+            unit="percentunit",
+            pmax=1,
+            replay=True,
+        ),
+        12,
+        8,
+    )
+
+
+def kpi_ai_ops(b: Board) -> None:
+    """AI operations: calls, errors, fallback and latency by role and route; tokens per check."""
+    b.row("By role and route | حسب الدور والمسار")
+    rate = "rate(fl_llm_calls_total[$__rate_interval])"
+    b.add(
+        ts(
+            "AI calls / min by role and route | نداءات حسب الدور والمسار",
+            [target(f"sum by (role, route) ({rate}) * 60", "{{role}} · {{route}}")],
+            desc(
+                "Provider calls per minute by role and route (local or cloud). One series per finished provider call.",
+                "none: volume",
+                ND_LLM,
+            ),
+        ),
+        12,
+        8,
+    )
+    b.add(
+        ts(
+            "AI error rate by route | معدل الأخطاء حسب المسار",
+            [
+                target(
+                    f'sum by (route) (rate(fl_llm_calls_total{{outcome!="ok"}}[$__rate_interval]))'
+                    f" / clamp_min(sum by (route) ({rate}), 0.000001)",
+                    "{{route}} errors, timeouts and budget stops",
+                )
+            ],
+            desc(
+                "Share of provider calls that did not finish ok (timeout, error or budget stop), per route.",
+                "dashed amber at 5% and red at 20%: visual limits, a route failing one call in five makes verdicts slow; "
+                "not an alert (alerts are in the rules file)",
+                ND_LLM,
+            ),
+            unit="percentunit",
+            steps=[(None, GREEN), (0.05, AMBER), (0.2, RED)],
+            pmax=1,
+        ),
+        12,
+        8,
+    )
+    b.add(
+        ts(
+            "Template fallback rate by role | الرجوع للقالب حسب الدور",
+            [
+                target(
+                    'sum by (role) (rate(fl_llm_results_total{status="fallback"}[$__rate_interval]))'
+                    " / clamp_min(sum by (role) (rate(fl_llm_results_total[$__rate_interval])), 0.000001)",
+                    "{{role}}",
+                )
+            ],
+            desc(
+                "Share of finished LLM requests per role where the caller's template was used instead of model text.",
+                "dashed amber at 10% and red at 30%: visual limits; the alert LlmTemplateFallback is the authority",
+                ND_LLM,
+            ),
+            unit="percentunit",
+            steps=[(None, GREEN), (0.1, AMBER), (0.3, RED)],
+            pmax=1,
+            rb="llm-fallback",
+        ),
+        12,
+        8,
+    )
+    b.add(
+        ts(
+            "AI call latency p50 / p95 by route | زمن النداء حسب المسار",
+            [
+                target(q("rate(fl_llm_call_seconds_bucket[$__rate_interval])", 0.5, ", route"), "p50 {{route}}", "A"),
+                target(q("rate(fl_llm_call_seconds_bucket[$__rate_interval])", 0.95, ", route"), "p95 {{route}}", "B"),
+            ],
+            desc(
+                "Provider call wall time per route. The local route shares one GPU, so its tail is long by design.",
+                "none: compare routes with each other",
+                ND_LLM,
+            ),
+            unit="s",
+        ),
+        12,
+        8,
+    )
+    b.add(
+        stat(
+            "Tokens / check, 1 h | رموز لكل فحص",
+            "sum(increase(fl_llm_tokens_total[1h])) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
+            desc(
+                "LLM tokens (input + output, all roles and routes) divided by finished checks in the last hour.",
+                "none: depends on how many checks reach the AI tiers",
+                ND_LLM,
+            ),
+            unit="short",
+            decimals=0,
+        ),
+        6,
+        4,
+    )
+    b.add(
+        stat(
+            "Cost / check, 1 h | تكلفة الفحص",
+            "(sum(increase(fl_llm_cost_usd_total[1h])) or vector(0)) / clamp_min(sum(increase(fl_checks_total[1h])), 1)",
+            desc(
+                "Estimated cloud USD per finished check in the last hour (price table x tokens, computed by the caller).",
+                "none: no budget target is set",
+                ND_LLM,
+            ),
+            unit="currencyUSD",
+            decimals=5,
+        ),
+        6,
+        4,
+    )
+
+
+def kpi_sentinel(b: Board) -> None:
+    """Sentinel: incidents per day, approval turnaround, campaign board views."""
+    b.row("Daily KPIs | مؤشرات يومية")
+    b.add(
+        stat(
+            "Incidents, 24 h | حوادث في 24 ساعة",
+            "sum(increase(fl_incidents_total[24h])) or vector(0)",
+            desc(
+                "Incidents opened in the last 24 hours (live and replayed together; see the banner).",
+                "none: volume",
+                ND_SENT,
+            ),
+            decimals=0,
+        ),
+        6,
+        4,
+    )
+    b.add(
+        stat(
+            "Approval turnaround p50, 24 h | زمن الموافقة",
+            "histogram_quantile(0.5, sum by (le) (increase(fl_approval_turnaround_seconds_bucket[24h])))",
+            desc(
+                "Median seconds from an action proposal to the operator decision, last 24 hours.",
+                "none: no SLA is set for operator response",
+                "no operator decision was made in the last 24 hours",
+            ),
+            unit="s",
+            decimals=0,
+        ),
+        6,
+        4,
+    )
+    b.add(
+        stat(
+            "Campaign board views, 24 h | زيارات لوحة الحملات",
+            "sum(increase(fl_campaign_board_views_total[24h])) or vector(0)",
+            desc(
+                "Reads of the campaign board through the API (list and live stream), last 24 hours. No caller identity "
+                "is recorded.",
+                "none: volume",
+                "the board was not read in this range; the series appears at the first read",
+            ),
+            decimals=0,
+        ),
+        6,
+        4,
+    )
+    b.add(
+        ts(
+            "Incidents per day | حوادث يوميا",
+            [target(src("sum by (source) (increase(fl_incidents_total[1d]))"), "{{source}}")],
+            desc(
+                "Incidents opened in the trailing day, by source. Replayed incidents are dashed orange.",
+                "none: volume",
+                ND_SENT,
+            ),
+            replay=True,
+        ),
+        12,
+        8,
+    )
+    b.add(
+        ts(
+            "Approval turnaround p50 / p95 by decision, 24 h | زمن الموافقة",
+            [
+                target(
+                    q("increase(fl_approval_turnaround_seconds_bucket[24h])", 0.5, ", decision"),
+                    "p50 {{decision}}",
+                    "A",
+                ),
+                target(
+                    q("increase(fl_approval_turnaround_seconds_bucket[24h])", 0.95, ", decision"),
+                    "p95 {{decision}}",
+                    "B",
+                ),
+            ],
+            desc(
+                "Trailing 24 h quantiles of proposal-to-decision time. Quantiles of few decisions are coarse "
+                "(bucket-bound).",
+                "none: no SLA is set for operator response",
+                "no operator decision was made in the trailing 24 hours",
+            ),
+            unit="s",
+        ),
+        12,
+        8,
+    )
+    b.add(
+        ts(
+            "Campaign board views / min | زيارات لوحة الحملات",
+            [target("sum by (surface) (rate(fl_campaign_board_views_total[$__rate_interval])) * 60", "{{surface}}")],
+            desc(
+                "Reads of the campaign board API per minute: list = one-off fetch, stream = an open live view.",
+                "none: volume",
+                "the board was not read in this range",
+            ),
+        ),
+        12,
+        6,
+    )
 
 
 # ------------------------------------------------------------------------------------------ validation

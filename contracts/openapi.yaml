@@ -38,6 +38,46 @@ components:
       - report
       title: Actions
       type: object
+    AgentActivity:
+      description: What the Investigator did for one check (derived counts only).
+      properties:
+        extractor_ran:
+          description: The structured-extraction model contributed evidence.
+          title: Extractor Ran
+          type: boolean
+        investigator_ran:
+          description: The T3 tool-using investigator ran.
+          title: Investigator Ran
+          type: boolean
+        llm_calls:
+          description: Model calls recorded in the sanitised trace.
+          minimum: 0.0
+          title: Llm Calls
+          type: integer
+        tiers_run:
+          description: Cascade tiers executed, T0 up to `tier_reached`.
+          items:
+            enum:
+            - T0
+            - T1
+            - T2
+            - T3
+            type: string
+          title: Tiers Run
+          type: array
+        tool_calls:
+          description: Tool calls recorded in the sanitised trace.
+          minimum: 0.0
+          title: Tool Calls
+          type: integer
+      required:
+      - tiers_run
+      - extractor_ran
+      - investigator_ran
+      - tool_calls
+      - llm_calls
+      title: AgentActivity
+      type: object
     AgentTrace:
       additionalProperties: false
       properties:
@@ -873,6 +913,108 @@ components:
       - latency_ms
       - created_at
       title: Verdict
+      type: object
+    VerdictPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/VerdictSummary'
+          title: Items
+          type: array
+        next_cursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Opaque cursor for the next page; null on the last page.
+          title: Next Cursor
+      required:
+      - items
+      - next_cursor
+      title: VerdictPage
+      type: object
+    VerdictSummary:
+      description: One row of the operator history. No raw input and no personal data.
+      properties:
+        agent:
+          $ref: '#/components/schemas/AgentActivity'
+        created_at:
+          title: Created At
+          type: string
+        degraded:
+          title: Degraded
+          type: boolean
+        degraded_reasons:
+          items:
+            type: string
+          title: Degraded Reasons
+          type: array
+        display:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Defanged host for links (no userinfo, path or query); null for messages, emails
+            and images.
+          title: Display
+        input_type:
+          enum:
+          - url
+          - message
+          - email
+          - image
+          title: Input Type
+          type: string
+        model_route:
+          enum:
+          - cloud
+          - local
+          - none
+          title: Model Route
+          type: string
+        risk_score:
+          maximum: 100.0
+          minimum: 0.0
+          title: Risk Score
+          type: integer
+        source:
+          enum:
+          - live
+          - replay
+          - synthetic
+          - fixture
+          title: Source
+          type: string
+        tier_reached:
+          enum:
+          - T0
+          - T1
+          - T2
+          - T3
+          title: Tier Reached
+          type: string
+        verdict:
+          enum:
+          - dangerous
+          - suspicious
+          - no_warning_signs
+          title: Verdict
+          type: string
+        verdict_id:
+          title: Verdict Id
+          type: string
+      required:
+      - verdict_id
+      - created_at
+      - input_type
+      - display
+      - verdict
+      - risk_score
+      - degraded
+      - degraded_reasons
+      - tier_reached
+      - model_route
+      - source
+      - agent
+      title: VerdictSummary
       type: object
     falcon_core__contracts__agent_trace__TraceStep:
       additionalProperties: false
@@ -1993,6 +2135,167 @@ paths:
       summary: Submit Report
       tags:
       - intake
+  /v1/verdicts:
+    get:
+      description: 'Operator history of Investigator checks, newest first. Summaries only: no raw input,
+        no personal data.'
+      operationId: list_verdicts_v1_verdicts_get
+      parameters:
+      - description: Opaque cursor from `next_cursor`.
+        in: query
+        name: cursor
+        required: false
+        schema:
+          anyOf:
+          - maxLength: 64
+            type: string
+          - type: 'null'
+          description: Opaque cursor from `next_cursor`.
+          title: Cursor
+      - description: Page size.
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 25
+          description: Page size.
+          maximum: 100
+          minimum: 1
+          title: Limit
+          type: integer
+      - in: query
+        name: verdict
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - dangerous
+            - suspicious
+            - no_warning_signs
+            type: string
+          - type: 'null'
+          title: Verdict
+      - in: query
+        name: input_type
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - url
+            - message
+            - email
+            - image
+            type: string
+          - type: 'null'
+          title: Input Type
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerdictPage'
+          description: Successful Response
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: List Verdicts
+      tags:
+      - verdicts
+  /v1/verdicts/stream:
+    get:
+      description: 'SSE: `event: verdict`, data = one `VerdictSummary`. Bounded to 5 minutes; reconnect
+        with Last-Event-ID.'
+      operationId: verdicts_stream_v1_verdicts_stream_get
+      parameters:
+      - in: header
+        name: last-event-id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last-Event-Id
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              itemSchema:
+                properties:
+                  data:
+                    type: string
+                  event:
+                    type: string
+                  id:
+                    type: string
+                  retry:
+                    minimum: 0
+                    type: integer
+                type: object
+          description: Successful Response
+        '413':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: Verdicts Stream
+      tags:
+      - verdicts
   /v1/verdicts/{verdict_id}:
     get:
       operationId: get_verdict_v1_verdicts__verdict_id__get

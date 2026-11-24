@@ -38,7 +38,7 @@ def _registered() -> dict[str, tuple[str, ...]]:
 
 
 def test_doc_parses_all_sections() -> None:
-    assert len(_doc_metrics()) == 49
+    assert len(_doc_metrics()) == 50
 
 
 def test_every_documented_metric_exists_exactly() -> None:
@@ -70,6 +70,7 @@ def test_labels_match_doc() -> None:
     m.CAMPAIGN_NEW_DOMAINS.labels("falcon_demo_bank", "replay").inc()
     m.BRAND_IMPERSONATION.labels("falcon_demo_bank").inc()
     m.USER_FEEDBACK.labels("false_positive").inc()
+    m.record_campaign_board_view("list")
     m.EVAL_METRIC.labels("f1", "test", "cascade").set(0.5)
     m.record_incident(type="campaign", severity="high", source="replay")
     m.INCIDENT_OPEN.labels("high").set(1)

@@ -104,6 +104,8 @@ CAMPAIGN_NEW_DOMAINS = _c(
 )
 BRAND_IMPERSONATION = _c("brand_impersonation_total", "Brand impersonation hits", ("brand",))
 USER_FEEDBACK = _c("user_feedback_total", "User feedback submissions", ("type",))
+# surface: list (GET /v1/campaigns) | stream (GET /v1/campaigns/stream). One per request; no caller identity is kept.
+CAMPAIGN_BOARD_VIEWS = _c("campaign_board_views_total", "Campaign board reads through the API", ("surface",))
 # Evals
 EVAL_METRIC = _g("eval_metric", "Metric from the latest eval artifact", ("name", "split", "route"))
 SCORE_DRIFT = _g("score_drift_index", "Score distribution drift vs. baseline")
@@ -199,6 +201,13 @@ def record_llm(
     LLM_COST.labels(model).inc(max(cost_usd, 0.0))
     if fallback:
         LLM_FALLBACK.labels(role).inc()
+
+
+def record_campaign_board_view(surface: str) -> None:
+    """Count one read of the public campaign board (``list`` or ``stream``)."""
+    if surface not in ("list", "stream"):
+        raise ValueError(f"surface must be list|stream, got {surface!r}")
+    CAMPAIGN_BOARD_VIEWS.labels(surface).inc()
 
 
 def record_incident(*, type: str, severity: str, source: Source = "live") -> None:  # noqa: A002

@@ -1,0 +1,42 @@
+/* ── Operator history (/history) and check trace (/checks/[id]) ─────── */
+.back { color: var(--fl-brand); font-weight: var(--fl-weight-medium); }
+.hs-tabs { display: flex; flex-wrap: wrap; gap: var(--fl-space-2); margin-block: var(--fl-space-5) var(--fl-space-4); border-block-end: 2px solid var(--fl-border); }
+.hs-tabs [role="tab"] { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 48px; padding: 0.5rem 1rem; background: none; border: 0; border-block-end: 4px solid transparent; margin-block-end: -2px; color: var(--fl-text-muted); font: inherit; font-weight: var(--fl-weight-medium); cursor: pointer; }
+.hs-tabs [role="tab"][aria-selected="true"] { color: var(--fl-text); border-block-end-color: var(--fl-brand); font-weight: var(--fl-weight-bold); }
+.hs-tabs [role="tab"]:focus-visible { outline: 3px solid var(--fl-brand); outline-offset: 2px; }
+.hs-list { list-style: none; margin: 0 0 var(--fl-space-5); padding: 0; display: grid; gap: var(--fl-space-3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .hs-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hs-row { position: relative; padding: var(--fl-space-4) var(--fl-space-5); display: grid; gap: var(--fl-space-2); min-width: 0; }
+.hs-row:hover { border-color: var(--fl-brand); }
+.hs-top, .hs-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.8rem; min-width: 0; }
+.hs-time { margin-inline-start: auto; }
+.hs-title { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); margin: 0; overflow-wrap: anywhere; }
+.hs-link { color: inherit; text-decoration: none; }
+.hs-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.hs-link:focus-visible { outline: 3px solid var(--fl-brand); outline-offset: 2px; }
+.hs-note { margin-block: 0 var(--fl-space-3); }
+.vpill { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: var(--fl-weight-bold); color: var(--v-fg, var(--fl-text)); background: var(--v-tint, var(--fl-surface-2)); border: 1.5px solid var(--v-line, var(--fl-border-strong)); border-radius: var(--fl-radius-pill); padding: 0.1rem 0.8rem; }
+.tierbar { list-style: none; margin: 0; padding: 0; display: inline-flex; gap: 0.25rem; }
+.tierbar li { font-size: var(--fl-text-xs); border-radius: 6px; padding: 0.1rem 0.4rem; border: 1.5px dashed var(--fl-border-strong); color: var(--fl-text-muted); }
+.tierbar li[data-run="true"] { border-style: solid; border-color: var(--fl-brand); color: var(--fl-text); font-weight: var(--fl-weight-bold); }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* check trace */
+.ck-sum, .ck-final, .ck-ai { padding: var(--fl-space-4) var(--fl-space-5); display: grid; gap: var(--fl-space-3); min-width: 0; }
+.ck-sum { border-color: var(--v-line, var(--fl-border)); }
+.ck-sum-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.8rem; }
+.ck-h { margin-block: var(--fl-space-6) var(--fl-space-3); }
+.ck-tiers { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--fl-space-3); }
+.ck-tier { padding: var(--fl-space-4) var(--fl-space-5); display: grid; gap: var(--fl-space-2); min-width: 0; }
+.ck-tier[data-state="skipped"] { border-style: dashed; }
+.ck-tier-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; }
+.ck-tier-top h3 { flex: 1 1 8rem; margin: 0; font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); }
+.ck-code { border: 2px solid var(--fl-brand); border-radius: 8px; padding: 0.1rem 0.5rem; font-weight: var(--fl-weight-bold); }
+.ck-tier[data-state="skipped"] .ck-code { border-style: dashed; border-color: var(--fl-border-strong); }
+.ck-skip { border-style: dashed; }
+.ck-ev, .ck-calls, .ck-reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--fl-space-2); }
+.ck-reasons { list-style: decimal; padding-inline-start: 1.4rem; }
+.ck-ev-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.2rem 0.6rem; align-items: start; overflow-wrap: anywhere; }
+.ck-ev-row .kv { grid-column: 2; margin-block: 0; }
+.ck-calls li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.8rem; overflow-wrap: anywhere; }
+.ck-call-sum { flex: 1 1 100%; color: var(--fl-text-muted); }
+.ck-final .vpill, .ck-sum .vpill { justify-self: start; }

@@ -111,7 +111,7 @@ describe("copy rules (W2 acceptance)", () => {
     for (const v of Object.values(MESSAGES.en)) expect(v.toLowerCase()).not.toMatch(/\bsafe(ly|r|st|ty)?\b/);
   });
   it("the nav labels in the v2 order exist in both languages", () => {
-    for (const k of ["nav.check", "nav.agents", "nav.results", "nav.authorities", "nav.docs", "nav.privacy", "nav.live", "nav.ops"] as const) {
+    for (const k of ["nav.check", "nav.agents", "nav.results", "nav.authorities", "nav.docs", "nav.privacy", "nav.live", "nav.campaigns", "nav.ops"] as const) {
       expect(MESSAGES.ar[k]).toBeTruthy();
       expect(MESSAGES.en[k]).toBeTruthy();
     }
