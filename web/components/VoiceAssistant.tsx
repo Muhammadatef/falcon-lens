@@ -6,14 +6,16 @@ import { ApiError, fetchVerdict, submitCheck } from "@/lib/api";
 import type { Lang, Verdict } from "@/lib/contracts";
 import { VERDICT_ID_RE, parseVerdict } from "@/lib/contracts";
 import { defang, looksLikeSingleUrl } from "@/lib/defang";
-import { MESSAGES } from "@/lib/i18n";
+import { MESSAGES, pick } from "@/lib/i18n";
 import { voiceText, type VoiceKey } from "@/lib/i18n-voice";
 import { usePrefs } from "@/lib/prefs";
 import { cancelSpeech, canSpeak, speak } from "@/lib/speech";
 import { startListener, voiceSupported, type Listener } from "@/lib/vad";
 import {
   PRIVACY_LINE_CONFIRMED,
+  aiStepText,
   buildSpeech,
+  findIncident,
   buildSummary,
   countOutcomes,
   narMessage,
@@ -21,7 +23,7 @@ import {
   narStart,
   newProgressSteps,
   parseVoiceReply,
-  sharedBrandCampaign,
+  sentinelSteps,
   speechLang,
   splitMessages,
   stepKey,
@@ -31,6 +33,8 @@ import {
   type ClipItem,
   type Outcome,
   type ProgressStep,
+  type SentinelIncident,
+  type SentinelStep,
   type VoiceReply,
 } from "@/lib/voice";
 import { UntrustedText } from "./Chrome";
@@ -142,6 +146,35 @@ async function readClipboard(): Promise<string | null> {
   }
 }
 
+const incidentHref = (id: string): string => `/incidents/${id}`;
+const SENTINEL_WAIT_MS = 20_000;
+
+/**
+ * Polls the public incident list (up to ~20 s) for an incident that links any of our verdict ids, then reads its
+ * real LangGraph trace. Two failed calls in a row mean the Sentinel is not connected: stop waiting. Never invents one.
+ */
+async function findSentinelIncident(ids: string[], alive: () => boolean): Promise<{ incident: SentinelIncident; steps: SentinelStep[] } | null> {
+  const deadline = Date.now() + SENTINEL_WAIT_MS;
+  let misses = 0;
+  while (alive() && Date.now() < deadline) {
+    try {
+      const res = await fetch("/api/public/incidents?limit=50", { cache: "no-store", credentials: "same-origin" });
+      if (res.ok) {
+        const incident = findIncident(await res.json(), ids);
+        if (incident) {
+          const detail = await fetch(`/api/public/incidents/${incident.id}`, { cache: "no-store", credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+          return { incident, steps: sentinelSteps((detail as { trace?: unknown } | null)?.trace) };
+        }
+        misses = 0;
+      } else if (++misses >= 2) return null;
+    } catch {
+      if (++misses >= 2) return null;
+    }
+    await sleep(2000);
+  }
+  return null;
+}
+
 function Tick() {
   return (
     <svg className="voice-tick" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
@@ -163,6 +196,7 @@ export function VoiceAssistant() {
   const [rows, setRows] = useState<Row[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
   const [truncated, setTruncated] = useState(false);
+  const [incident, setIncident] = useState<SentinelIncident | null>(null);
   const [resultLang, setResultLang] = useState<Lang>(pageLang);
   const [showPaste, setShowPaste] = useState(false);
   const [pasteText, setPasteText] = useState("");
@@ -248,27 +282,65 @@ export function VoiceAssistant() {
       // One message at a time, so the steps on screen and the narration tell one story in order.
       for (const [at, item] of split.items.entries()) {
         const n = at + 1;
-        addStep(voiceText(lang, item.kind === "url" ? "voice.step.msg.url" : "voice.step.msg.text", { i: String(n) }), lang);
-        enqueue({ text: narMessage(lang, n), lang, kind: "msg" }, token);
+        const start = narMessage(lang, n);
+        addStep(start, lang);
+        enqueue({ text: start, lang, kind: "msg" }, token);
         const seen = new Set<ProgressStep>();
-        const outcome = await checkOne(item, (v) => newProgressSteps(v, item.kind, seen).forEach((s) => addStep(voiceText(lang, stepKey(s)), lang)), alive);
+        let aiShown = false;
+        const outcome = await checkOne(
+          item,
+          (v) =>
+            newProgressSteps(v, item.kind, seen).forEach((st) => {
+              if (st !== "ai") return addStep(voiceText(lang, stepKey(st)), lang);
+              const ai = aiStepText(lang, v);
+              if (ai) {
+                aiShown = true;
+                addStep(ai, lang);
+              }
+            }),
+          alive,
+        );
         if (!alive()) return;
         outcomes.push(outcome);
         setRows((prev) => prev.map((r) => (r.key === at ? { ...r, outcome } : r)));
         const v = outcome.verdict;
+        // The AI second look is named only when that tier ran and a model answered; otherwise the rules decided.
+        if (v && !aiShown) addStep(voiceText(lang, "investigator.rules_only"), lang);
         addStep(
           v
-            ? voiceText(lang, "voice.step.result", { i: String(n), verdict: MESSAGES[lang][`v.${v.verdict}`], score: String(Math.round(v.risk_score)) })
+            ? voiceText(lang, "investigator.arbiter_result", { i: String(n), verdict: MESSAGES[lang][`v.${v.verdict}`], score: String(Math.round(v.risk_score)) })
             : voiceText(lang, "voice.step.failed", { i: String(n) }),
           lang,
         );
         enqueue({ text: narResult(lang, n, v), lang, kind: "msg" }, token);
       }
-      if (sharedBrandCampaign(outcomes)) addStep(voiceText(lang, "voice.step.campaign"), lang);
+
+      // Hand over to the Sentinel and look for the REAL incident that links these checks.
+      setIncident(null);
+      const handover = voiceText(lang, "sentinel.handover");
+      addStep(handover, lang);
+      enqueue({ text: handover, lang, kind: "final" }, token);
+      const ids = outcomes.flatMap((o) => (o.id ? [o.id] : []));
+      const found = ids.length ? await findSentinelIncident(ids, alive) : null;
+      if (!alive()) return;
+      if (found) {
+        setIncident(found.incident);
+        const lines: string[] = [];
+        for (const st of found.steps) {
+          const line = voiceText(lang, `sentinel.${st}` as VoiceKey, { n: String(found.incident.linked) });
+          lines.push(line);
+          addStep(line, lang);
+          enqueue({ text: line, lang, kind: "final" }, token);
+        }
+      } else {
+        const watching = voiceText(lang, "sentinel.watching");
+        addStep(watching, lang);
+        enqueue({ text: watching, lang, kind: "final" }, token);
+      }
       addStep(buildSummary(lang, countOutcomes(outcomes)), lang);
       // The check may have finished before the narration caught up: the summary replaces any per-message lines still waiting.
-      queue.current = queue.current.filter((q) => q.kind === "final");
-      enqueue({ text: buildSpeech(lang, outcomes), lang, kind: "final" }, token);
+      queue.current = queue.current.filter((q) => q.kind === "final"); // keeps the Sentinel lines
+      enqueue({ text: buildSpeech(lang, outcomes, { sentinelFound: !!found }), lang, kind: "final" }, token);
       await drain();
       if (alive()) finishSteps();
     },
@@ -363,6 +435,7 @@ export function VoiceAssistant() {
     setCaption("");
     setRows([]);
     setSteps([]);
+    setIncident(null);
     setHeard("");
     if (!voiceSupported()) {
       setProblem("unsupported");
@@ -520,13 +593,18 @@ export function VoiceAssistant() {
               <UntrustedText value={now} />
             </p>
           ) : null}
-          {done && sharedBrandCampaign(outcomes) ? (
-            <p className="card callout voice-campaign" data-testid="voice-campaign">
-              <Icon name="spark" size={24} />
-              <span>
-                {voiceText(resultLang, "voice.campaign")} <Link href="/campaigns">{voiceText(resultLang, "voice.campaign.link")}</Link>
-              </span>
-            </p>
+          {incident ? (
+            <section className="card voice-sentinel" data-testid="voice-sentinel" data-severity={incident.severity} aria-label={voiceText(resultLang, "voice.sentinel.h")}>
+              <h3 className="h3"><Icon name="spark" size={24} /> {voiceText(resultLang, "voice.sentinel.h")}</h3>
+              {pick(resultLang, incident.summary) ? <p className="voice-sentinel-title"><UntrustedText value={pick(resultLang, incident.summary)} /></p> : null}
+              <p>
+                <b>{voiceText(resultLang, "voice.sentinel.sev")}</b> {voiceText(resultLang, `voice.sev.${incident.severity}` as VoiceKey)} · <b>{voiceText(resultLang, "voice.sentinel.count")}</b> {incident.linked}
+              </p>
+              <p className="voice-sentinel-links">
+                <Link className="btn btn--sm" href={incidentHref(incident.id)} data-testid="voice-incident-link">{voiceText(resultLang, "voice.sentinel.open")}</Link>
+                <Link className="btn btn--sm" href="/campaigns" data-testid="voice-campaign-link">{voiceText(resultLang, "voice.campaign.link")}</Link>
+              </p>
+            </section>
           ) : null}
           <ol className="voice-cards">
             {rows.map((r) => {

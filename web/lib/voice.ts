@@ -187,8 +187,9 @@ export function topAction(lang: Lang, outcomes: readonly Outcome[]): string {
 }
 
 /** The full utterance: summary, then the single most important next step. */
-export function buildSpeech(lang: Lang, outcomes: readonly Outcome[]): string {
-  const summary = buildSummary(lang, countOutcomes(outcomes));
+export function buildSpeech(lang: Lang, outcomes: readonly Outcome[], agents?: { sentinelFound: boolean }): string {
+  const base = buildSummary(lang, countOutcomes(outcomes));
+  const summary = agents && outcomes.length ? `${base} ${vt(lang, "voice.sum.inv")} ${vt(lang, agents.sentinelFound ? "voice.sum.sen.found" : "sentinel.watching")}` : base;
   const action = topAction(lang, outcomes);
   return action ? `${summary} ${vt(lang, "voice.sum.now")} ${action}` : summary;
 }
@@ -243,8 +244,59 @@ export function newProgressSteps(v: Verdict, kind: "url" | "message", seen: Set<
   return fresh;
 }
 
-export const stepKey = (s: ProgressStep): VoiceKey => `voice.step.${s}`;
+export const stepKey = (s: ProgressStep): VoiceKey =>
+  s === "lists" ? "investigator.lists" : s === "lookalike" ? "investigator.address" : s === "browser" ? "investigator.page" : s === "wording" ? "voice.step.wording" : "investigator.ai_second_look";
 
 export const narStart = (lang: Lang, total: number): string => vt(lang, "voice.nar.start", { total: totalPhrase(lang, total) });
-export const narMessage = (lang: Lang, i: number): string => vt(lang, "voice.nar.msg", { ord: ordinal(lang, i) });
-export const narResult = (lang: Lang, i: number, v: Verdict | null): string => vt(lang, v ? (`voice.nar.res.${v.verdict}` as VoiceKey) : "voice.nar.res.failed", { ord: ordinal(lang, i) });
+export const narMessage = (lang: Lang, i: number): string => vt(lang, "investigator.start", { ord: ordinal(lang, i) });
+export const narResult = (lang: Lang, i: number, v: Verdict | null): string =>
+  v ? vt(lang, `investigator.nar.${v.verdict}` as VoiceKey, { ord: ordinal(lang, i) }) : vt(lang, "voice.nar.res.failed", { ord: ordinal(lang, i) });
+
+/** The AI second look is named only when a model actually answered; the route says where. */
+export function aiStepText(lang: Lang, v: Verdict): string | null {
+  if (v.model_route === "none") return null;
+  return vt(lang, "investigator.ai_second_look", { route: vt(lang, v.model_route === "local" ? "investigator.route.local" : "investigator.route.cloud") });
+}
+
+/* ── Sentinel hand-over ───────────────────────────────────────────────── */
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+export interface SentinelIncident {
+  id: string;
+  severity: "low" | "medium" | "high" | "critical";
+  linked: number;
+  summary: { ar?: string; en?: string };
+}
+
+/** The first public incident whose linked verdict ids include any of ours; null when none does. Opaque ids only. */
+export function findIncident(list: unknown, verdictIds: readonly string[]): SentinelIncident | null {
+  const items = isObj(list) && Array.isArray(list.items) ? list.items : [];
+  const mine = new Set(verdictIds);
+  for (const raw of items) {
+    if (!isObj(raw) || typeof raw.incident_id !== "string" || !/^inc_[0-9A-HJKMNP-TV-Z]{26}$/.test(raw.incident_id)) continue;
+    const linked = (Array.isArray(raw.linked_verdicts) ? raw.linked_verdicts : []).filter((x): x is string => typeof x === "string");
+    if (!linked.some((id) => mine.has(id))) continue;
+    const sev = (["low", "medium", "high", "critical"] as const).find((x) => x === raw.severity);
+    const sum = isObj(raw.summary) ? raw.summary : {};
+    const cut = (x: unknown) => (typeof x === "string" ? x.slice(0, 240) : undefined);
+    return { id: raw.incident_id, severity: sev ?? "low", linked: linked.length, summary: { ar: cut(sum.ar), en: cut(sum.en) } };
+  }
+  return null;
+}
+
+export type SentinelStep = "linked" | "summary" | "draft" | "awaiting_approval";
+
+/** Plain-words steps that the incident's real LangGraph trace proves; nothing else is narrated. */
+export function sentinelSteps(trace: unknown): SentinelStep[] {
+  const runs = isObj(trace) && Array.isArray(trace.runs) ? trace.runs.filter(isObj) : [];
+  const steps = runs.flatMap((r) => (Array.isArray(r.steps) ? r.steps.filter(isObj) : []));
+  const nodes = new Set(steps.map((x) => x.node));
+  const out: SentinelStep[] = [];
+  if (nodes.has("enrich") || nodes.has("compare")) out.push("linked");
+  if (nodes.has("summarise")) out.push("summary");
+  const drafted = steps.some((x) => Array.isArray(x.tools) && x.tools.some((t) => isObj(t) && t.mode === "external_draft"));
+  if (drafted) out.push("draft");
+  if (runs.some((r) => isObj(r.interrupt) && r.interrupt.decision == null)) out.push("awaiting_approval");
+  return out;
+}

@@ -3,7 +3,9 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { dangerousStream, nwsStream } from "../fixtures";
 import { VOICE_MESSAGES } from "../../lib/i18n-voice";
-import { expect, newVerdictId, registerScenario, setPrefs, test, token } from "./helpers";
+import { DEMO_INCIDENT } from "../../lib/demo";
+import { DEMO_TRACE } from "../../lib/demo-trace";
+import { expect, newIncidentId, newVerdictId, registerScenario, setPrefs, test, token, useBoards } from "./helpers";
 
 const AR = VOICE_MESSAGES.ar;
 const EN = VOICE_MESSAGES.en;
@@ -94,7 +96,7 @@ async function setup(page: Page, request: any) {
 const listening = (lang: typeof AR | typeof EN) => lang["voice.state.listening"];
 
 test.describe("voice assistant: hands-free mode with mocked microphone, clipboard and speech", () => {
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
 
   test("wake, three messages, live steps in order, spoken in each speaker's language, results and campaign", async ({ page, request }) => {
     const { ids } = await setup(page, request);
@@ -118,20 +120,24 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await say(page, "check-ar");
     await expect(page.getByTestId("voice-card")).toHaveCount(3);
     await expect(page.getByTestId("voice-todo")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("voice-steps")).toContainText(AR["sentinel.watching"], { timeout: 20_000 }); // no Sentinel connected here
     const texts = await page.getByTestId("voice-step").allTextContents();
     const at = (needle: string) => texts.findIndex((t) => t.includes(needle));
-    const order = [at("سمعتك"), at("الرسالة 1: أقرأ"), at(AR["voice.step.lists"]), at("الرسالة 1: خطِر"), at("الرسالة 2: أقرأ"), at("الرسالة 3: لم نجد"), at(AR["voice.step.campaign"])];
-    expect(order.every((i) => i >= 0), JSON.stringify(texts)).toBe(true);
+    const order = [at("سمعتك"), at("يفحص الرسالة الأولى"), at(AR["investigator.lists"]), at("الرسالة 1: حكم"), at("يفحص الرسالة الثانية"), at("الرسالة 3: حكم"), at(AR["sentinel.handover"]), at(AR["sentinel.watching"])];
+    expect(texts.some((t) => t.includes("المحقّق")) && texts.some((t) => t.includes("«الحارس»"))).toBe(true); // both agents are named on screen
+    expect(at(AR["investigator.rules_only"]) >= 0 || at("نظرة ثانية") >= 0).toBe(true); // either the rules decided or a model answered, never silent
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(texts.join(" ")).not.toMatch(/\bT[0-3]\b|آمن|\bsafe\b/i);
     await expect(page.getByTestId("voice-step").first()).toHaveAttribute("data-done", "true");
     await expect(page.getByTestId("voice-card-verdict")).toHaveText(["خطِر", "خطِر", "لم نجد علامات تحذير"]);
-    await expect(page.getByTestId("voice-campaign")).toBeVisible();
+    await expect(page.getByTestId("voice-campaign")).toHaveCount(0); // no campaign claim without a real Sentinel incident
     await expect(page.getByTestId("voice-trace").first()).toHaveAttribute("href", `/checks/${ids[0]}`);
     const ar = await spoken(page);
     expect(ar.every((s) => s.lang === "ar-SA")).toBe(true);
     expect(ar.map((s) => s.text).join(" ")).toContain("فحصت ثلاث رسائل.");
     expect(ar.map((s) => s.text).join(" ")).toContain("لا تضغط على الروابط ولا ترسل أي رمز.");
+    expect(ar.map((s) => s.text)).toContain(AR["sentinel.handover"]);
+    expect(ar.map((s) => s.text).join(" ")).toContain(AR["voice.sum.inv"]);
     expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b/i);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 15_000 });
 
@@ -148,11 +154,54 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect(en.map((s) => s.text).join(" ")).toContain("Two are dangerous: don't tap the links and never share a code.");
     // Each spoken line is queued, never overlapping: the per-message lines come before the summary.
     expect(en[0]!.text).toBe("Checking three messages from your clipboard.");
+    expect(en.map((x) => x.text)).toContain("Handing the results to the Sentinel agent");
+    expect(en.map((x) => x.text).join(" ")).toContain("The Investigator agent checked every message.");
 
     // Stop works and the mic is released.
     await page.getByTestId("voice-stop").click();
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.stopped"]);
     await expect(page.getByTestId("voice-on")).toBeVisible();
+  });
+
+  test("Sentinel hand-over: a real incident linking these checks gets a card, its trace is narrated, approval is stated", async ({ page, request, context, baseURL }) => {
+    const { ids } = await setup(page, request);
+    const inc = newIncidentId();
+    const trace = { incident_id: inc, thread_id: inc, runs: JSON.parse(JSON.stringify(DEMO_TRACE.runs)) };
+    await useBoards(context, request, baseURL!, { incidents: [{ ...DEMO_INCIDENT, incident_id: inc, source: "live", linked_verdicts: ids }], traces: { [inc]: [trace] } });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "check-ar");
+    await expect(page.getByTestId("voice-sentinel")).toBeVisible({ timeout: 40_000 });
+    await expect(page.getByTestId("voice-incident-link")).toHaveAttribute("href", `/incidents/${inc}`);
+    await expect(page.getByTestId("voice-campaign-link")).toHaveAttribute("href", "/campaigns");
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 30_000 });
+    const texts = await page.getByTestId("voice-step").allTextContents();
+    const at = (needle: string) => texts.findIndex((t) => t.includes(needle));
+    const order = [at(AR["sentinel.handover"]), at("ربط «الحارس» 3 بلاغات"), at(AR["sentinel.summary"]), at(AR["sentinel.draft"]), at(AR["sentinel.awaiting_approval"])];
+    expect(order.every((i) => i >= 0), JSON.stringify(texts)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(at(AR["sentinel.watching"])).toBe(-1); // never "still watching" when an incident was found
+    const said = (await spoken(page)).map((x) => x.text).join(" ");
+    expect(said).toContain(AR["sentinel.handover"]);
+    expect(said).toContain(AR["sentinel.awaiting_approval"]);
+    expect(said).toContain(AR["voice.sum.sen.found"]);
+    expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b|\bT[0-3]\b/i);
+  });
+
+  test("Sentinel timeout: no matching incident means 'still watching', never an invented campaign", async ({ page, request, context, baseURL }) => {
+    await setup(page, request);
+    await useBoards(context, request, baseURL!, { incidents: [] });
+    await setPrefs(context, baseURL!, { lang: "en" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "check-en");
+    await expect(page.getByTestId("voice-steps")).toContainText(EN["sentinel.watching"], { timeout: 70_000 });
+    await expect(page.getByTestId("voice-state")).toHaveText(EN["voice.state.listening"], { timeout: 30_000 });
+    expect(await page.getByTestId("voice-step").allTextContents()).toContain(EN["sentinel.watching"]);
+    await expect(page.getByTestId("voice-sentinel")).toHaveCount(0);
+    const said = (await spoken(page)).map((x) => x.text).join(" ");
+    expect(said).toContain("The Sentinel is still watching for similar reports.");
+    expect(said).toContain(EN["voice.sum.inv"]);
   });
 
   test("stop intent by voice turns listening off; help and 'just Hey Falcon' are answered aloud", async ({ page, request }) => {

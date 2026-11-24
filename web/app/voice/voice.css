@@ -46,6 +46,9 @@
 .voice-verdict { font-size: var(--fl-text-xl); color: var(--v-fg, var(--fl-text)); }
 .voice-snippet { font-size: var(--fl-text-md); color: var(--fl-text-muted); overflow-wrap: anywhere; }
 .voice-trace { min-height: var(--fl-tap); display: inline-flex; align-items: center; }
+.voice-sentinel { padding: var(--fl-space-4); display: grid; gap: var(--fl-space-2); font-size: var(--fl-text-lg); line-height: 1.7; border-color: var(--fl-sand, var(--fl-brand)); }
+.voice-sentinel-title { font-weight: var(--fl-weight-bold); }
+.voice-sentinel-links { display: flex; flex-wrap: wrap; gap: var(--fl-space-3); }
 .voice-how ol { padding-inline-start: 1.5rem; display: grid; gap: var(--fl-space-2); font-size: var(--fl-text-lg); margin-block-end: var(--fl-space-3); }
 
 .voice-entry { margin-block: var(--fl-space-5); }
