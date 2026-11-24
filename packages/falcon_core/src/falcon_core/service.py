@@ -65,9 +65,11 @@ class _FalconApp(FastAPI):
     trust: Callable[[Request], bool] = staticmethod(lambda _r: False)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        has_trace = scope["type"] in ("http", "websocket") and any(k in _TRACE_HEADERS for k, _ in scope["headers"])
+        has_trace = scope["type"] in ("http", "websocket") and any(
+            k.lower() in _TRACE_HEADERS for k, _ in scope["headers"]
+        )
         if has_trace and not self.trust(Request(scope)):
-            scope = {**scope, "headers": [(k, v) for k, v in scope["headers"] if k not in _TRACE_HEADERS]}
+            scope = {**scope, "headers": [(k, v) for k, v in scope["headers"] if k.lower() not in _TRACE_HEADERS]}
         await super().__call__(scope, receive, send)
 
 

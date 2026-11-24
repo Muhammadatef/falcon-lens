@@ -266,3 +266,34 @@ async def test_inbound_traceparent_ignored_unless_internal_caller(monkeypatch: p
     spans = [sp for sp in exporter.get_finished_spans() if sp.name.startswith("http")]
     assert len(spans) >= 2
     assert all(f"{sp.context.trace_id:032x}" != "ab" * 16 for sp in spans)
+
+
+async def test_trace_headers_trust_boundary(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fastapi import FastAPI
+
+    from falcon_core.service import _FalconApp
+
+    seen: list[list[tuple[bytes, bytes]]] = []
+
+    async def inner(self: Any, scope: Any, receive: Any, send: Any) -> None:
+        seen.append(scope["headers"])
+
+    monkeypatch.setattr(FastAPI, "__call__", inner)
+
+    async def run(headers: list[tuple[bytes, bytes]], trusted: bool) -> list[tuple[bytes, bytes]]:
+        app = _FalconApp()
+        app.trust = lambda _r: trusted
+        await app({"type": "http", "headers": headers}, None, None)  # type: ignore[arg-type]
+        return seen[-1]
+
+    tp = b"00-" + b"ab" * 16 + b"-" + b"cd" * 8 + b"-01"
+    hdrs = [
+        (b"traceparent", tp),
+        (b"TraceParent", tp),
+        (b"tracestate", b"a=b"),
+        (b"Baggage", b"k=v"),
+        (b"baggage", b"k=v"),
+        (b"x-keep", b"1"),
+    ]
+    assert await run(hdrs, trusted=False) == [(b"x-keep", b"1")]
+    assert await run(hdrs, trusted=True) == hdrs

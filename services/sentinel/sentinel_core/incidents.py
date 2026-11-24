@@ -177,7 +177,7 @@ def build_incident(
         severity = _max_sev(severity, o["severity"])
     updated = max([f.event.occurred_at for f in fs] + ([parse_time(existing["updated_at"])] if existing else []))
 
-    channel_set = {c for f in fs if isinstance((c := f.event.payload.get("channel")), str) and c in CHANNELS}
+    channel_set = {ch for f in fs if isinstance((ch := f.event.payload.get("channel")), str) and ch in CHANNELS}
     channel_set |= {c for o in others for c in o.get("channels", ())}
     inc: dict[str, Any] = dict(existing or {})
     if channel_set:  # contracts/incident.schema.json `channels`: which clients the linked checks came from
