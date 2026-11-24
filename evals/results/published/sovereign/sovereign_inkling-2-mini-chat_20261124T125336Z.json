@@ -1,0 +1,341 @@
+{
+  "kind": "sovereign_proof",
+  "created_at": "2026-11-24T12:53:36+00:00",
+  "git_sha": "bde4ef3",
+  "provenance": "Run on one developer machine (macOS host, Docker, local model servers). Fixtures are the invented Falcon Demo Bank; speech is synthetic (macOS `say`). Not a production deployment.",
+  "route": "local (FL_SOVEREIGN_MODE=1, no ANTHROPIC_API_KEY)",
+  "local_model": "inkling-2-mini-chat",
+  "model_server": "http://127.0.0.1:11434",
+  "status": "passed",
+  "service_env": {
+    "api": {
+      "FL_SOVEREIGN_MODE": "1",
+      "OLLAMA_BASE_URL": "http://host.docker.internal:11434",
+      "FL_LOCAL_MODEL": "inkling-2-mini-chat",
+      "FL_LOCAL_VISION_MODEL": "gemma3:27b",
+      "FL_LOCAL_NO_THINK": "0",
+      "ANTHROPIC_BASE_URL": "http://host.docker.internal:18999",
+      "ANTHROPIC_API_KEY_present": false
+    },
+    "worker": {
+      "FL_SOVEREIGN_MODE": "1",
+      "OLLAMA_BASE_URL": "http://host.docker.internal:11434",
+      "FL_LOCAL_MODEL": "inkling-2-mini-chat",
+      "FL_LOCAL_VISION_MODEL": "gemma3:27b",
+      "FL_LOCAL_NO_THINK": "0",
+      "ANTHROPIC_BASE_URL": "http://host.docker.internal:18999",
+      "ANTHROPIC_API_KEY_present": false
+    },
+    "sentinel": {
+      "FL_SOVEREIGN_MODE": "1",
+      "OLLAMA_BASE_URL": "http://host.docker.internal:11434",
+      "FL_LOCAL_MODEL": "inkling-2-mini-chat",
+      "FL_LOCAL_VISION_MODEL": "gemma3:27b",
+      "FL_LOCAL_NO_THINK": "0",
+      "ANTHROPIC_BASE_URL": "http://host.docker.internal:18999",
+      "ANTHROPIC_API_KEY_present": false
+    },
+    "mcp": {
+      "FL_SOVEREIGN_MODE": "1",
+      "OLLAMA_BASE_URL": "http://host.docker.internal:11434",
+      "FL_LOCAL_MODEL": "inkling-2-mini-chat",
+      "FL_LOCAL_VISION_MODEL": "gemma3:27b",
+      "FL_LOCAL_NO_THINK": "0",
+      "ANTHROPIC_BASE_URL": "http://host.docker.internal:18999",
+      "ANTHROPIC_API_KEY_present": false
+    }
+  },
+  "warmup": {
+    "ok": true,
+    "status": 200,
+    "seconds": 0.3
+  },
+  "scenarios": [
+    {
+      "name": "1 feed phish (H2)",
+      "result": "PASS",
+      "verdict": "dangerous",
+      "verdict_id": "vd_01M86SWWS70HNWSX8EAGV3CXJB",
+      "note": "H2 via an invented .test feed entry (restored afterwards)",
+      "model_route": "none",
+      "tier_reached": "T0",
+      "latency_ms": 0,
+      "degraded": true,
+      "wall_s": 0.5
+    },
+    {
+      "name": "2 lookalike",
+      "result": "PASS",
+      "verdict": "dangerous",
+      "verdict_id": "vd_01M86SWWZW1ZSTD53D3CVZH591",
+      "note": "H1 cited",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 6857,
+      "degraded": false,
+      "wall_s": 6.9
+    },
+    {
+      "name": "3 Arabic SMS",
+      "result": "PASS",
+      "verdict": "dangerous",
+      "verdict_id": "vd_01M86SX3PNSC96969ZPC7JKHSH",
+      "note": "H5 cited",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 6860,
+      "degraded": false,
+      "wall_s": 6.9
+    },
+    {
+      "name": "4 phishing email",
+      "result": "PASS",
+      "verdict": "dangerous",
+      "verdict_id": "vd_01M86SXADEGVACPN4YMKTSZ9GJ",
+      "note": "display-name impersonation evidence",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 7312,
+      "degraded": false,
+      "wall_s": 7.3
+    },
+    {
+      "name": "5 verified official",
+      "result": "PASS",
+      "verdict": "no_warning_signs",
+      "verdict_id": "vd_01M86SXHJBAVZP3M0TR1A1NXMR",
+      "note": "H3 cited, caution present",
+      "model_route": "none",
+      "tier_reached": "T1",
+      "latency_ms": 2006,
+      "degraded": false,
+      "wall_s": 2.0
+    },
+    {
+      "name": "6 injected page",
+      "result": "PASS",
+      "verdict": "suspicious",
+      "verdict_id": "vd_01M86SXKHG8W90254TDKMQGK8E",
+      "note": "instruction-like text counted as risk evidence",
+      "model_route": "local",
+      "tier_reached": "T3",
+      "latency_ms": 21799,
+      "degraded": false,
+      "wall_s": 22.4
+    },
+    {
+      "name": "S Sentinel scene",
+      "result": "PASS",
+      "verdict": "awaiting_approval",
+      "verdict_id": "inc_01M86SX3PE8ZANG29NAR07DSNW",
+      "note": "inc_01M86SX3PE8ZANG29NAR07DSNW status=awaiting_approval executed=3 awaiting_approval=2",
+      "wall_s": 94.3
+    }
+  ],
+  "scenario_counts": {
+    "PASS": 7
+  },
+  "message_probes": [
+    {
+      "kind": "message_probe",
+      "verdict": "no_warning_signs",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 3450,
+      "wall_s": 3.5
+    },
+    {
+      "kind": "message_probe",
+      "verdict": "suspicious",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 3296,
+      "wall_s": 3.3
+    }
+  ],
+  "voice": {
+    "provenance": "SYNTHETIC speech from macOS `say` (not a human recording)",
+    "audio_seconds": 5.7,
+    "http_status": 200,
+    "wall_s": 1.39,
+    "model": "container:faster-whisper-small",
+    "wake": true,
+    "intent": "check_clipboard",
+    "lang": "en",
+    "duration_ms": 5731,
+    "transcript": "Hey Falcon. I have received multiple messages that I feel at scam. Run Falcon Lens.",
+    "ok": true
+  },
+  "sentinel_incident": {
+    "created_during_this_run": true,
+    "incident_id": "inc_01M86SX3PE8ZANG29NAR07DSNW",
+    "type": "campaign",
+    "summary_generated_by": "llm",
+    "summary_model_route": "local",
+    "severity_reason_generated_by": null,
+    "ok": true
+  },
+  "llm_calls_from_logs": {
+    "ok_calls": [
+      {
+        "role": "extractor",
+        "route": "local",
+        "model": "inkling-2-mini-chat",
+        "n": 6,
+        "p50_ms": 3875,
+        "max_ms": 4835
+      },
+      {
+        "role": "investigator",
+        "route": "local",
+        "model": "inkling-2-mini-chat",
+        "n": 3,
+        "p50_ms": 4640,
+        "max_ms": 5064
+      },
+      {
+        "role": "sentinel",
+        "route": "local",
+        "model": "inkling-2-mini-chat",
+        "n": 3,
+        "p50_ms": 25049,
+        "max_ms": 41437
+      }
+    ],
+    "failed_calls": [
+      {
+        "role": "investigator",
+        "route": "local",
+        "model": "inkling-2-mini-chat",
+        "n": 1
+      }
+    ]
+  },
+  "metrics": {
+    "fl_llm_calls_total": [
+      {
+        "outcome": "ok",
+        "role": "extractor",
+        "route": "local",
+        "value": 6.0
+      },
+      {
+        "outcome": "ok",
+        "role": "investigator",
+        "route": "local",
+        "value": 3.0
+      },
+      {
+        "outcome": "timeout",
+        "role": "investigator",
+        "route": "local",
+        "value": 1.0
+      },
+      {
+        "outcome": "ok",
+        "role": "sentinel",
+        "route": "local",
+        "value": 3.0
+      }
+    ],
+    "fl_llm_tokens_total_by_model": [
+      {
+        "model": "inkling-2-mini-chat",
+        "role": "extractor",
+        "value": 8734.0
+      },
+      {
+        "model": "inkling-2-mini-chat",
+        "role": "investigator",
+        "value": 6175.0
+      },
+      {
+        "model": "inkling-2-mini-chat",
+        "role": "sentinel",
+        "value": 7890.0
+      }
+    ],
+    "fl_llm_results_total": [
+      {
+        "role": "extractor",
+        "status": "ok",
+        "value": 6.0
+      },
+      {
+        "role": "investigator",
+        "status": "ok",
+        "value": 3.0
+      },
+      {
+        "role": "investigator",
+        "status": "fallback",
+        "value": 1.0
+      },
+      {
+        "role": "sentinel",
+        "status": "ok",
+        "value": 3.0
+      }
+    ],
+    "fl_sentinel_text_total": [
+      {
+        "generated_by": "template",
+        "task": "assess",
+        "value": 1.0
+      },
+      {
+        "generated_by": "llm",
+        "task": "summarise",
+        "value": 1.0
+      }
+    ],
+    "fl_sentinel_llm_calls_total": [
+      {
+        "outcome": "ok",
+        "task": "assess",
+        "value": 1.0
+      },
+      {
+        "outcome": "ok",
+        "task": "summarise",
+        "value": 1.0
+      },
+      {
+        "outcome": "ok",
+        "task": "propose",
+        "value": 1.0
+      }
+    ]
+  },
+  "egress_audit": {
+    "anthropic_api_key_present_in_any_llm_service": false,
+    "sovereign_flag_in_every_llm_service": true,
+    "anthropic_sink_hits": 0,
+    "sink_note": "ANTHROPIC_BASE_URL of api/worker/sentinel/mcp points at a host sink that counts requests; 0 means no SDK call to a cloud LLM was attempted.",
+    "cloud_llm_host_mentions_in_service_logs": {},
+    "llm_routes_seen_in_logs": [
+      "local"
+    ],
+    "egress_proxy": {
+      "hosts_total": 0,
+      "lookup_hosts": [],
+      "cloud_llm_hosts": [],
+      "page_visit_hosts_count": 0,
+      "note": "page-visit hosts are sites the sandbox visited passively during the 90 s replay plus their sub-resources; they are lookups about the checked site, not user data and not LLM traffic"
+    },
+    "voice_egress_hosts": [
+      "cas-server.xethub.hf.co",
+      "huggingface.co",
+      "us.aws.cdn.hf.co"
+    ],
+    "log_lines_scanned_bytes": 11119
+  },
+  "failure_reasons": [],
+  "finished_at": "2026-11-24T12:56:27+00:00",
+  "caveats": [
+    "Sovereign mode keeps the user's text and the model prompts on the machine; not every lookup is offline.",
+    "Still needs the internet: RDAP/WHOIS and certificate lookups about the checked domain, reputation feeds, and the sandbox's one passive visit to the checked site (all via the filtering egress proxy). These carry the URL's hostname, not the user's messages or the LLM prompts.",
+    "The container speech model downloads its weights once from huggingface.co through its own allow-listed proxy; audio then never leaves the machine.",
+    "Everything ran on one machine with fixtures; speech is synthetic; latencies are for this hardware and load."
+  ]
+}

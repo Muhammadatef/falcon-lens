@@ -142,7 +142,9 @@ class LLMRouter:
         self._cloud: Provider | None = None
         if self.config.cloud_enabled:
             self._cloud = cloud or AnthropicProvider(self.config.anthropic_api_key or "")
-        self._local: Provider = local or OllamaProvider(self.config.ollama_base_url)
+        self._local: Provider = local or OllamaProvider(
+            self.config.ollama_base_url, no_think=self.config.local_no_think
+        )
         self._rng = rng or random.Random()  # noqa: S311 - sampling, not security
         self.canary = canary or new_canary()
         self._shadow_hook = shadow_hook
