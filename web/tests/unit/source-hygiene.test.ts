@@ -43,7 +43,7 @@ describe("source hygiene (app code, not tests)", () => {
     for (const file of files.filter((f) => f.endsWith(".tsx"))) {
       const text = readFileSync(file, "utf8");
       // Internal constants only: nav entries, the /docs/<slug> list, and the figure paths in lib/docs-content.ts.
-      const ALLOWED = ["l.href", "`/docs/${slug", "`/docs/${s", "REPO_BLOB + src", "page.figure.src", "f.src", "skipHref"];
+      const ALLOWED = ["l.href", "`/docs/${slug", "`/docs/${s", "REPO_BLOB + src", "page.figure.src", "f.src", "skipHref", "traceHref(c.id)", "traceHref(r.outcome.id)"];
       for (const m of text.matchAll(/\b(href|src)=\{([^}]+)\}/g)) expect(ALLOWED, `${file}: ${m[0]}`).toContain(m[2]);
     }
   });
