@@ -40,6 +40,7 @@ Safety notes:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
 import secrets
@@ -349,10 +350,8 @@ def main(argv: list[str]) -> int:
         return len(a.sink_log.read_text().splitlines()) if a.sink_log.exists() else 0
 
     n0 = sink_lines()
-    try:
+    with contextlib.suppress(httpx.HTTPError):
         httpx.get(a.sink_url.rstrip("/") + "/selftest", timeout=5)
-    except httpx.HTTPError:
-        pass
     sink_selftest_ok = sink_lines() == n0 + 1  # the sink is listening and logging
     sink_before = sink_lines()
     try:
