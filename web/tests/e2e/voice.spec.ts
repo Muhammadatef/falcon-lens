@@ -157,6 +157,8 @@ async function mockClips(page: Page) {
     await page.route(`**/voice/${dir}/manifest.json`, (route) => route.fulfill({ json: list }));
     await page.route(new RegExp(`/voice/${dir}/[^/]+\\.mp3$`), (route) => route.fulfill({ contentType: "audio/mpeg", body: decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop()!.replace(/\.mp3$/, "")) }));
   }
+  // Language-neutral earcons: /voice/sfx/<name>.mp3 is recorded as the id `sfx.<name>`, like the clips above.
+  await page.route(/\/voice\/sfx\/[^/]+\.mp3$/, (route) => route.fulfill({ contentType: "audio/mpeg", body: `sfx.${decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop()!.replace(/\.mp3$/, ""))}` }));
 }
 
 const listening = (lang: typeof AR | typeof EN) => lang["voice.state.listening"];
@@ -293,12 +295,12 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect(await items.first().evaluate((el) => getComputedStyle(el, "::before").content)).toContain("counter");
     const texts = (await items.allTextContents()).map((t) => t.trim());
     const played = await page.evaluate(() => (window as any).__played as string[]);
-    expect(played.every((id) => id.startsWith("ar_ae."))).toBe(true);
+    expect(played.filter((id) => !id.startsWith("sfx.")).every((id) => id.startsWith("ar_ae."))).toBe(true);
     const pieces = (await spoken(page)).map((p) => p.text);
     expect(texts.join(" ")).toBe(pieces.slice(1).join(" ")); // the first clip is the wake acknowledgement, shown as the caption
     await expect.poll(() => manifests["ar_ae"]?.length ?? 0).toBeGreaterThan(0);
     const byId = new Map(manifests["ar_ae"]!.map((e) => [e.id, e]));
-    for (const id of played) expect([byId.get(id)?.engine, byId.get(id)?.voice], id).toEqual(["polly", "Zayd"]);
+    for (const id of played.filter((p) => !p.startsWith("sfx."))) expect([byId.get(id)?.engine, byId.get(id)?.voice], id).toEqual(["polly", "Zayd"]);
   });
 
   test("Sentinel hand-over: a real incident linking these checks gets a card, its trace is narrated, approval is stated", async ({ page, request, context, baseURL }) => {
