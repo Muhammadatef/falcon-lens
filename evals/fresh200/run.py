@@ -134,7 +134,11 @@ def publish(_: argparse.Namespace) -> int:
     ok2 = [r for r in rows2 if "error" not in r]
     legit_main = [r for r in ok if r["label"] == 0]
     summary2 = summarise(ok2 + legit_main) if ok2 else None
-    examples: dict[str, list[dict[str, Any]]] = {"missed_phishing": [], "false_alarms_on_legit": [], "dangerous_on_legit": []}
+    examples: dict[str, list[dict[str, Any]]] = {
+        "missed_phishing": [],
+        "false_alarms_on_legit": [],
+        "dangerous_on_legit": [],
+    }
     for r in ok + ok2:
         if r["label"] == 1 and r["verdict"] == "no_warning_signs":
             examples["missed_phishing"].append(
