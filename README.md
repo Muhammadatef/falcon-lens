@@ -150,7 +150,8 @@ The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a
 | `/authorities` | What a police or security team can use, and what is "ready to connect". |
 | `/privacy` | What is collected, what is not, and why. |
 | `/docs/*` | Technical documentation pages. |
-| `/history` | Operator history: every check with its trace, and every incident with its trace. |
+| `/history` | Public read-only history (until SSO) with per-check and per-incident traces. |
+| `/checks/[id]` | The trace of one check: steps, evidence and verdict. |
 | `/ops` | Operator board: campaigns and incidents, approve or reject each draft (operator key). |
 | `/incidents/[id]` | The trace of one incident: evidence, rules, draft actions. |
 
@@ -328,7 +329,7 @@ Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `d
 
 Unfinished only:
 
-- **Operator history view** of both agents' checks (open pull request).
+- **Sign-in (SSO)** to restrict the read-only history; approve and reject stay with the operator.
 - **Real-data measurement** of brand-new fake pages, and of sandbox detection on labelled phishing snapshots.
 - **Native-speaker rating** of the Arabic verdict text.
 - **A licence for the scam list.** The prototype uses the OpenPhish community list, which allows research use only.

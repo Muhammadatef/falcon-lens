@@ -487,7 +487,7 @@ def build(a: Artifacts) -> list[Block]:
                 "**Message:** text is normalised (Arabic and Arabizi), rule features are read (urgency, secrecy, OTP request, payment, authority, prize, delivery fee, fine and others), and it is compared with known scam scripts using embeddings. A quarantined extractor pulls out links, and each one goes through the full link pipeline as a child check. A message with no link is judged on its wording: an intent classifier fitted on training data, with rule floors, reads the scam script itself (section 8 gives its recall and its false-alarm rate on a small synthetic set).",
                 "**Email:** parsed locally with a size cap and no remote fetch. Checks include sender authentication results, header mismatches, link text against the real target, QR codes in images, and attachment type and hash only.",
                 "**Picture or QR poster:** the file type is verified by its first bytes, a QR code is decoded, and text is read by a quarantined vision model. Extracted links and text go through the link and message pipelines.",
-                "**Where you can see the work:** the campaign board has an explainer of what a campaign is; the operator history lists every check and every incident with its step-by-step trace; the results page shows each measured figure with a REAL or SYNTHETIC badge; a Grafana model-quality dashboard and Arize Phoenix traces (metadata only) show the models at work. The history page is read-only and is meant for operators. Verdicts read «خطِر», «مريب» and «لم نجد علامات تحذير», and a claimed brand is shown by its display name.",
+                "**Where you can see the work:** the campaign board has an explainer of what a campaign is; the public read-only History (until SSO) lists every check and every incident with its step-by-step trace; the results page shows each measured figure with a REAL or SYNTHETIC badge; a Grafana model-quality dashboard and Arize Phoenix traces (metadata only) show the models at work. Approving or rejecting a draft action stays with the operator. Verdicts read «خطِر», «مريب» and «لم نجد علامات تحذير», and a claimed brand is shown by its display name.",
             ],
         )
     )
@@ -811,7 +811,7 @@ def build(a: Artifacts) -> list[Block]:
             "ul",
             [
                 "A native reader's rating of the Arabic text, sandbox recall on labelled phishing pages, and bringing the live false-alarm rate down to its target.",
-                "Sign-in (SSO) for the operator pages, so that the history view can be restricted (open pull request).",
+                "Sign-in (SSO) to restrict the read-only History, which is public until then.",
                 "Adopting DSPy-optimised prompts: the optimiser ran for every model role and none was adopted, because the gains are within noise.",
                 "A business-oriented redesign of the web app (open pull requests).",
                 "Active discovery of new look-alike domains.",

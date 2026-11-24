@@ -312,7 +312,7 @@ The one-minute video uses the invented-brand demo kit (`demo-kit/`, test data on
 2. **M1**, the Arabic SMS, in the Message tab: Dangerous, with Arabic reasons and the bank display name.
 3. **Q1**, the QR poster, in the Image / QR tab: Dangerous, because the QR leads to a dangerous link.
 4. **L2**, the official site, in the Link tab: «لم نجد علامات تحذير» with the caution line, to show it does not cry wolf.
-5. `/campaigns` (explainer and a campaign card), then `/history` (operator history): open one check to show its trace.
+5. `/campaigns` (explainer and a campaign card), then `/history` (public read-only history until SSO; approve and reject stay with the operator): open one check to show its trace.
 6. `/results`: the REAL and SYNTHETIC badges. Close on "ready to connect, not connected".
 
 No credentials on camera: the flow uses public pages only, so it never opens `/ops` (operator key). Say "no warning signs found", with the caution line, and never promise safety. Show no police logo and no real brand.

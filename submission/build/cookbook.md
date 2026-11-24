@@ -192,7 +192,7 @@ curl -sk -H "X-API-Key: $K" "$B/v1/verdicts/<verdict_id>"
 
 The result page shows the same as a timeline with a "Technical details" switch. An incident (`GET /v1/incidents/<incident_id>`) lists indicators, evidence and actions; every action is also in the append-only audit log. Logs for the Sentinel are in Grafana Loki. {{INCIDENT_TRACE}}
 
-In the web app, the campaign board (`/campaigns`) explains what a campaign is, the operator history (`/history`) opens the trace of any check or incident, and the results page (`/results`) shows each measured figure with a REAL or SYNTHETIC badge. Arize Phoenix holds model-call traces (metadata only) and Grafana has a model-quality dashboard.
+In the web app, the campaign board (`/campaigns`) explains what a campaign is, the public read-only history (`/history`, until SSO) opens the trace of any check or incident, and the results page (`/results`) shows each measured figure with a REAL or SYNTHETIC badge. Arize Phoenix holds model-call traces (metadata only) and Grafana has a model-quality dashboard.
 
 ### 4.8 Add a brand to `data/brands.yaml`
 
