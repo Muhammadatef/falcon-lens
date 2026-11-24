@@ -17,7 +17,7 @@ const config: NextConfig = {
   },
   async rewrites() {
     // Private (uncommitted) voice clips win over the committed public/voice files; the route falls back to them.
-    return { beforeFiles: [{ source: "/voice/:lang/:file", destination: "/api/voice-clips/:lang/:file" }], afterFiles: [], fallback: [] };
+    return { beforeFiles: [{ source: "/voice/:lang(ar_ae|en)/:file", destination: "/api/voice-clips/:lang/:file" }], afterFiles: [], fallback: [] };
   },
   async headers() {
     return [
