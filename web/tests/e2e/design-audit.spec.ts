@@ -29,7 +29,7 @@ test.describe("typography and chrome", () => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto("/");
     await expect(page.getByTestId("menu-toggle")).toBeHidden();
-    await expect(page.locator("#site-nav a")).toHaveCount(8);
+    await expect(page.locator("#site-nav a")).toHaveCount(9);
     for (const a of await page.locator("#site-nav a").all()) await expect(a).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await page.setViewportSize({ width: 1024, height: 700 });
