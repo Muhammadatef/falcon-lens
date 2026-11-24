@@ -233,6 +233,19 @@ Needs an Android phone with Chrome and the tunnel address. iOS has no share targ
 
 Record the phone with a screen recording plus one shot of the hand holding it, so it is clear this is a real device.
 
+## The voice scene: "Hey Falcon"
+
+Needs the stack up (`make up`), the speech engine (`make voice-native`, or the container engine alone, a little slower) and a browser on `/voice` with the microphone allowed. Copy the three Falcon Demo Bank test messages (fixtures only, never a real brand), tap hands-free, and say: «يا فالكون، افحص رسائلي» or "Hey Falcon, check my messages".
+
+| What you see and hear | What proves it |
+|---|---|
+| The page shows the live steps while the Investigator checks each message, then the Sentinel card (or "still watching" when no incident links them yet). | The steps come from the real progress stream of each check; the Sentinel line appears only when an incident links these checks. |
+| The summary is spoken from pre-generated clips. | `/agents` and `/docs/agents` list what ships; speech synthesis is only the fallback for a missing clip. |
+| `/history` lists the three checks with the "Voice" badge. | The badge reads the `channel` field of each check (`voice`). |
+| Grafana, Command overview, row "Voice assistant" (المساعد الصوتي). | Counts come from `fl_voice_*` metrics. |
+
+`make voice-rehearsal` plays the demo lines through the real speech route. `make voice-e2e` runs the whole scene with a real browser against a stack (see `reviews/VOICE-E2E-*.md` for the recorded result); it needs macOS `say`.
+
 ## Reset between takes
 
 ```bash

@@ -35,6 +35,9 @@ const VERDICTS = ["dangerous", "suspicious", "no_warning_signs"] as const;
 const INPUTS = ["url", "message", "email", "image"] as const;
 const SOURCES = ["live", "replay", "synthetic", "fixture"] as const;
 const ROUTES = ["cloud", "local", "none"] as const;
+/** Which client asked (contracts/verdict.schema.json `channel`). A fixed enum: the only client information that is public. */
+export const CHANNELS = ["web", "extension", "api", "mcp", "voice"] as const;
+export type PublicChannel = (typeof CHANNELS)[number];
 const SEVERITIES = ["low", "medium", "high", "critical"] as const;
 const INCIDENT_STATUSES = ["open", "triaging", "awaiting_approval", "mitigated", "closed", "false_positive"] as const;
 const ACTION_STATUSES = ["proposed", "executed", "awaiting_approval", "approved", "rejected", "reverted", "failed"] as const;
@@ -141,6 +144,7 @@ export interface PublicCheckSummary {
   tier_reached: (typeof TIERS)[number];
   model_route: (typeof ROUTES)[number];
   source: (typeof SOURCES)[number];
+  channel: PublicChannel | null;
   agent: { tiers_run: (typeof TIERS)[number][]; extractor_ran: boolean; investigator_ran: boolean; tool_calls: number; llm_calls: number };
 }
 
@@ -169,6 +173,7 @@ export function toPublicCheckSummary(raw: unknown): PublicCheckSummary | null {
     tier_reached: tier,
     model_route: oneOf(raw.model_route, ROUTES) ?? "none",
     source: oneOf(raw.source, SOURCES) ?? "live",
+    channel: oneOf(raw.channel, CHANNELS),
     agent: {
       tiers_run: tiers.length ? tiers : TIERS.slice(0, TIERS.indexOf(tier) + 1),
       extractor_ran: a.extractor_ran === true,
@@ -253,6 +258,7 @@ export function toPublicCheck(raw: unknown): Obj | null {
     final: raw.final,
     trace,
     source: oneOf(raw.source, SOURCES) ?? "live",
+    ...(oneOf(raw.channel, CHANNELS) ? { channel: oneOf(raw.channel, CHANNELS) } : {}),
     latency_ms: Math.round(num(raw.latency_ms, 0, 1e7)),
     created_at: iso(raw.created_at),
   };
@@ -357,6 +363,7 @@ export function toPublicIncident(raw: unknown): Obj | null {
     summary: publicIncidentTitle(raw.type, raw.brand_id),
     actions,
     source: oneOf(raw.source, SOURCES) ?? "live",
+    ...((Array.isArray(raw.channels) ? raw.channels : []).some((c) => oneOf(c, CHANNELS)) ? { channels: [...new Set((raw.channels as unknown[]).map((c) => oneOf(c, CHANNELS)).filter((c): c is PublicChannel => c !== null))].sort() } : {}),
     created_at: iso(raw.created_at),
     updated_at: iso(raw.updated_at),
   };

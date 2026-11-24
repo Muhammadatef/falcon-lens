@@ -51,6 +51,8 @@ def verdict_created(doc: Mapping[str, Any], meta: Mapping[str, Any]) -> dict[str
         "tier_reached": doc["tier_reached"],
         "degraded": doc["degraded"],
     }
+    if doc.get("channel"):
+        payload["channel"] = doc["channel"]
     event = PlatformEvent(
         # Deterministic per verdict: a retried publish re-sends the same event (Sentinel dedupes on id).
         event_id="evt_" + str(doc["verdict_id"]).removeprefix("vd_"),

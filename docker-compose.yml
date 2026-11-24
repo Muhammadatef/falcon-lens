@@ -44,6 +44,7 @@ x-app-env: &app-env
   FALCON_BRANDS_YAML: /app/data/brands.yaml
   FL_REPORTING_CHANNELS: /app/config/reporting_channels.yaml
   FL_OPERATOR_KEY: ${FL_OPERATOR_KEY:-change-me-operator}
+  FL_WEB_READ_KEY: ${FL_WEB_READ_KEY:-}
   FL_MCP_BEARER_TOKEN: ${FL_MCP_BEARER_TOKEN:-change-me-mcp}
   FL_WEBHOOK_SECRET: ${FL_WEBHOOK_SECRET:-change-me-webhook}
   FL_WEBHOOK_TARGETS: ${FL_WEBHOOK_TARGETS:-}

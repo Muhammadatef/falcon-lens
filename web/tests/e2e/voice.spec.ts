@@ -79,6 +79,8 @@ async function say(page: Page, voice: string) {
 }
 
 const spoken = (page: Page): Promise<{ text: string; lang: string }[]> => page.evaluate(() => (window as any).__spoken);
+/** The narration is a queue of clips with short gaps: wait until the assistant has finished speaking and is listening again. */
+const narrationDone = (page: Page) => expect(page.getByTestId("voice")).toHaveAttribute("data-phase", "listening", { timeout: 30_000 });
 
 async function setup(page: Page, request: any) {
   const t = token();
@@ -135,6 +137,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-card-verdict")).toHaveText(["خطِر", "خطِر", "لم نجد علامات تحذير"]);
     await expect(page.getByTestId("voice-campaign")).toHaveCount(0); // no campaign claim without a real Sentinel incident
     await expect(page.getByTestId("voice-trace").first()).toHaveAttribute("href", `/checks/${ids[0]}`);
+    await narrationDone(page);
     const ar = await spoken(page);
     expect(ar.every((s) => s.lang === "ar-SA")).toBe(true);
     const arSpoken = ar.map((s) => s.text).join(" ");
@@ -153,6 +156,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-card-verdict")).toHaveText(["Dangerous", "Dangerous", "No warning signs found"], { timeout: 25_000 });
     await expect(page.getByTestId("voice-steps")).toContainText(EN["sentinel.unavailable"], { timeout: 20_000 });
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.listening"], { timeout: 20_000 });
+    await narrationDone(page);
     const en = (await spoken(page)).slice(before);
     expect(en.length).toBeGreaterThan(0);
     expect(en.every((s) => s.lang === "en-GB")).toBe(true);

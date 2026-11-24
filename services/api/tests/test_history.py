@@ -109,7 +109,7 @@ async def test_redaction_no_userinfo_no_raw_text(client: httpx.AsyncClient, redi
     }
     assert set(url_row) == {
         "verdict_id", "created_at", "input_type", "display", "verdict", "risk_score", "degraded",
-        "degraded_reasons", "tier_reached", "model_route", "source", "agent",
+        "degraded_reasons", "tier_reached", "model_route", "source", "channel", "agent",
     }  # fmt: skip
 
 
@@ -170,3 +170,17 @@ async def test_per_ip_rate_limit(redis: Any, store: FakeStore) -> None:
         assert codes[0] == 200 and codes[-1] == 429
         other = await c.get("/v1/verdicts", headers={**OP, "X-Falcon-Client-IP": "198.51.100.8"})
         assert other.status_code == 200
+
+
+async def test_summary_carries_channel_only_from_the_enum(
+    client: httpx.AsyncClient, redis: Any, store: FakeStore
+) -> None:
+    await seed(redis, store, 1, channel="voice")
+    await seed(redis, store, 2)
+    r = await client.get("/v1/verdicts", headers=OP)
+    rows = {i["verdict_id"]: i for i in r.json()["items"]}
+    assert rows[vid(1)]["channel"] == "voice"
+    assert rows[vid(2)]["channel"] is None
+    assert (
+        history.summarize({**make_doc(vid(3), final=True), "channel": "telegram"}) is None
+    )  # outside the enum: not a usable row

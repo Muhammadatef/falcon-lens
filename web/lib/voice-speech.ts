@@ -34,13 +34,15 @@ export function campaignSize(outcomes: readonly Outcome[]): number {
   return max >= 2 ? max : 0;
 }
 
-export const speakFound = (lang: Lang, total: number): string => spoken(lang, foundClips(total));
+export const foundKeys = (total: number): string[] => foundClips(total);
+export const speakFound = (lang: Lang, total: number): string => spoken(lang, foundKeys(total));
 
 /** "The Investigator agent is checking the Nth message" (+ "of N" when there are several). */
-export const speakChecking = (lang: Lang, i: number, total: number): string => spoken(lang, [...investigatorStartClips(i), ...checkingClips(i, total).slice(1)]);
+export const checkingKeys = (i: number, total: number): string[] => [...investigatorStartClips(i), ...checkingClips(i, total).slice(1)];
+export const speakChecking = (lang: Lang, i: number, total: number): string => spoken(lang, checkingKeys(i, total));
 
-/** Investigator step lines that a progressive snapshot proves ran. "wording" has no spoken line (screen only). */
-export function speakStep(lang: Lang, step: ProgressStep, v: Verdict): string {
+/** Investigator step clips that a progressive snapshot proves ran. "wording" has no spoken line (screen only). */
+export function stepKeys(step: ProgressStep, v: Verdict): string[] {
   const map: Partial<Record<ProgressStep, InvestigatorStep | null>> = {
     lists: "lists",
     lookalike: "address",
@@ -48,17 +50,23 @@ export function speakStep(lang: Lang, step: ProgressStep, v: Verdict): string {
     ai: v.model_route === "cloud" ? "ai_second_look_cloud" : v.model_route === "local" ? "ai_second_look_local" : null,
   };
   const s = map[step];
-  return s ? spoken(lang, investigatorStepClips(s)) : "";
+  return s ? investigatorStepClips(s) : [];
 }
+export const speakStep = (lang: Lang, step: ProgressStep, v: Verdict): string => {
+  const keys = stepKeys(step, v);
+  return keys.length ? spoken(lang, keys) : "";
+};
 
 /** The arbiter's decision for a message, preceded by "the rules decided without AI" when no model was used. */
-export function speakArbiter(lang: Lang, v: Verdict | null): string {
+export function arbiterKeys(v: Verdict | null): string[] {
   const rules = v?.model_route === "none" ? ["investigator.rules_only"] : [];
-  return spoken(lang, [...rules, ...arbiterClips(v ? v.verdict : null, v?.risk_score ?? 0)]);
+  return [...rules, ...arbiterClips(v ? v.verdict : null, v?.risk_score ?? 0)];
 }
+export const speakArbiter = (lang: Lang, v: Verdict | null): string => spoken(lang, arbiterKeys(v));
 
 /** The closing utterance: counts, what to do, and a wrap-up that names what the Sentinel actually did. */
-export const speakFinal = (lang: Lang, outcomes: readonly Outcome[], sentinel: "found" | "watching" | "unavailable" | "none"): string => spoken(lang, finalClips(countOutcomes(outcomes), sentinel));
+export const finalKeys = (outcomes: readonly Outcome[], sentinel: "found" | "watching" | "unavailable" | "none"): string[] => finalClips(countOutcomes(outcomes), sentinel);
+export const speakFinal = (lang: Lang, outcomes: readonly Outcome[], sentinel: "found" | "watching" | "unavailable" | "none"): string => spoken(lang, finalKeys(outcomes, sentinel));
 
 /** The hand-over line, said when the results are handed to the Sentinel. */
 export const speakHandover = (lang: Lang): string => spoken(lang, ["sentinel.handover"]);
@@ -70,4 +78,5 @@ export const speakMicDenied = (lang: Lang): string => spoken(lang, ["mic.denied"
 export const speakVoiceUnavailable = (lang: Lang): string => spoken(lang, ["voice.unavailable"]);
 export const speakWatching = (lang: Lang): string => spoken(lang, ["sentinel.watching"]);
 /** One spoken line per fact the incident shows (empty list when it shows nothing speakable). */
-export const speakFinding = (lang: Lang, f: SentinelFinding): string[] => sentinelFindingClips(f).map((k) => spoken(lang, [k]));
+export const findingKeys = (f: SentinelFinding): string[] => sentinelFindingClips(f);
+export const speakFinding = (lang: Lang, f: SentinelFinding): string[] => findingKeys(f).map((k) => spoken(lang, [k]));
