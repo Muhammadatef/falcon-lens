@@ -9,7 +9,6 @@ import type { Lang, Verdict, VerdictLabel } from "./contracts";
 import { looksLikeSingleUrl, refang } from "./defang";
 import { pick } from "./i18n";
 import { voiceText, type VoiceKey } from "./i18n-voice";
-
 /** Set to true only once the backend PR confirms: audio recognised by a local model on our own server and deleted. */
 export const PRIVACY_LINE_CONFIRMED = false;
 

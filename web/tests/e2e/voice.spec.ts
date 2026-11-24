@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { dangerousStream, nwsStream } from "../fixtures";
 import { VOICE_MESSAGES } from "../../lib/i18n-voice";
+import { SCRIPT } from "../../lib/voice-script";
 import { expect, newVerdictId, registerScenario, setPrefs, test, token } from "./helpers";
 
 const AR = VOICE_MESSAGES.ar;
@@ -130,8 +131,9 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-trace").first()).toHaveAttribute("href", `/checks/${ids[0]}`);
     const ar = await spoken(page);
     expect(ar.every((s) => s.lang === "ar-SA")).toBe(true);
-    expect(ar.map((s) => s.text).join(" ")).toContain("فحصت ثلاث رسائل.");
-    expect(ar.map((s) => s.text).join(" ")).toContain("لا تضغط على الروابط ولا ترسل أي رمز.");
+    const arSpoken = ar.map((s) => s.text).join(" ");
+    for (const key of ["wake.ack", "found.3", "investigator.start.1", "investigator.lists", "todo.otp", "sentinel.handover", "sentinel.linked.2", "final.both_agents"]) expect(arSpoken, key).toContain(SCRIPT.ar_ae[key]!);
+    expect(arSpoken).not.toContain("فحصت"); // the formal screen wording is never the spoken one
     expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b/i);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 15_000 });
 
@@ -144,10 +146,9 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     const en = (await spoken(page)).slice(before);
     expect(en.length).toBeGreaterThan(0);
     expect(en.every((s) => s.lang === "en-GB")).toBe(true);
-    expect(en.map((s) => s.text).join(" ")).toContain("I checked three messages.");
-    expect(en.map((s) => s.text).join(" ")).toContain("Two are dangerous: don't tap the links and never share a code.");
-    // Each spoken line is queued, never overlapping: the per-message lines come before the summary.
-    expect(en[0]!.text).toBe("Checking three messages from your clipboard.");
+    for (const key of ["found.3", "investigator.start.1", "sum.dangerous.2", "todo.otp", "final.both_agents"]) expect(en.map((s) => s.text).join(" "), key).toContain(SCRIPT.en[key]!);
+    // Each spoken line is queued, never overlapping: the acknowledgement first, then the count.
+    expect(en[0]!.text).toBe(SCRIPT.en["wake.ack"]);
 
     // Stop works and the mic is released.
     await page.getByTestId("voice-stop").click();
@@ -165,7 +166,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await say(page, "none-ar");
     await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.none"]);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
-    expect((await spoken(page)).map((s) => s.text).join(" ")).toContain("يا فالكون، افحص رسائلي");
+    expect((await spoken(page)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["didnt"]!);
     await say(page, "stop");
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.stopped"]);
     await expect(page.getByTestId("voice-on")).toBeVisible();
@@ -179,7 +180,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await say(page, "check-ar");
     await expect(page.getByTestId("voice-paste")).toBeVisible();
     await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.paste"]);
-    expect((await spoken(page)).map((s) => s.text)).toContain("لم أتمكن من قراءة ما نسخته.");
+    expect((await spoken(page)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["clip.denied"]!);
     await page.getByTestId("voice-paste-input").fill(msgs);
     await page.getByTestId("voice-paste-submit").click();
     await expect(page.getByTestId("voice-card")).toHaveCount(3);
