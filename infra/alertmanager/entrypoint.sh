@@ -72,6 +72,9 @@ route:
     # Replayed/synthetic data never pages anyone.
     - matchers: ['source="replay"']
       receiver: 'null'
+    # Info alerts (e.g. HuntQuotaExhausted) are dashboard-only: they never page anyone.
+    - matchers: ['severity="info"']
+      receiver: 'null'
 receivers:
 $RECEIVERS
 YAML

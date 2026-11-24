@@ -29,6 +29,7 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from falcon_api import admin, history, integration, voice
+from falcon_api import hunt as hunt_api
 from falcon_api.auth import (
     AuditLog,
     Authenticator,
@@ -762,6 +763,9 @@ def build_app(
     )
 
     admin.register(app, settings=settings, get_redis=lambda: cast("Redis | None", state["redis"]), require=require)
+    hunt_api.register(
+        app, get_sentinel=get_sentinel, get_redis=lambda: cast("Redis | None", state["redis"]), require=require
+    )
 
     voice.register(
         app,

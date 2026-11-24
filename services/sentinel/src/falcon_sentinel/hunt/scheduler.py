@@ -255,6 +255,9 @@ class HuntScheduler:
             key=lambda i: (-cands[i].prescore, cands[i].first_seen, cands[i].candidate_id),
         )
         for i in order:
+            if self.crt.breaker.is_open(self.clock.monotonic()):
+                tm.HUNT_SOURCE_REQUESTS.labels("ct_lookup", "backoff", "live").inc()  # visible while the breaker is open
+                break
             if not self.crt.ready():
                 break
             c = cands[i]
