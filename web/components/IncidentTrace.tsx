@@ -117,6 +117,8 @@ function Header({ incident }: { incident: Incident }) {
   const { t, lang } = usePrefs();
   const tt = useTT();
   const title = pick(lang, incident.summary) || translateMaybe(lang, "type", incident.type);
+  const rawReason = pick(lang, incident.severity_reason);
+  const reason = rawReason.includes("[text removed]") || rawReason.includes("[أُزيل النص]") ? "" : rawReason;
   return (
     <article className="card incident" data-testid="trace-incident">
       <div className="inc-head" data-sev={incident.severity}>
@@ -128,18 +130,22 @@ function Header({ incident }: { incident: Incident }) {
       </div>
       <div className="inc-grid">
         <div>
-          {pick(lang, incident.severity_reason) ? <p dir="auto">{pick(lang, incident.severity_reason)}</p> : null}
-          <div className="kv">
-            <span>{incident.incident_id}</span>
-            {incident.brand_id ? <span>{tt("tr.brand")}={incident.brand_id}</span> : null}
-            {incident.rule_ids.map((r) => <span key={r}>rule:{r}</span>)}
-          </div>
-          <h3>{tt("tr.verdicts")}</h3>
-          {incident.linked_verdicts.length === 0 ? <p className="muted">{t("i.none")}</p> : (
-            <ul className="ind" data-testid="trace-verdicts">
-              {incident.linked_verdicts.map((v) => <li key={v}><span className="mono" translate="no">{v}</span></li>)}
-            </ul>
-          )}
+          {reason ? <p dir="auto">{reason}</p> : null}
+          <p className="small" data-testid="trace-linked-count">{tt("tr.verdicts.n", { n: incident.linked_verdicts.length })}</p>
+          <details className="tech-details" data-testid="trace-technical">
+            <summary>{tt("tr.technical")}</summary>
+            <div className="kv">
+              <span>{tt("tr.id")}: <span className="mono" translate="no">{incident.incident_id}</span></span>
+              {incident.brand_id ? <span>{tt("tr.brand")}: <span className="mono" translate="no">{incident.brand_id}</span></span> : null}
+              {incident.rule_ids.length ? <span>{tt("tr.rules")}: <span className="mono" translate="no">{incident.rule_ids.join(", ")}</span></span> : null}
+            </div>
+            <h3>{tt("tr.verdicts")}</h3>
+            {incident.linked_verdicts.length === 0 ? <p className="muted">{t("i.none")}</p> : (
+              <ul className="ind" data-testid="trace-verdicts">
+                {incident.linked_verdicts.map((v) => <li key={v}><span className="mono" translate="no">{v}</span></li>)}
+              </ul>
+            )}
+          </details>
         </div>
         <div>
           <h3>{t("i.ind")}</h3>
@@ -162,7 +168,11 @@ function Header({ incident }: { incident: Incident }) {
 function Timeline({ incident, trace, demo }: { incident: Incident; trace: AgentTrace; demo: boolean }) {
   const tt = useTT();
   const steps = flatSteps(trace);
-  if (steps.length === 0) return <div className="card state" role="status" data-testid="trace-empty"><p>{tt("tr.empty")}</p></div>;
+  if (steps.length === 0) {
+    // Accurate from the data: no run yet and the incident is still open/triaging means queued; a run without steps has just started.
+    const key: TraceKey = trace.runs.length > 0 && trace.runs.some((r) => r.status === "running") ? "tr.starting" : trace.runs.length === 0 && (incident.status === "open" || incident.status === "triaging") ? "tr.queued" : "tr.empty";
+    return <div className="card state" role="status" data-testid="trace-empty" data-state={key}><p>{tt(key)}</p></div>;
+  }
   const runNo = new Map(trace.runs.map((r, i) => [r.run_id, i + 1]));
   const lastSeq = steps[steps.length - 1]!.step.seq;
   let prevRun = "";

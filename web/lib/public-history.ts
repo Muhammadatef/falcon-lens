@@ -12,6 +12,7 @@
  * The output keeps the contract shapes (verdict, incident, agent trace) with the private parts emptied, so the
  * existing guards (`parseVerdict`, `parseIncident`, `parseAgentTrace`) and components work unchanged.
  */
+import { BRAND_NAMES } from "./brand-names";
 import { defang } from "./defang";
 
 type Obj = Record<string, unknown>;
@@ -258,6 +259,28 @@ export function toPublicCheck(raw: unknown): Obj | null {
 
 /* ── Incidents (Sentinel) ─────────────────────────────────────────────── */
 
+const INCIDENT_TYPES = ["campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"] as const;
+
+/**
+ * Public incident title from STRUCTURED fields only: the type enum and the brand display name from the registry
+ * (brand_id to {ar, en}). The free-text `summary` is never used. An unknown brand_id or type falls back to the
+ * generic line, so no attacker-shaped text can reach the title.
+ */
+export function publicIncidentTitle(type: unknown, brandId: unknown): { ar: string; en: string } {
+  const t = oneOf(type, INCIDENT_TYPES) ?? "campaign";
+  const b = typeof brandId === "string" && Object.hasOwn(BRAND_NAMES, brandId) ? BRAND_NAMES[brandId]! : null;
+  switch (t) {
+    case "report_burst":
+      return b ? { ar: `موجة بلاغات عن انتحال ${b.ar}`, en: `Burst of reports about impersonation of ${b.en}` } : { ar: "موجة بلاغات احتيال", en: "Burst of scam reports" };
+    case "reputation_flip":
+      return b ? { ar: `تغيّر في سمعة نطاق مرتبط بـ${b.ar}`, en: `Reputation change on a domain linked to ${b.en}` } : { ar: "تغيّر في سمعة نطاق مشتبه به", en: "Reputation change on a suspect domain" };
+    case "quality":
+      return { ar: "ملاحظة جودة على نتائج الفحص", en: "Check quality note" };
+    default:
+      return b ? { ar: `حملة احتيال تنتحل ${b.ar}`, en: `Suspected scam campaign impersonating ${b.en}` } : { ar: "حملة احتيال مشتبه بها", en: "Suspected scam campaign" };
+  }
+}
+
 const INDICATOR_KINDS = new Set(["domain", "url", "host"]);
 
 /** Incident for the public board and trace header: titles, severity, counts, defanged domains, action TYPES and status only. */
@@ -286,7 +309,6 @@ export function toPublicIncident(raw: unknown): Obj | null {
     }))
     .filter((a) => a.action_id && a.tool && a.status !== null)
     .slice(0, 20);
-  const summary = isObj(raw.summary) ? raw.summary : {};
   const reason = isObj(raw.severity_reason) ? raw.severity_reason : {};
   return {
     incident_id: raw.incident_id,
@@ -301,7 +323,8 @@ export function toPublicIncident(raw: unknown): Obj | null {
     linked_verdicts: (Array.isArray(raw.linked_verdicts) ? raw.linked_verdicts : []).filter((v): v is string => typeof v === "string" && VERDICT_ID.test(v)).slice(0, 50),
     // The free-text timeline is not public; the node timeline comes from the trace.
     timeline: [],
-    summary: { ar: scrubAr(summary.ar, 240), en: scrub(summary.en, 240) },
+    // The free-text summary is never shown: the title comes from the structured type and brand only.
+    summary: publicIncidentTitle(raw.type, raw.brand_id),
     actions,
     source: oneOf(raw.source, SOURCES) ?? "live",
     created_at: iso(raw.created_at),
