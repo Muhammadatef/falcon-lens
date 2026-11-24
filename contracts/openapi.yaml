@@ -1016,6 +1016,53 @@ components:
       - agent
       title: VerdictSummary
       type: object
+    VoiceUtterance:
+      additionalProperties: false
+      properties:
+        command:
+          maxLength: 300
+          title: Command
+          type: string
+        duration_ms:
+          minimum: 0.0
+          title: Duration Ms
+          type: integer
+        intent:
+          enum:
+          - check_clipboard
+          - check_text
+          - help
+          - stop
+          - none
+          title: Intent
+          type: string
+        lang:
+          enum:
+          - ar
+          - en
+          - other
+          title: Lang
+          type: string
+        model:
+          title: Model
+          type: string
+        transcript:
+          maxLength: 300
+          title: Transcript
+          type: string
+        wake:
+          title: Wake
+          type: boolean
+      required:
+      - transcript
+      - lang
+      - wake
+      - intent
+      - command
+      - duration_ms
+      - model
+      title: VoiceUtterance
+      type: object
     falcon_core__contracts__agent_trace__TraceStep:
       additionalProperties: false
       properties:
@@ -2439,3 +2486,67 @@ paths:
       summary: Version
       tags:
       - meta
+  /v1/voice/utterance:
+    post:
+      operationId: utterance_v1_voice_utterance_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                audio:
+                  description: audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB
+                  format: binary
+                  type: string
+                lang_hint:
+                  description: optional
+                  enum:
+                  - ar
+                  - en
+                  type: string
+              required:
+              - audio
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceUtterance'
+          description: Transcript, wake flag and intent.
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: Transcribe one spoken utterance and read its wake phrase and intent
+      tags:
+      - voice

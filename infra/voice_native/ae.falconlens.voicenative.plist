@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- TEMPLATE, not installed by any make target. Replace @REPO@, @UV@ and @TOKEN@ (the FL_VOICE_TOKEN value from .env), then see docs/RUNBOOK.md "Voice assistant". -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>ae.falconlens.voicenative</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>@UV@</string>
+    <string>run</string>
+    <string>uvicorn</string>
+    <string>falcon_voice_native:app</string>
+    <string>--host</string>
+    <string>127.0.0.1</string>
+    <string>--port</string>
+    <string>8093</string>
+    <string>--log-level</string>
+    <string>warning</string>
+  </array>
+  <key>WorkingDirectory</key><string>@REPO@/services/voice-native</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>HF_HOME</key><string>@REPO@/work/models/hf</string>
+    <key>FL_VOICE_TOKEN</key><string>@TOKEN@</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>@REPO@/work/voice-native/launchd.out.log</string>
+  <key>StandardErrorPath</key><string>@REPO@/work/voice-native/launchd.err.log</string>
+</dict>
+</plist>

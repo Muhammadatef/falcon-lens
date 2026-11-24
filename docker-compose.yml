@@ -51,6 +51,11 @@ x-app-env: &app-env
   FL_SENTINEL_URL: ${FL_SENTINEL_URL:-http://sentinel:8000}
   FL_API_URL: ${FL_API_URL:-http://api:8000}
   FL_RATE_LIMIT_PER_IP_PER_MIN: ${FL_RATE_LIMIT_PER_IP_PER_MIN:-60}
+  # Voice STT engines, tried in order: the native Mac engine (make voice-native), then the container.
+  FL_VOICE_STT_URLS: ${FL_VOICE_STT_URLS:-http://host.docker.internal:8093,http://voice:8000}
+  # Required: empty makes the voice route and engines answer 503 (fail closed). `make up` generates it into .env.
+  FL_VOICE_TOKEN: ${FL_VOICE_TOKEN:-}
+  FL_VOICE_RATE_PER_MIN: ${FL_VOICE_RATE_PER_MIN:-30}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
   ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
@@ -76,6 +81,9 @@ networks:
   # `edge` so their loopback host ports can be published.
   observability:
     internal: true
+  # api <-> voice STT container <-> voice-egress. Internal: the voice container has no route to the internet.
+  voice:
+    internal: true
 
 volumes:
   pg_data: {}
@@ -86,6 +94,8 @@ volumes:
   grafana_data: {}
   alloy_data: {}
   phoenix_data: {}
+  # faster-whisper weights for the voice fallback, downloaded lazily on first use (not at build or `make up`).
+  voice_models: {}
 
 services:
   # ───────────────────────────── core ─────────────────────────────
@@ -126,7 +136,7 @@ services:
     image: falcon-lens/api:0.1.0
     <<: [*hardened, *host-gateway]
     environment: *app-env
-    networks: [app, data, observability]
+    networks: [app, data, observability, voice]
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -270,6 +280,51 @@ services:
     networks: [app]
     mem_limit: 384m
     cpus: 1
+    pids_limit: 128
+
+  # Voice STT fallback (CPU, faster-whisper) for fresh clones and Linux. The primary engine is the native
+  # Mac process (services/voice-native, `make voice-native`). No published port; bearer-protected; audio
+  # is decoded in memory and dropped. It sits on the INTERNAL `voice` network only: the one-time model
+  # download goes through `voice-egress`, an instance of the filtering egress proxy that may reach only
+  # huggingface.co and hf.co (+ subdomains). Once the model is in the voice_models volume it loads from
+  # disk and never touches the network again (FL_VOICE_OFFLINE=true also forbids the download).
+  voice:
+    profiles: [core]
+    build: { context: ., dockerfile: services/voice/Dockerfile }
+    image: falcon-lens/voice:0.1.0
+    <<: *hardened
+    environment:
+      FL_ENV: ${FL_ENV:?FL_ENV must be set (local|demo|ci|production)}
+      FL_VOICE_TOKEN: ${FL_VOICE_TOKEN:-}
+      FL_WHISPER_MODEL: ${FL_WHISPER_MODEL:-small}
+      FL_WHISPER_COMPUTE: ${FL_WHISPER_COMPUTE:-int8}
+      FL_WHISPER_THREADS: ${FL_WHISPER_THREADS:-4}
+      FL_VOICE_OFFLINE: ${FL_VOICE_OFFLINE:-false}
+      FL_VOICE_PRELOAD: ${FL_VOICE_PRELOAD:-true}
+      HTTPS_PROXY: http://voice-egress:3128
+      HTTP_PROXY: http://voice-egress:3128
+      NO_PROXY: localhost,127.0.0.1
+    volumes:
+      - voice_models:/models
+    networks: [voice]
+    depends_on:
+      voice-egress: { condition: service_healthy }
+    mem_limit: 2g
+    cpus: 4
+    pids_limit: 128
+
+  voice-egress:
+    profiles: [core]
+    build: { context: ., dockerfile: services/egress/Dockerfile }
+    image: falcon-lens/egress:0.1.0
+    <<: *hardened
+    environment:
+      FL_ENV: ${FL_ENV:?FL_ENV must be set (local|demo|ci|production)}
+      # Destination allowlist: model weights only (Hugging Face and its LFS/xet CDN hosts, all under these domains).
+      FL_EGRESS_DEST_ALLOW: huggingface.co,hf.co
+    networks: [voice, app]
+    mem_limit: 128m
+    cpus: 0.5
     pids_limit: 128
 
   mcp:

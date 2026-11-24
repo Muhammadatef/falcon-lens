@@ -93,6 +93,8 @@ EXTRA_DEPS = {
 # Runtime deps in service/package pyprojects with no badge of their own (helpers, internal packages).
 MINOR_LIBS = {
     "falcon-core",
+    "av",  # PyAV, decoder behind faster-whisper
+    "mlx-whisper",  # native voice engine (own lock, not in the root uv.lock)
     "hatchling",
     "src",
     "httpcore",

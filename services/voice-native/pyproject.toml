@@ -1,0 +1,17 @@
+[project]
+name = "falcon-voice-native"
+version = "0.1.0"
+description = "Falcon Lens native voice STT: Whisper large-v3-turbo through mlx-whisper on the Mac GPU (Metal). Not a Docker service."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "mlx-whisper==0.4.3",
+  "fastapi>=0.120",
+  "uvicorn>=0.38",
+  "numpy>=2.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = ["pytest>=8.3", "httpx>=0.28"]
