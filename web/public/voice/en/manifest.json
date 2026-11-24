@@ -2512,6 +2512,22 @@
     "voice": "am_fenrir"
   },
   {
+    "id": "en.voice.too_long",
+    "file": "en.voice.too_long.mp3",
+    "text": "That was a bit long. Please say it more briefly.",
+    "ms": 2232,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.voice.catching_up",
+    "file": "en.voice.catching_up.mp3",
+    "text": "One moment, catching up.",
+    "ms": 1209,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
     "id": "en.goodbye",
     "file": "en.goodbye.mp3",
     "text": "Thank you. Take care.",

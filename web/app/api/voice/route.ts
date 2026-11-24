@@ -51,7 +51,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const upstream = await fetch(`${apiBase()}/v1/voice/utterance`, { method: "POST", headers, body: out, cache: "no-store", signal: AbortSignal.timeout(20_000) });
     if (upstream.status === 429) return notConnected(429, { "Retry-After": "10" });
-    if (upstream.status === 413 || upstream.status === 415 || upstream.status === 404) return notConnected(upstream.status);
+    if (upstream.status === 413 || upstream.status === 422 || upstream.status === 415 || upstream.status === 404) return notConnected(upstream.status);
     if (!upstream.ok) return notConnected(502);
     const reply = parseVoiceReply(await upstream.json());
     if (!reply) return notConnected(502);

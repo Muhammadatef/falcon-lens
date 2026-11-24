@@ -539,6 +539,21 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-paste")).toBeVisible();
   });
 
+  for (const [voice, key] of [["toolong", "voice.too_long"], ["fast", "voice.catching_up"]] as const) {
+    test(`a ${voice === "toolong" ? "too long (422)" : "too fast (429)"} utterance gets its own short line, never "voice unavailable"`, async ({ page, request }) => {
+      await setup(page, request);
+      await page.goto("/voice");
+      await page.getByTestId("voice-on").click();
+      await expect(page.getByTestId("voice-state")).toHaveText(listening(AR));
+      await say(page, voice);
+      await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae[key]!);
+      await expect.poll(async () => (await playedIds(page)).includes(`ar_ae.${key}`)).toBe(true);
+      expect(await playedIds(page)).not.toContain("ar_ae.voice.unavailable");
+      await expect(page.getByTestId("voice-problem")).toHaveCount(0);
+      await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
+    });
+  }
+
   test("Stop aborts the running check at once: no steps after Stop", async ({ page, request }) => {
     await setup(page, request);
     await page.goto("/voice");

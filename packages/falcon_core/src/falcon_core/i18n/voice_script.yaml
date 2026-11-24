@@ -2,7 +2,7 @@
 # Every SPOKEN line of the Hey Falcon assistant. ar_ae = Emirati spoken Arabic (screen text stays formal MSA).
 # Every spoken output is a concatenation of the clips below; ids are stable: <lang>.<key>.
 version: 1
-clip_count: 630
+clip_count: 634
 languages: [ar_ae, en]
 ar_ae:
   "wake.ack": "هلا، سامعك."
@@ -319,6 +319,8 @@ ar_ae:
   "clip.empty": "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي."
   "greet.hello": "هلا! شلون أقدر أساعدك اليوم؟"
   "error": "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط."
+  "voice.too_long": "الكلام طويل شوي، قوله باختصار."
+  "voice.catching_up": "لحظة، خلني ألحق عليك."
   "goodbye": "يزاك الله خير. الله يحفظك."
 en:
   "wake.ack": "Yes, I'm listening."
@@ -635,6 +637,8 @@ en:
   "clip.empty": "I found no messages in what you copied. Copy them and try again."
   "greet.hello": "Hi, how can I help you today?"
   "error": "Something went wrong. Try again, and don't open any link."
+  "voice.too_long": "That was a bit long. Please say it more briefly."
+  "voice.catching_up": "One moment, catching up."
   "goodbye": "Thank you. Take care."
 clips:
   - {id: "ar_ae.wake.ack", lang: ar_ae, text: "هلا، سامعك."}
@@ -951,6 +955,8 @@ clips:
   - {id: "ar_ae.clip.empty", lang: ar_ae, text: "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي."}
   - {id: "ar_ae.greet.hello", lang: ar_ae, text: "هلا! شلون أقدر أساعدك اليوم؟"}
   - {id: "ar_ae.error", lang: ar_ae, text: "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط."}
+  - {id: "ar_ae.voice.too_long", lang: ar_ae, text: "الكلام طويل شوي، قوله باختصار."}
+  - {id: "ar_ae.voice.catching_up", lang: ar_ae, text: "لحظة، خلني ألحق عليك."}
   - {id: "ar_ae.goodbye", lang: ar_ae, text: "يزاك الله خير. الله يحفظك."}
   - {id: "en.wake.ack", lang: en, text: "Yes, I'm listening."}
   - {id: "en.clip.reading", lang: en, text: "One moment, reading what you copied."}
@@ -1266,4 +1272,6 @@ clips:
   - {id: "en.clip.empty", lang: en, text: "I found no messages in what you copied. Copy them and try again."}
   - {id: "en.greet.hello", lang: en, text: "Hi, how can I help you today?"}
   - {id: "en.error", lang: en, text: "Something went wrong. Try again, and don't open any link."}
+  - {id: "en.voice.too_long", lang: en, text: "That was a bit long. Please say it more briefly."}
+  - {id: "en.voice.catching_up", lang: en, text: "One moment, catching up."}
   - {id: "en.goodbye", lang: en, text: "Thank you. Take care."}

@@ -41,7 +41,7 @@ import { VoiceProgress } from "./VoiceProgress";
 import { closeStages, enterStage, tierRows, type Stage, type TierRow } from "@/lib/voice-progress";
 import { Icon } from "./Icon";
 
-type Phase = "off" | "starting" | "listening" | "heard" | "checking";
+type Phase = "off" | "starting" | "listening" | "thinking" | "heard" | "checking";
 type Problem = "denied" | "unsupported" | "server" | "unavailable" | null;
 interface Row {
   key: number;
@@ -591,6 +591,16 @@ export function VoiceAssistant() {
   /** A voice-service failure: spoken once per streak, shown always, with exponential back-off (1 s, 2 s, 4 s ... 15 s). */
   const voiceFailed = useCallback(
     async (token: number, status: number) => {
+      if (status === 413 || status === 422 || status === 429) {
+        // Too long / too fast: its own short line, never "voice unavailable", and it does not count as a service failure.
+        const l: Lang = lastLang.current ?? langRef.current;
+        const key = status !== 429 ? "voice.too_long" : "voice.catching_up";
+        setCaption(spoken(l, [key]));
+        void playKeys(l, [key]);
+        await sleep(status === 429 ? 4000 : 1500);
+        backToListening(token);
+        return;
+      }
       failures.current += 1;
       if (status === 0) setOffline(true);
       const first = failures.current === 1;
@@ -609,6 +619,7 @@ export function VoiceAssistant() {
       if (busy.current) return;
       busy.current = true;
       listener.current?.pause();
+      setPhase("thinking"); // between the end of speech and the answer
       sentAt.current = Date.now();
       setTotal(null);
       setTiers([]);

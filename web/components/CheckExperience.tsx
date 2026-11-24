@@ -86,8 +86,8 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed, pen
         </div>
 
         {showResult ? null : <VoiceEntry />}
-        {showResult && state.verdict ? <CheckSteps verdict={state.verdict} /> : null}
         {showResult ? <Result state={state} onReset={reset} investigatorLive={investigatorLive} sentinelLive={sentinelLive} /> : null}
+        {showResult && state.verdict ? <CheckSteps verdict={state.verdict} /> : null}
 
         <SentinelTicker demo={demo} sentinelLive={sentinelLive} />
         <HomeSections investigatorLive={investigatorLive} sentinelLive={sentinelLive} />
