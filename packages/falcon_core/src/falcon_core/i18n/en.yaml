@@ -70,6 +70,7 @@ reasons:
   url.data_uri: "The link holds a hidden page instead of a real site address."
   message.brand_mention: "The message names a known organisation."
   message.brand_url_mismatch: "The message names a known organisation, but its link goes to another site."
+  brand.unofficial_contact_number: "The message gives a phone number that is not on the organisation's official list."
   email.attachment: "The email has an attachment that can run programs on your device."
   injection.instruction_like_text: "The content has hidden text that tries to trick checking tools."
   injection.tool_provenance: "The content tried to steer our check toward a different address."
