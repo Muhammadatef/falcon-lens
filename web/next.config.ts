@@ -15,6 +15,10 @@ const config: NextConfig = {
       { source: "/architecture/agents", destination: "/docs/agents", permanent: true },
     ];
   },
+  async rewrites() {
+    // Private (uncommitted) voice clips win over the committed public/voice files; the route falls back to them.
+    return { beforeFiles: [{ source: "/voice/:lang/:file", destination: "/api/voice-clips/:lang/:file" }], afterFiles: [], fallback: [] };
+  },
   async headers() {
     return [
       // The service worker must never be served stale, and may control the whole origin.
