@@ -5,6 +5,7 @@ import { loadBoard } from "@/lib/api";
 import { parseCampaign, unwrapList, type Campaign } from "@/lib/contracts";
 import { formatTime, pick } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
+import { CampaignExplainer } from "./CampaignExplainer";
 import { DemoRibbon, SourceBadge } from "./Chrome";
 import { Icon, SeverityMark, severityPath } from "./Icon";
 
@@ -136,6 +137,7 @@ export function CampaignBoard({ demo }: { demo: boolean }) {
               ) : null}
             </div>
             <p className="sec-sub">{t("board.sub")}</p>
+            <CampaignExplainer />
 
             {load.state === "loading" ? (
               <div className="card state" role="status" data-testid="board-loading">
