@@ -88,20 +88,24 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
   })();
 
   const cancelWait = () => {
-    wake?.();
+    const w = wake;
     wake = null;
+    w?.();
   };
 
+  // Each pending step owns its `wake`; a late event from a cancelled step only resolves its own promise
+  // and never touches the shared `wake`/`current` of the run that replaced it.
   const waitOrWake = (ms: number) =>
     new Promise<void>((resolve) => {
-      const t = setTimeout(() => {
-        wake = null;
-        resolve();
-      }, ms);
-      wake = () => {
+      const mine = () => {
         clearTimeout(t);
         resolve();
       };
+      const t = setTimeout(() => {
+        if (wake === mine) wake = null;
+        resolve();
+      }, ms);
+      wake = mine;
     });
 
   function playBuffer(buf: AudioBuffer, my: number): Promise<void> {
@@ -111,23 +115,29 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
       const src = c.createBufferSource();
       src.buffer = buf;
       src.connect(c.destination);
-      current = src;
-      const done = () => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
         if (current === src) current = null;
-        wake = null;
+        if (wake === mine) wake = null;
         resolve();
       };
-      src.onended = done;
-      wake = () => {
-        try {
-          src.onended = null;
-          src.stop();
-        } catch {
-          /* already stopped */
+      const mine = () => {
+        src.onended = null;
+        if (current === src) {
+          try {
+            src.stop();
+          } catch {
+            /* already stopped */
+          }
         }
-        done();
+        finish();
       };
-      if (my !== token) return wake();
+      if (my !== token) return resolve();
+      current = src;
+      wake = mine;
+      src.onended = finish;
       src.start();
     });
   }
@@ -138,16 +148,22 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
     return new Promise<void>((resolve) => {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = opts.lang === "en" ? "en-GB" : "ar-AE";
-      const done = () => {
-        wake = null;
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        if (wake === mine) wake = null;
         resolve();
       };
-      u.onend = done;
-      u.onerror = done;
-      wake = () => {
+      const mine = () => {
+        u.onend = null;
+        u.onerror = null;
         s.cancel();
-        done();
+        finish();
       };
+      u.onend = finish;
+      u.onerror = finish;
+      wake = mine;
       s.speak(u);
     });
   }
@@ -157,7 +173,16 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
     has: (id) => buffers.has(id),
     stop() {
       token++;
+      const src = current;
       current = null;
+      if (src) {
+        src.onended = null;
+        try {
+          src.stop();
+        } catch {
+          /* already stopped */
+        }
+      }
       cancelWait();
       synth()?.cancel();
     },

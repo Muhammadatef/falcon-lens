@@ -1,5 +1,8 @@
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { safeJoin } from "./route";
+import { readClip, safeJoin } from "./route";
 
 describe("voice clip path safety", () => {
   it("accepts known langs and clip files", () => {
@@ -13,5 +16,31 @@ describe("voice clip path safety", () => {
     expect(safeJoin("/d", "fr", "a.mp3")).toBeNull();
     expect(safeJoin("/d", "en", "a.sh")).toBeNull();
     expect(safeJoin("/d", "en", ".hidden.mp3")).toBeNull();
+  });
+});
+
+describe("readClip", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "voice-"));
+  const outside = mkdtempSync(path.join(tmpdir(), "outside-"));
+  mkdirSync(path.join(root, "en"));
+  writeFileSync(path.join(root, "en", "a.mp3"), "audio");
+  writeFileSync(path.join(outside, "secret.mp3"), "secret");
+  symlinkSync(path.join(outside, "secret.mp3"), path.join(root, "en", "out.mp3"));
+  symlinkSync(path.join(root, "en", "a.mp3"), path.join(root, "en", "in.mp3"));
+  mkdirSync(path.join(root, "en", "dir.mp3"));
+
+  it("serves a regular file", async () => {
+    expect((await readClip(root, "en", "a.mp3"))?.toString()).toBe("audio");
+  });
+  it("rejects a symlink to outside, a symlink to inside, a directory and a missing file", async () => {
+    expect(await readClip(root, "en", "out.mp3")).toBeNull();
+    expect(await readClip(root, "en", "in.mp3")).toBeNull();
+    expect(await readClip(root, "en", "dir.mp3")).toBeNull();
+    expect(await readClip(root, "en", "nope.mp3")).toBeNull();
+  });
+  it("rejects a language dir that is a symlink escaping the base", async () => {
+    const r2 = mkdtempSync(path.join(tmpdir(), "voice2-"));
+    symlinkSync(outside, path.join(r2, "en"));
+    expect(await readClip(r2, "en", "secret.mp3")).toBeNull();
   });
 });

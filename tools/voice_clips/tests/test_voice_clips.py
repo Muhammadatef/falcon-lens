@@ -100,6 +100,8 @@ def test_committed_manifests_cover_draft_or_final_script() -> None:
             assert (lang_dir / e["file"]).is_file()
             # clones of real people stay in data/private; committed clips are built-in/synthetic voices only
             assert not str(e["voice"]).startswith("ref-"), e["id"]
+            # macOS `say` output (Apple terms unverified) is private too
+            assert e["engine"] != "macos", e["id"]
 
 
 def test_engine_registry_and_default_ref(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

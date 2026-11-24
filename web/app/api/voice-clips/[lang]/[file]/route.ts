@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { lstat, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 
 export const dynamic = "force-dynamic";
@@ -25,9 +25,16 @@ export function safeJoin(root: string, lang: string, file: string): string | nul
   return full.startsWith(base + path.sep) ? full : null;
 }
 
-async function tryRead(p: string): Promise<Buffer | null> {
+/** Reads a regular, non-symlink file whose real path stays inside the real path of its base dir. */
+export async function readClip(root: string, lang: string, file: string): Promise<Buffer | null> {
+  const p = safeJoin(root, lang, file);
+  if (!p) return null;
   try {
-    return await readFile(p);
+    const st = await lstat(/*turbopackIgnore: true*/ p);
+    if (st.isSymbolicLink() || !st.isFile()) return null;
+    const [realBase, realFile] = await Promise.all([realpath(/*turbopackIgnore: true*/ root).then((r) => path.join(r, lang)), realpath(/*turbopackIgnore: true*/ p)]);
+    if (!realFile.startsWith(realBase + path.sep)) return null;
+    return await readFile(/*turbopackIgnore: true*/ realFile);
   } catch {
     return null;
   }
@@ -37,10 +44,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ lang: string; 
   const { lang, file } = await ctx.params;
   const privateRoot = process.env.FL_VOICE_CLIPS_DIR ?? "/data/private/voice/clips";
   const publicRoot = path.join(process.cwd(), "public", "voice");
-  const candidates = [safeJoin(privateRoot, lang, file), safeJoin(publicRoot, lang, file)];
-  for (const p of candidates) {
-    if (!p) continue;
-    const body = await tryRead(p);
+  for (const root of [privateRoot, publicRoot]) {
+    const body = await readClip(root, lang, file);
     if (body) {
       const manifest = file === "manifest.json";
       return new Response(new Uint8Array(body), {
