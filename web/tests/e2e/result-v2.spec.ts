@@ -25,23 +25,23 @@ async function run(page: Page, request: Parameters<typeof registerScenario>[0], 
 test.describe("checking state: the Investigator is working", () => {
   test("title names the agent, steps advance with the stream, no provisional 'no warning signs'", async ({ page, request }) => {
     await run(page, request, "nws", false);
-    await expect(page.getByTestId("activity-title")).toContainText("المحقّق");
+    await expect(page.getByTestId("activity-title")).toContainText("بصير");
     await expect(page.getByTestId("act-wait")).toContainText("لا تضغط على الرابط");
     await expect(page.getByTestId("act-step-T0")).toHaveAttribute("data-status", "done");
     await expect(page.getByTestId("act-step-T1")).toHaveAttribute("data-status", /running|done/);
     // The partial verdicts of this stream say no_warning_signs; nothing may say so before `final`.
     expect(await page.getByTestId("result").innerText()).not.toContain("لم نجد علامات تحذير");
     await expect(page.getByTestId("result")).toHaveAttribute("data-phase", "final");
-    await expect(page.getByTestId("activity-title")).toContainText("أنهى «المحقّق» الفحص خلال");
+    await expect(page.getByTestId("activity-title")).toContainText("أنهى «بصير» الفحص خلال");
     await expect(page.getByTestId("act-wait")).toHaveCount(0);
   });
 
   test("English title and no tier codes in the activity card", async ({ page, request, context, baseURL }) => {
     await setPrefs(context, baseURL!, { lang: "en" });
     await run(page, request, "danger", false);
-    await expect(page.getByTestId("activity-title")).toContainText("The Investigator is checking your link");
+    await expect(page.getByTestId("activity-title")).toContainText("The Investigator (Baseer | بصير) is checking your link");
     await expect(page.getByTestId("activity")).not.toContainText(/\bT[0-3]\b/);
-    await expect(page.getByTestId("activity-title")).toContainText("The Investigator finished in");
+    await expect(page.getByTestId("activity-title")).toContainText("Investigator finished in");
   });
 });
 

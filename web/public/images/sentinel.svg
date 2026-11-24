@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 776" width="1200" height="776" role="img" aria-labelledby="t d">
-<title id="t">The Sentinel: the always-on backend agent</title>
+<title id="t">The Sentinel (Dir' | درع): the always-on backend agent</title>
 <desc id="d">The Sentinel listens to platform events on a Redis stream, correlates them with deterministic code, and applies rules R1 to R5 to open incidents. A LangGraph state graph then triages each incident through the nodes enrich, compare, assess, summarise, propose and act. Internal actions such as blocking an indicator run automatically and are reversible. External actions such as a takedown draft stop at an interrupt and wait for a human operator to approve or reject them. Every action is written to an append-only audit log.</desc>
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}

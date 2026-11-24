@@ -34,7 +34,7 @@ MAX_BYTES = 1024 * 1024
 TRANSCRIBE_TIMEOUT_S = 25.0
 SAMPLE_RATE = 16000
 # Short bias towards the product name. Per language: a mixed prompt makes Whisper echo it on noise.
-PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا فالكون. عدسة الصقر."}
+PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا صقر. عدسة الصقر."}
 
 
 MIN_LANG_PROB = 0.5

@@ -31,6 +31,11 @@ export const NODES: readonly NodeDef[] = [
   { id: "clients", group: "entry", kind: "io", cap: "pwa", repo: "web/app/page.tsx", repoMore: ["extension"], doc: "architecture", docFile: "docs/ARCHITECTURE.md" },
   { id: "api", group: "entry", kind: "code", cap: "rest_api", repo: "services/api/src/falcon_api/app.py", repoMore: ["contracts/openapi.yaml"], doc: "integration", docFile: "docs/INTEGRATION.md" },
 
+  // Entry: the voice path ("Hey Falcon"): browser microphone, local speech to text, intent, then the same check API
+  { id: "voice_mic", group: "entry", kind: "io", cap: "pwa", repo: "web/components/VoiceAssistant.tsx", repoMore: ["web/app/api/voice/route.ts"], doc: "agents", docFile: "docs/PRIVACY.md" },
+  { id: "voice_stt", group: "entry", kind: "code", cap: "rest_api", repo: "services/voice/src/falcon_voice/app.py", repoMore: ["services/api/src/falcon_api/voice.py"], doc: "agents", docFile: "docs/PRIVACY.md" },
+  { id: "voice_intent", group: "entry", kind: "code", cap: "rest_api", repo: `${CORE}/voice/intent.py`, repoMore: ["services/api/src/falcon_api/voice.py"], doc: "agents", docFile: "docs/PRIVACY.md" },
+
   // Investigator: the check cascade
   { id: "t0", group: "inv", kind: "code", cap: "url_check", repo: `${CORE}/signals/cache.py`, repoMore: [`${CORE}/signals/reputation/mirror.py`, "data/brands.yaml"], doc: "cascade", docFile: "docs/ARCHITECTURE.md" },
   { id: "t1", group: "inv", kind: "code", cap: "t1_measured_model", repo: `${CORE}/scoring/t1_model.py`, repoMore: [`${CORE}/signals/url/lexical.py`, `${CORE}/signals/domain/rdap.py`], doc: "cascade", docFile: "docs/SCORING.md" },
@@ -113,7 +118,7 @@ export interface GroupDef {
 
 /** Full technical view (/docs/agents). */
 export const FULL_GROUPS: readonly GroupDef[] = [
-  { id: "entry", flow: true, segments: [{ ids: ["clients", "api"] }] },
+  { id: "entry", flow: true, segments: [{ ids: ["clients", "api"] }, { ids: ["voice_mic", "voice_stt", "voice_intent"] }] },
   { id: "inv", flow: true, segments: [{ ids: ["t0", "t1", "t2", "t3", "arbiter", "verdict"] }] },
   { id: "sen", flow: true, segments: [{ label: "events", ids: ["bus", "correlate", "rules"] }, { label: "graph", ids: ["enrich", "compare", "assess", "summarise", "propose", "act"] }, { ids: ["approval", "audit"] }] },
   {
@@ -149,6 +154,10 @@ export const BIZ_GROUPS: readonly GroupDef[] = [
  */
 const EXTRA_LINKS: readonly (readonly [string, string])[] = [
   ["clients", "api"],
+  ["voice_mic", "clients"],
+  ["voice_stt", "api"],
+  ["voice_intent", "api"],
+  ["voice_intent", "t0"],
   ["api", "t0"],
   ["verdict", "bus"],
   ["t2", "render_page"],

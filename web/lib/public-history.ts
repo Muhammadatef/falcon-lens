@@ -314,8 +314,8 @@ export function publicSeverityLine(ruleIds: readonly string[], linked: number, d
   const rule = ruleIds.find((r) => Object.hasOwn(RULE_LINES, r));
   if (rule) return RULE_LINES[rule]!(domains);
   return linked > 0
-    ? { ar: `ربط الحارس ${arCount(linked, CHECKS)} بهذه الحادثة.`, en: `Sentinel linked ${plural(linked, "check", "checks")} to this incident.` }
-    : { ar: "سجّل الحارس هذه الحادثة.", en: "Sentinel recorded this incident." };
+    ? { ar: `ربط درع ${arCount(linked, CHECKS)} بهذه الحادثة.`, en: `Sentinel linked ${plural(linked, "check", "checks")} to this incident.` }
+    : { ar: "سجّل درع هذه الحادثة.", en: "Sentinel recorded this incident." };
 }
 
 const INDICATOR_KINDS = new Set(["domain", "url", "host"]);

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Capabilities } from "@/lib/capabilities";
 import type { Lang } from "@/lib/contracts";
 import { CapBadge } from "./CapBadge";
+import { VoiceDoc } from "./docs/VoiceDoc";
 
 /** Languages whose pre-generated narration clips are available to this server (read from the files, never typed). */
 function clipLanguages(): { en: boolean; ar: boolean } {
@@ -15,18 +16,16 @@ function clipLanguages(): { en: boolean; ar: boolean } {
 
 const TEXT = {
   en: {
-    title: "Voice assistant",
-    biz: "Say “Hey Falcon, check my messages”. The assistant reads the messages you copied, gives each one to the Investigator, then hands the results to the Sentinel, and tells you aloud what it found. Your voice is understood on our own machine: the audio is dropped after recognition and what you said is never stored.",
-    tech: "Wake phrase, then local Whisper speech recognition (native GPU engine, container engine as fallback), then fixed intent rules with no model, then the copied messages go through the same public check API as the Check page with channel “voice” and a linked trace span. The Investigator cascade runs, the verdict event reaches the Sentinel on the event bus, and the spoken summary is composed from pre-generated clips; browser speech is only the fallback for a clip that is missing.",
+    title: "Voice assistant | المساعد الصوتي",
+    biz: "Say “Hey Falcon, check my messages”. The assistant reads the messages you copied, gives each one to Baseer (the Investigator), then hands the results to Dir' (the Sentinel), and tells you aloud what it found. Your voice is understood on our own machine: the audio is dropped after recognition and what you said is never stored.",
     privacy: "Privacy: audio is decoded in memory and discarded; the transcript goes back to your browser only. The trace span voice.utterance carries the engine, language, wake flag, intent and duration, never the words.",
     clips: (l: { en: boolean; ar: boolean }) =>
       l.en && l.ar ? "Pre-generated clips ship for English and Arabic." : l.en ? "Pre-generated clips ship for English; Arabic is read by the browser’s own voice until Arabic clips are added." : "No pre-generated clips are bundled in this build; the browser’s own voice reads every line.",
     open: "Try it",
   },
   ar: {
-    title: "المساعد الصوتي",
-    biz: "قل «يا فالكون، افحص رسائلي». يقرأ المساعد الرسائل التي نسختها، ويسلّم كل رسالة إلى المحقق، ثم يحيل النتائج إلى الحارس، ويخبرك بصوت مسموع بما وجده. يُفهم كلامك على جهازنا نفسه: يُتخلص من التسجيل بعد التعرف عليه ولا يُحفظ ما قلته.",
-    tech: "عبارة التنبيه، ثم التعرف المحلي على الكلام بنموذج Whisper (محرك أصلي على وحدة المعالجة الرسومية، ومحرك الحاوية احتياطاً)، ثم قواعد نوايا ثابتة بلا نموذج، ثم تمر الرسائل المنسوخة عبر واجهة الفحص العامة نفسها التي تستخدمها صفحة الفحص بقناة «صوت» ومسار تتبع مربوط. يعمل شلال المحقق، ويصل حدث الحكم إلى الحارس عبر ناقل الأحداث، ويُركَّب الملخص المنطوق من مقاطع صوتية مولَّدة مسبقاً؛ ولا يُستخدم صوت المتصفح إلا بديلاً لمقطع مفقود.",
+    title: "المساعد الصوتي | Voice assistant",
+    biz: "قل «يا صقر، افحص رسائلي». يقرأ المساعد الرسائل التي نسختها، ويسلّم كل رسالة إلى «بصير»، المحقّق، ثم يحيل النتائج إلى «درع»، الحارس، ويخبرك بصوت مسموع بما وجده. يُفهم كلامك على جهازنا نفسه: يُتخلص من التسجيل بعد التعرف عليه ولا يُحفظ ما قلته.",
     privacy: "الخصوصية: يُفك ترميز الصوت في الذاكرة ويُتلف، ولا يعود النص المفرَّغ إلا إلى متصفحك. يحمل مسار التتبع voice.utterance المحرك واللغة وعلامة التنبيه والنية والمدة فقط، ولا يحمل الكلمات.",
     clips: (l: { en: boolean; ar: boolean }) =>
       l.en && l.ar ? "المقاطع المولَّدة مسبقاً متوفرة بالإنجليزية والعربية." : l.en ? "المقاطع المولَّدة مسبقاً متوفرة بالإنجليزية؛ ويقرأ صوتُ المتصفح العربيةَ إلى أن تُضاف مقاطع عربية." : "لا مقاطع مولَّدة مسبقاً في هذا الإصدار؛ يقرأ صوت المتصفح كل سطر.",
@@ -38,13 +37,13 @@ const TEXT = {
 export function VoiceAgentsSection({ lang, caps, view }: { lang: Lang; caps: Capabilities; view: "biz" | "tech" }) {
   const t = TEXT[lang];
   return (
-    <section className="card" aria-labelledby={`voice-${view}-h`} data-testid={`agents-voice-${view}`}>
+    <section className="card" id={view === "tech" ? "voice" : undefined} aria-labelledby={`voice-${view}-h`} data-testid={`agents-voice-${view}`}>
       <div className="sec-head">
         <h2 id={`voice-${view}-h`}>
           {t.title} <CapBadge live={caps.voice_assistant} lang={lang} />
         </h2>
       </div>
-      <p>{view === "biz" ? t.biz : t.tech}</p>
+      {view === "biz" ? <p>{t.biz}</p> : <VoiceDoc lang={lang} />}
       {view === "tech" ? <p className="muted">{t.clips(clipLanguages())}</p> : null}
       <p className="muted">{t.privacy}</p>
       {view === "biz" ? <p><Link className="btn" href="/voice">{t.open}</Link></p> : null}

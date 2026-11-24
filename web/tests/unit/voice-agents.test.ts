@@ -46,8 +46,8 @@ describe("agents: Investigator and Sentinel hand-over", () => {
     for (const lang of ["ar", "en"] as const) {
       for (const sentinelFound of [true, false]) {
         const t = buildSpeech(lang, [d, c], { sentinelFound });
-        expect(t).toContain(lang === "ar" ? "«المحقّق»" : "Investigator");
-        expect(t).toContain(lang === "ar" ? "«الحارس»" : "Sentinel");
+        expect(t).toContain(lang === "ar" ? "«بصير»" : "Investigator");
+        expect(t).toContain(lang === "ar" ? "«درع»" : "Sentinel");
         expect(t.toLowerCase()).not.toMatch(/\bsafe(ly|r|st)?\b|آمن/);
       }
     }

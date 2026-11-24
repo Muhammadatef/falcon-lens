@@ -35,6 +35,8 @@ export interface VoicePlayerOptions {
   fallbackText?: (id: string) => string | undefined;
   /** Reads a line aloud when its clip is missing (the app passes lib/speech, which picks the best device voice). Default: raw speechSynthesis. */
   speakFallback?: (text: string, alive: () => boolean) => Promise<unknown>;
+  /** Called for every line that is read by device speech because its clip is missing (the happy path never calls it). */
+  onFallback?: (id: string, text: string) => void;
   /** Test seams. */
   fetchImpl?: typeof fetch;
   audioContext?: () => AudioContext;
@@ -78,12 +80,15 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
     if (!c) return;
     await Promise.all(
       [...entries.values()].map(async (e) => {
-        try {
-          const r = await doFetch(`${base}/${e.file}`);
-          if (!r.ok) return;
-          buffers.set(e.id, await c.decodeAudioData(await r.arrayBuffer()));
-        } catch {
-          /* clip stays missing: falls back to speech */
+        // One retry: a clip that fails once under a burst of parallel requests must not turn into a different voice.
+        for (let attempt = 0; attempt < 2 && !buffers.has(e.id); attempt++) {
+          try {
+            const r = await doFetch(`${base}/${e.file}`);
+            if (!r.ok) continue;
+            buffers.set(e.id, await c.decodeAudioData(await r.arrayBuffer()));
+          } catch {
+            /* retried once, then the clip stays missing: falls back to speech */
+          }
         }
       }),
     );
@@ -204,7 +209,10 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
         if (buf) await playBuffer(buf, my);
         else {
           const text = entries.get(id)?.text ?? opts.fallbackText?.(id);
-          if (text) await speak(text, my);
+          if (text) {
+            opts.onFallback?.(id, text);
+            await speak(text, my);
+          }
         }
         if (my !== token) return;
         if (i < ids.length - 1) await waitOrWake(gap);

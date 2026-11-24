@@ -93,7 +93,7 @@ function build(): Record<VoiceLang, Record<string, string>> {
   N.slice(1).forEach((n, i) => put(`of.${n}`, OF[i]![0], OF[i]![1]));
 
   // The Investigator agent, step by step (only narrated when the verdict stream proves the step ran).
-  N.forEach((n, i) => put(`investigator.start.${n}`, `المحقق يشيّك المسج ${ORD_AR[i]}.`, `The Investigator agent is checking the ${ORD_EN[i]} message.`));
+  N.forEach((n, i) => put(`investigator.start.${n}`, `بصير يشيّك على المسج ${ORD_AR[i]}.`, `Baseer, the Investigator, is checking the ${ORD_EN[i]} message.`));
   put("investigator.lists", "أطابقه مع قوائم النصب المعروفة.", "Checking known scam lists.");
   put("investigator.address", "أشوف عنوان الموقع، يمكن فيه تشابه مخادع.", "Checking the web address for look-alike tricks.");
   put("investigator.page", "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي.", "Opening the page in our isolated browser. Nothing is typed.");
@@ -111,19 +111,19 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("score.of", "من مية.", "out of one hundred.");
 
   // The Sentinel agent.
-  put("sentinel.handover", "أسلّم النتايج للحارس.", "Handing the results to the Sentinel agent.");
-  for (let n = 2; n <= 10; n++) put(`sentinel.linked.${n}`, `الحارس ربط ${COUNT_AR[n - 1]} في حملة نصب وحدة.`, `The Sentinel linked ${NUM_EN[n]} reports into one campaign.`);
-  put("sentinel.summary", "الحارس كتب ملخص بالعربي والإنجليزي.", "The Sentinel wrote a summary in Arabic and English.");
-  put("sentinel.draft", "الحارس جهّز مسودة طلب لإزالة الموقع.", "The Sentinel prepared a takedown request draft.");
+  put("sentinel.handover", "أسلّم النتايج لدرع.", "Handing the results to Dir, the Sentinel.");
+  for (let n = 2; n <= 10; n++) put(`sentinel.linked.${n}`, `درع ربط ${COUNT_AR[n - 1]} في حملة نصب وحدة.`, `Dir linked ${NUM_EN[n]} reports into one campaign.`);
+  put("sentinel.summary", "درع كتب ملخص بالعربي والإنجليزي.", "Dir wrote a summary in Arabic and English.");
+  put("sentinel.draft", "درع جهّز مسودة طلب لإزالة الموقع.", "Dir prepared a takedown request draft.");
   put("sentinel.awaiting_approval", "ننتظر موافقة ضابط. ما يُرسل شي بدونها.", "Waiting for an officer's approval. Nothing is sent without it.");
-  put("sentinel.watching", "الحارس يظل يراقب أي بلاغات مشابهة.", "The Sentinel keeps watching for similar reports.");
-  put("final.both_agents", "المحقق شيّك، والحارس ربطها وصار يتابع.", "The Investigator checked, and the Sentinel linked them and follows up.");
-  put("sentinel.unavailable", "ما وصلت للحارس الحين، فما أعرف إذا فيه حملة.", "I couldn't reach the Sentinel right now, so I can't say whether there is a campaign.");
-  put("nothing_checked", "ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس.", "No check could be completed, so I handed nothing to the Sentinel.");
+  put("sentinel.watching", "درع يظل يراقب أي بلاغات مشابهة.", "Dir keeps watching for similar reports.");
+  put("final.both_agents", "بصير شيّك، ودرع ربطها وصار يتابع.", "Baseer checked, and Dir linked them and follows up.");
+  put("sentinel.unavailable", "ما وصلت لدرع الحين، فما أعرف إذا فيه حملة.", "I couldn't reach the Sentinel (Dir) right now, so I can't say whether there is a campaign.");
+  put("nothing_checked", "ما قدرنا نكمّل أي فحص، فما سلّمت شي لدرع.", "No check could be completed, so I handed nothing to Dir.");
   put("mic.denied", "ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات.", "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box.");
   put("voice.unavailable", "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق.", "The voice service isn't available right now. Please use the paste box.");
-  put("final.sentinel_unavailable", "المحقق شيّك، بس ما قدرت أوصل للحارس.", "The Investigator checked, but I couldn't reach the Sentinel.");
-  put("final.sentinel_watching", "المحقق شيّك، والحارس يظل يراقب.", "The Investigator checked, and the Sentinel keeps watching.");
+  put("final.sentinel_unavailable", "بصير شيّك، بس ما قدرت أوصل لدرع.", "Baseer checked, but I couldn't reach Dir.");
+  put("final.sentinel_watching", "بصير شيّك، ودرع يظل يراقب.", "Baseer checked, and Dir keeps watching.");
 
   N.forEach((n, i) => {
     const en_ = SUM_EN(n);
@@ -140,7 +140,7 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("todo.report", "وبلّغ عن المسج من القنوات الرسمية.", "Report the message through the official channels.");
   put("todo.careful", "بس خلّك حذر.", "But stay careful.");
   put("todo.wait", "لا تفتح الرابط لين نشيّكه.", "Don't open the link until it is checked.");
-  put("help", "انسخ المسجات، وقل: يا فالكون، شيّك مسجاتي.", "Copy your messages, then say: Hey Falcon, check my messages.");
+  put("help", "انسخ المسجات، وقل: يا صقر، شيّك مسجاتي.", "Copy your messages, then say: Hey Falcon, check my messages.");
   put("stop", "تمام، وقّفت.", "Okay, I've stopped.");
   put("didnt", "ما فهمت عليك. عيد، لو سمحت.", "Sorry, I didn't catch that. Please say it again.");
   put("clip.empty", "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي.", "I found no messages in what you copied. Copy them and try again.");

@@ -5,7 +5,7 @@
 import type { Lang } from "./contracts";
 
 const ar = {
-  "cx.intro": "الحملة هي عدة بلاغات وفحوص منفصلة تبيّن أنها الاحتيال نفسه: العلامة المنتحَلة نفسها، وقالب الصفحة نفسه، والبنية التقنية نفسها. يربطها «الحارس»، وهو وكيل ذكاء اصطناعي، تلقائياً.",
+  "cx.intro": "الحملة هي عدة بلاغات وفحوص منفصلة تبيّن أنها الاحتيال نفسه: العلامة المنتحَلة نفسها، وقالب الصفحة نفسه، والبنية التقنية نفسها. يربطها «درع»، الحارس، وهو وكيل ذكاء اصطناعي، تلقائياً.",
   "cx.toggle": "كيف يعمل هذا؟",
   "cx.toggle.hint": "لماذا تهمّ الحملات، وكيف تُبنى، وكيف تقرأ البطاقة",
   "cx.region": "شرح لوحة الحملات",
@@ -15,15 +15,15 @@ const ar = {
   "cx.why.auth.h": "للجهات المختصة",
   "cx.why.auth": "جاهز للربط وغير مرتبط حالياً. عرض واحد للحملة بدلاً من مئات البلاغات المفردة، وطلبات إزالة أبكر، وإمكانية مشاركتها بصيغة STIX للاستخبارات.",
   "cx.why.safe.h": "سرعة بلا مخاطرة",
-  "cx.why.safe": "يجهّز «الحارس» مسوّدات طلبات الإزالة والبلاغ للشرطة، ولا يغادر شيء النظام قبل أن يوافق ضابط.",
+  "cx.why.safe": "يجهّز «درع» مسوّدات طلبات الإزالة والبلاغ للشرطة، ولا يغادر شيء النظام قبل أن يوافق ضابط.",
   "cx.how.h": "كيف تُبنى الحملة؟",
   "cx.how.1": "تصل الفحوص والبلاغات.",
-  "cx.how.2": "يربطها «الحارس» ببصمات مشتركة: العلامة، وقالب الصفحة، ونمط النطاق، والتوقيت.",
+  "cx.how.2": "يربطها «درع» ببصمات مشتركة: العلامة، وقالب الصفحة، ونمط النطاق، والتوقيت.",
   "cx.how.3": "قواعد ثابتة، لا الذكاء الاصطناعي، هي التي تقرّر أنها حملة.",
   "cx.how.4": "يكتب الذكاء الاصطناعي ملخصاً بلغتين، وتنتظر المسوّدات موافقة بشرية.",
   "cx.read.h": "كيف تقرأ البطاقة؟",
   "cx.read.title": "العنوان: اسم الحملة والعلامة التي تنتحلها.",
-  "cx.read.count": "فحوص مرتبطة: عدد الفحوص التي ضمّها «الحارس» إلى هذه الحملة.",
+  "cx.read.count": "فحوص مرتبطة: عدد الفحوص التي ضمّها «درع» إلى هذه الحملة.",
   "cx.read.seen": "آخر ظهور: وقت آخر فحص ارتبط بها.",
   "cx.read.sev": "الشدة: حرجة أو عالية أو متوسطة أو منخفضة. الشكل يرافق الكلمة، فلا يعتمد المعنى على اللون.",
   "cx.read.bars": "الأعمدة الصغيرة: نشاط الحملة عبر الفترات الأخيرة، والعمود الأخير هو الأحدث.",
@@ -34,7 +34,7 @@ const ar = {
 } as const;
 
 const en: Record<keyof typeof ar, string> = {
-  "cx.intro": "A campaign is many separate reports and checks that turn out to be the same scam: the same fake brand, the same page kit, the same infrastructure. The Sentinel, an AI agent, links them automatically.",
+  "cx.intro": "A campaign is many separate reports and checks that turn out to be the same scam: the same fake brand, the same page kit, the same infrastructure. The Sentinel (Dir' | درع), an AI agent, links them automatically.",
   "cx.toggle": "How this works",
   "cx.toggle.hint": "Why campaigns matter, how they are built, how to read a card",
   "cx.region": "About the campaign board",
