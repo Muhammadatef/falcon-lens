@@ -48,6 +48,10 @@ ALLOWED_TYPES = {
 }
 DEFAULT_STT_URLS = "http://host.docker.internal:8093,http://voice:8000"
 HEALTH_TTL_S = 10.0
+# Per-engine answer budgets. Their sum stays under the web route's 20 s abort, so a hung native engine still
+# leaves the container time to answer (measured: native 0.16-0.3 s per utterance, container a few seconds).
+ENGINE_TIMEOUT_S = {"native": 6.0, "container": 12.0}
+DEFAULT_ENGINE_TIMEOUT_S = 12.0
 LOCAL_HOSTS = {"host.docker.internal", "localhost", "127.0.0.1"}
 
 
@@ -107,7 +111,14 @@ class SttRouter:
     def __init__(self, engines: list[SttEngine], token: str, client: httpx.AsyncClient | None = None) -> None:
         self.engines = engines
         self.token = token
-        self.client = client or httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=1.5))
+        self.client = client or httpx.AsyncClient(timeout=httpx.Timeout(DEFAULT_ENGINE_TIMEOUT_S, connect=1.5))
+        #: Called with (engine name, reason) each time an engine is skipped: unreachable, timeout, loading, error.
+        self.on_failover: Callable[[str, str], None] | None = None
+
+    def _failed(self, eng: SttEngine, reason: str, park_s: float) -> None:
+        eng.down_until = time.monotonic() + park_s
+        if self.on_failover:
+            self.on_failover(eng.name, reason)
 
     async def transcribe(self, audio: bytes, content_type: str, lang: str | None) -> tuple[str, SttResult]:
         if not self.token:  # fail closed: never call an engine without the shared secret
@@ -118,19 +129,30 @@ class SttRouter:
         for eng in self.engines:
             if not eng.usable:
                 continue
+            budget = httpx.Timeout(ENGINE_TIMEOUT_S.get(eng.name, DEFAULT_ENGINE_TIMEOUT_S), connect=1.5)
             try:
-                r = await self.client.post(f"{eng.url}/stt", content=audio, headers=headers, params=params)
+                r = await self.client.post(
+                    f"{eng.url}/stt", content=audio, headers=headers, params=params, timeout=budget
+                )
+            except httpx.TimeoutException:
+                self._failed(eng, "timeout", HEALTH_TTL_S)
+                continue
             except httpx.HTTPError:
-                eng.down_until = time.monotonic() + HEALTH_TTL_S
+                self._failed(eng, "unreachable", HEALTH_TTL_S)
                 continue
             if r.status_code in (413, 422):
                 raise SttRejectedError(
                     r.status_code, str(r.json().get("error", "rejected")) if r.content else "rejected"
                 )
             if r.status_code != 200:  # 503 model loading, 504 timeout, 401 misconfigured: try the next engine
-                eng.down_until = time.monotonic() + (2.0 if r.status_code == 503 else HEALTH_TTL_S)
+                loading = r.status_code == 503
+                self._failed(eng, "loading" if loading else "error", 2.0 if loading else HEALTH_TTL_S)
                 continue
-            return eng.name, SttResult.model_validate(r.json())
+            try:
+                return eng.name, SttResult.model_validate(r.json())
+            except ValueError:  # a 200 that is not our reply shape (wrong service on the port): next engine
+                self._failed(eng, "error", HEALTH_TTL_S)
+                continue
         raise SttUnavailableError
 
     async def aclose(self) -> None:
@@ -158,6 +180,28 @@ def register(
         registry=registry,
     )
     errors = Counter("fl_voice_errors_total", "Voice request failures", ["reason"], registry=registry)
+    stt_seconds = Histogram(
+        "fl_voice_stt_seconds",
+        "Speech recognition time reported by the engine (0 when the silence gate answered)",
+        ["engine"],
+        buckets=(0.05, 0.1, 0.2, 0.3, 0.5, 1, 2, 5, 10),
+        registry=registry,
+    )
+    failovers = Counter(
+        "fl_voice_engine_failover_total",
+        "Times a speech engine was skipped over (unreachable, timeout, loading, error)",
+        ["engine", "reason"],
+        registry=registry,
+    )
+    faq_semantic_total = Counter(
+        "fl_voice_faq_semantic_total",
+        "Semantic FAQ fallback outcomes (hit, miss, warming, timeout, error); never the question text",
+        ["outcome"],
+        registry=registry,
+    )
+    empty_total = Counter(
+        "fl_voice_empty_total", "Clips with no speech in them (silence, noise): no transcript", registry=registry
+    )
     per_min = int(os.environ.get("FL_VOICE_RATE_PER_MIN", "30"))
     holder: dict[str, SttRouter] = {}
     # Semantic FAQ fallback (local embedding model, no text generation). Off unless an embedder is injected or
@@ -170,7 +214,8 @@ def register(
         """An unmatched command after the wake phrase: nearest FAQ question, else the off-topic redirect."""
         if semantic is None or result.intent != "off_topic" or result.injection or not result.command:
             return result
-        name = await semantic.match(result.command)
+        name, outcome = await semantic.match_outcome(result.command)
+        faq_semantic_total.labels(outcome).inc()
         if name is None:
             return result
         return replace(result, intent="faq", answer_id=name)
@@ -185,6 +230,7 @@ def register(
                     os.environ.get("FL_VOICE_TOKEN", ""),
                 )
             )
+            holder["r"].on_failover = lambda engine, reason: failovers.labels(engine, reason).inc()
         return holder["r"]
 
     def fail(status: int, slug: str, title: str, reason: str, headers: dict[str, str] | None = None) -> Problem:
@@ -286,7 +332,9 @@ def register(
                 {"Retry-After": str(60 - int(time.time() % 60)), "X-RateLimit-Limit": str(per_min)},
             )
         if semantic is not None:
-            semantic.start_warming()  # STT takes seconds: the FAQ question embeddings are ready by the time it returns
+            # While speech recognition runs: embed the question bank (first call) and keep the embedding model
+            # loaded, so a question never pays the model's load time inside its 0.4 s budget.
+            semantic.keep_warm()
         data, declared, lang_hint, follow_up = await read_form(request)
         if lang_hint is not None and lang_hint not in ("ar", "en"):
             raise fail(422, "invalid-lang-hint", "lang_hint must be ar or en", "bad_lang_hint")
@@ -312,8 +360,13 @@ def register(
             )
             raise fail(422, slug, title, "too_long" if exc.reason == "too_long" else "undecodable") from exc
         except SttUnavailableError as exc:
-            raise fail(503, "stt-unavailable", "Speech recognition unavailable", "stt_unavailable") from exc
+            raise fail(
+                503, "stt-unavailable", "Speech recognition unavailable", "stt_unavailable", {"Retry-After": "2"}
+            ) from exc
         transcript = res.text.strip()[:300]
+        stt_seconds.labels(engine).observe(res.ms / 1000)
+        if not transcript:
+            empty_total.inc()
         result = await with_faq(analyse(transcript, follow_up=follow_up))
         # The language of the reply follows the speaker's own words (script of the wake phrase and command), not
         # Whisper's guess, which is unreliable on a one-second "Hey Falcon". The model's guess is the last resort.
