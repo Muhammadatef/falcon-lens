@@ -28,6 +28,18 @@ export function Badge({ kind, lang, short = false }: { kind: BadgeKind; lang: La
   );
 }
 
+/** A note published in an artifact: Arabic when we hold a translation, else the English text, labelled and LTR-isolated. Never hidden. */
+export function ArtifactNote({ text, lang }: { text: string; lang: Lang }) {
+  const ar = artifactNote(text, lang);
+  if (ar !== null) return <>{ar}</>;
+  return (
+    <>
+      <span className="muted">ملاحظة منهجية (بالإنجليزية): </span>
+      <bdi dir="ltr" lang="en" className="note-en">{text}</bdi>
+    </>
+  );
+}
+
 /** "0 من 50": the words keep the page direction, every number is isolated (no forced LTR on Arabic phrases). */
 function CountOf({ text }: { text: string }) {
   return <>{text.split(/(\d[\d.,]*%?)/).map((part, i) => (i % 2 === 1 ? <bdi key={i} dir="ltr">{part}</bdi> : part))}</>;
@@ -142,7 +154,7 @@ function Group({ g, lang, ciLabel }: { g: RsGroup; lang: Lang; ciLabel: string }
           </tbody>
         </table>
       </div>
-      {artifactNote(g.caveat, lang) ? <p className="muted rs-caveat">{artifactNote(g.caveat, lang)}</p> : null}
+      {g.caveat ? <p className="muted rs-caveat"><ArtifactNote text={g.caveat} lang={lang} /></p> : null}
     </div>
   );
 }
@@ -173,8 +185,8 @@ export function RealSyntheticSection({ lang }: { lang: Lang }) {
         <summary>{c.artifact}</summary>
       <ul className="area-prov">
         <li>{c.artifact}: <code dir="ltr">{rs.artifact}</code>{rs.messageArtifact ? <> · <code dir="ltr">{rs.messageArtifact}</code></> : null}</li>
-        {artifactNote(rs.provenance, lang) ? <li>{artifactNote(rs.provenance, lang)}</li> : null}
-        {artifactNote(rs.separationRule, lang) ? <li>{artifactNote(rs.separationRule, lang)}</li> : null}
+        {rs.provenance ? <li><ArtifactNote text={rs.provenance} lang={lang} /></li> : null}
+        {rs.separationRule ? <li><ArtifactNote text={rs.separationRule} lang={lang} /></li> : null}
       </ul>
       </details>
     </section>

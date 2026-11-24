@@ -125,3 +125,18 @@ test.describe("check trace is verdict first", () => {
     expect(await page.locator("body").innerText()).not.toMatch(/آمن/);
   });
 });
+
+test.describe("axe on every touched page", () => {
+  for (const lang of ["ar", "en"] as const) {
+    for (const path of ["/", "/history?demo=1", "/checks/vd_01KB0DEM0DATA0000000000001?demo=1", "/authorities", "/privacy", "/results", "/ops"]) {
+      test(`${path} (${lang})`, async ({ page, context, baseURL }) => {
+        await setPrefs(context, baseURL!, { lang });
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+        const found = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+        expect(found.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
+      });
+    }
+  }
+});
