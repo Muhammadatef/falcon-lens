@@ -210,7 +210,7 @@ def mix(x: np.ndarray, noise: np.ndarray, snr_db: float) -> np.ndarray:
     noise = np.resize(noise, x.shape)
     px, pn = float(np.mean(x**2)) + 1e-12, float(np.mean(noise**2)) + 1e-12
     y = x + noise * np.sqrt(px / (pn * 10 ** (snr_db / 10)))
-    return y / max(1.0, float(np.max(np.abs(y))) / 0.95)
+    return np.asarray(y / max(1.0, float(np.max(np.abs(y))) / 0.95))
 
 
 def make_noisy(src: Path, dst: Path, kind: str, other: Path, rng: np.random.Generator) -> None:
@@ -475,7 +475,7 @@ def main() -> int:
     have_polly = load_aws()
     polly = None
     if have_polly:
-        import boto3
+        import boto3  # type: ignore[import-untyped]
 
         polly = boto3.client("polly", region_name=os.environ.get("AWS_REGION") or "us-east-1")
         try:
