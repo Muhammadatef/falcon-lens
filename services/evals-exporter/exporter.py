@@ -341,6 +341,38 @@ def _fits_rows(doc: dict[str, Any]) -> list[Row]:
     return rows
 
 
+def _w95(node: Any) -> tuple[float | None, float | None]:
+    pair = node.get("wilson95") or node.get("bootstrap95") if isinstance(node, dict) else None
+    return (_num(pair[0]), _num(pair[1])) if isinstance(pair, list) and len(pair) == 2 else (None, None)
+
+
+def _fresh200_rows(doc: dict[str, Any]) -> list[Row]:
+    """Headline aggregates only (bounded names): confusion metrics of the main and second-source runs plus the
+    degraded rate per class. Never the per-group breakdowns, examples, tiers or reasons."""
+    rows: list[Row] = []
+    for split, key in (("main", "results"), ("second_source", "results_second_source")):
+        res = doc.get(key)
+        if not isinstance(res, dict):
+            continue
+        for scope, block in (("all", "overall_all_phishing"), ("live", "overall_live_phishing_only")):
+            for mode, sub in (("any", "any_warning"), ("dangerous", "dangerous_only")):
+                node = (res.get(block) or {}).get(sub) or {}
+                for name in ("recall", "false_positive_rate", "precision", "f1", "accuracy"):
+                    m = node.get(name)
+                    v = _num(m.get("value")) if isinstance(m, dict) else None
+                    if v is None:
+                        continue
+                    lo, hi = _w95(m)
+                    rows.append(Row(f"{scope}_{mode}_{name}", split, v, lo, hi))
+        for g in ("phishing_all", "legit_all"):
+            d = ((res.get("groups") or {}).get(g) or {}).get("degraded")
+            v = _num(d.get("value")) if isinstance(d, dict) else None
+            if v is not None:
+                lo, hi = _w95(d)
+                rows.append(Row(f"{g}_degraded_rate", split, v, lo, hi, _num(d.get("n"))))
+    return rows
+
+
 def artifact_rows(source: str, doc: dict[str, Any]) -> list[Row]:
     """The rows of one artifact, by source layout."""
     if source == "main":
@@ -353,6 +385,8 @@ def artifact_rows(source: str, doc: dict[str, Any]) -> list[Row]:
         return _fits_rows(doc)
     if source == "dspy":
         return _dspy_rows(doc)
+    if source == "fresh200":
+        return _fresh200_rows(doc)
     return _generic_rows(doc)
 
 
