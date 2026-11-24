@@ -9,7 +9,15 @@ import httpx
 import pytest
 
 from falcon_api.app import build_app
-from falcon_api.auth import Authenticator, KeyRecord, MemoryKeyStore, StoreUnavailableError, fingerprint, hash_key
+from falcon_api.auth import (
+    Authenticator,
+    KeyConflictError,
+    KeyRecord,
+    MemoryKeyStore,
+    StoreUnavailableError,
+    fingerprint,
+    hash_key,
+)
 from tests.conftest import OPERATOR_KEY, SANDBOX_KEY, FakeStore, make_settings
 
 PEPPER = "test-pepper"  # matches make_settings
@@ -60,11 +68,13 @@ async def test_revoked_stored_row_stays_revoked(redis: Any, store: FakeStore, mo
         assert (await c.get("/v1/verdicts", headers={"X-API-Key": OPERATOR_KEY})).status_code == 200
 
 
-async def test_failing_seed_is_skipped_not_fatal(redis: Any, store: FakeStore, monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_conflicting_seed_is_skipped_not_fatal(
+    redis: Any, store: FakeStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
     class FlakyStore(MemoryKeyStore):
         async def put(self, rec: KeyRecord) -> None:
             if rec.key_id == "sentinel-hunt":
-                raise StoreUnavailableError("UniqueViolationError")
+                raise KeyConflictError("UniqueViolationError")
             await super().put(rec)
 
     monkeypatch.setenv("FL_HUNT_API_KEY", HUNT_KEY)
@@ -89,5 +99,50 @@ async def test_unknown_scope_dropped_known_scopes_kept() -> None:
 async def test_memory_store_enforces_unique_fingerprint() -> None:
     ks = MemoryKeyStore()
     await ks.put(_row("a", "same", ["read"]))
-    with pytest.raises(StoreUnavailableError):
+    with pytest.raises(KeyConflictError):
         await ks.put(_row("b", "same", ["read"]))
+
+
+async def test_outage_during_seed_stays_not_ready_and_retries(
+    redis: Any, store: FakeStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class OutageStore(MemoryKeyStore):
+        down = True
+
+        async def put(self, rec: KeyRecord) -> None:
+            if self.down and rec.key_id == "sentinel-hunt":
+                raise StoreUnavailableError("OSError")
+            await super().put(rec)
+
+    ks = OutageStore()
+    monkeypatch.setenv("FL_HUNT_API_KEY", HUNT_KEY)
+    async with _client(ks, redis, store) as c:
+        r = await c.get("/v1/verdicts", headers={"X-API-Key": OPERATOR_KEY})
+        assert r.status_code == 503
+        assert r.json()["type"].endswith("auth-unavailable")
+        ks.down = False  # the database is back: the next request finishes seeding
+        assert (await c.get("/v1/verdicts", headers={"X-API-Key": OPERATOR_KEY})).status_code == 200
+        ok = await c.post("/v1/check/url", json={"url": URL, "channel": "hunt"}, headers={"X-API-Key": HUNT_KEY})
+        assert ok.status_code == 202
+
+
+async def test_seed_never_unrevokes_same_key_id(redis: Any, store: FakeStore, monkeypatch: pytest.MonkeyPatch) -> None:
+    ks = MemoryKeyStore()
+    auth = Authenticator(ks, PEPPER)
+    await auth.seed("sentinel-hunt", HUNT_KEY, ["hunt"], 60, "hunt")
+    await ks.revoke("sentinel-hunt")
+    await auth.seed("sentinel-hunt", HUNT_KEY, ["hunt"], 60, "hunt")  # same value: skipped
+    await auth.seed("sentinel-hunt", HUNT_KEY, ["hunt", "read"], 30, "hunt")  # changed scopes: still skipped
+    assert ks.rows["sentinel-hunt"].revoked_at is not None
+    monkeypatch.setenv("FL_HUNT_API_KEY", HUNT_KEY)
+    async with _client(ks, redis, store) as c:  # app start re-seeds too
+        bad = await c.post("/v1/check/url", json={"url": URL, "channel": "hunt"}, headers={"X-API-Key": HUNT_KEY})
+        assert bad.status_code == 401
+
+
+async def test_put_keeps_revoked_at_on_rekey() -> None:
+    ks = MemoryKeyStore()
+    await ks.put(_row("sentinel-hunt", "old-value", ["hunt"]))
+    await ks.revoke("sentinel-hunt")
+    await Authenticator(ks, PEPPER).seed("sentinel-hunt", "new-value", ["hunt"], 60, "hunt")
+    assert ks.rows["sentinel-hunt"].revoked_at is not None  # only an explicit admin rotation may un-revoke

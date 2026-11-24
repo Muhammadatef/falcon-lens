@@ -33,6 +33,10 @@ class StoreUnavailableError(Exception):
     pass
 
 
+class KeyConflictError(StoreUnavailableError):
+    """A write hit a unique constraint (e.g. the same key value under another key_id). Not an outage."""
+
+
 @dataclass(frozen=True, slots=True)
 class Principal:
     key_id: str
@@ -108,7 +112,10 @@ class MemoryKeyStore:
     async def put(self, rec: KeyRecord) -> None:
         # Mirror the Postgres UNIQUE(fingerprint) constraint so tests see the same failure mode.
         if any(r.fingerprint == rec.fingerprint and k != rec.key_id for k, r in self.rows.items()):
-            raise StoreUnavailableError("UniqueViolationError")
+            raise KeyConflictError("UniqueViolationError")
+        old = self.rows.get(rec.key_id)
+        if old is not None and old.revoked_at is not None:  # like Postgres put: never un-revoke an existing row
+            rec.revoked_at = old.revoked_at
         self.rows[rec.key_id] = rec
 
     async def revoke(self, key_id: str) -> None:
@@ -176,10 +183,13 @@ class Authenticator:
 
         If the same key value is already stored under another key_id (e.g. created with scripts/create_api_key.py
         and then copied into .env), the stored row wins: inserting it again would violate UNIQUE(fingerprint) and
-        take the whole key store down. A revoked stored row stays revoked (fail closed).
+        take the whole key store down. Seeding never un-revokes: a revoked stored row (any key_id) stays revoked.
         """
         fp = fingerprint(self.pepper, key)
         existing = await self.store.find(fp)
+        if existing is not None and existing.revoked_at is not None:
+            log.warning("configured key %s is revoked (stored as %s); not re-seeding it", key_id, existing.key_id)
+            return
         if existing is not None and existing.key_id != key_id:
             log.warning(
                 "configured key %s is already stored as %s (revoked=%s, scopes=%s); keeping the stored row",
@@ -192,7 +202,6 @@ class Authenticator:
         if (
             existing is not None
             and existing.key_id == key_id
-            and existing.revoked_at is None
             and existing.scopes == scopes
             and existing.rate_limit_per_min == rate
         ):

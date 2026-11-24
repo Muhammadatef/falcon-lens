@@ -33,6 +33,7 @@ from falcon_api import hunt as hunt_api
 from falcon_api.auth import (
     AuditLog,
     Authenticator,
+    KeyConflictError,
     KeyStore,
     MemoryAuditLog,
     MemoryKeyStore,
@@ -251,8 +252,9 @@ def build_app(
                     continue
                 try:
                     await auth.seed(key_id, key, scopes, rate, label)
-                except AuthStoreUnavailableError as exc:  # one bad seed must not take every API key down
+                except KeyConflictError as exc:  # a conflicting seed must not take every API key down
                     log.warning("could not seed configured key %s (%s); continuing without it", key_id, exc)
+                # any other StoreUnavailableError (a real outage) propagates: not ready, retried on the next request
             state["auth"] = auth
             state["ready"] = True
             return auth
