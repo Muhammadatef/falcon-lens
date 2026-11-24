@@ -10,6 +10,20 @@
 #   sandbox builder from data/private/.
 # name_ar values marked in unverified_notes were not confirmed on the fetched page.
 # This is a defensive allow-list; it implies no endorsement by, or integration with, any entity.
+#
+# official_contacts (T-036, read 2026-11-24): customer-service numbers, each read on the entity's OWN page at
+#   source_url. kind phone -> value in E.164 (+971...), local = the form shown on the page; kind short_code -> the
+#   digits as shown (999, 101, 155). Used only by brand.unofficial_contact_number: a number that matches this list
+#   emits nothing (caller ID can be spoofed, so a match is never trust). A brand without official_contacts never
+#   produces that evidence. Numbers that could not be read on the entity's own page are OMITTED:
+#   - adcb: adcb.com answered HTTP 403 to every fetch (bot protection); no number recorded.
+#   - uae_pass: uaepass.ae renders no text to a fetcher; 600561111 is listed on the official ICP site
+#     (icp.gov.ae/en/uae-pass/, federal government), accepted by L1 on 2026-11-24.
+#   - dubai_police: dubaipolice.gov.ae is a script-only app; 901 is cited by news and mediaoffice.ae only. Omitted.
+#   - etisalat_by_eand: only 101 was read (eand.ae support page); 800 101 for non-customers appears in search
+#     snippets of an etisalat.ae page that now returns 404. Omitted.
+#   - salik, itc_abu_dhabi_darb, addc, dewa, sewa, cbuae, moi_uae, emirates_islamic: not researched in T-036.
+#   Abu Dhabi Police numbers are listed because scammers impersonate it; this is NOT a partnership.
 brands:
   - brand_id: abu_dhabi_police
     name_en: Abu Dhabi Police
@@ -20,6 +34,15 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [abu dhabi police, adp, fine, traffic fine, violation, case, report, aman]
     keywords_ar: [شرطة ابوظبي, شرطة أبوظبي, مخالفة, مخالفات, بلاغ, قضية, أمان]
+    official_contacts:
+      - {kind: short_code, value: "999", local: "999", label_en: "Emergency number", label_ar: "رقم الطوارئ",
+         source_url: https://www.adpolice.gov.ae/en/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+9718002626", local: "800 2626", label_en: "Aman service", label_ar: "خدمة أمان",
+         source_url: https://www.adpolice.gov.ae/en/, retrieved_at: 2026-11-24}
+      - {kind: short_code, value: "2828", local: "2828", label_en: "Aman service short number", label_ar: "الرقم المختصر لخدمة أمان",
+         source_url: https://www.adpolice.gov.ae/en/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+9718003333", local: "800 3333", label_en: "Saeed service (immediate assistance)", label_ar: "خدمة سعيد (المساعدة الفورية)",
+         source_url: https://www.adpolice.gov.ae/en/, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "name_ar uses أبوظبي with hamza as the official AD999 app listing writes it (Google Play ae.adpolice.sos, 2026-11-22); the site banner omits the hamza. Both spellings are in keywords_ar."
@@ -62,6 +85,10 @@ brands:
     verification_l1: "TLS cert (OV/EV) subject O=Government of Dubai; HTTPS visit from host 2026-11-22 returned 200."
     keywords_en: [uae pass, uaepass, digital id, verify identity, account suspended, login]
     keywords_ar: [الهوية الرقمية, يو ايه اي باس, تحقق, تعليق الحساب]
+    official_contacts:
+      - {kind: phone, value: "+971600561111", local: "600561111", label_en: "Digital Identity team (24/7)", label_ar: "فريق الهوية الرقمية (على مدار الساعة)",
+         source_url: https://icp.gov.ae/en/uae-pass/, retrieved_at: 2026-11-24,
+         note: "listed on the official ICP site (icp.gov.ae), not on uaepass.ae"}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "uaepass.ae (and docs.uaepass.ae) appear in search/App Store listing only; uaepass.ae page returned no content to the fetcher, u.ae page not fetched successfully. Omitted pending manual check. name_ar is a descriptive form, not confirmed."
@@ -76,6 +103,9 @@ brands:
     verification_l1: "TLS cert (OV/EV) subject O=Department of Government Enablement; HTTPS visit from host 2026-11-22 returned 200."
     keywords_en: [tamm, abu dhabi government, pay fines, traffic fines, services, renew]
     keywords_ar: [تم, حكومة أبوظبي, دفع المخالفات, خدمات]
+    official_contacts:
+      - {kind: phone, value: "+971800555", local: "800 555", label_en: "Abu Dhabi Contact Center", label_ar: "مركز اتصال حكومة أبوظبي",
+         source_url: https://www.tamm.abudhabi/en/contact-us, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "tamm.abudhabi verified only via the official Abu Dhabi Police page linking to it as the government services/fine-payment portal; tamm.abudhabi itself failed to fetch (header overflow). name_ar not confirmed on page."
@@ -89,6 +119,11 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [icp, identity, emirates id, visa, residency, renew, smart services, customs]
     keywords_ar: [الهوية والجنسية, الهوية الإماراتية, تأشيرة, إقامة, تجديد, جمارك]
+    official_contacts:
+      - {kind: phone, value: "+971600522222", local: "600 522222", label_en: "Contact number (inside and outside the UAE)", label_ar: "رقم التواصل (داخل الدولة وخارجها)",
+         source_url: https://icp.gov.ae/en/uae-pass/, retrieved_at: 2026-11-24}
+      - {kind: short_code, value: "171", local: "171", label_en: "Short number shown in the site footer", label_ar: "الرقم المختصر في تذييل الموقع",
+         source_url: https://icp.gov.ae/en/uae-pass/, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
 
@@ -101,6 +136,11 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [emirates post, parcel, package, delivery, customs fee, redelivery, tracking]
     keywords_ar: [بريد الإمارات, طرد, شحنة, توصيل, رسوم جمركية, تتبع]
+    official_contacts:
+      - {kind: phone, value: "+971600599999", local: "600 599 999", label_en: "Call us", label_ar: "مركز الاتصال",
+         source_url: https://www.emiratespost.ae/en/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97142303000", local: "04 230 3000", label_en: "Head office telephone", label_ar: "هاتف المقر الرئيسي",
+         source_url: https://www.emiratespost.ae/en/contact-us, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "name_ar not confirmed on page. epg.ae is linked from the official page as the Emirates Post Group site. The site states it never asks for card details via SMS/WhatsApp/email."
@@ -141,6 +181,15 @@ brands:
     verification_l1: "TLS cert (OV/EV) subject O=Roads and Transport Authority (SAN incl. rta.gov.ae, nol.ae); HTTPS visit from host 2026-11-22 returned 200."
     keywords_en: [rta, dubai, fine, parking, nol, vehicle renewal, traffic, salik]
     keywords_ar: [هيئة الطرق والمواصلات, مخالفة, مواقف, نول, تجديد]
+    official_contacts:
+      - {kind: phone, value: "+9718009090", local: "800 9090", label_en: "Call centre", label_ar: "مركز الاتصال",
+         source_url: https://www.rta.ae/wps/portal/rta/ae/home/about-rta/contactus, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97146051414", local: "04 605 1414", label_en: "Call centre for overseas callers", label_ar: "مركز الاتصال للمتصلين من خارج الدولة",
+         source_url: https://www.rta.ae/wps/portal/rta/ae/home/about-rta/contactus, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97142844444", local: "04 284 4444", label_en: "Telephone", label_ar: "الهاتف",
+         source_url: https://www.rta.ae/wps/portal/rta/ae/home/about-rta/contactus, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+971588009090", local: "058 800 9090", label_en: "WhatsApp", label_ar: "واتساب",
+         source_url: https://www.rta.ae/wps/portal/rta/ae/home/about-rta/contactus, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "rta.ae seen only through search-result listings of rta.ae portal pages (direct fetch returned empty). name_ar not confirmed on page."
@@ -217,6 +266,9 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [etisalat, e&, eand, sim, bill, recharge, points, rewards, suspended]
     keywords_ar: [اتصالات, اتصالات الامارات, اتصالات الإمارات, إي آند, فاتورة, شحن, نقاط, إيقاف الخدمة]
+    official_contacts:
+      - {kind: short_code, value: "101", local: "101", label_en: "Call centre", label_ar: "مركز الاتصال",
+         source_url: https://www.eand.ae/en/onboarding/elife/get-support/support.html, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "etisalat.ae redirects (302) to www.eand.ae; the page links etisalat.ae, eand.ae and eand.com (group). name_ar «اتصالات» as written on eand.ae/ar (page title and header, 2026-11-22). eim.ae (mail) and eanduniverse.com were linked but not included."
@@ -231,6 +283,11 @@ brands:
     verification_l1: "TLS cert (OV/EV) subject O=EMIRATES INTEGRATED TELECOMMUNICATIONS COMPANY P.J.S.C. (SAN incl. du.com); HTTPS visit from host 2026-11-22 returned 200."
     keywords_en: [du, sim, bill, recharge, rewards, suspended, mobile]
     keywords_ar: [دو, فاتورة, شحن, مكافآت, إيقاف]
+    official_contacts:
+      - {kind: short_code, value: "155", local: "155", label_en: "Call us in the UAE", label_ar: "الاتصال من داخل الدولة",
+         source_url: https://www.du.ae/support/du-contactus, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+971555678155", local: "055 567 8155", label_en: "Call us from overseas", label_ar: "الاتصال من خارج الدولة",
+         source_url: https://www.du.ae/support/du-contactus, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "du.ae redirects to www.du.ae/personal but fetched content exposed no domain/links; omitted pending manual check. name_ar not confirmed on page."
@@ -264,6 +321,43 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [fab, first abu dhabi bank, online banking, otp, card blocked, verify, account]
     keywords_ar: [بنك أبوظبي الأول, الخدمات المصرفية عبر الإنترنت, بطاقة موقوفة, تحقق, حساب]
+    official_contacts:
+      - {kind: phone, value: "+971600525500", local: "600 52 5500", label_en: "FAB Service (UAE)", label_ar: "خدمة العملاء (داخل الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97126811511", local: "02 681 1511", label_en: "FAB Service (international)", label_ar: "خدمة العملاء (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+971600560137", local: "600 560137", label_en: "National Housing Loan (UAE)", label_ar: "قرض الإسكان الوطني (داخل الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124996111", local: "02 499 6111", label_en: "National Housing Loan (international)", label_ar: "قرض الإسكان الوطني (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+971600500201", local: "600 500201", label_en: "e-Dirham (UAE)", label_ar: "الدرهم الإلكتروني (داخل الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124996125", local: "02 499 6125", label_en: "e-Dirham (international)", label_ar: "الدرهم الإلكتروني (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+971600522298", local: "600 522298", label_en: "Ratibi (UAE)", label_ar: "راتبي (داخل الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124996279", local: "02 499 6279", label_en: "Ratibi (international)", label_ar: "راتبي (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+971600543329", local: "600 543329", label_en: "Payit (UAE)", label_ar: "Payit (داخل الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124996411", local: "02 499 6411", label_en: "Payit (international)", label_ar: "Payit (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124104888", local: "02 410 4888", label_en: "POS", label_ar: "نقاط البيع",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+9718002200", local: "800 2200", label_en: "FAB Islamic (UAE)", label_ar: "بنك أبوظبي الأول الإسلامي (داخل الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124996299", local: "02 499 6299", label_en: "FAB Islamic (international)", label_ar: "بنك أبوظبي الأول الإسلامي (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+971600522235", local: "600 52 2235", label_en: "Commercial Banking (UAE)", label_ar: "الخدمات المصرفية التجارية (داخل الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124996700", local: "02 499 6700", label_en: "Commercial Banking (international)", label_ar: "الخدمات المصرفية التجارية (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97180040000", local: "800 40000", label_en: "Elite and Private Banking (UAE)", label_ar: "الخدمات المصرفية للنخبة والخاصة (داخل الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124103402", local: "02 410 3402", label_en: "Elite Banking (international)", label_ar: "الخدمات المصرفية للنخبة (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97124996599", local: "02 499 6599", label_en: "Private Banking (international)", label_ar: "الخدمات المصرفية الخاصة (من خارج الدولة)",
+         source_url: https://www.bankfab.com/en-ae/contact-us, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "name_ar not confirmed on page. securitiesfab.com is linked from the bank page as FABS Online."
@@ -300,6 +394,9 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [emirates nbd, enbd, online banking, otp, card blocked, verify, account]
     keywords_ar: [بنك الإمارات دبي الوطني, بطاقة موقوفة, تحقق, حساب]
+    official_contacts:
+      - {kind: phone, value: "+971600540000", local: "600 54 0000", label_en: "Call Center", label_ar: "مركز الاتصال",
+         source_url: https://www.emiratesnbd.com/en/contact-us, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "name_ar not confirmed on page. emiratesnbdsecurities.com linked as Brokerage; emiratesnbdresearch.com also linked but not included."
@@ -313,6 +410,11 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [dib, dubai islamic bank, online banking, otp, card blocked, kyc update, verify]
     keywords_ar: [بنك دبي الإسلامي, بطاقة موقوفة, تحديث البيانات, تحقق]
+    official_contacts:
+      - {kind: phone, value: "+97146092222", local: "04 609 2222", label_en: "Phone Banking", label_ar: "الخدمات المصرفية الهاتفية",
+         source_url: https://dib.ae/support, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+9718004354", local: "800 4354", label_en: "Home Finance call center", label_ar: "مركز اتصال التمويل السكني",
+         source_url: https://www.dib.ae/In-It-Together, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "Page self-identified by name and footer and linked dib.ae subdomains (istatement.dib.ae); page text did not show its own URL. name_ar not confirmed on page."
@@ -326,6 +428,25 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [mashreq, neo, online banking, otp, card blocked, verify, account]
     keywords_ar: [بنك المشرق, نيو, بطاقة موقوفة, تحقق, حساب]
+    official_contacts:
+      - {kind: phone, value: "+97144244444", local: "04 424 4444", label_en: "Mashreq NEO (within and outside the UAE)", label_ar: "مشرق نيو (داخل الدولة وخارجها)",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+9718007748283", local: "800 7748283", label_en: "Private Banking (UAE)", label_ar: "الخدمات المصرفية الخاصة (داخل الدولة)",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97144244466", local: "04 424 4466", label_en: "Private Banking (outside the UAE)", label_ar: "الخدمات المصرفية الخاصة (من خارج الدولة)",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97180044653", local: "800 44653", label_en: "Mashreq Gold (UAE)", label_ar: "مشرق جولد (داخل الدولة)",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97144244653", local: "04 424 4653", label_en: "Mashreq Gold (outside the UAE)", label_ar: "مشرق جولد (من خارج الدولة)",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+9718002278", local: "800 2278", label_en: "Corporate and Investment Banking (UAE)", label_ar: "الخدمات المصرفية للشركات والاستثمار (داخل الدولة)",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97144246620", local: "04 424 6620", label_en: "Corporate and Investment Banking (outside the UAE)", label_ar: "الخدمات المصرفية للشركات والاستثمار (من خارج الدولة)",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97144244763", local: "04 424 4763", label_en: "Business Banking", label_ar: "الخدمات المصرفية للأعمال",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97144244550", local: "04 424 4550", label_en: "Mashreq NEO BIZ", label_ar: "مشرق نيو بيز",
+         source_url: https://www.mashreq.com/en/uae/customer-care/contact-us/, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "www.mashreq.com 301-redirects to mashreq.com/en/uae/neo; mashreqbank.com and mashreqalislami.com linked from that page. name_ar not confirmed on page."
@@ -339,6 +460,11 @@ brands:
     retrieved_at: 2026-11-22
     keywords_en: [adib, abu dhabi islamic bank, online banking, otp, card blocked, verify]
     keywords_ar: [مصرف أبوظبي الإسلامي, بطاقة موقوفة, تحقق, حساب]
+    official_contacts:
+      - {kind: phone, value: "+971600543216", local: "600 543216", label_en: "Phone Banking (UAE)", label_ar: "الخدمات المصرفية الهاتفية (داخل الدولة)",
+         source_url: https://www.adib.com/en/pages/personal_services_telephone_banking.aspx, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+97126100600", local: "02 610 0600", label_en: "Phone Banking (outside the UAE)", label_ar: "الخدمات المصرفية الهاتفية (من خارج الدولة)",
+         source_url: https://www.adib.com/en/pages/personal_services_telephone_banking.aspx, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "Page showed adib.ae subdomains and links to adib.com; page text did not show its own URL. name_ar not confirmed on page. Subsidiary domains (adibsecurities.ae, adibdirect.com, adibwealth.ae, adibsmartdeals.com) and foreign affiliates (adib.iq, adib.eg) not included."
@@ -362,6 +488,11 @@ brands:
         shows: "CBUAE register Oct 2026: National Bank of R.A.K P.J.S.C is a licensed national bank (licence only; register has no website column)"
     keywords_en: [rakbank, national bank of ras al khaimah, online banking, otp, card blocked, verify]
     keywords_ar: [راك بنك, بنك رأس الخيمة الوطني, بطاقة موقوفة, تحقق]
+    official_contacts:
+      - {kind: phone, value: "+971600544049", local: "600 544049", label_en: "Conventional Banking", label_ar: "الخدمات المصرفية التقليدية",
+         source_url: https://www.rakbank.ae/en/contact-us, retrieved_at: 2026-11-24}
+      - {kind: phone, value: "+971600540044", local: "600 540044", label_en: "Islamic Banking", label_ar: "الخدمات المصرفية الإسلامية",
+         source_url: https://www.rakbank.ae/en/contact-us, retrieved_at: 2026-11-24}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "No separate online-banking domain found with an official source. The Play listing's contact email is a gmail.com address, so never trust a non-rakbank.ae email domain as RAKBANK. name_ar kept as «بنك رأس الخيمة الوطني» after the C01 review; the bank's Arabic site uses the brand «راك بنك», which is in keywords_ar."

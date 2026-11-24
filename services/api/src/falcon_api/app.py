@@ -29,6 +29,7 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from falcon_api import admin, history, integration, voice
+from falcon_api import hunt as hunt_api
 from falcon_api.auth import (
     AuditLog,
     Authenticator,
@@ -83,14 +84,15 @@ SOURCES = {"live", "replay", "synthetic", "fixture"}
 api_key_header = APIKeyHeader(
     name="X-API-Key",
     auto_error=False,
-    description="Integration key (scopes: check, read, operator, intel). `Authorization: Bearer <key>` also works.",
+    description="Integration key (scopes: check, read, operator, intel, hunt). `Authorization: Bearer <key>` also ok.",
 )
 
 
-ChannelLit = Literal["web", "extension", "api", "mcp", "voice"]
+ChannelLit = Literal["web", "extension", "api", "mcp", "voice", "hunt"]
 _CHANNEL_DESC = (
     "Optional: which client asks (web, extension, api, mcp, voice). Metadata for History, metrics and the Sentinel; "
-    "it never changes the verdict. A repeated identical input answers from the cache with the first channel."
+    "it never changes the verdict. A repeated identical input answers from the cache with the first channel. "
+    "`hunt` is reserved for the Sentinel hunt mode: accepted only from a key with the `hunt` scope (else 422)."
 )
 
 
@@ -199,6 +201,7 @@ def build_app(
             "FL_OPERATOR_KEY": settings.fl_operator_key.get_secret_value() if settings.fl_operator_key else None,
             "FL_WEBHOOK_SECRET": settings.fl_webhook_secret.get_secret_value() if settings.fl_webhook_secret else None,
             "FL_MCP_SERVICE_KEY": os.environ.get("FL_MCP_SERVICE_KEY"),
+            "FL_HUNT_API_KEY": os.environ.get("FL_HUNT_API_KEY"),
         },
     )
 
@@ -240,6 +243,8 @@ def build_app(
                     "operator (read + approve/reject)",
                 ),
                 ("mcp-service", os.environ.get("FL_MCP_SERVICE_KEY"), ["check", "read"], 120, "MCP service key"),
+                # Sentinel hunt mode (docs/design/HUNTER.md): POST /v1/check/url with channel=hunt, nothing else.
+                ("sentinel-hunt", os.environ.get("FL_HUNT_API_KEY"), ["hunt"], 60, "Sentinel hunt key (hunt only)"),
             ]
             for key_id, key, scopes, rate, label in seeds:
                 if key:
@@ -489,7 +494,12 @@ def build_app(
             if not length.isdigit() or int(length) > limit:
                 return problem_response(request, Problem(413, "payload-too-large", "Payload too large"))
         if p is not None and path.startswith("/v1/"):
-            if request.method == "POST" and path.startswith("/v1/check/") and "check" not in p.scopes:
+            if (
+                request.method == "POST"
+                and path.startswith("/v1/check/")
+                and "check" not in p.scopes
+                and not (path == "/v1/check/url" and "hunt" in p.scopes)
+            ):
                 return problem_response(request, Problem(403, "forbidden", "Key lacks the required scope"))
             if (
                 p.rate_limit_per_min > 0
@@ -619,6 +629,12 @@ def build_app(
     ) -> Response:
         if len(body.url.encode()) > MAX_URL_BYTES:
             raise Problem(413, "payload-too-large", "URL longer than 4 KB")
+        hunter = principal_of(request)
+        hunt_scope = bool(hunter and "hunt" in hunter.scopes)
+        if body.channel == "hunt" and not hunt_scope:
+            raise Problem(422, "invalid-channel", "channel=hunt needs the hunt scope")
+        if hunt_scope and hunter is not None and "check" not in hunter.scopes and body.channel != "hunt":
+            raise Problem(422, "invalid-channel", "a hunt-only key submits with channel=hunt")
         try:
             canonical = canonicalize_url(body.url)
         except ValueError as exc:
@@ -648,6 +664,8 @@ def build_app(
         _key: ApiKey = None,
         wait: WaitQ = 0,
     ) -> Response:
+        if body.channel == "hunt":
+            raise Problem(422, "invalid-channel", "channel=hunt is for URL checks from the hunt scope only")
         raw = body.text.encode()
         if len(raw) > MAX_MESSAGE_BYTES:
             raise Problem(413, "payload-too-large", "Message longer than 8 KB")
@@ -745,6 +763,9 @@ def build_app(
     )
 
     admin.register(app, settings=settings, get_redis=lambda: cast("Redis | None", state["redis"]), require=require)
+    hunt_api.register(
+        app, get_sentinel=get_sentinel, get_redis=lambda: cast("Redis | None", state["redis"]), require=require
+    )
 
     voice.register(
         app,

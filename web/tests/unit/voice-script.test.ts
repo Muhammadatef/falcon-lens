@@ -36,14 +36,16 @@ describe("voice script", () => {
       expect(c.text.length, c.id).toBeGreaterThan(2);
       expect(c.text.toLowerCase(), c.id).not.toMatch(/\bsafe(ly|r|st)?\b|آمن/);
       expect(c.text, c.id).not.toMatch(/[0-9٠-٩{}]|undefined/);
-      expect(c.text.toLowerCase(), c.id).not.toMatch(/password|iban|emirates id|رقم الهوية|كلمة السر/);
+      // The assistant never ASKS for these; a finding line may only DESCRIBE what a scam page does ("find.*").
+      if (!c.key.startsWith("find.")) expect(c.text.toLowerCase(), c.id).not.toMatch(/password|iban|emirates id|رقم الهوية|كلمة السر/);
+      expect(c.text, c.id).not.toMatch(/claude|anthropic|كلود/i);
     }
   });
 
   it("every Arabic line is a short sentence (12 words at most) and not formal-only for key lines", () => {
     for (const c of CLIPS.filter((x) => x.lang === "ar_ae")) expect(wordCount(c.text), c.id).toBeLessThanOrEqual(isFaqKey(c.key) ? 28 : 12);
     expect(SCRIPT.ar_ae["wake.ack"]).toBe("هلا، سامعك.");
-    expect(SCRIPT.ar_ae["found.1"]).toContain("مسج وحدة");
+    expect(SCRIPT.ar_ae["found.1"]).toContain("مسج واحد");
     expect(SCRIPT.ar_ae["found.2"]).toContain("مسجين");
     expect(SCRIPT.ar_ae["found.3"]).toContain("ثلاث مسجات");
   });

@@ -2313,7 +2313,149 @@ def sentinel() -> Board:
         9,
     )
     kpi_sentinel(b)
+    hunt_row(b)
     return b
+
+
+ND_HUNT = "hunt mode is off (FL_HUNT_ENABLED=false, the default) or no cycle has run in this range"
+
+
+def hunt_row(b: Board) -> None:
+    """Row "Hunting | الرصد الاستباقي" (docs/design/HUNTER.md section 5). Every series carries `source`."""
+    b.row("Hunting | الرصد الاستباقي")
+    b.add(
+        stat(
+            "Hunt enabled | الرصد مفعّل",
+            "max(fl_hunt_enabled)",
+            desc("1 when the hunt task runs (FL_HUNT_ENABLED), else 0.", "none: a state, not a target", ND_HUNT),
+            nodata="Off",
+        ),
+        4,
+        3,
+    )
+    b.add(
+        stat(
+            "Quota left this hour | الحصة المتبقية",
+            'min(fl_hunt_quota_remaining{quota="hour"})',
+            desc(
+                "Hunt submissions (and so sandbox visits) left in the hourly window.",
+                "amber 0: HuntQuotaExhausted (info) fires",
+                ND_HUNT,
+            ),
+            steps=[(None, AMBER), (1, GREEN)],
+            rb="hunt-quota-exhausted",
+            nodata="Off",
+        ),
+        4,
+        3,
+    )
+    b.add(
+        stat(
+            "Already known, 24 h | فحصها شخص قبلنا",
+            "sum(increase(fl_hunt_already_known_total[24h]))",
+            desc(
+                "Candidates a person had already checked: never counted as found before a report.",
+                "none: a count",
+                ND_HUNT,
+            ),
+            nodata="0",
+        ),
+        4,
+        3,
+    )
+    b.add(
+        stat(
+            "Last successful source poll | آخر استطلاع ناجح",
+            "time() - max(fl_hunt_last_success_timestamp_seconds)",
+            desc(
+                "Seconds since any hunt source last answered.",
+                "amber > 3 cycles (45 min default): HuntStalled",
+                ND_HUNT,
+            ),
+            unit="s",
+            steps=[(None, GREEN), (2700, AMBER)],
+            rb="hunt-stalled",
+            nodata="Off",
+        ),
+        4,
+        3,
+    )
+    b.newline()
+    b.add(
+        ts(
+            "Candidates per hour by discovery | المرشحون في الساعة",
+            [
+                target(
+                    src("sum by (discovery, source) (increase(fl_hunt_candidates_total[1h]))"),
+                    "{{discovery}} · {{source}}",
+                )
+            ],
+            desc(
+                "New look-alike candidates recorded (not judged). TEST FIXTURE rows carry source=fixture.",
+                "none: counts",
+                ND_HUNT,
+            ),
+            replay=True,
+        ),
+        12,
+        7,
+    )
+    b.add(
+        ts(
+            "Confirmed by the arbiter | ما أكّده بصير",
+            [
+                target(
+                    src("sum by (verdict, source) (increase(fl_hunt_confirmed_total[1h]))"), "{{verdict}} · {{source}}"
+                )
+            ],
+            desc(
+                "Hunt candidates the arbiter judged, by verdict. The hunt finds; the arbiter decides.",
+                "none: counts",
+                ND_HUNT,
+            ),
+            replay=True,
+        ),
+        12,
+        7,
+    )
+    b.add(
+        ts(
+            "Time to detection | زمن الرصد",
+            [
+                target(q(f"rate(fl_hunt_time_to_detection_seconds_bucket[{RI}])", 0.5, ", basis"), "p50 {{basis}}"),
+                target(
+                    q(f"rate(fl_hunt_time_to_detection_seconds_bucket[{RI}])", 0.95, ", basis"), "p95 {{basis}}", "B"
+                ),
+            ],
+            desc(
+                "Arbiter verdict time minus the earliest upstream timestamp: certificate not_before (approximate) or RDAP registration.",
+                "none: measured, not a target",
+                ND_HUNT,
+            ),
+            unit="s",
+        ),
+        12,
+        7,
+    )
+    b.add(
+        ts(
+            "Source health | صحة المصادر",
+            [
+                target(
+                    "sum by (source_id, outcome) (increase(fl_hunt_source_requests_total[1h]))",
+                    "{{source_id}} · {{outcome}}",
+                )
+            ],
+            desc(
+                "Outbound hunt requests (DoH, crt.sh) by outcome; backoff means the breaker is open.",
+                "HuntSourceBackoff after 1 h of backoff",
+                ND_HUNT,
+            ),
+            rb="hunt-source-backoff",
+        ),
+        12,
+        7,
+    )
 
 
 # ------------------------------------------------------------------------------------------ 7 model quality

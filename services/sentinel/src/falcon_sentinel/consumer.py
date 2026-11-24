@@ -12,7 +12,7 @@ import json
 import logging
 import time
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from redis.exceptions import ResponseError
 from sentinel_core.events import Event, parse_event
@@ -20,6 +20,9 @@ from sentinel_core.incidents import Sentinel
 
 from . import metrics as m
 from .db import IncidentCache, Repo
+
+if TYPE_CHECKING:
+    from .hunt.link import HuntLinker
 
 log = logging.getLogger("falcon.sentinel.consumer")
 
@@ -41,11 +44,13 @@ class Consumer:
         name: str,
         on_incidents: Callable[[list[str]], Awaitable[None]] | None = None,
         min_idle_ms: int = 30_000,
+        hunt: HuntLinker | None = None,
     ) -> None:
         self.redis, self.repo, self.cache, self.sentinel = redis, repo, cache, sentinel
         self.name = name
         self.on_incidents = on_incidents
         self.min_idle_ms = min_idle_ms
+        self.hunt = hunt
 
     async def setup(self) -> int:
         """Create the group and rehydrate the deterministic core from Postgres. Returns events replayed."""
@@ -79,6 +84,10 @@ class Consumer:
         m.EVENT_LAG.set(max(0.0, time.time() - ms / 1000))
         if await self.redis.sismember(PROCESSED, ev.event_id):
             return []
+        if self.hunt is not None:
+            # Hunt origin comes from the Sentinel's own hunt_candidates table (never the client label).
+            await self.hunt.annotate(data)
+            ev = parse_event(data)
         await self.repo.add_features([data])
         before = {i["incident_id"]: i for i in self.cache.all()}
         changed = self.sentinel.process([ev])
@@ -93,6 +102,8 @@ class Consumer:
                     m.TIME_TO_INCIDENT.observe(max(0.0, time.time() - ev.occurred_at.timestamp()))
             for r in inc["rule_ids"]:
                 m.RULE_FIRED.labels(r).inc()
+        if self.hunt is not None and written:
+            await self.hunt.link_incidents([i for i in (self.cache.get(x) for x in written) if i is not None])
         m.SentinelMetrics().refresh_gauges(self.cache.all())
         await self.redis.sadd(PROCESSED, ev.event_id)
         return changed

@@ -159,6 +159,9 @@ class Features:
     prev_verdict: str | None
     signal: str | None
     kind: str | None
+    # "hunt" only when the consumer matched the verdict_id in its own hunt_candidates table (never the
+    # client-asserted payload.channel); "user" for every other verdict or report; None for other events.
+    origin: str | None = None
 
     def get(self, name: str) -> Any:
         return getattr(self, name, None)
@@ -176,7 +179,16 @@ def extract(event: Event, official: frozenset[str] = frozenset()) -> Features:
         brand = brand or (cands[0] if cands else None)
     elif p.get("registrable_domain"):
         domain = registrable_domain(p["registrable_domain"]) or None
+    origin = p.get("origin") if p.get("origin") in ("hunt", "user") else None
+    if origin is None and event.type in ("verdict.created", "verdict.upgraded", "report.submitted"):
+        origin = "user"  # events stored before hunt mode existed came from people
+    if origin == "hunt" and not brand:
+        brand = p.get("hunt_brand_id") or None
     look, affix = domain_pattern(domain, brand, official) if domain else (False, None)
+    if origin == "hunt" and p.get("hunt_lookalike") is True and domain and not look:
+        # The candidate was generated from this brand's verified domain (typo, homoglyph, combosquat,
+        # TLD swap), so it is a look-alike by construction even when the brand_id skeleton test misses it.
+        look, affix = True, ""
     asn = fp.get("asn")
     return Features(
         event=event,
@@ -193,6 +205,7 @@ def extract(event: Event, official: frozenset[str] = frozenset()) -> Features:
         prev_verdict=p.get("previous_verdict"),
         signal=p.get("signal"),
         kind=p.get("kind"),
+        origin=origin,
     )
 
 

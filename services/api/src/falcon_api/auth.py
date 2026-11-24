@@ -22,7 +22,7 @@ from argon2.exceptions import InvalidHashError, VerificationError
 
 log = logging.getLogger("falcon.api.auth")
 
-SCOPES = ("check", "read", "operator", "intel")
+SCOPES = ("check", "read", "operator", "intel", "hunt")  # hunt: the Sentinel hunt mode, POST /v1/check/url only
 CACHE_TTL_S = 30.0
 NEG_CACHE_TTL_S = 5.0
 CACHE_MAX = 2048

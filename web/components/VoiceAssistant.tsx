@@ -17,7 +17,6 @@ import {
   findIncident,
   narStart,
   newProgressSteps,
-  parseVoiceReply,
   sentinelSteps,
   speechLang,
   splitMessages,
@@ -32,16 +31,17 @@ import {
   type SentinelStep,
   type VoiceReply,
 } from "@/lib/voice";
-import { checkingKeys, finalKeys, findingKeys, foundKeys, spoken, stepKeys } from "@/lib/voice-speech";
+import { campaignBrand, checkingKeys, finalKeys, findingGroups, foundKeys, spoken, stepGroups, stepKeys } from "@/lib/voice-speech";
 import { ACK_KEY, SCRIPT, SFX_KEYS, clipId, isSfx, messageResultKeys, offTopicKey, toVoiceLang, type ResultTone } from "@/lib/voice-script";
 import { createVoicePlayer, type VoiceLang, type VoicePlayer } from "@/lib/voice-player";
 import type { SentinelFinding } from "@/lib/voice-script";
 import { UntrustedText } from "./Chrome";
 import { VoiceProgress } from "./VoiceProgress";
+import { postUtterance } from "@/lib/voice-request";
 import { closeStages, enterStage, tierRows, type Stage, type TierRow } from "@/lib/voice-progress";
 import { Icon } from "./Icon";
 
-type Phase = "off" | "starting" | "listening" | "heard" | "checking";
+type Phase = "off" | "starting" | "listening" | "thinking" | "heard" | "checking";
 type Problem = "denied" | "unsupported" | "server" | "unavailable" | null;
 interface Row {
   key: number;
@@ -148,6 +148,19 @@ function snippet(text: string): string {
   return out.length > 110 ? `${out.slice(0, 109)}…` : out;
 }
 
+/** Reads the permission state where the browser exposes it (Chrome); Safari/Firefox do not know "clipboard-read". */
+async function clipboardPermission(): Promise<"granted" | "denied" | "prompt" | "unknown"> {
+  try {
+    const st = await navigator.permissions.query({ name: "clipboard-read" as PermissionName });
+    return st.state;
+  } catch {
+    return "unknown";
+  }
+}
+
+/** Pause between two steps (a short, natural pace). */
+const STEP_GAP_MS = 320;
+
 async function readClipboard(): Promise<string | null> {
   if (!navigator.clipboard?.readText) return null;
   try {
@@ -210,10 +223,14 @@ export function VoiceAssistant() {
   const [stopped, setStopped] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
+  /** The closing result ("what to do now") is written only after the last step has been shown. */
+  const [finalReady, setFinalReady] = useState(false);
   const [truncated, setTruncated] = useState(false);
   const [incident, setIncident] = useState<SentinelIncident | null>(null);
   const [resultLang, setResultLang] = useState<Lang>(pageLang);
-  const [showPaste, setShowPaste] = useState(false);
+  const [, setShowPaste] = useState(false); // the input panel is always open now; kept as a no-op marker for older call sites
+  /** Clipboard read permission, from the browser (a tap on hands-free is the gesture that may ask for it). */
+  const [clipPerm, setClipPerm] = useState<"unknown" | "granted" | "denied" | "unsupported">("unknown");
   const [pasteText, setPasteText] = useState("");
   const pasteRef = useRef<HTMLTextAreaElement>(null);
 
@@ -302,10 +319,32 @@ export function VoiceAssistant() {
     for (const p of Object.values(players.current)) p?.stop();
   }, []);
 
+  /**
+   * Steps are revealed strictly in the order they were added, one every STEP_GAP_MS (a short natural pace, nothing
+   * longer): a burst of events never shows several at once and never out of order. `stepsIdle()` resolves when every
+   * queued step has been shown; results are written only after it.
+   */
+  const stepChain = useRef<Promise<void>>(Promise.resolve());
+  const stepGen = useRef(0);
   const addStep = useCallback((text: string, lang: Lang) => {
-    setSteps((prev) => [...prev.map((s) => ({ ...s, done: true })), { id: ++stepId.current, text, done: false, lang }]);
+    const gen = stepGen.current;
+    stepChain.current = stepChain.current.then(async () => {
+      if (gen !== stepGen.current) return;
+      setSteps((prev) => [...prev.map((s) => ({ ...s, done: true })), { id: ++stepId.current, text, done: false, lang }]);
+      await new Promise<void>((r) => window.setTimeout(r, STEP_GAP_MS));
+    });
   }, []);
-  const finishSteps = useCallback(() => setSteps((prev) => prev.map((s) => ({ ...s, done: true }))), []);
+  const stepsIdle = useCallback(() => stepChain.current, []);
+  const resetSteps = useCallback(() => {
+    stepGen.current += 1;
+    stepChain.current = Promise.resolve();
+    setSteps([]);
+    setFinalReady(false);
+  }, []);
+  const finishSteps = useCallback(() => {
+    stepGen.current += 1; // anything still queued is dropped (Stop, or the run is over)
+    setSteps((prev) => prev.map((s) => ({ ...s, done: true })));
+  }, []);
 
   /** Speech queue: one utterance at a time, never overlapping; the caption always shows the line being spoken. */
   const enqueue = useCallback((item: Spoken, token: number) => {
@@ -352,7 +391,7 @@ export function VoiceAssistant() {
     async (text: string, lang: Lang, token: number, voiceStarted = false) => {
       const split = splitMessages(text);
       setTruncated(split.truncated);
-      setSteps([]);
+      resetSteps();
       if (!split.items.length) {
         setRows([]);
         await say(voiceText(lang, "voice.say.empty"), lang, token, ["clip.empty"]);
@@ -388,18 +427,14 @@ export function VoiceAssistant() {
             (setTiers(tierRows(v, item.kind, lang, false)), true) &&
             newProgressSteps(v, item.kind, seen).forEach((st) => {
               if (st === "ai") {
-                const ai = aiStepText(lang, v);
-                if (!ai) return;
+                if (!aiStepText(lang, v)) return;
                 aiShown = true;
-                const aiLine = stepKeys(st, v);
-                addStep(aiLine.length ? spoken(lang, aiLine) : ai, lang);
-              } else {
-                const own = stepKeys(st, v);
-                // A step with no spoken line is not listed: the written steps are exactly what Falcon says.
-                if (own.length) addStep(spoken(lang, own), lang);
               }
-              const line = stepKeys(st, v);
-              if (line.length) enqueue({ text: spoken(lang, line), keys: line, lang, kind: "msg" }, token);
+              // Each line is one spoken clip sequence AND one written step: the tier intro, then what this check found there.
+              for (const keys of stepGroups(st, v)) {
+                addStep(spoken(lang, keys), lang);
+                enqueue({ text: spoken(lang, keys), keys, lang, kind: "msg" }, token);
+              }
             }),
           alive,
           ctl.signal,
@@ -408,8 +443,6 @@ export function VoiceAssistant() {
         );
         if (!alive()) return;
         outcomes.push(outcome);
-        if (outcome.verdict) setTiers(tierRows(outcome.verdict, item.kind, lang, true));
-        setRows((prev) => prev.map((r) => (r.key === at ? { ...r, outcome } : r)));
         const v = outcome.verdict;
         // One decision (usedModel) drives screen and speech: a model answered, or the fixed rules decided.
         if (v && !aiShown) {
@@ -419,6 +452,11 @@ export function VoiceAssistant() {
             if (line.length) enqueue({ text: spoken(lang, line), keys: line, lang, kind: "msg" }, token);
           }
         }
+        // The result of this message is written only after every earlier step has been shown (never in parallel).
+        await stepsIdle();
+        if (!alive()) return;
+        if (outcome.verdict) setTiers(tierRows(outcome.verdict, item.kind, lang, true));
+        setRows((prev) => prev.map((r) => (r.key === at ? { ...r, outcome } : r)));
         const rules = v?.model_route === "none" ? ["investigator.rules_only"] : [];
         const resKeys = [...rules, ...messageResultKeys(n, v ? v.verdict : null)];
         addStep(spoken(lang, resKeys), lang);
@@ -445,10 +483,10 @@ export function VoiceAssistant() {
           const inc = result.incident;
           setIncident(inc);
           // Screen and speech say exactly what the incident shows: nothing more.
-          const facts: SentinelFinding = { linked: inc.linked, linkStep: result.steps.includes("linked"), summary: result.steps.includes("summary"), drafted: result.steps.includes("draft"), awaiting: result.steps.includes("awaiting_approval") };
-          for (const key of findingKeys(facts)) {
-            addStep(spoken(lang, [key]), lang);
-            enqueue({ text: spoken(lang, [key]), keys: [key], lang, kind: "final" }, token);
+          const facts: SentinelFinding = { linked: inc.linked, linkStep: result.steps.includes("linked"), summary: result.steps.includes("summary"), drafted: result.steps.includes("draft"), awaiting: result.steps.includes("awaiting_approval"), brand: campaignBrand(outcomes) };
+          for (const keys of findingGroups(facts)) {
+            addStep(spoken(lang, keys), lang);
+            enqueue({ text: spoken(lang, keys), keys, lang, kind: "final" }, token);
           }
         } else if (result.kind === "timeout") {
           sentinel = "watching";
@@ -468,10 +506,13 @@ export function VoiceAssistant() {
       addStep(spoken(lang, closing), lang);
       // Nothing is dropped when the check finishes before the narration catches up: every written step is also spoken, in order.
       enqueue({ text: spoken(lang, closing), keys: closing, lang, kind: "final" }, token);
-      await drain();
-      if (alive()) finishSteps();
+      await Promise.all([drain(), stepsIdle()]);
+      if (alive()) {
+        finishSteps();
+        setFinalReady(true); // "what to do now" is written only after the last step
+      }
     },
-    [addStep, drain, enqueue, finishSteps, say],
+    [addStep, drain, enqueue, finishSteps, resetSteps, say, stepsIdle],
   );
 
   const stopAll = useCallback(() => {
@@ -535,8 +576,9 @@ export function VoiceAssistant() {
         if (text === null) {
           setShowPaste(true);
           setRows([]);
-          setSteps([]);
-          await say(voiceText(lang, "voice.say.paste"), lang, token, ["clip.denied"]);
+          resetSteps();
+          setClipPerm((p) => (p === "unsupported" ? p : "denied"));
+          await say(voiceText(lang, "voice.say.greet"), lang, token, ["greet.hello"]);
           pasteRef.current?.focus();
         } else await runChecks(text, lang, token, true);
       } else await say(voiceText(lang, "voice.say.none"), lang, token, ["didnt"]);
@@ -548,6 +590,16 @@ export function VoiceAssistant() {
   /** A voice-service failure: spoken once per streak, shown always, with exponential back-off (1 s, 2 s, 4 s ... 15 s). */
   const voiceFailed = useCallback(
     async (token: number, status: number) => {
+      if (status === 413 || status === 422 || status === 429) {
+        // Too long / too fast: its own short line, never "voice unavailable", and it does not count as a service failure.
+        const l: Lang = lastLang.current ?? langRef.current;
+        const key = status !== 429 ? "voice.too_long" : "voice.catching_up";
+        setCaption(spoken(l, [key]));
+        void playKeys(l, [key]);
+        await sleep(status === 429 ? 4000 : 1500);
+        backToListening(token);
+        return;
+      }
       failures.current += 1;
       if (status === 0) setOffline(true);
       const first = failures.current === 1;
@@ -566,6 +618,7 @@ export function VoiceAssistant() {
       if (busy.current) return;
       busy.current = true;
       listener.current?.pause();
+      setPhase("thinking"); // between the end of speech and the answer
       sentAt.current = Date.now();
       setTotal(null);
       setTiers([]);
@@ -582,12 +635,22 @@ export function VoiceAssistant() {
           setCaption(SCRIPT[toVoiceLang(l)][ACK_KEY] ?? "");
           void playKeys(l, [ACK_KEY]);
         }
-        const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin", cache: "no-store" });
+        // 10 s limit and one automatic retry; the retry says its own "still checking" line (spoken and captioned).
+        const result = await postUtterance(form, {
+          onRetry: () => {
+            const l: Lang = lastLang.current ?? langRef.current;
+            setCaption(spoken(l, ["voice.still_checking"]));
+            void playKeys(l, ["voice.still_checking"]);
+          },
+        });
         if (run.current !== token) return;
-        if (!res.ok) return await voiceFailed(token, res.status);
-        traceparent.current = res.headers.get("traceparent");
-        const reply = parseVoiceReply(await res.json().catch(() => null));
-        if (!reply) return await voiceFailed(token, 502);
+        if (!result.ok) {
+          // A refused or too-long clip and a rate limit have their own short lines; they are not "voice unavailable".
+          const status = result.reason === "audio_too_long" || result.reason === "audio_refused" ? 422 : result.reason === "rate_limited" ? 429 : result.status;
+          return await voiceFailed(token, status);
+        }
+        traceparent.current = result.traceparent;
+        const reply = result.reply;
         failures.current = 0;
         followUntil.current = 0;
         setOffline(false);
@@ -616,9 +679,23 @@ export function VoiceAssistant() {
     setStopped(false);
     setProblem(null);
     failures.current = 0;
+    // The tap on "hands-free" is a user gesture: ask for the clipboard now, once, so a spoken command can read it later.
+    if (!navigator.clipboard?.readText) {
+      setClipPerm("unsupported");
+      setShowPaste(true);
+    } else {
+      void navigator.clipboard.readText().then(
+        () => setClipPerm("granted"),
+        () => setClipPerm("denied"),
+      );
+      void clipboardPermission().then((st) => {
+        if (st === "granted") setClipPerm("granted");
+        else if (st === "denied") setClipPerm("denied");
+      });
+    }
     setCaption("");
     setRows([]);
-    setSteps([]);
+    resetSteps();
     setIncident(null);
     setHeard("");
     if (!voiceSupported()) {
@@ -652,7 +729,15 @@ export function VoiceAssistant() {
     }
     listener.current = startListener(stream, { onUtterance: (audio) => void sendUtterance(audio, token), onVoice: setVoiceActive, onLevel: setLevel });
     setPhase("listening");
-  }, [playerFor, playKeys, sendUtterance]);
+    // Greet once the mic is live (the same clip is the caption).
+    enqueue({ text: spoken(langRef.current, ["greet.hello"]), keys: ["greet.hello"], lang: langRef.current, kind: "msg" }, token);
+    void drain();
+  }, [playerFor, playKeys, sendUtterance, enqueue, drain]);
+
+  // A browser that cannot read the clipboard at all (Safari): paste mode with a hint from the very start, nothing fails.
+  useEffect(() => {
+    if (!navigator.clipboard?.readText) setClipPerm("unsupported");
+  }, []);
 
   // Both languages' clips are fetched and decoded as soon as the page opens, so no line waits (or falls back) mid-narration.
   useEffect(() => {
@@ -686,8 +771,10 @@ export function VoiceAssistant() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const submitPaste = () => {
-    if (!pasteText.trim()) return;
+  const submitPaste = (given?: string) => {
+    const text = (typeof given === "string" ? given : pasteText).trim();
+    if (!text) return;
+    setPasteText(text);
     const token = ++run.current;
     abort.current?.abort();
     cancelSpeech();
@@ -696,7 +783,7 @@ export function VoiceAssistant() {
     drainId.current += 1;
     draining.current = null;
     busy.current = true;
-    void runChecks(pasteText, langRef.current, token).then(() => {
+    void runChecks(text, langRef.current, token).then(() => {
       if (run.current !== token) return;
       busy.current = false;
       if (listener.current) {
@@ -706,9 +793,42 @@ export function VoiceAssistant() {
     });
   };
 
+  // Text pasted or dropped anywhere on the page is checked at once (a paste into our own box is handled by the box).
+  const submitRef = useRef(submitPaste);
+  submitRef.current = submitPaste;
+  useEffect(() => {
+    const textOf = (dt: DataTransfer | null) => (dt?.getData("text/plain") ?? "").slice(0, 20000);
+    const onPaste = (e: ClipboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && el.closest("input, textarea, select, [contenteditable]")) return;
+      const t = textOf(e.clipboardData);
+      if (t.trim()) {
+        e.preventDefault();
+        submitRef.current(t);
+      }
+    };
+    const onOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes("text/plain")) e.preventDefault();
+    };
+    const onDrop = (e: DragEvent) => {
+      const t = textOf(e.dataTransfer);
+      if (!t.trim()) return;
+      e.preventDefault();
+      submitRef.current(t);
+    };
+    window.addEventListener("paste", onPaste);
+    window.addEventListener("dragover", onOver);
+    window.addEventListener("drop", onDrop);
+    return () => {
+      window.removeEventListener("paste", onPaste);
+      window.removeEventListener("dragover", onOver);
+      window.removeEventListener("drop", onDrop);
+    };
+  }, []);
+
   const done = rows.length > 0 && rows.every((r) => r.outcome);
   const outcomes = rows.flatMap((r) => (r.outcome ? [r.outcome] : []));
-  const now = done ? topAction(resultLang, outcomes) : "";
+  const now = done && finalReady ? topAction(resultLang, outcomes) : "";
   const shown = speaking ? "speaking" : phase;
   const stateKey: VoiceKey = stopped && phase === "off" ? "voice.state.stopped" : (`voice.state.${shown === "starting" ? "off" : shown}` as VoiceKey);
   const label = phase === "starting" ? vt("voice.mic.starting") : vt(stateKey);
@@ -780,14 +900,23 @@ export function VoiceAssistant() {
         </section>
       ) : null}
 
-      {showPaste || problem === "denied" || problem === "unsupported" || problem === "unavailable" ? (
+      {clipPerm !== "unknown" ? (
+        <p className="voice-clip-chip small" data-testid="voice-clip-chip" data-state={clipPerm} role="status">
+          <span>{vt(clipPerm === "granted" ? "voice.clip.allowed" : clipPerm === "denied" ? "voice.clip.denied" : "voice.clip.unsupported")}</span>
+          {clipPerm === "denied" ? (
+            <button type="button" className="btn btn--sm" data-testid="voice-clip-allow" onClick={() => void navigator.clipboard?.readText().then(() => setClipPerm("granted"), () => { setClipPerm("denied"); setShowPaste(true); pasteRef.current?.focus(); })}>{vt("voice.clip.allow")}</button>
+          ) : null}
+        </p>
+      ) : null}
+
+      <>
         <section className="card voice-paste" aria-labelledby="voice-paste-h" data-testid="voice-paste">
           <h2 id="voice-paste-h" className="h3">{vt("voice.paste.h")}</h2>
-          <p className="muted">{vt("voice.paste.hint")}</p>
-          <textarea ref={pasteRef} className="voice-paste-box" rows={7} value={pasteText} onChange={(e) => setPasteText(e.target.value)} aria-label={vt("voice.paste.label")} data-testid="voice-paste-input" dir="auto" maxLength={20000} />
-          <button type="button" className="btn btn--primary" data-testid="voice-paste-submit" disabled={!pasteText.trim()} onClick={submitPaste}>{vt("voice.paste.btn")}</button>
+          <p className="muted" data-testid="voice-paste-hint">{vt(clipPerm === "unsupported" ? "voice.paste.nosupport" : "voice.paste.hint")}</p>
+          <textarea ref={pasteRef} className="voice-paste-box" rows={7} value={pasteText} onChange={(e) => setPasteText(e.target.value)} onPaste={(e) => { const t = e.clipboardData.getData("text/plain"); if (t.trim()) { e.preventDefault(); submitPaste(t.slice(0, 20000)); } }} placeholder={vt("voice.paste.placeholder")} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && pasteText.trim()) { e.preventDefault(); submitPaste(); } }} aria-label={vt("voice.paste.label")} data-testid="voice-paste-input" dir="auto" maxLength={20000} />
+          <button type="button" className="btn btn--primary" data-testid="voice-paste-submit" disabled={!pasteText.trim()} onClick={() => submitPaste()}>{vt("voice.paste.btn")}</button>
         </section>
-      ) : null}
+      </>
 
       {rows.length ? (
         <section className="voice-results" aria-labelledby="voice-res-h" data-testid="voice-results" lang={resultLang} dir={resultLang === "ar" ? "rtl" : "ltr"}>

@@ -14,14 +14,15 @@ def fire(rule_id, events, vectors=None):
     return evaluate(RULES[rule_id], [extract(e) for e in events], vectors)
 
 
-def test_rules_file_defines_r1_to_r5():
-    assert list(RULES) == ["R1", "R2", "R3", "R4", "R5"]
+def test_rules_file_defines_r1_to_r6():
+    assert list(RULES) == ["R1", "R2", "R3", "R4", "R5", "R6"]
     assert {r.type for r in RULES.values()} == {
         "campaign",
         "kit_reuse",
         "report_burst",
         "reputation_flip",
         "quality",
+        "early_warning",
     }
 
 

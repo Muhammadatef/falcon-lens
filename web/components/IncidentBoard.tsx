@@ -9,6 +9,7 @@ import { parseIncident, unwrapList, type ActionStatus, type Incident } from "@/l
 import { formatTime, pick, translateMaybe } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
 import { readSse } from "@/lib/sse";
+import { HuntOpsPanel } from "./HuntOpsPanel";
 import { LlmRoutePanel } from "./LlmRoutePanel";
 import { MonitoringCard } from "./OperatorLinks";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
@@ -164,6 +165,7 @@ export function IncidentBoard({ demo }: { demo: boolean }) {
 
             {!demo && key ? <LlmRoutePanel operatorKey={key} /> : null}
             {!demo && key ? <MonitoringCard /> : null}
+            {!demo && key ? <HuntOpsPanel operatorKey={key} /> : null}
 
             {load.state === "loading" ? (
               <div className="card state" role="status" data-testid="ops-loading">

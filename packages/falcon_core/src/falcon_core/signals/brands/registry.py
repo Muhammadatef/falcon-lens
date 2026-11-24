@@ -12,6 +12,7 @@ from typing import Any
 
 import yaml
 
+from falcon_core.signals.brands.contacts import OfficialContact, parse_contacts, phone_values
 from falcon_core.signals.url.canonical import psl_split
 from falcon_core.signals.url.textutil import compact, normalize_arabic
 
@@ -136,6 +137,8 @@ class Brand:
     # Latin brand tokens (compact, lowercase) and Arabic tokens (normalised, compact)
     tokens_en: tuple[str, ...] = field(default=(), compare=False)
     tokens_ar: tuple[str, ...] = field(default=(), compare=False)
+    # Verified customer-service numbers (T-036); empty when none could be read on the entity's own page.
+    official_contacts: tuple[OfficialContact, ...] = field(default=(), compare=False)
 
     @property
     def is_demo(self) -> bool:
@@ -194,6 +197,7 @@ def _build(entry: dict[str, Any]) -> Brand:
         domain_parts=tuple(parts),
         tokens_en=tuple(toks),
         tokens_ar=tuple(ar),
+        official_contacts=parse_contacts(str(entry["brand_id"]), entry.get("official_contacts")),
     )
 
 
@@ -205,9 +209,12 @@ class BrandRegistry:
     def __init__(self, brands: list[Brand]) -> None:
         self.brands = brands
         self._official: dict[str, Brand] = {}
+        self._numbers: dict[str, list[str]] = {}
         for b in brands:
             for d in b.verified_domains:
                 self._official[d] = b
+            for n in phone_values(b.official_contacts):
+                self._numbers.setdefault(n, []).append(b.brand_id)
 
     @classmethod
     def from_file(cls, path: str | Path) -> BrandRegistry:
@@ -224,6 +231,10 @@ class BrandRegistry:
 
     def is_official(self, registrable: str) -> bool:
         return registrable.lower() in self._official
+
+    def number_brands(self, e164: str) -> list[str]:
+        """Brand ids whose verified ``official_contacts`` list this E.164 number (empty if none)."""
+        return list(self._numbers.get(e164, ()))
 
     def is_official_host(self, host: str) -> bool:
         host = host.lower().rstrip(".")
