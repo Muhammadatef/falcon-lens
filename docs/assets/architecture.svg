@@ -81,7 +81,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans","Noto S
 <text x="1022.25" y="350" class="c m" text-anchor="middle">History voice badge · Grafana row</text>
 <path class="w" d="M872.5 323.0H889.5" marker-end="url(#ah)"/>
 <path class="w" d="M1050.3999999999999 236V259H177.75V279" marker-end="url(#ah)"/>
-<text x="600.0" y="394" class="c" text-anchor="middle">Audio stays in memory and is never stored. No cloud speech service. No generative model writes an answer.</text>
+<text x="600.0" y="394" class="c" text-anchor="middle">Audio stays in memory and is never stored. No cloud speech-to-text; voice clips are generated in advance. No generative model writes an answer.</text>
 <path id="l1" class="w" d="M110 410V458" marker-end="url(#ah)"/>
 <circle class="dot" r="5"><animateMotion dur="3.6s" repeatCount="indefinite" begin="0s"><mpath href="#l1"/></animateMotion></circle>
 <text x="132" y="432" class="b" text-anchor="start">The same public check API as the Check page</text>
@@ -141,7 +141,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans","Noto S
 <text x="1120" y="790" class="h" text-anchor="start" direction="rtl">موافقة بشرية</text>
 <path class="w" d="M882.0 756V763"/>
 <text x="882.0" y="848" class="c" text-anchor="middle">Rules decide incidents. The model only summarises and proposes.</text>
-<text x="318.0" y="830" class="c" text-anchor="middle">Model route, chosen by an operator: Claude with local Inkling fallback, or local Inkling or Qwen</text>
+<text x="318.0" y="830" class="c" text-anchor="middle">Model route, chosen by an operator: Claude with local Inkling fallback, or local Inkling or Qwen.</text>
 <path class="w" d="M591 696H609" marker-end="url(#ah)"/>
 <path id="l2" class="w" d="M110 878V926" marker-end="url(#ah)"/>
 <circle class="dot" r="5"><animateMotion dur="3.6s" repeatCount="indefinite" begin="1.8s"><mpath href="#l2"/></animateMotion></circle>
