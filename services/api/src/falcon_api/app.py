@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import contextlib
+import hmac
 import ipaddress
 import json
 import logging
@@ -71,7 +72,7 @@ BODY_LIMITS = {
     "/v1/check/image": MAX_IMAGE_BYTES + _JSON_OVERHEAD,
     "/v1/reports": 16 * 1024,
     "/v1/feedback": 4 * 1024,
-    "/v1/voice/utterance": 1024 * 1024 + _JSON_OVERHEAD,
+    "/v1/voice/utterance": 1024 * 1024 + 16 * 1024,  # audio cap plus multipart framing
 }
 VERDICT_ID_RE = r"^vd_[0-9A-HJKMNP-TV-Z]{26}$"
 _IDEM_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
@@ -146,6 +147,20 @@ def _cors_origins(settings: Settings) -> list[str]:
     extra = os.environ.get("FL_CORS_EXTENSION_ORIGINS", "")  # e.g. chrome-extension://<id>
     origins += [o.strip() for o in extra.split(",") if o.strip()]
     return origins
+
+
+_INTERNAL_KEY_ENVS = ("FL_WEB_READ_KEY", "FL_OPERATOR_KEY", "FL_MCP_SERVICE_KEY")
+
+
+def trusted_internal_caller(request: Request) -> bool:
+    """True when the request carries the web (or operator / MCP) server key: only then is its `traceparent` adopted."""
+    supplied = request.headers.get("x-api-key", "") or request.headers.get("authorization", "").removeprefix("Bearer ")
+    if not supplied:
+        return False
+    return any(
+        (k := os.environ.get(name, "")) != "" and hmac.compare_digest(supplied.encode(), k.encode())
+        for name in _INTERNAL_KEY_ENVS
+    )
 
 
 def build_app(
@@ -281,7 +296,9 @@ def build_app(
         deps["postgres"] = settings.database_url.get_secret_value()
     if settings.redis_url:
         deps["redis"] = settings.redis_url
-    app = create_app("api", deps=deps, lifespan=lifespan, title="Falcon Lens API")
+    app = create_app(
+        "api", deps=deps, lifespan=lifespan, title="Falcon Lens API", trust_traceparent=trusted_internal_caller
+    )
     app.version = __version__
     app.description = (
         "REST v1 for Falcon Lens. Verdicts follow contracts/verdict.schema.json. Errors are "

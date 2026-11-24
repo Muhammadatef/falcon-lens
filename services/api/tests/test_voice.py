@@ -84,7 +84,7 @@ async def test_happy_path_matches_contract() -> None:
     c, key = await make_client(Engines(nat=ok(), con=ok()))
     async with c:
         r = await c.post("/v1/voice/utterance", files=files(wav_bytes(2)), headers={"X-API-Key": key})
-    assert r.status_code == 200
+    assert r.status_code == 200, r.text
     body = r.json()
     jsonschema.validate(body, SCHEMA)
     assert body["wake"] is True
@@ -227,11 +227,12 @@ async def test_utterance_span_has_metadata_only_and_traceparent_links_checks(mon
     provider.add_span_processor(SimpleSpanProcessor(exporter))
     monkeypatch.setattr(tracing, "get_tracer", lambda: provider.get_tracer("t"))
     c, key = await make_client(Engines(nat=ok(text=f"Hey Falcon, check my messages {SECRET_WORDS}"), con=ok()))
+    monkeypatch.setenv("FL_WEB_READ_KEY", key)  # the web server key: its traceparent is trusted
     async with c:
         r = await c.post("/v1/voice/utterance", files=files(wav_bytes(2)), headers={"X-API-Key": key})
         tp = r.headers["traceparent"]
         # The caller passes it on: the next request's span becomes a child of voice.utterance.
-        await c.get("/v1/version", headers={"traceparent": tp})
+        await c.get("/v1/version", headers={"traceparent": tp, "X-API-Key": key})
     done = exporter.get_finished_spans()
     utt = next(sp for sp in done if sp.name == "voice.utterance")
     assert (
@@ -243,3 +244,25 @@ async def test_utterance_span_has_metadata_only_and_traceparent_links_checks(mon
     assert tp.startswith(f"00-{utt.context.trace_id:032x}-{utt.context.span_id:016x}-")
     kids = [sp for sp in done if sp.parent is not None and sp.parent.span_id == utt.context.span_id]
     assert any(sp.name == "http GET" for sp in kids)
+
+
+async def test_inbound_traceparent_ignored_unless_internal_caller(monkeypatch: pytest.MonkeyPatch) -> None:
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    from falcon_core.telemetry import tracing
+
+    exporter = InMemorySpanExporter()
+    provider = tracing.build_provider("t")
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    monkeypatch.setattr(tracing, "get_tracer", lambda: provider.get_tracer("t"))
+    monkeypatch.setenv("FL_WEB_READ_KEY", "some-other-server-key")
+    c, key = await make_client(Engines(nat=ok(), con=ok()))
+    forged = f"00-{'ab' * 16}-{'cd' * 8}-01"
+    async with c:
+        await c.get("/v1/version", headers={"traceparent": forged, "X-API-Key": key})  # valid key, not the server key
+        await c.get("/v1/version", headers={"traceparent": forged})  # no key at all
+
+    spans = [sp for sp in exporter.get_finished_spans() if sp.name.startswith("http")]
+    assert len(spans) >= 2
+    assert all(f"{sp.context.trace_id:032x}" != "ab" * 16 for sp in spans)

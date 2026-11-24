@@ -27,6 +27,7 @@ case "${1:-start}" in
       echo "voice-native already running (pid $(cat "$RUN/pid"))"
       exit 0
     fi
+    if [ -f "$ROOT/.env" ]; then python3 scripts/ensure_local_secrets.py .env >/dev/null; fi
     (cd services/voice-native && uv sync -q)
     token="$(envv FL_VOICE_TOKEN)"
     path="$(envv FL_WHISPER_PATH)"

@@ -89,3 +89,18 @@ def clean_transcript(text: str, audio_s: float, segments: Iterable[Mapping[str, 
     text = echo_guard(text.strip(), segments)
     text = cap_words(collapse_repeats(text), word_cap(audio_s))
     return "" if _HALLUCINATIONS.fullmatch(text) else text
+
+
+def sniff(data: bytes) -> str | None:
+    """Container family from magic bytes: wav (RIFF/WAVE), ogg (OggS), webm (EBML header). Anything else is None.
+
+    Text payloads such as an ffconcat playlist or an HLS/DASH manifest never match, so they are refused before a
+    decoder sees them.
+    """
+    if data[:4] == b"RIFF" and data[8:12] == b"WAVE":
+        return "wav"
+    if data[:4] == b"OggS":
+        return "ogg"
+    if data[:4] == b"\x1a\x45\xdf\xa3":
+        return "webm"
+    return None

@@ -10,24 +10,28 @@ from __future__ import annotations
 import logging
 import os
 import time
-from collections.abc import Awaitable, Callable
-from typing import Annotated, Any
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
-from fastapi import Depends, FastAPI, File, Form, Request, Response, UploadFile
+from fastapi import Depends, FastAPI, Request, Response
 from opentelemetry import trace
 from prometheus_client import CollectorRegistry, Counter, Histogram
+from starlette.datastructures import UploadFile
+from starlette.formparsers import MultiPartException, MultiPartParser
 
 from falcon_api.auth import Principal
 from falcon_api.problem import PROBLEM_RESPONSES, Problem
 from falcon_core.contracts.voice import SttResult, VoiceUtterance
 from falcon_core.telemetry.tracing import fl_span, set_span_attrs, traceparent_of
+from falcon_core.voice.guard import sniff
 from falcon_core.voice.intent import analyse
 
 log = logging.getLogger("falcon.api.voice")
 
 MAX_AUDIO_BYTES = 1024 * 1024
+MAX_BODY_BYTES = MAX_AUDIO_BYTES + 16 * 1024  # audio plus multipart framing
 MAX_AUDIO_S = 15.0
 ALLOWED_TYPES = {
     "audio/webm": "webm",
@@ -42,17 +46,6 @@ ALLOWED_TYPES = {
 DEFAULT_STT_URLS = "http://host.docker.internal:8093,http://voice:8000"
 HEALTH_TTL_S = 10.0
 LOCAL_HOSTS = {"host.docker.internal", "localhost", "127.0.0.1"}
-
-
-def sniff(data: bytes) -> str | None:
-    """Container family from magic bytes: wav (RIFF/WAVE), ogg (OggS), webm (EBML header)."""
-    if data[:4] == b"RIFF" and data[8:12] == b"WAVE":
-        return "wav"
-    if data[:4] == b"OggS":
-        return "ogg"
-    if data[:4] == b"\x1a\x45\xdf\xa3":
-        return "webm"
-    return None
 
 
 def wav_seconds(data: bytes) -> float | None:
@@ -114,9 +107,10 @@ class SttRouter:
         self.client = client or httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=1.5))
 
     async def transcribe(self, audio: bytes, content_type: str, lang: str | None) -> tuple[str, SttResult]:
-        headers = {"Content-Type": content_type}
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
+        if not self.token:  # fail closed: never call an engine without the shared secret
+            log.error("voice token not configured", extra={"reason": "no_token"})
+            raise SttUnavailableError
+        headers = {"Content-Type": content_type, "Authorization": f"Bearer {self.token}"}
         params = {"lang": lang} if lang else {}
         for eng in self.engines:
             if not eng.usable:
@@ -184,6 +178,38 @@ def register(
         200: {"model": VoiceUtterance, "description": "Transcript, wake flag and intent."},
     }
 
+    async def read_form(request: Request) -> tuple[bytes, str, str | None]:
+        """Stream-limit the body, then parse the multipart ourselves so nothing spools to disk.
+
+        The body is counted as it arrives (413 past MAX_BODY_BYTES, whatever Content-Length said) and the
+        parser keeps file parts in memory (spool threshold above the cap).
+        """
+        total = 0
+
+        async def limited() -> AsyncGenerator[bytes, None]:
+            nonlocal total
+            async for chunk in request.stream():
+                total += len(chunk)
+                if total > MAX_BODY_BYTES:
+                    raise fail(413, "payload-too-large", "Audio larger than 1 MB", "too_large")
+                yield chunk
+
+        parser = MultiPartParser(request.headers, limited(), max_files=1, max_fields=2)
+        parser.spool_max_size = 2 * MAX_BODY_BYTES  # never reached: the stream is capped below it
+        try:
+            form = await parser.parse()
+        except MultiPartException as exc:
+            raise fail(
+                422, "invalid-multipart", "Expected multipart/form-data with an `audio` file", "bad_form"
+            ) from exc
+        audio = form.get("audio")
+        if not isinstance(audio, UploadFile):
+            raise fail(422, "missing-audio", "Field `audio` is required", "bad_form")
+        hint = form.get("lang_hint")
+        data = await audio.read()
+        await form.close()
+        return data, (audio.content_type or "").split(";")[0].strip().lower(), hint if isinstance(hint, str) else None
+
     @app.post(
         "/v1/voice/utterance",
         tags=["voice"],
@@ -191,27 +217,39 @@ def register(
         responses=responses,
         summary="Transcribe one spoken utterance and read its wake phrase and intent",
         dependencies=[Depends(require("read"))],
+        openapi_extra={
+            "requestBody": {
+                "required": True,
+                "content": {
+                    "multipart/form-data": {
+                        "schema": {
+                            "type": "object",
+                            "required": ["audio"],
+                            "properties": {
+                                "audio": {
+                                    "type": "string",
+                                    "format": "binary",
+                                    "description": "audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB",
+                                },
+                                "lang_hint": {"type": "string", "enum": ["ar", "en"], "description": "optional"},
+                            },
+                        }
+                    }
+                },
+            }
+        },
     )
-    async def utterance(
-        request: Request,
-        response: Response,
-        audio: Annotated[
-            UploadFile, File(description="audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB")
-        ],
-        lang_hint: Annotated[str | None, Form(description="ar or en (optional)")] = None,
-    ) -> VoiceUtterance:
+    async def utterance(request: Request, response: Response) -> VoiceUtterance:
         # One span per utterance (engine, lang, wake, intent, duration: never the transcript or audio). Its W3C
         # `traceparent` goes back in a response header so the checks this utterance starts can be linked to it.
         with fl_span("voice.utterance", "CHAIN") as span:
-            out = await handle_utterance(request, audio, lang_hint, span)
+            out = await handle_utterance(request, span)
             tp = traceparent_of(span)
             if tp:
                 response.headers["traceparent"] = tp
             return out
 
-    async def handle_utterance(
-        request: Request, audio: UploadFile, lang_hint: str | None, span: trace.Span
-    ) -> VoiceUtterance:
+    async def handle_utterance(request: Request, span: trace.Span) -> VoiceUtterance:
         t0 = time.perf_counter()
         bucket = f"rl:voice:{client_ip(request)}:{int(time.time() // 60)}"
         if per_min > 0 and await count(bucket) > per_min:
@@ -222,14 +260,13 @@ def register(
                 "rate_limited",
                 {"Retry-After": str(60 - int(time.time() % 60)), "X-RateLimit-Limit": str(per_min)},
             )
+        data, declared, lang_hint = await read_form(request)
         if lang_hint is not None and lang_hint not in ("ar", "en"):
             raise fail(422, "invalid-lang-hint", "lang_hint must be ar or en", "bad_lang_hint")
-        data = await audio.read(MAX_AUDIO_BYTES + 1)
         if len(data) > MAX_AUDIO_BYTES:
             raise fail(413, "payload-too-large", "Audio larger than 1 MB", "too_large")
         if not data:
             raise fail(422, "empty-audio", "Empty audio", "empty")
-        declared = (audio.content_type or "").split(";")[0].strip().lower()
         family = ALLOWED_TYPES.get(declared)
         if family is None or sniff(data) != family:
             raise fail(415, "unsupported-media-type", "Expected audio/webm (opus), audio/wav or audio/ogg", "bad_type")

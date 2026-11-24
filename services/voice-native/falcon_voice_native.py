@@ -34,7 +34,7 @@ from fastapi.responses import JSONResponse
 
 # The guards are shared with the API (packages/falcon_core); no install needed for this standalone project.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "falcon_core" / "src"))
-from falcon_core.voice.guard import clean_transcript  # noqa: E402
+from falcon_core.voice.guard import clean_transcript, sniff  # noqa: E402
 
 SAMPLE_RATE = 16000
 MAX_AUDIO_S = 15.0
@@ -63,11 +63,29 @@ _lock = threading.Lock()  # one GPU job at a time
 _state: dict[str, Any] = {"ready": False}
 
 
+DEMUXERS = {"wav": "wav", "ogg": "ogg", "webm": "matroska,webm"}
+
+
 def decode(raw: bytes, content_type: str) -> np.ndarray:
-    """Audio bytes -> mono float32 16 kHz, in memory (ffmpeg pipes)."""
+    """Audio bytes -> mono float32 16 kHz, in memory (ffmpeg pipes).
+
+    The demuxer is forced from the content type and must agree with the magic bytes, so ffmpeg never probes
+    (no concat/playlist/HLS/DASH demuxers). Protocols are limited to the pipe, output is capped at 15.5 s and
+    there is no shell and a hard timeout.
+    """
     if content_type.startswith("audio/l16"):
         return np.frombuffer(raw[: len(raw) // 2 * 2], dtype="<i2").astype(np.float32) / 32768.0
-    cmd = ["ffmpeg", "-v", "error", "-i", "pipe:0", "-f", "s16le", "-ac", "1", "-ar", str(SAMPLE_RATE), "pipe:1"]
+    family = content_type.split(";")[0].strip().removeprefix("audio/").removeprefix("x-")
+    if family not in DEMUXERS or sniff(raw) != family:
+        raise ValueError("unsupported audio container")
+    cmd = [
+        "ffmpeg", "-v", "error", "-nostdin",
+        "-protocol_whitelist", "pipe",
+        "-f", DEMUXERS[family], "-i", "pipe:0",
+        "-t", str(MAX_AUDIO_S + 0.5),
+        "-vn", "-sn", "-dn",
+        "-f", "s16le", "-ac", "1", "-ar", str(SAMPLE_RATE), "pipe:1",
+    ]  # fmt: skip
     r = subprocess.run(cmd, input=raw, capture_output=True, timeout=20, check=True)  # noqa: S603
     return np.frombuffer(r.stdout, dtype="<i2").astype(np.float32) / 32768.0
 
@@ -127,7 +145,10 @@ app = FastAPI(title="falcon-voice-native", version="0.1.0", lifespan=lifespan)
 
 @app.middleware("http")
 async def bearer(request: Request, call_next: Any) -> Any:
-    if TOKEN and request.url.path not in ("/healthz", "/readyz"):
+    if request.url.path not in ("/healthz", "/readyz"):
+        if not TOKEN:  # fail closed: no shared secret configured, no speech recognition
+            log.error(json.dumps({"event": "no_token", "reason": "FL_VOICE_TOKEN not configured"}))
+            return JSONResponse({"error": "token_not_configured"}, status_code=503)
         sent = request.headers.get("authorization", "")
         if not hmac.compare_digest(sent.encode(), f"Bearer {TOKEN}".encode()):
             return JSONResponse({"error": "unauthorized"}, status_code=401)

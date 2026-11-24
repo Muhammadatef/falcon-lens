@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass, field
+from urllib.parse import urlsplit
 
 from falcon_core.security import (
     BlockReason,
@@ -44,6 +45,22 @@ def policy_from_env() -> GuardPolicy:
     return GuardPolicy(allowed_ports=ALLOWED_PORTS, allow_hosts=hosts)
 
 
+def dest_allow_from_env() -> tuple[str, ...]:
+    """``FL_EGRESS_DEST_ALLOW`` (comma-separated domains): when set, ONLY these hosts and their subdomains may be
+    reached; everything else is refused with reason ``destination_not_allowed``. Empty (default) = no restriction
+    beyond the SSRF guard. Used by the voice instance of this proxy, which may reach only the model hosts."""
+    raw = os.environ.get("FL_EGRESS_DEST_ALLOW", "")
+    return tuple(h.strip().lower().strip(".") for h in raw.split(",") if h.strip())
+
+
+def dest_allowed(host: str, allow: tuple[str, ...] | None = None) -> bool:
+    allow = dest_allow_from_env() if allow is None else allow
+    if not allow:
+        return True
+    h = host.lower().rstrip(".")
+    return any(h == d or h.endswith("." + d) for d in allow)
+
+
 @dataclass(frozen=True)
 class Decision:
     allowed: bool
@@ -67,6 +84,8 @@ async def check(
     policy: GuardPolicy | None = None,
 ) -> Decision:
     """Decide a CONNECT ``host:port``. ``reason`` is a ``BlockReason`` value."""
+    if not dest_allowed(host):
+        return Decision(False, "destination_not_allowed")
     try:
         ips = await resolve_host_port(host, port, resolver, policy or policy_from_env())
     except SSRFBlocked as exc:
@@ -82,6 +101,8 @@ async def check_url(
 ) -> Decision:
     """Decide a plain-HTTP absolute-form request target (``GET http://h/p``)."""
     pol = policy or policy_from_env()
+    if not dest_allowed(urlsplit(url).hostname or ""):
+        return Decision(False, "destination_not_allowed")
     try:
         target = validate_url(url, pol)
         if target.scheme != "http":
