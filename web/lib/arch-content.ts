@@ -27,7 +27,6 @@ export interface AgentBlock {
   guards: string[];
   rejectedTitle: string;
   rejected: { name: string; reason: string }[];
-  adr: string;
 }
 
 export interface ArchContent {
@@ -54,7 +53,7 @@ export const ARCH: Record<Lang, ArchContent> = {
     loopLabel: "Investigator · بصير loop",
     loopDone: "stop: hand evidence to the arbiter",
     loopBudget: "at most 6 tool calls",
-    toolsTitle: "The typed tool registry (contracts/tools.schema.json)",
+    toolsTitle: "The typed tool registry",
     tools: TOOLS,
     back: "Back to How it works",
     investigator: {
@@ -85,13 +84,12 @@ export const ARCH: Record<Lang, ArchContent> = {
         "No tool can submit a form or enter data into a page.",
         "Every step is traced with its tier, tool and evidence ids.",
       ],
-      rejectedTitle: "Alternatives rejected (ADR-001)",
+      rejectedTitle: "Alternatives we rejected",
       rejected: [
         { name: "A single free-running agent", reason: "slow, costly, nondeterministic and injectable: a page could talk it out of the evidence." },
         { name: "A multi-agent chat framework", reason: "adds latency and unpredictability for no benefit inside the tight time budget of a check." },
         { name: "A pure classifier", reason: "gives no grounded explanation and is weak on new attack styles and brands." },
       ],
-      adr: "ADR-001",
     },
     sentinel: {
       name: "Sentinel · درع",
@@ -123,13 +121,12 @@ export const ARCH: Record<Lang, ArchContent> = {
         "The agent cannot edit rules, thresholds or scoring, and sees structured evidence only.",
         "Every block expires on a timer and can be reverted; every action is in the append-only audit log.",
       ],
-      rejectedTitle: "Alternatives rejected (ADR-002)",
+      rejectedTitle: "Alternatives we rejected",
       rejected: [
         { name: "A free-running single agent", reason: "cannot guarantee a stop before external actions, and is hard to resume or audit." },
         { name: "A multi-agent chat framework", reason: "nondeterministic hand-offs and no durable state for a process that runs around the clock." },
         { name: "A pure classifier or rules alone", reason: "decides well but cannot write the summary, the severity reason or the takedown and report drafts." },
       ],
-      adr: "ADR-002",
     },
   },
   ar: {
@@ -139,7 +136,7 @@ export const ARCH: Record<Lang, ArchContent> = {
     loopLabel: "حلقة بصير، المحقّق",
     loopDone: "إيقاف: تسليم الأدلة إلى المحكّم",
     loopBudget: "حدّ أقصى 6 استدعاءات أدوات",
-    toolsTitle: "سجل الأدوات المصنّفة (contracts/tools.schema.json)",
+    toolsTitle: "سجل الأدوات المصنّفة",
     tools: TOOLS,
     back: "العودة إلى آلية العمل",
     investigator: {
@@ -170,13 +167,12 @@ export const ARCH: Record<Lang, ArchContent> = {
         "لا تستطيع أي أداة إرسال نموذج أو إدخال بيانات في صفحة.",
         "كل خطوة تُسجَّل بطبقتها وأداتها ومعرّفات أدلتها.",
       ],
-      rejectedTitle: "بدائل مرفوضة (ADR-001)",
+      rejectedTitle: "بدائل استبعدناها",
       rejected: [
         { name: "وكيل واحد حرّ التشغيل", reason: "بطيء ومكلف وغير حتمي وقابل للحقن: قد تقنعه صفحة بتجاهل الأدلة." },
         { name: "إطار محادثة متعدد الوكلاء", reason: "يضيف زمن استجابة وعدم قابلية للتنبؤ دون فائدة ضمن الميزانية الزمنية الضيقة للفحص." },
         { name: "مصنّف فقط", reason: "لا يقدّم تفسيراً مستنداً إلى الأدلة، وضعيف أمام أساليب الهجوم والعلامات الجديدة." },
       ],
-      adr: "ADR-001",
     },
     sentinel: {
       name: "درع، الحارس",
@@ -208,13 +204,12 @@ export const ARCH: Record<Lang, ArchContent> = {
         "لا يستطيع الوكيل تعديل القواعد أو العتبات أو التقدير، ولا يرى سوى أدلة مهيكلة.",
         "كل حظر ينتهي بمؤقت ويمكن التراجع عنه، وكل إجراء مسجّل في سجل التدقيق للإضافة فقط.",
       ],
-      rejectedTitle: "بدائل مرفوضة (ADR-002)",
+      rejectedTitle: "بدائل استبعدناها",
       rejected: [
         { name: "وكيل واحد حرّ التشغيل", reason: "لا يضمن التوقف قبل الإجراءات الخارجية، ويصعب استئنافه وتدقيقه." },
         { name: "إطار محادثة متعدد الوكلاء", reason: "تسليمات غير حتمية ولا حالة دائمة لعملية تعمل على مدار الساعة." },
         { name: "مصنّف أو قواعد فقط", reason: "يقرر جيداً لكنه لا يكتب الملخص ولا سبب الشدة ولا مسودات الإزالة والبلاغ." },
       ],
-      adr: "ADR-002",
     },
   },
 };

@@ -24,7 +24,7 @@
 4. The Sentinel (Dir' | درع) consumes `fl:events`, correlates and applies rules. If an incident results, the LangGraph triage runs and the incident is published to `fl:board`, then to SSE on the incident board and to Alertmanager.
 
 ### Voice path ("Hey Falcon")
-The browser (`/voice`) sends one short clip to `POST /v1/voice/utterance`. The API passes it to a local Whisper engine (native `mlx-whisper` on the Mac, else the `voice` container with `faster-whisper`), decodes it in memory and drops it. Wake phrase and intent come from fixed rules in `falcon_core.voice`. For a check intent the browser then calls the same public check API as the Check page and narrates the Investigator (Baseer | بصير) tiers and verdict, then the Sentinel (Dir' | درع) hand-over, from pre-generated clips (`web/public/voice/<lang>/manifest.json`). The voice service has no direct internet access. Details: `docs/PRIVACY.md`, `docs/RUNBOOK.md`.
+The browser (`/voice`) sends one short clip to `POST /v1/voice/utterance`. The API passes it to a local Whisper engine (native `mlx-whisper` on the Mac, else the `voice` container with `faster-whisper`), decodes it in memory and drops it. Wake phrase and intent come from fixed rules in `falcon_core.voice` first; a scam-safety question is answered by a pre-recorded FAQ clip, and only when no rule matches does a local embedding model (`qwen3-embedding:4b`, `falcon_core/voice/faq_semantic.py`) match the question to the nearest FAQ question, otherwise the assistant redirects to scam checking. No generative model writes an answer. For a check intent the browser then calls the same public check API as the Check page and narrates the Investigator (Baseer | بصير) tiers and verdict, then the Sentinel (Dir' | درع) hand-over, from pre-generated clips (`web/public/voice/<lang>/manifest.json`). The voice service has no direct internet access. Details: `docs/PRIVACY.md`, `docs/RUNBOOK.md`.
 
 ```mermaid
 sequenceDiagram
@@ -52,12 +52,13 @@ Synchronous mode: `?wait=8` blocks up to 8 s and returns the best verdict so far
 
 ## Model router (`falcon_core/llm/router.py`)
 - Roles are `extractor`, `investigator`, `responder`, `vision`, `sentinel`, `judge`. Each role maps to a cloud model and a local model.
-- In sovereign mode, or when no `ANTHROPIC_API_KEY` is set, every role goes local. On a cloud error or timeout, the call falls back to local and increments `fl_llm_fallback_total`.
+- Route selector: `FL_LLM_ROUTE` is `cloud_with_local_fallback`, `local`, `cloud_only` or `auto` (default: cloud with local fallback when a key is set, else local). An operator can change it at runtime on `/ops` (`GET`/`PUT /v1/admin/llm-route`, operator scope, audit-logged), including the local model (Inkling or Qwen 3.8). `GET /v1/meta` reports the effective route read-only, and `/agents` shows it.
+- In sovereign mode (`FL_SOVEREIGN_MODE=1`) the route is always `local` and cannot be changed at runtime. When no `ANTHROPIC_API_KEY` is set, every role goes local. On a cloud error or timeout, the call falls back to local and increments `fl_llm_fallback_total`.
 - Before any cloud call, inputs are redacted (phone numbers, Emirates ID, card numbers, emails) and spotlighted: untrusted text sits between `<<<UNTRUSTED:{nonce}>>>` markers and each line is datamarked with `^`.
 - Output is schema-validated (pydantic) with one repair retry, then falls back to templates.
 - Shadow mode: `FL_SHADOW_RATE` sends a fraction of traffic to the other route in the background, to measure `fl_route_agreement_ratio`.
 
-Models in use, their roles, where they run and their status are listed in the README section "Models we use" (sources: `.env.example`, `DECISIONS.md`, the voice manifests). Cloud: `claude-sonnet-5-5` and `claude-haiku-5-5` (only with an API key and sovereign mode off). Local: `inkling-2-mini-chat`, `gemma3:27b` (vision), `qwen3-embedding:4b`. Voice: Whisper large-v3-turbo (`mlx-whisper`) with `faster-whisper` fallback; Kokoro and macOS `say` clips. `qwen3.8:27b` is available locally (sovereign-mode proof pending); the Chatterbox clone is planned, not used.
+Models in use, their roles, where they run and their status are listed in the README section "Models we use" (sources: `.env.example`, `DECISIONS.md`, the voice manifests). Cloud: `claude-sonnet-5-5` and `claude-haiku-5-5` (only with an API key and sovereign mode off). Local: `inkling-2-mini-chat`, `gemma3:27b` (vision), `qwen3-embedding:4b`. Voice: Whisper large-v3-turbo (`mlx-whisper`) with `faster-whisper` fallback; Kokoro clips (English) and Amazon Polly neural `Zayd` clips (Arabic, generated once offline and kept private). `qwen3.8:27b` is available locally and selectable on `/ops` (sovereign-mode proof runs: `evals/results/published/sovereign/`, read with `docs/EVALS.md`); the Chatterbox clone is planned, not used.
 
 ## Data stores
 - **Postgres + pgvector**:

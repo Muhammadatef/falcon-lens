@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from falcon_core.contracts.event import PlatformEvent
+from falcon_core.provenance import effective_source
 from falcon_core.signals.url.textutil import defang
 
 TOP_SIGNALS = 5
@@ -58,7 +59,7 @@ def verdict_created(doc: Mapping[str, Any], meta: Mapping[str, Any]) -> dict[str
         event_id="evt_" + str(doc["verdict_id"]).removeprefix("vd_"),
         type="verdict.created",
         occurred_at=datetime.now(UTC),
-        source=doc.get("source", "live"),
+        source=effective_source(doc.get("source", "live"), [str(reg)] if reg else []),
         verdict_id=doc["verdict_id"],
         payload=payload,
     )

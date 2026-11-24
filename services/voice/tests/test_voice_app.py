@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import logging
 from typing import Any
 
@@ -151,8 +152,81 @@ def _run(code: str, prob: float, hint: str | None) -> tuple[str | None, DetectMo
     eng = Engine()
     model = DetectModel(code, prob)
     eng.model = model
-    res = eng.transcribe(_wav(1), hint)
+    res = eng.transcribe(_speech_wav(), hint)
     return res.lang, model
+
+
+def _speech_wav(seconds: float = 1.5, noise: float = 0.0) -> bytes:
+    """Speech-shaped audio: 140 ms tone bursts with 100 ms gaps (silent audio no longer reaches the model)."""
+    import wave
+
+    import numpy as np
+
+    rate = 16000
+    t = np.arange(int(rate * seconds)) / rate
+    burst = ((t % 0.24) < 0.14).astype(np.float32)
+    pcm = 0.3 * np.sin(2 * np.pi * 220 * t) * burst + noise * np.random.default_rng(7).standard_normal(len(t))
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes((np.clip(pcm, -1, 1) * 32767).astype("<i2").tobytes())
+    return buf.getvalue()
+
+
+def _steady_wav(seconds: float, level: float) -> bytes:
+    import wave
+
+    import numpy as np
+
+    pcm = level * np.random.default_rng(3).standard_normal(int(16000 * seconds))
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(16000)
+        w.writeframes((np.clip(pcm, -1, 1) * 32767).astype("<i2").tobytes())
+    return buf.getvalue()
+
+
+def test_silence_and_steady_noise_never_reach_the_model() -> None:
+    """Measured on the live engine: silence came back as "Falcon Lens." and noise as a wake phrase (prompt echo)."""
+    for clip in (_wav(3), _steady_wav(3, 0.01), _steady_wav(3, 0.2)):
+        eng = Engine()
+        model = DetectModel("en", 0.9)
+        eng.model = model
+        res = eng.transcribe(clip, None)
+        assert (res.text, res.lang, res.ms) == ("", None, 0)
+        assert model.used == []  # Whisper was not run at all
+
+
+def test_speech_in_a_noisy_room_reaches_the_model() -> None:
+    eng = Engine()
+    model = DetectModel("en", 0.9)
+    eng.model = model
+    res = eng.transcribe(_speech_wav(noise=0.03), None)
+    assert res.text == "hey falcon"
+    assert len(model.used) == 1
+
+
+def test_two_words_over_seconds_of_continuous_sound_are_dropped() -> None:
+    """Modulated noise passes the level gate; a 2-word transcript out of 4 s of unbroken sound is still an echo."""
+    import wave
+
+    import numpy as np
+
+    t = np.arange(16000 * 4) / 16000
+    pcm = 0.05 * np.random.default_rng(5).standard_normal(len(t)) * (1 + 0.6 * np.sin(2 * np.pi * 0.7 * t))
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(16000)
+        w.writeframes((np.clip(pcm, -1, 1) * 32767).astype("<i2").tobytes())
+    eng = Engine()
+    eng.model = DetectModel("ar", 0.9)
+    assert eng.transcribe(buf.getvalue(), None).text == ""
 
 
 def test_hint_never_forces_language() -> None:

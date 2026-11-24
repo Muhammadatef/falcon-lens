@@ -42,7 +42,9 @@ for (const lang of ["en", "ar"] as const) {
       await expect(panel).toHaveAttribute("data-node", "t3");
       await expect(panel.locator("h3")).toHaveCount(8);
       await expect(panel.getByTestId("cap-badge")).toBeVisible();
-      await expect(panel.locator(".ap-code code").first()).toContainText("packages/falcon_core/src/falcon_core/agent/investigator.py");
+      // One plain link to the code on GitHub; raw repository paths are not shown on the page.
+      await expect(panel.getByTestId("arch-code-link")).toHaveAttribute("href", /^https:\/\/github\.com\/[^/]+\/falcon-lens\/blob\/main\/packages\/falcon_core\/src\/falcon_core\/agent\/investigator\.py$/);
+      await expect(panel).not.toContainText("packages/falcon_core");
       await expect(panel.locator('a[href="/docs/agents"]')).toBeVisible();
       await expect(page.getByTestId("arch-panel-close")).toBeFocused();
       await page.keyboard.press("Escape");

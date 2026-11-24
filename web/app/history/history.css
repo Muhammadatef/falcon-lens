@@ -6,6 +6,7 @@
 .hs-tabs [role="tab"]:focus-visible { outline: 3px solid var(--fl-brand); outline-offset: 2px; }
 .hs-list { list-style: none; margin: 0 0 var(--fl-space-5); padding: 0; display: grid; gap: var(--fl-space-3); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1100px) { .hs-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hs-skel { min-height: 7.5rem; height: auto; border-radius: var(--fl-radius-lg, 12px); }
 .hs-row { position: relative; padding: var(--fl-space-4) var(--fl-space-5); display: grid; gap: var(--fl-space-2); min-width: 0; }
 .hs-row:hover { border-color: var(--fl-brand); }
 .hs-top, .hs-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.8rem; min-width: 0; }

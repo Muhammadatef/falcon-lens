@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CapBadge } from "@/components/CapBadge";
+import { ArchLayers } from "@/components/arch/ArchLayers";
 import { Icon, type IconName } from "@/components/Icon";
 import { flag } from "@/lib/cap-flag";
 import { loadCapabilities } from "@/lib/capabilities";
@@ -37,6 +38,7 @@ export default async function DocsLanding() {
           </li>
         ))}
       </ol>
+      <ArchLayers lang={lang} />
       <p className="card callout docs-back">
         <Icon name="hand" size={24} />
         <Link href="/agents">{dt(lang, "docs.back")}</Link>

@@ -115,7 +115,7 @@ async def test_ollama_embedder_posts_model_and_parses_reply() -> None:
     out = await ollama_embedder("http://ollama.test:11434/", client=client)(["a", "b"])
     assert out == [[1.0, 0.0], [0.0, 1.0]]
     assert seen["url"] == "http://ollama.test:11434/api/embed"
-    assert seen["body"] == {"model": "qwen3-embedding:4b", "input": ["a", "b"]}
+    assert seen["body"] == {"model": "qwen3-embedding:4b", "input": ["a", "b"], "keep_alive": "24h"}
 
 
 async def test_ollama_embedder_rejects_a_short_reply() -> None:

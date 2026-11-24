@@ -38,7 +38,7 @@ This section carries no statistics on purpose: a figure appears in this reposito
 ## System architecture
 
 <p align="center">
-  <img src="assets/architecture.svg" width="100%" alt="Animated system architecture. A request travels from the PWA, the Chrome extension or a police app through the Caddy gateway to the API, onto a Redis stream, through the worker tiers T0 to T3 and the deterministic arbiter, and the verdict returns over SSE. The sandbox sits on an isolated network behind the egress proxy. A model router chooses a local Ollama model or the Anthropic API. The Sentinel consumes verdict events. Postgres with pgvector, Redis and the observability stack sit below.">
+  <img src="assets/architecture-networks.svg" width="100%" alt="Animated system architecture. A request travels from the PWA, the Chrome extension or a police app through the Caddy gateway to the API, onto a Redis stream, through the worker tiers T0 to T3 and the deterministic arbiter, and the verdict returns over SSE. The sandbox sits on an isolated network behind the egress proxy. A model router chooses a local Ollama model or the Anthropic API. The Sentinel consumes verdict events. Postgres with pgvector, Redis and the observability stack sit below.">
 </p>
 
 One check, end to end ([`docs/ARCHITECTURE.md`](ARCHITECTURE.md)):

@@ -150,11 +150,17 @@ class RouterLLM:
         self.router = router
         self.max_output_tokens = max_output_tokens
         self._last_route: str | None = None
+        self._last_model: str | None = None
 
     @property
     def route(self) -> str:
         """Route of the latest call (cloud | local); the planned primary route before any call."""
         return self._last_route or self.router.primary_route("sentinel")
+
+    @property
+    def model(self) -> str:
+        """Model id that answered the latest call (from the router response); "unknown" before any call."""
+        return self._last_model or "unknown"
 
     async def complete_model[M: BaseModel](
         self,
@@ -177,6 +183,8 @@ class RouterLLM:
         )
         if res.route != "none":
             self._last_route = res.route
+        if res.model:
+            self._last_model = res.model
         if on_tokens:  # count tokens even when the output turns out unusable
             on_tokens(res.usage.input_tokens + res.usage.output_tokens)
         if on_usage:
@@ -196,6 +204,7 @@ class StubLLM:
     `overrides[task]` can return custom (or invalid) output to exercise the verifier and repair paths."""
 
     route = "local"
+    model = "stub"
 
     def __init__(self, overrides: dict[str, Callable[[dict[str, Any]], Any]] | None = None) -> None:
         self.overrides = overrides or {}
