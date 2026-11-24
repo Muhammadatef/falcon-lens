@@ -13,10 +13,11 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
 
-from falcon_core.cascade.evidence import make_evidence
+from falcon_core.cascade.evidence import from_signal, make_evidence
 from falcon_core.cascade.models import SandboxFeatures
 from falcon_core.scoring.evidence import Evidence
 from falcon_core.signals.brands.registry import GENERIC_EN, Brand, BrandRegistry
+from falcon_core.signals.message.helpline import helpline_evidence
 from falcon_core.signals.url.canonical import canonicalize
 from falcon_core.signals.url.textutil import defang, normalize_arabic
 
@@ -428,8 +429,16 @@ def page_evidence(
                 )
             )
 
+    claims = claimed_brands(features, reg, favicons)
+    # brand.unofficial_contact_number (T-036, weight 0): the page claims a brand it does not own and shows a UAE
+    # number on no brand's verified list. Masked number only; a listed number emits nothing.
+    not_owned = [c.brand for c in claims if not (owns(c.brand, page_reg) or owns(c.brand, input_registrable))]
+    if not_owned:
+        page_text = f"{features.title}\n{features.visible_text}"
+        out += [from_signal(e) for e in helpline_evidence(page_text, reg, brands=not_owned, tier="T2")]
+
     # brand.claimed_not_owned (H1 input)
-    for claim in claimed_brands(features, reg, favicons):
+    for claim in claims:
         if owns(claim.brand, page_reg) or owns(claim.brand, input_registrable):
             continue
         out.append(

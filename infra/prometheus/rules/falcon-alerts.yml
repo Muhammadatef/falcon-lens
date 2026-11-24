@@ -193,6 +193,39 @@ groups:
           summary: "Score distribution drift index is {{ $value }}"
           runbook_url: docs/RUNBOOK.md#score-drift
 
+  # Sentinel hunt mode (docs/design/HUNTER.md section 5). Quiet while FL_HUNT_ENABLED=false (fl_hunt_enabled 0).
+  - name: falcon-hunt
+    rules:
+      # Enabled, and no cycle finished ok or paused for 3 default intervals (3 x 15 min). A paused hunt is quiet.
+      - alert: HuntStalled
+        expr: |
+          max(fl_hunt_enabled{data!="synthetic-replay"}) == 1
+          unless on ()
+          sum(increase(fl_hunt_cycles_total{data!="synthetic-replay",outcome=~"ok|paused"}[45m])) > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Hunt mode is on but no hunt cycle completed in 45 minutes"
+          runbook_url: docs/RUNBOOK.md#hunt-stalled
+      # A source (crt.sh / DoH) stayed in breaker backoff for an hour with no successful request.
+      - alert: HuntSourceBackoff
+        expr: |
+          sum by (source_id) (increase(fl_hunt_source_requests_total{data!="synthetic-replay",outcome="backoff"}[1h])) > 0
+          unless on (source_id)
+          sum by (source_id) (increase(fl_hunt_source_requests_total{data!="synthetic-replay",outcome="ok"}[1h])) > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Hunt source {{ $labels.source_id }} has been in backoff for over an hour"
+          runbook_url: docs/RUNBOOK.md#hunt-source-backoff
+      # The hourly submission quota is used up (expected under load; the quota is the safety limit).
+      - alert: HuntQuotaExhausted
+        expr: min(fl_hunt_quota_remaining{data!="synthetic-replay",quota="hour"}) == 0
+        for: 5m
+        labels: { severity: info }
+        annotations:
+          summary: "Hunt submission quota for this hour is used up"
+          runbook_url: docs/RUNBOOK.md#hunt-quota-exhausted
   - name: falcon-voice
     rules:
       # More than 1 in 5 voice requests failed over 5 minutes (needs at least 3 failures, so one bad clip is quiet).

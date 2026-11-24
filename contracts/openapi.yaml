@@ -166,6 +166,20 @@ components:
       - name_en
       title: Brand
       type: object
+    BrandName:
+      additionalProperties: false
+      properties:
+        ar:
+          title: Ar
+          type: string
+        en:
+          title: En
+          type: string
+      required:
+      - ar
+      - en
+      title: BrandName
+      type: object
     Decision:
       properties:
         action_id:
@@ -335,6 +349,413 @@ components:
       - rating
       title: FeedbackIn
       type: object
+    HuntAdmin:
+      additionalProperties: false
+      properties:
+        counts:
+          additionalProperties:
+            type: integer
+          propertyNames:
+            enum:
+            - new
+            - unregistered
+            - queued
+            - submitted
+            - confirmed
+            - cleared
+            - already_known
+            - skipped_quota
+            - error
+          title: Counts
+          type: object
+        enabled:
+          title: Enabled
+          type: boolean
+        interval_min:
+          title: Interval Min
+          type: integer
+        items:
+          items:
+            $ref: '#/components/schemas/HuntAdminItem'
+          title: Items
+          type: array
+        last_cycle_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Last Cycle At
+        last_cycle_outcome:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Cycle Outcome
+        paused:
+          title: Paused
+          type: boolean
+        prescore_min:
+          title: Prescore Min
+          type: integer
+        quota:
+          additionalProperties:
+            type: integer
+          title: Quota
+          type: object
+        sources:
+          items:
+            $ref: '#/components/schemas/HuntSourceInfo'
+          title: Sources
+          type: array
+      required:
+      - enabled
+      - paused
+      - interval_min
+      - sources
+      - last_cycle_at
+      - last_cycle_outcome
+      - counts
+      - quota
+      - prescore_min
+      - items
+      title: HuntAdmin
+      type: object
+    HuntAdminIn:
+      additionalProperties: false
+      properties:
+        paused:
+          description: true pauses every outbound hunt request within one request; false resumes.
+          title: Paused
+          type: boolean
+      required:
+      - paused
+      title: HuntAdminIn
+      type: object
+    HuntAdminItem:
+      additionalProperties: false
+      description: 'Operator view: the full contract record (defanged) plus the incident''s found_before_report.'
+      properties:
+        brand_id:
+          title: Brand Id
+          type: string
+        candidate_id:
+          pattern: ^hc_[0-9A-HJKMNP-TV-Z]{26}$
+          title: Candidate Id
+          type: string
+        discovery:
+          enum:
+          - ct
+          - permutation
+          - search
+          - ads
+          - maps
+          title: Discovery
+          type: string
+        domain_defanged:
+          pattern: ^[^.]+(\[\.\][^.]+)+$
+          title: Domain Defanged
+          type: string
+        domain_sha256:
+          pattern: ^[0-9a-f]{64}$
+          title: Domain Sha256
+          type: string
+        first_seen:
+          format: date-time
+          title: First Seen
+          type: string
+        found_before_report:
+          title: Found Before Report
+          type: boolean
+        incident_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Incident Id
+        permutation_kind:
+          anyOf:
+          - enum:
+            - typo
+            - homoglyph
+            - combosquat
+            - tld_swap
+            type: string
+          - type: 'null'
+          title: Permutation Kind
+        prescore:
+          maximum: 100.0
+          minimum: 0.0
+          title: Prescore
+          type: integer
+        provenance:
+          $ref: '#/components/schemas/Provenance'
+        reasons:
+          items:
+            pattern: ^(brand_token_in_cert|resolves_a|has_mx|cert_fresh|permutation:(typo|homoglyph|combosquat|tld_swap))$
+            type: string
+          title: Reasons
+          type: array
+        status:
+          enum:
+          - new
+          - unregistered
+          - queued
+          - submitted
+          - confirmed
+          - cleared
+          - already_known
+          - skipped_quota
+          - error
+          title: Status
+          type: string
+        time_to_detection_basis:
+          anyOf:
+          - enum:
+            - cert_not_before
+            - rdap
+            type: string
+          - type: 'null'
+          title: Time To Detection Basis
+        time_to_detection_s:
+          anyOf:
+          - minimum: 0.0
+            type: number
+          - type: 'null'
+          title: Time To Detection S
+        upstream_seen:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Upstream Seen
+        verdict:
+          anyOf:
+          - enum:
+            - no_warning_signs
+            - suspicious
+            - dangerous
+            type: string
+          - type: 'null'
+          title: Verdict
+        verdict_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Verdict Id
+      required:
+      - candidate_id
+      - domain_defanged
+      - domain_sha256
+      - brand_id
+      - discovery
+      - permutation_kind
+      - reasons
+      - provenance
+      - first_seen
+      - upstream_seen
+      - prescore
+      - status
+      - verdict_id
+      - verdict
+      - incident_id
+      - time_to_detection_s
+      - found_before_report
+      title: HuntAdminItem
+      type: object
+    HuntFeed:
+      additionalProperties: false
+      properties:
+        counts:
+          additionalProperties:
+            type: integer
+          description: All candidates by status (unconfirmed ones appear only here).
+          propertyNames:
+            enum:
+            - new
+            - unregistered
+            - queued
+            - submitted
+            - confirmed
+            - cleared
+            - already_known
+            - skipped_quota
+            - error
+          title: Counts
+          type: object
+        items:
+          items:
+            $ref: '#/components/schemas/HuntFeedItem'
+          title: Items
+          type: array
+      required:
+      - items
+      - counts
+      title: HuntFeed
+      type: object
+    HuntFeedItem:
+      additionalProperties: false
+      description: One arbiter-confirmed candidate, public projection (defanged; no prescore).
+      properties:
+        brand_id:
+          title: Brand Id
+          type: string
+        brand_name:
+          anyOf:
+          - $ref: '#/components/schemas/BrandName'
+          - type: 'null'
+        candidate_id:
+          pattern: ^hc_[0-9A-HJKMNP-TV-Z]{26}$
+          title: Candidate Id
+          type: string
+        discovery:
+          enum:
+          - ct
+          - permutation
+          - search
+          - ads
+          - maps
+          title: Discovery
+          type: string
+        domain_defanged:
+          pattern: ^[^.]+(\[\.\][^.]+)+$
+          title: Domain Defanged
+          type: string
+        first_seen:
+          format: date-time
+          title: First Seen
+          type: string
+        found_before_report:
+          title: Found Before Report
+          type: boolean
+        incident_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Incident Id
+        permutation_kind:
+          anyOf:
+          - enum:
+            - typo
+            - homoglyph
+            - combosquat
+            - tld_swap
+            type: string
+          - type: 'null'
+          title: Permutation Kind
+        reasons:
+          items:
+            pattern: ^(brand_token_in_cert|resolves_a|has_mx|cert_fresh|permutation:(typo|homoglyph|combosquat|tld_swap))$
+            type: string
+          title: Reasons
+          type: array
+        source:
+          enum:
+          - live
+          - fixture
+          - replay
+          title: Source
+          type: string
+        time_to_detection_basis:
+          anyOf:
+          - enum:
+            - cert_not_before
+            - rdap
+            type: string
+          - type: 'null'
+          title: Time To Detection Basis
+        time_to_detection_s:
+          anyOf:
+          - minimum: 0.0
+            type: number
+          - type: 'null'
+          title: Time To Detection S
+        verdict:
+          enum:
+          - suspicious
+          - dangerous
+          title: Verdict
+          type: string
+      required:
+      - candidate_id
+      - domain_defanged
+      - brand_id
+      - discovery
+      - permutation_kind
+      - reasons
+      - first_seen
+      - verdict
+      - incident_id
+      - found_before_report
+      - time_to_detection_s
+      - time_to_detection_basis
+      - source
+      title: HuntFeedItem
+      type: object
+    HuntMeta:
+      additionalProperties: false
+      description: '`hunt` block of GET /v1/meta: what the hunt mode is and is not doing right now (capability
+        flag).'
+      properties:
+        enabled:
+          title: Enabled
+          type: boolean
+        interval_min:
+          title: Interval Min
+          type: integer
+        last_cycle_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Last Cycle At
+        paused:
+          title: Paused
+          type: boolean
+        sources:
+          items:
+            $ref: '#/components/schemas/HuntSourceInfo'
+          title: Sources
+          type: array
+      required:
+      - enabled
+      - paused
+      - interval_min
+      - sources
+      - last_cycle_at
+      title: HuntMeta
+      type: object
+    HuntSourceInfo:
+      additionalProperties: false
+      properties:
+        id:
+          title: Id
+          type: string
+        kind:
+          enum:
+          - ct
+          - permutation
+          - search
+          - ads
+          - maps
+          title: Kind
+          type: string
+        status:
+          enum:
+          - live
+          - ready_needs_key
+          - disabled
+          title: Status
+          type: string
+        terms_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Terms Url
+      required:
+      - id
+      - kind
+      - status
+      - terms_url
+      title: HuntSourceInfo
+      type: object
     LlmRoute:
       properties:
         cloud_available:
@@ -443,11 +864,13 @@ components:
             - api
             - mcp
             - voice
+            - hunt
             type: string
           - type: 'null'
           description: 'Optional: which client asks (web, extension, api, mcp, voice). Metadata for History,
             metrics and the Sentinel; it never changes the verdict. A repeated identical input answers
-            from the cache with the first channel.'
+            from the cache with the first channel. `hunt` is reserved for the Sentinel hunt mode: accepted
+            only from a key with the `hunt` scope (else 422).'
           title: Channel
         text:
           description: Message text (max 8 KB UTF-8).
@@ -465,6 +888,13 @@ components:
             type: boolean
           title: Feeds
           type: object
+        hunt:
+          anyOf:
+          - $ref: '#/components/schemas/HuntMeta'
+          - type: 'null'
+          description: 'Sentinel hunt mode (capability flag): enabled, paused, interval, sources with
+            their status (live, ready_needs_key, disabled) and terms page, last cycle time. Null when
+            the Sentinel cannot be asked.'
         llm_route:
           anyOf:
           - additionalProperties: true
@@ -561,6 +991,35 @@ components:
       - title
       - status
       title: ProblemDetail
+      type: object
+    Provenance:
+      additionalProperties: false
+      properties:
+        retrieved_at:
+          format: date-time
+          title: Retrieved At
+          type: string
+        source:
+          enum:
+          - live
+          - fixture
+          - replay
+          title: Source
+          type: string
+        source_id:
+          title: Source Id
+          type: string
+        terms_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Terms Url
+      required:
+      - source_id
+      - terms_url
+      - retrieved_at
+      - source
+      title: Provenance
       type: object
     Reason:
       additionalProperties: false
@@ -894,11 +1353,13 @@ components:
             - api
             - mcp
             - voice
+            - hunt
             type: string
           - type: 'null'
           description: 'Optional: which client asks (web, extension, api, mcp, voice). Metadata for History,
             metrics and the Sentinel; it never changes the verdict. A repeated identical input answers
-            from the cache with the first channel.'
+            from the cache with the first channel. `hunt` is reserved for the Sentinel hunt mode: accepted
+            only from a key with the `hunt` scope (else 422).'
           title: Channel
         url:
           description: URL to check (max 4 KB). Never fetched by the API.
@@ -1090,6 +1551,7 @@ components:
             - api
             - mcp
             - voice
+            - hunt
             type: string
           - type: 'null'
           description: Which client asked for the check; null when it did not say.
@@ -1352,8 +1814,8 @@ components:
       type: object
   securitySchemes:
     APIKeyHeader:
-      description: 'Integration key (scopes: check, read, operator, intel). `Authorization: Bearer <key>`
-        also works.'
+      description: 'Integration key (scopes: check, read, operator, intel, hunt). `Authorization: Bearer
+        <key>` also ok.'
       in: header
       name: X-API-Key
       type: apiKey
@@ -1364,6 +1826,105 @@ info:
   version: 0.1.0
 openapi: 3.1.0
 paths:
+  /v1/admin/hunt:
+    get:
+      description: 'Hunt mode operator view (operator scope): all statuses, prescore (queue priority only),
+        quotas.'
+      operationId: get_admin_hunt_v1_admin_hunt_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HuntAdmin'
+          description: Successful Response
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: Get Admin Hunt
+      tags:
+      - admin
+    put:
+      description: Pause or resume hunting at runtime (operator scope, audit-logged). Takes effect before
+        the next request.
+      operationId: put_admin_hunt_v1_admin_hunt_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HuntAdminIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HuntAdmin'
+          description: Successful Response
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: Put Admin Hunt
+      tags:
+      - admin
   /v1/admin/llm-route:
     get:
       description: Current language-model route (operator scope).
@@ -1917,6 +2478,63 @@ paths:
       summary: Submit Feedback
       tags:
       - intake
+  /v1/hunt/candidates:
+    get:
+      description: 'Arbiter-confirmed hunt candidates (read scope): defanged, no prescore; other statuses
+        as counts only.'
+      operationId: hunt_candidates_v1_hunt_candidates_get
+      parameters:
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 1
+          title: Limit
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HuntFeed'
+          description: Successful Response
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: Hunt Candidates
+      tags:
+      - hunt
   /v1/incidents:
     get:
       description: Incidents (contracts/incident.schema.json), newest first, cursor-paginated.

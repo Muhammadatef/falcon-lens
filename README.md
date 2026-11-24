@@ -143,6 +143,8 @@ The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a
   <img src="docs/assets/agent-sentinel-steps.svg" width="390" alt="The Sentinel, step by step. One: it listens to every check. Two: it groups similar ones into a campaign. Three: rules decide it is an incident. Four: AI writes a bilingual summary. Five: it drafts a report and waits for a person to approve.">
 </p>
 
+**Hunt mode (Sentinel, off by default).** The Sentinel can also look for trouble before anyone reports it. It builds look-alike names of the brands in `data/brands.yaml` (typos, look-alike letters as punycode, brand name plus a word, other domain endings) and checks through DNS which of them exist. It sends the plausible ones to the Investigator through the normal API with `channel=hunt`, within hourly and daily quotas. The arbiter decides; rule R6 opens an `early_warning` incident for a dangerous look-alike, marked «رُصد قبل أي بلاغ» / "Found before any report" only when no person checked or reported that domain earlier. Its only way out is the `hunt-egress` proxy, which can reach the DNS-over-HTTPS resolver and crt.sh and nothing else. **Shipped switches:** `FL_HUNT_ENABLED=false` by default; the certificate-log lookup (crt.sh) is off by default because crt.sh publishes no terms of use; search results, ad libraries and Maps listings are interfaces only and show "Ready, needs API key". Public results list only arbiter-confirmed domains, defanged. Design: [`docs/design/HUNTER.md`](docs/design/HUNTER.md).
+
 **DSPy.** DSPy defines the typed contract of each AI role. The offline optimiser **ran** on five roles, on **synthetic** data, and **no optimised prompt was adopted** (every artifact says `adopted: false`, decision "not adopted (within noise)"). The shipped prompts are the hand-written ones. See [`evals/results/published/dspy/`](evals/results/published/dspy). **LangGraph.** The Sentinel is a graph because its steps must be visible, resumable and stopped by a human before anything leaves the system. The Investigator is deliberately a short bounded loop, not a graph.
 
 ## Architecture in three layers | <span dir="rtl">البنية في ثلاث طبقات</span>
@@ -455,6 +457,7 @@ Unfinished only:
 - **A licence for the scam list.** The prototype uses the OpenPhish community list, which allows research use only.
 - **More warning feeds**, once access keys are available.
 - **A real connection** to a police or security system needs an agreement with that organisation.
+- **Hunt mode sources:** search results, ad libraries and Maps listings (need API keys and verified provider terms), Certificate Transparency log tailing, and a measured precision figure for hunting (none is claimed today).
 
 ## For engineers
 

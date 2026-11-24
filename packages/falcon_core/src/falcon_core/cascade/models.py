@@ -17,8 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from falcon_core.cascade.ids import is_verdict_id
 
 Source = Literal["live", "replay", "synthetic", "fixture"]
-CHANNELS = ("web", "extension", "api", "mcp", "voice")
-Channel = Literal["web", "extension", "api", "mcp", "voice"]
+CHANNELS = ("web", "extension", "api", "mcp", "voice", "hunt")
+Channel = Literal["web", "extension", "api", "mcp", "voice", "hunt"]
 InputType = Literal["url", "message", "email", "image"]
 MAX_URL_BYTES = 4096
 MAX_VISIBLE_TEXT = 4096

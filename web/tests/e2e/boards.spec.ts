@@ -137,7 +137,7 @@ test.describe("operator incident board", () => {
     await page.getByTestId("key-input").fill("op-test-key");
     await page.getByTestId("key-input").press("Enter");
     await expect(page.getByTestId("llm-route-panel")).toBeVisible();
-    await expect(page.getByTestId("route-effective")).toContainText("Claude");
+    await expect(page.getByTestId("route-effective")).toContainText(/Cloud LLM|نموذج لغوي سحابي/);
     await expect(page.getByTestId("route-model")).toHaveText("inkling-2-mini-chat");
     await expect(page.getByTestId("route-note")).toContainText("لا تغادر هذا الجهاز");
     await page.getByTestId("route-select").selectOption("local");

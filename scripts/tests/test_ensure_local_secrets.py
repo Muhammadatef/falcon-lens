@@ -57,3 +57,11 @@ def test_every_stack_start_path_fills_secrets() -> None:
     smoke = (root / "scripts" / "smoke.sh").read_text(encoding="utf-8")
     start = smoke.split("stack not up, starting it", 1)[1]
     assert start.index("ensure_local_secrets.py") < start.index("up -d")
+
+
+def test_evidence_hmac_key_is_generated_locally(tmp_path: Path) -> None:
+    env = tmp_path / ".env"
+    env.write_text("FL_EVIDENCE_HMAC_KEY=\n", encoding="utf-8")
+    els.main(str(env))
+    out = dict(line.split("=", 1) for line in env.read_text(encoding="utf-8").splitlines() if "=" in line)
+    assert "FL_EVIDENCE_HMAC_KEY" in els.LOCAL_ONLY and len(out["FL_EVIDENCE_HMAC_KEY"]) >= 32

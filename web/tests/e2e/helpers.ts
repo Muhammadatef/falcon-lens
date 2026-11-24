@@ -46,6 +46,8 @@ export interface Boards {
   nextCursor?: string | null;
   /** Agent trace snapshots per incident id; each poll gets the next one, the last repeats. */
   traces?: Record<string, unknown[]>;
+  /** Hunt mode: public feed items, counts, the /v1/meta hunt block and the operator rows. */
+  hunt?: { items: unknown[]; counts?: Record<string, number>; meta?: unknown; adminItems?: unknown[] };
 }
 
 /** Registers board data for this browser context (selected by a cookie the mock reads). */

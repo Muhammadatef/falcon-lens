@@ -106,7 +106,7 @@ async function control(req, res, path) {
   if (path === "/__mock/voice" && req.method === "GET") return json(res, 200, { calls: voiceCalls });
   if (path === "/__mock/boards" && req.method === "GET") {
     const b = boards.get(new URL(req.url, "http://x").searchParams.get("key") ?? "");
-    return b ? json(res, 200, { decisions: b.decisions, routePuts: b.routePuts ?? [] }) : problem(req, res, 404, "not-found", "no board");
+    return b ? json(res, 200, { decisions: b.decisions, routePuts: b.routePuts ?? [], huntPuts: b.huntPuts ?? [] }) : problem(req, res, 404, "not-found", "no board");
   }
   return problem(req, res, 404, "not-found", "unknown control route");
 }
@@ -174,6 +174,8 @@ async function voice(req, res) {
   const text = raw.toString("latin1");
   voiceCalls.push({ bytes: raw.length, hasAudioPart: /name="audio"/.test(text), followUp: /name="follow_up"\r\n\r\n(\d)/.exec(text)?.[1] ?? null, langHint: /name="lang_hint"\r\n\r\n(\w+)/.exec(text)?.[1] ?? null, marker: /;T:([a-z0-9]+)/.exec(text)?.[1] ?? null });
   if (text.includes("VOICE:fail")) return problem(req, res, 503, "unavailable", "Unavailable");
+  if (text.includes("VOICE:toolong")) return problem(req, res, 422, "too_long", "Too long");
+  if (text.includes("VOICE:fast")) return problem(req, res, 429, "rate_limited", "Too fast");
   const reply = VOICE_REPLIES[/VOICE:([a-z-]+)/.exec(text)?.[1] ?? ""];
   if (!reply) return problem(req, res, 422, "invalid-request", "Invalid request");
   return json(res, 200, { duration_ms: 3200, model: "mock-asr", answer_id: null, ...reply });
@@ -296,6 +298,31 @@ async function api(req, res, path) {
     if (!snaps?.length) return json(res, 200, { incident_id: one[1], thread_id: one[1], runs: [] });
     board.traceCalls = (board.traceCalls ?? 0) + 1;
     return json(res, 200, snaps[Math.min(board.traceCalls - 1, snaps.length - 1)]);
+  }
+  // Hunt mode (mirrors services/api/src/falcon_api/hunt.py). Public feed and meta need the read key like the real API.
+  if (path === "/v1/hunt/candidates" && req.method === "GET") {
+    if (key !== "test-read-key") return problem(req, res, 401, "unauthorized", "Unauthorized");
+    if (!board?.hunt) return problem(req, res, 404, "not-found", "Not found");
+    // operator-only extras on purpose: the public route must strip them
+    return json(res, 200, { items: board.hunt.items.map((i) => ({ ...i, prescore: 99, domain: "SECRET-LIVE-NAME.test" })), counts: board.hunt.counts ?? {} });
+  }
+  if (path === "/v1/meta" && req.method === "GET" && board?.hunt) {
+    return json(res, 200, { hunt: board.hunt.meta ?? null });
+  }
+  if (path === "/v1/admin/hunt" && (req.method === "GET" || req.method === "PUT")) {
+    if (!board?.hunt || !key || !authed(board)) return problem(req, res, 401, "unauthorized", "Unauthorized");
+    board.hunt.paused ??= false;
+    if (req.method === "PUT") {
+      const body = JSON.parse((await readBody(req)).toString("utf8") || "{}");
+      if (typeof body.paused !== "boolean") return problem(req, res, 422, "invalid", "Invalid");
+      board.hunt.paused = body.paused;
+      board.huntPuts = [...(board.huntPuts ?? []), body.paused];
+    }
+    return json(res, 200, {
+      enabled: true, paused: board.hunt.paused, interval_min: 15, prescore_min: 60, quota: { per_hour: 20, per_day: 200 },
+      last_cycle_at: "2026-11-24T20:10:00Z", last_cycle_outcome: "ok", sources: board.hunt.meta?.sources ?? [],
+      counts: board.hunt.counts ?? {}, items: board.hunt.adminItems ?? [],
+    });
   }
   // Operator-only model route (mirrors services/api/src/falcon_api/admin.py).
   if (path === "/v1/admin/llm-route" && (req.method === "GET" || req.method === "PUT")) {
