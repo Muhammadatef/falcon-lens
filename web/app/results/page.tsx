@@ -7,6 +7,7 @@ import type { Lang } from "@/lib/contracts";
 import { translate, translateMaybe, type MessageKey } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/meta";
 import { formatCi, formatMetric, loadResults, type SplitView } from "@/lib/results";
+import { areaLabels, areaNote, areaScope, areaTitle, loadAreas, pendingKeys, pendingLabel, rowLabel, rowText, type Area } from "@/lib/results-areas";
 import { serverLang } from "@/lib/server-lang";
 
 /** Page-local copy for the states v2's shared copy does not cover. Plain text, no numbers. */
@@ -62,11 +63,47 @@ function SplitBlock({ view, lang }: { view: SplitView; lang: Lang }) {
   );
 }
 
+function AreaBlock({ area, lang }: { area: Area; lang: Lang }) {
+  const L = areaLabels(lang);
+  const id = `area-${area.id}`;
+  const note = areaNote(area.id, lang);
+  return (
+    <section aria-labelledby={id} data-testid={id} className="area">
+      <h3 id={id} className="h3">{areaTitle(area.id, lang)}</h3>
+      <p className="muted">{areaScope(area.id, lang)}</p>
+      <div className="metrics">
+        {Object.entries(area.rows).map(([key, row]) => {
+          const x = rowText(row, lang);
+          return (
+            <div className="card metric" key={key} data-testid={`row-${area.id}-${key}`}>
+              <span className="lbl">{rowLabel(area.id, key, lang)}</span>
+              <b>{x.main}</b>
+              {x.detail ? <span className="ci">{x.detail}</span> : null}
+              {x.ci ? <span className="ci">{L.ci}: {x.ci}</span> : null}
+            </div>
+          );
+        })}
+      </div>
+      {note ? <p className="card callout" role="note" data-testid={`note-${area.id}`}><Icon name="scale" size={24} /><span>{note}</span></p> : null}
+      <ul className="area-prov">
+        <li>{L.artifact}: <code dir="ltr">{area.artifact}</code>{area.date ? <> · {L.date}: <code dir="ltr">{area.date}</code></> : null}</li>
+        {area.provenance ? <li>{L.provenance}: <code dir="ltr" lang="en">{area.provenance}</code></li> : null}
+        {area.route || area.model ? <li>{L.route}: <code dir="ltr" lang="en">{area.route || "-"}</code>{area.model ? <> · {L.model}: <code dir="ltr" lang="en">{area.model}</code></> : null}</li> : null}
+        {area.caveat ? <li>{L.asPublished}: <span dir="ltr" lang="en">{area.caveat}</span></li> : null}
+        {area.runs ? area.runs.map((r) => <li key={r.artifact}><code dir="ltr">{r.artifact}</code></li>) : null}
+      </ul>
+    </section>
+  );
+}
+
 export default async function ResultsPage() {
   const lang = await serverLang();
   const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
   const local = LOCAL[lang];
   const r = loadResults();
+  const areas = loadAreas();
+  const L = areaLabels(lang);
+  const pend = r ? pendingKeys(r.notEvaluated, areas) : { main: [], extra: [] };
   const caps = await loadCapabilities();
   return (
     <main id="main" className="page" data-testid="results-page">
@@ -96,6 +133,14 @@ export default async function ResultsPage() {
               </p>
             ) : null}
 
+            {areas.length > 0 ? (
+              <section aria-labelledby="areas-h" data-testid="areas">
+                <div className="sec-head"><h2 id="areas-h">{L.measured}</h2></div>
+                <p className="muted">{L.measuredLead}</p>
+                {areas.map((a) => <AreaBlock key={a.id} area={a} lang={lang} />)}
+              </section>
+            ) : null}
+
             <section className="prose" aria-labelledby="scope-h">
               <h2 id="scope-h">{t("results.scope.title")}</h2>
               <p className="card callout" role="note">
@@ -104,12 +149,13 @@ export default async function ResultsPage() {
               </p>
             </section>
 
-            {r.notEvaluated.length > 0 ? (
+            {pend.main.length + pend.extra.length > 0 ? (
               <section className="prose" aria-labelledby="ne-h" data-testid="not-evaluated">
                 <h2 id="ne-h">{t("results.ne.title")}</h2>
                 <p>{t("results.ne.lead")}</p>
                 <ul className="chips">
-                  {r.notEvaluated.map((k) => <li className="chip" key={k}>{translateMaybe(lang, "ne", k)}</li>)}
+                  {pend.main.map((k) => <li className="chip" key={k}>{translateMaybe(lang, "ne", k)}</li>)}
+                  {pend.extra.map((k) => <li className="chip" key={k}>{pendingLabel(k, lang)}</li>)}
                 </ul>
               </section>
             ) : null}

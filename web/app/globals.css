@@ -990,3 +990,7 @@ a.btn:hover { text-decoration: none; }
 
 .seg button { flex-wrap: wrap; }
 .seg .cap { padding: 0 0.4rem; }
+
+.area { margin-block: var(--fl-space-6); display: grid; gap: var(--fl-space-3); }
+.area-prov { font-size: var(--fl-text-sm); color: var(--fl-text-muted); display: grid; gap: 0.25rem; padding-inline-start: 1.1rem; overflow-wrap: anywhere; }
+.area-prov code { font-size: var(--fl-text-xs); }

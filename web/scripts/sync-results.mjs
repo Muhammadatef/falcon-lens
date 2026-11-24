@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { syncEvalAreas } from "./eval-areas.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repo = join(web, "..");
@@ -42,6 +43,9 @@ if (existsSync(fpDir)) {
     console.log("sync-results: fp_regress", best.f);
   }
 }
+
+// Per-area compact JSON for /results (scripts/eval-areas.mjs).
+syncEvalAreas(web, published);
 
 const assets = join(repo, "docs", "assets");
 if (existsSync(assets)) {
