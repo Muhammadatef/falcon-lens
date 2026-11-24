@@ -65,7 +65,9 @@ ALLOWED_HOSTS = {
     "code.claude.com",
     "docs.ollama.com",
     "ollama.com",
-    "falconlens.app",  # our own public demo domain (owner-registered, 24 Nov)
+    "falconlens.app",
+    "dns.google",  # Google public DNS-over-HTTPS (hosting/ASN enrichment, evidence pack)
+    "rdap.org",  # RDAP bootstrap redirector (registrar/abuse contact)  # our own public demo domain (owner-registered, 24 Nov)
 }
 ALLOWED_SUFFIXES = (
     ".test",
