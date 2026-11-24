@@ -185,6 +185,7 @@ class _Run:
     evidence: list[Evidence] = field(default_factory=list)
     trace: list[TraceStep] = field(default_factory=list)
     degraded_reasons: list[str] = field(default_factory=list)
+    t1_skipped: bool = False  # exited before T1 by design (T0 feed hit, invalid URL): T1 was not needed
     blocked: str | None = None  # SSRF block reason: never render
     unreachable: str | None = None  # blocked only because DNS did not answer (not an egress/SSRF policy block)
     meta: dict[str, Any] = field(default_factory=dict)  # for platform events, never published
@@ -238,6 +239,7 @@ class Cascade:
             extra_degraded_reasons=tuple(dict.fromkeys(run.degraded_reasons)),
             enrichment_signals=self._enrichment,
             params=self.params,
+            t1_required=not run.t1_skipped,
         )
         return score_with_model(dedupe(run.evidence), run.p_clf, ctx)
 
@@ -361,6 +363,7 @@ class Cascade:
         c = canonicalize(url)
         if not c.ok or c.scheme not in ("http", "https") or not c.host:
             run.degraded_reasons.append("invalid_url")
+            run.t1_skipped = True
             run.trace.append(TraceStep("T0", "URL could not be parsed", ms=self._observe("T0", t0)))
             return await self._emit(sink, run, self._score(run), "T0", final=True)
         run.canonical = c
@@ -431,7 +434,8 @@ class Cascade:
             )
         )
         if h2:
-            return await self._emit(sink, run, result, "T0", final=True)
+            run.t1_skipped = True
+            return await self._emit(sink, run, self._score(run), "T0", final=True)
         await self._emit(sink, run, result, "T0", final=False)
         return None
 
