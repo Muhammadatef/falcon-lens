@@ -858,7 +858,7 @@ export function VoiceAssistant() {
             <Icon name={tone} size={32} />
           </span>
         ) : null}
-        {caption ? <p className="voice-say" data-testid="voice-caption" lang={resultLang} dir={resultLang === "ar" ? "rtl" : "ltr"}>{caption}</p> : null}
+        {caption ? <p className="voice-say" data-testid="voice-caption" aria-live="polite" lang={resultLang} dir={resultLang === "ar" ? "rtl" : "ltr"}>{caption}</p> : null}
         <div className="voice-actions">
           {!active ? (
             <button type="button" className="btn btn--primary voice-big" data-testid="voice-on" onClick={() => void start()}>
@@ -866,13 +866,21 @@ export function VoiceAssistant() {
               <span>{vt("voice.on")}</span>
             </button>
           ) : null}
-          <button type="button" className={active ? "btn voice-big voice-stop" : "btn voice-stop"} data-testid="voice-stop" onClick={stopAll}>
-            <Icon name="x" size={active ? 28 : 20} />
+          <button type="button" className="btn voice-stop" data-testid="voice-stop" onClick={stopAll}>
+            <Icon name="x" size={20} />
             <span>{vt("voice.stop")}</span>
           </button>
           <button type="button" className="btn" data-testid="voice-sfx" aria-pressed={sfxOnState} onClick={toggleSfx}>
             <span>{vt(sfxOnState ? "voice.sfx.on" : "voice.sfx.off")}</span>
           </button>
+          {clipPerm !== "unknown" ? (
+            <p className="voice-clip-chip small" data-testid="voice-clip-chip" data-state={clipPerm} role="status">
+              <span>{vt(clipPerm === "granted" ? "voice.clip.allowed" : clipPerm === "denied" ? "voice.clip.denied" : "voice.clip.unsupported")}</span>
+              {clipPerm === "denied" ? (
+                <button type="button" className="btn btn--sm" data-testid="voice-clip-allow" onClick={() => void navigator.clipboard?.readText().then(() => setClipPerm("granted"), () => { setClipPerm("denied"); setShowPaste(true); pasteRef.current?.focus(); })}>{vt("voice.clip.allow")}</button>
+              ) : null}
+            </p>
+          ) : null}
         </div>
         {active ? <p className="muted voice-hint">{vt("voice.hint.space")}</p> : null}
       </section>
@@ -899,24 +907,6 @@ export function VoiceAssistant() {
           </ol>
         </section>
       ) : null}
-
-      {clipPerm !== "unknown" ? (
-        <p className="voice-clip-chip small" data-testid="voice-clip-chip" data-state={clipPerm} role="status">
-          <span>{vt(clipPerm === "granted" ? "voice.clip.allowed" : clipPerm === "denied" ? "voice.clip.denied" : "voice.clip.unsupported")}</span>
-          {clipPerm === "denied" ? (
-            <button type="button" className="btn btn--sm" data-testid="voice-clip-allow" onClick={() => void navigator.clipboard?.readText().then(() => setClipPerm("granted"), () => { setClipPerm("denied"); setShowPaste(true); pasteRef.current?.focus(); })}>{vt("voice.clip.allow")}</button>
-          ) : null}
-        </p>
-      ) : null}
-
-      <>
-        <section className="card voice-paste" aria-labelledby="voice-paste-h" data-testid="voice-paste">
-          <h2 id="voice-paste-h" className="h3">{vt("voice.paste.h")}</h2>
-          <p className="muted" data-testid="voice-paste-hint">{vt(clipPerm === "unsupported" ? "voice.paste.nosupport" : "voice.paste.hint")}</p>
-          <textarea ref={pasteRef} className="voice-paste-box" rows={7} value={pasteText} onChange={(e) => setPasteText(e.target.value)} onPaste={(e) => { const t = e.clipboardData.getData("text/plain"); if (t.trim()) { e.preventDefault(); submitPaste(t.slice(0, 20000)); } }} placeholder={vt("voice.paste.placeholder")} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && pasteText.trim()) { e.preventDefault(); submitPaste(); } }} aria-label={vt("voice.paste.label")} data-testid="voice-paste-input" dir="auto" maxLength={20000} />
-          <button type="button" className="btn btn--primary" data-testid="voice-paste-submit" disabled={!pasteText.trim()} onClick={() => submitPaste()}>{vt("voice.paste.btn")}</button>
-        </section>
-      </>
 
       {rows.length ? (
         <section className="voice-results" aria-labelledby="voice-res-h" data-testid="voice-results" lang={resultLang} dir={resultLang === "ar" ? "rtl" : "ltr"}>
@@ -964,6 +954,15 @@ export function VoiceAssistant() {
           </ol>
         </section>
       ) : null}
+
+      <>
+        <section className="card voice-paste" aria-labelledby="voice-paste-h" data-testid="voice-paste">
+          <h2 id="voice-paste-h" className="h3">{vt("voice.paste.h")}</h2>
+          <p className="muted" data-testid="voice-paste-hint">{vt(clipPerm === "unsupported" ? "voice.paste.nosupport" : "voice.paste.hint")}</p>
+          <textarea ref={pasteRef} className="voice-paste-box" rows={7} value={pasteText} onChange={(e) => setPasteText(e.target.value)} onPaste={(e) => { const t = e.clipboardData.getData("text/plain"); if (t.trim()) { e.preventDefault(); submitPaste(t.slice(0, 20000)); } }} placeholder={vt("voice.paste.placeholder")} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && pasteText.trim()) { e.preventDefault(); submitPaste(); } }} aria-label={vt("voice.paste.label")} data-testid="voice-paste-input" dir="auto" maxLength={20000} />
+          <button type="button" className="btn btn--primary" data-testid="voice-paste-submit" disabled={!pasteText.trim()} onClick={() => submitPaste()}>{vt("voice.paste.btn")}</button>
+        </section>
+      </>
 
       <section className="voice-how" aria-labelledby="voice-how-h">
         <h2 id="voice-how-h" className="h3">{vt("voice.how.h")}</h2>

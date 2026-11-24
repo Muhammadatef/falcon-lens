@@ -172,7 +172,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
   test("wake, three messages, live steps in order, spoken in each speaker's language, results and campaign", async ({ page, request }) => {
     const { ids } = await setup(page, request);
     await page.goto("/voice");
-    await expect(page.getByTestId("voice-preview")).toBeVisible();
+    await expect(page.getByTestId("voice-preview")).toHaveCount(0); // voice_assistant is live: no Preview chip
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.off"]);
     await expect(page.getByTestId("voice-stop")).toBeVisible();
     expect(await page.evaluate(() => (window as any).__gum)).toBe(0); // the mic is never touched before the tap
