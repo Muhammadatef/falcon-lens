@@ -20,7 +20,7 @@
     "tier_trace": { "type": "object", "required": ["tiers", "steps"] },
     "registration": { "type": "object", "required": ["registrar", "created", "expires", "nameservers", "abuse_contact", "source"] },
     "tls": { "type": "object", "required": ["issuer", "not_before", "not_after", "source"] },
-    "hosting": { "type": "object", "required": ["host", "resolved_ips", "asn", "as_name", "country", "prefix", "source", "retrieved_at"] },
+    "hosting": { "type": "object", "description": "`country` is the registry country of the network allocation (RIR, Team Cymru IP-to-ASN), not a geolocation of the server; `country_label` carries that wording.", "required": ["host", "country_label", "resolved_ips", "asn", "as_name", "country", "prefix", "source", "retrieved_at"] },
     "whois": { "type": "object", "description": "Registrar-level RDAP only (registrar, dates, nameservers, status, registrar abuse contact). Registrant, admin and tech contacts are never collected.", "required": ["registrar", "created", "expires", "updated", "nameservers", "status", "registrar_abuse_email", "registrar_abuse_phone", "source", "retrieved_at"] },
     "screenshot": { "type": "object", "required": ["included", "file", "sha256", "captured_at_utc"] },
     "gaps": { "type": "array", "items": { "type": "string" } },

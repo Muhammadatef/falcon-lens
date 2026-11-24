@@ -255,6 +255,7 @@ def build_evidence(
         "asn": asno.get("asn") or pick("asn"),
         "as_name": asno.get("as_name") or pick("as_name"),
         "country": asno.get("country") or pick("asn_country"),
+        "country_label": {"en": "registry country (RIR)", "ar": "دولة السجل (RIR)"},  # not geolocation
         "prefix": asno.get("prefix"),
         "source": asno.get("hosting_source") or ipo.get("hosting_source") or pick("hosting_source"),
         "retrieved_at": asno.get("retrieved_at") or ipo.get("retrieved_at") or pick("retrieved_at"),
@@ -353,7 +354,7 @@ def build_takedown(ev: dict[str, Any]) -> str:
             row("Nameservers", ", ".join(reg.get("nameservers") or [])),
             row("Resolved IPs", ", ".join(host["resolved_ips"])),
             row(
-                "ASN / AS name / country",
+                "ASN / AS name / registry country (RIR, not geolocation) | دولة السجل (RIR)",
                 " / ".join(str(x) for x in (host["asn"], host["as_name"], host["country"]) if x),
             ),
             row("Verdict", f"{v['label']['en']} (risk {v['risk_score']}/100)"),

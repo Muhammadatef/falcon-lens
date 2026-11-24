@@ -195,6 +195,7 @@ def test_pack_fills_hosting_whois_and_screenshot_and_drops_gaps() -> None:
         "EXAMPLE-NET, AE",
         "AE",
     )
+    assert h["country_label"]["en"] == "registry country (RIR)" and "RIR" in h["country_label"]["ar"]
     assert "Team Cymru" in h["source"] and h["retrieved_at"] == "2026-11-24T10:00:01Z"
     assert w["registrar_abuse_email"] == "abuse@registrar.test" and w["nameservers"] == ["ns1[.]example-dns[.]test"]
     assert w["updated"] and w["status"] == ["client transfer prohibited"] and w["retrieved_at"]
