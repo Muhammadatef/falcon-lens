@@ -20,7 +20,7 @@ const KEY_STORE = "fl_operator_key";
 type Row = { url: string; result: BatchResult };
 
 /** One URL through the server route, backing off on 429. Never throws. */
-async function checkOne(url: string, key: string): Promise<BatchResult | "unauthorized" | "not_configured"> {
+async function checkOne(url: string, key: string): Promise<BatchResult | "unauthorized" | "forbidden"> {
   for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt++) {
     let res: Response;
     try {
@@ -29,7 +29,7 @@ async function checkOne(url: string, key: string): Promise<BatchResult | "unauth
       return couldNotCheck("network error");
     }
     if (res.status === 401) return "unauthorized";
-    if (res.status === 503) return "not_configured";
+    if (res.status === 403) return "forbidden";
     if (res.status === 429 && attempt < MAX_429_RETRIES) {
       const wait = Number.parseInt(res.headers.get("retry-after") ?? "", 10);
       await new Promise((r) => setTimeout(r, (Number.isFinite(wait) ? Math.min(wait, 60) : 2 ** attempt) * 1000));
@@ -85,9 +85,9 @@ export function BatchTool() {
       while (!stop.current && next < urls.length) {
         const url = urls[next++] as string;
         const out = await checkOne(url, key);
-        if (out === "unauthorized" || out === "not_configured") {
+        if (out === "unauthorized" || out === "forbidden") {
           stop.current = true;
-          setError(out === "unauthorized" ? "e_key" : "e_conf");
+          setError(out === "unauthorized" ? "e_key" : "e_scope");
           return;
         }
         results.push({ url, result: out });

@@ -1,7 +1,6 @@
-import { timingSafeEqual } from "node:crypto";
 import { couldNotCheck, resultFromVerdict, type BatchResult } from "@/lib/batch";
 import { WindowLimiter, visitorKey } from "@/lib/public-campaigns";
-import { apiBase, notConnected, upstreamHeaders } from "../../public/campaigns/shared";
+import { apiBase } from "../../public/campaigns/shared";
 
 export const dynamic = "force-dynamic";
 
@@ -13,25 +12,16 @@ const noStore = { "Cache-Control": "no-store" };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-function keyOk(request: Request): boolean | null {
-  const expected = process.env.FL_OPS_BATCH_KEY || process.env.FL_WEB_READ_KEY;
-  if (!expected) return null;
-  const given = Buffer.from(request.headers.get("x-ops-key") ?? "");
-  const want = Buffer.from(expected);
-  return given.length === want.length && timingSafeEqual(given, want);
-}
-
 /**
- * Operator batch: checks ONE URL through POST /v1/check/url with the server-only key and returns a small result
- * (the page loops over the file and builds the CSV). The browser never sees the API key; the operator key only
- * unlocks this route. Nothing is stored here.
+ * Operator batch: checks ONE URL through POST /v1/check/url and returns a small result (the page loops over the file
+ * and builds the CSV). The key the operator typed is forwarded to the API, which enforces its scope; this route holds
+ * no key of its own and never submits on behalf of an unauthenticated visitor. Nothing is stored or logged here.
  */
 export async function POST(request: Request): Promise<Response> {
   const wait = limiter.take(visitorKey(request));
   if (wait > 0) return Response.json({ error: "rate_limited" }, { status: 429, headers: { ...noStore, "Retry-After": String(wait) } });
-  const ok = keyOk(request);
-  if (ok === null) return Response.json({ error: "not_configured" }, { status: 503, headers: noStore });
-  if (!ok) return Response.json({ error: "unauthorized" }, { status: 401, headers: noStore });
+  const key = (request.headers.get("x-ops-key") ?? "").trim();
+  if (!key || key.length > 256) return Response.json({ error: "unauthorized" }, { status: 401, headers: noStore });
 
   let url: unknown;
   try {
@@ -41,13 +31,12 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (typeof url !== "string" || !url.trim() || url.length > MAX_URL) return Response.json({ error: "invalid_request" }, { status: 400, headers: noStore });
 
-  const headers = upstreamHeaders(request, "application/json");
-  if (!headers) return notConnected(503);
-  headers.set("content-type", "application/json");
+  const headers = new Headers({ accept: "application/json", "content-type": "application/json", "x-api-key": key, "x-falcon-client-ip": visitorKey(request) });
   const t0 = Date.now();
   const respond = (r: BatchResult) => Response.json(r, { headers: noStore });
   try {
     const sub = await fetch(`${apiBase()}/v1/check/url?wait=8`, { method: "POST", headers, body: JSON.stringify({ url: url.trim() }), cache: "no-store", signal: AbortSignal.timeout(15_000) });
+    if (sub.status === 401 || sub.status === 403) return Response.json({ error: sub.status === 403 ? "forbidden" : "unauthorized" }, { status: sub.status, headers: noStore });
     if (sub.status === 429) return Response.json({ error: "rate_limited" }, { status: 429, headers: { ...noStore, "Retry-After": sub.headers.get("retry-after") ?? "10" } });
     if (sub.status !== 200 && sub.status !== 202) return respond(couldNotCheck(`submit HTTP ${sub.status}`, Date.now() - t0));
     let doc = (await sub.json()) as { final?: boolean; verdict_id?: string };

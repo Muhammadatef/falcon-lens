@@ -180,7 +180,30 @@ def test_summary_reports_both_modes_and_unchecked() -> None:
 
 def test_resolve_key_prefers_env_then_file(tmp_path: Path) -> None:
     f = tmp_path / ".env"
-    f.write_text("FL_WEB_READ_KEY='from-file'\n")
+    f.write_text("FL_WEB_READ_KEY='read'\n")
+    assert bc.resolve_key({}, f) is None  # read-scope key is never used
+    f.write_text("FL_OPERATOR_KEY=from-file\n")
     assert bc.resolve_key({}, f) == "from-file"
     assert bc.resolve_key({"FL_BATCH_API_KEY": "from-env"}, f) == "from-env"
     assert bc.resolve_key({}, tmp_path / "none") is None
+
+
+def test_403_stops_the_run_without_marking_rows(tmp_path: Path) -> None:
+    import pytest
+
+    seen: list[int] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(1)
+        return httpx.Response(403)
+
+    async def go() -> None:
+        async with client(handler) as c:
+            await bc.run_batch(
+                c, [(f"http://h{i}.test/", None) for i in range(20)], tmp_path / "r.csv", "strict", 2, sleep=nosleep
+            )
+
+    with pytest.raises(bc.KeyScopeError, match="check scope"):
+        asyncio.run(go())
+    assert len(seen) <= 2
+    assert "could_not_check" not in (tmp_path / "r.csv").read_text()

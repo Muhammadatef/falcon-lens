@@ -16,7 +16,7 @@ How to run:
 
 Inputs:
     FILE as above. Env: FL_BATCH_BASE_URL (default https://localhost:8443), FL_BATCH_API_KEY (else
-    FL_WEB_READ_KEY, read from the environment or from .env in-process, never printed),
+    FL_OPERATOR_KEY, read from the environment or from .env in-process, never printed),
     FL_BATCH_CA_BUNDLE (PEM of the local CA; without it a localhost gateway is trusted unverified).
 
 Outputs / side effects:
@@ -279,10 +279,13 @@ def load_env_file(path: Path) -> dict[str, str]:
 
 
 def resolve_key(environ: dict[str, str] | None = None, env_file: Path | None = None) -> str | None:
-    """API key: FL_BATCH_API_KEY, then FL_WEB_READ_KEY, from the environment first and .env second."""
+    """API key: FL_BATCH_API_KEY, then FL_OPERATOR_KEY, from the environment first and .env second.
+
+    Never FL_WEB_READ_KEY: it is read-scope and cannot POST /v1/check/url.
+    """
     e = dict(os.environ) if environ is None else environ
     f = load_env_file(env_file or ROOT / ".env")
-    for name in ("FL_BATCH_API_KEY", "FL_WEB_READ_KEY"):
+    for name in ("FL_BATCH_API_KEY", "FL_OPERATOR_KEY"):
         v = e.get(name) or f.get(name)
         if v:
             return v
@@ -296,6 +299,10 @@ def retry_after(resp: httpx.Response, attempt: int) -> float:
         return min(60.0, max(0.0, float(raw)))
     except ValueError:
         return min(30.0, 0.5 * 2**attempt) + random.uniform(0, 0.25)  # noqa: S311 - jitter, not security
+
+
+class KeyScopeError(Exception):
+    """The API refused the key (401/403): every further URL would fail the same way, so the run stops."""
 
 
 Sleep = Callable[[float], Awaitable[None]]
@@ -328,6 +335,10 @@ async def check_one(
 
     try:
         r = await call("POST", "/v1/check/url", json={"url": url}, params={"wait": 8})
+        if r.status_code in (401, 403):
+            raise KeyScopeError(
+                f"key lacks check scope (HTTP {r.status_code}): set FL_BATCH_API_KEY to a key with the `check` scope"
+            )
         if r.status_code not in (200, 202):
             return row_unchecked(url, f"submit HTTP {r.status_code}", mode, ms())
         doc = r.json()
@@ -403,11 +414,18 @@ async def run_batch(
         f.flush()
         sem = asyncio.Semaphore(max(1, concurrency))
         count = len(done)
+        fatal: KeyScopeError | None = None
 
         async def worker(u: str) -> None:
-            nonlocal count
+            nonlocal count, fatal
             async with sem:
-                row = await check_one(client, u, mode, sleep=sleep, final_timeout=final_timeout)
+                if fatal:
+                    return
+                try:
+                    row = await check_one(client, u, mode, sleep=sleep, final_timeout=final_timeout)
+                except KeyScopeError as exc:
+                    fatal = fatal or exc
+                    return
             results[u] = row
             w.writerow(row)
             f.flush()
@@ -418,6 +436,8 @@ async def run_batch(
         if progress:
             progress(render_progress(count, len(ordered)))
         await asyncio.gather(*(worker(u) for u in todo))
+        if fatal:
+            raise fatal
     rows = [results[u] for u in ordered]
     # Final pass: write in input order so the file is stable and diffable.
     with out.open("w", newline="", encoding="utf-8") as f:
@@ -460,8 +480,12 @@ async def amain(args: argparse.Namespace) -> int:
     def progress(s: str) -> None:
         print(f"\r{s}", end="", file=sys.stderr, flush=True)
 
-    async with client:
-        rows, labels = await run_batch(client, items, out, args.mode, args.concurrency, progress=progress)
+    try:
+        async with client:
+            rows, labels = await run_batch(client, items, out, args.mode, args.concurrency, progress=progress)
+    except KeyScopeError as exc:
+        print(f"\nstopped: {exc}. Rows answered so far are kept in {out}.", file=sys.stderr)
+        return 3
     print(file=sys.stderr)
     print(summarise(rows, labels))
     print(f"wrote {out} (mode {args.mode})")

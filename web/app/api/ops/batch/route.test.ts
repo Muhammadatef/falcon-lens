@@ -27,27 +27,24 @@ afterEach(() => {
 });
 
 describe("POST /api/ops/batch", () => {
-  it("rejects a wrong or missing operator key without calling the API", async () => {
+  it("rejects a missing key without calling the API, and holds no server key", async () => {
     const f = upstream();
-    expect((await POST(req({ url: "http://a.test/" }, "wrong-key-value-xxxxx"))).status).toBe(401);
     expect((await POST(req({ url: "http://a.test/" }, null))).status).toBe(401);
     expect(f).not.toHaveBeenCalled();
   });
-  it("is disabled when no key is configured", async () => {
-    vi.stubEnv("FL_OPS_BATCH_KEY", "");
-    vi.stubEnv("FL_WEB_READ_KEY", "");
-    expect((await POST(req({ url: "http://a.test/" }))).status).toBe(503);
+  it("passes the API's 403 (key lacks check scope) back so the page can say so", async () => {
+    upstream(json(403, {}));
+    expect((await POST(req({ url: "http://a.test/" }))).status).toBe(403);
   });
-  it("returns a final verdict with the server key, never the operator key, upstream", async () => {
+  it("forwards the typed key, never a server key, and returns a final verdict", async () => {
     const f = upstream(json(200, verdict()));
     const res = await POST(req({ url: "http://a.test/" }));
-    const body = await res.json();
-    expect(body).toMatchObject({ verdict: "dangerous", risk_score: 92, verdict_id: "vd_1", error: "" });
+    expect(await res.json()).toMatchObject({ verdict: "dangerous", risk_score: 92, verdict_id: "vd_1", error: "" });
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("http://api.test:8000/v1/check/url?wait=8");
     const h = init.headers as Headers;
-    expect(h.get("x-api-key")).toBe("server-key-not-a-secret");
-    expect(JSON.stringify(Object.fromEntries(h))).not.toContain("ops-key");
+    expect(h.get("x-api-key")).toBe("ops-key-not-a-secret");
+    expect(JSON.stringify(Object.fromEntries(h))).not.toContain("server-key");
   });
   it("polls until final", async () => {
     upstream(json(202, { verdict_id: "vd_2" }), json(200, verdict({ verdict_id: "vd_2", final: false })), json(200, verdict({ verdict_id: "vd_2", verdict: "suspicious" })));
