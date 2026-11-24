@@ -23,6 +23,7 @@ export const NAV_LINKS = [
 /** Footer only: the operator board (the live board is in the header). */
 export const FOOT_LINKS = [
   { href: "/ops", key: "nav.ops" },
+  { href: "/history", key: "nav.history" },
 ] as const;
 
 const isCurrent = (pathname: string, href: string): "page" | "true" | undefined =>

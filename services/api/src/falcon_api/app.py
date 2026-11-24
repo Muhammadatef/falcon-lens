@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
-from falcon_api import integration
+from falcon_api import history, integration
 from falcon_api.auth import (
     AuditLog,
     Authenticator,
@@ -697,6 +697,18 @@ def build_app(
             fingerprint=fp,
             blob_b64=base64.b64encode(data).decode(),
         )
+
+    # Registered before `/v1/verdicts/{verdict_id}` so that `/v1/verdicts/stream` is not read as an id.
+    history.register(
+        app,
+        get_redis=lambda: cast("Redis | None", state["redis"]),
+        get_jobs=jobs,
+        require=require,
+        stream_acquire=stream_acquire,
+        stream_release=stream_release,
+        count=count,
+        client_ip=client_ip,
+    )
 
     VerdictId = Annotated[str, Path(pattern=VERDICT_ID_RE)]
 

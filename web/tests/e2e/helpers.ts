@@ -39,6 +39,11 @@ export interface Boards {
   campaignEvents?: unknown[];
   incidentEvents?: unknown[];
   requireKey?: string;
+  /** Operator history: GET /v1/verdicts items, SSE events, and full verdicts by id for /checks/[id]. */
+  verdicts?: unknown[] | null;
+  verdictEvents?: unknown[];
+  verdictDocs?: Record<string, unknown>;
+  nextCursor?: string | null;
   /** Agent trace snapshots per incident id; each poll gets the next one, the last repeats. */
   traces?: Record<string, unknown[]>;
 }

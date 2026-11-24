@@ -89,7 +89,7 @@ test.describe("operator incident board", () => {
     await expect(page.getByTestId("incident-status")).toContainText("بانتظار الموافقة");
     await expect(page.getByTestId("incident-action")).toHaveCount(3);
     await expect(page.getByTestId("incident-card")).toContainText("falcon-demo-bank-secure[.]test");
-    await expect(page.getByTestId("incident-card").locator("a:not([data-testid='trace-link'])")).toHaveCount(0);
+    await expect(page.getByTestId("incident-card").locator("a:not([data-testid='trace-link']):not([data-testid='incident-title-link'])")).toHaveCount(0);
     // The key is never placed in the URL or a cookie.
     expect(page.url()).not.toContain("op-test-key");
     expect((await context.cookies()).some((c) => c.value.includes("op-test-key"))).toBe(false);
@@ -112,7 +112,7 @@ test.describe("operator incident board", () => {
     await expect(page.getByTestId("incident-card")).toHaveCount(1);
     await expect(page.getByTestId("incident-card")).toContainText(XSS.img);
     await expect(page.getByTestId("incident-card")).toContainText(XSS.script);
-    await expect(page.locator("main img, main script, main a:not([data-testid='trace-link'])")).toHaveCount(0);
+    await expect(page.locator("main img, main script, main a:not([data-testid='trace-link']):not([data-testid='incident-title-link'])")).toHaveCount(0);
     expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
   });
 
