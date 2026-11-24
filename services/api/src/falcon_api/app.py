@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
-from falcon_api import history, integration
+from falcon_api import history, integration, voice
 from falcon_api.auth import (
     AuditLog,
     Authenticator,
@@ -71,6 +71,7 @@ BODY_LIMITS = {
     "/v1/check/image": MAX_IMAGE_BYTES + _JSON_OVERHEAD,
     "/v1/reports": 16 * 1024,
     "/v1/feedback": 4 * 1024,
+    "/v1/voice/utterance": 1024 * 1024 + _JSON_OVERHEAD,
 }
 VERDICT_ID_RE = r"^vd_[0-9A-HJKMNP-TV-Z]{26}$"
 _IDEM_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
@@ -148,6 +149,7 @@ def build_app(
     submissions: SubmissionStore | None = None,
     sentinel: SentinelClient | None = None,
     webhook_transport: httpx.AsyncBaseTransport | None = None,
+    stt_router: voice.SttRouter | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
     state: dict[str, Any] = {
@@ -708,6 +710,15 @@ def build_app(
         stream_release=stream_release,
         count=count,
         client_ip=client_ip,
+    )
+
+    voice.register(
+        app,
+        require=require,
+        count=count,
+        client_ip=client_ip,
+        registry=registry,
+        router_factory=(lambda: stt_router) if stt_router else None,
     )
 
     VerdictId = Annotated[str, Path(pattern=VERDICT_ID_RE)]

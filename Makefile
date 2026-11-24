@@ -147,6 +147,18 @@ local-worker-enqueue: ## make local-worker-enqueue KIND=summarize INPUT=path [PA
 	uv run python -m scripts.local_worker enqueue --kind $(KIND) $(if $(INPUT),--input $(INPUT)) $(if $(PARAMS),--params '$(PARAMS)')
 
 
+# ---- native voice STT (Mac, Metal GPU): docs/RUNBOOK.md "Voice assistant"
+VOICE_PORT ?= 8093
+.PHONY: voice-native voice-native-stop voice-native-status voice-bench
+voice-native: ## start the native Whisper STT (mlx-whisper, 127.0.0.1:8093) in the background; pid + log under work/voice-native/
+	@scripts/voice_native.sh start
+voice-native-stop: ## stop the native voice STT started by `make voice-native`
+	@scripts/voice_native.sh stop
+voice-native-status: ## is the native voice STT up and warm?
+	@curl -fsS --max-time 3 http://127.0.0.1:$(VOICE_PORT)/readyz && echo || echo "voice-native not ready (log: work/voice-native/voice-native.log)"
+voice-bench: ## synthetic (macOS say) latency + wake accuracy for running engines; ENGINES="native=http://127.0.0.1:8093 container=http://127.0.0.1:18094"
+	uv run python scripts/voice_bench.py $(foreach e,$(or $(ENGINES),native=http://127.0.0.1:$(VOICE_PORT)),--engine $(e))
+
 ci-local: ## run every ci.yml job locally in parallel (logs: work/ci-local/<sha>/); JOBS="lint test" for a subset
 	@python3 scripts/ci_local.py
 
