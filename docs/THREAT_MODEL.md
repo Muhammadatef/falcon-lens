@@ -20,6 +20,7 @@
 4. Untrusted content → LLM (prompt injection).
 5. Stored attacker strings → web board (XSS).
 6. Containers → host and Ollama.
+7. Sentinel hunt mode → internet (`hunt-egress`, off by default). Only crt.sh and the DoH resolver are reachable (`FL_EGRESS_DEST_ALLOW=crt.sh,dns.google`, the same SSRF guard as the other proxy instances, on the internal `hunt` network). Responses are untrusted: 4 MB cap, 30 s timeout, no redirects, JSON shape-checked, names normalised through the PSL code and never shown to an LLM. The Sentinel never contacts a candidate domain; the one passive sandbox visit happens in the worker cascade, only above `FL_HUNT_PRESCORE_MIN` and inside the hourly and daily quotas. `channel=hunt` is accepted only from a `hunt`-scope key, and the Sentinel treats a verdict as hunt-originated only when its verdict_id is in its own `hunt_candidates` table (spoofed labels are counted as a person's check).
 
 ## STRIDE
 | | Threat | Mitigation | Test |

@@ -65,6 +65,7 @@ class TraceInterrupt(_Closed):
 
 class TraceRun(_Closed):
     run_id: str
+    trace_id: Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{32}$")] | None = None
     started_at: str
     finished_at: str | None
     status: Status

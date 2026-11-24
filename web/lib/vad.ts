@@ -39,6 +39,14 @@ export function pickMimeType(): string | null {
   return null;
 }
 
+/**
+ * One step of the noise-floor tracker. The floor follows the room on every frame that is NOT voiced, also while a
+ * capture is running (a fan that starts mid-sentence must not freeze the threshold), and never moves on voiced frames.
+ */
+export function adaptFloor(floor: number, level: number, voiced: boolean, alpha: number = FLOOR_ALPHA): number {
+  return voiced ? floor : floor * (1 - alpha) + level * alpha;
+}
+
 export function voiceSupported(): boolean {
   return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined" && pickMimeType() !== null && (typeof AudioContext !== "undefined" || "webkitAudioContext" in window);
 }
@@ -126,14 +134,14 @@ export function startListener(stream: MediaStream, events: ListenerEvents): List
     const voiced = level > threshold;
     if (!recorder) {
       if (voiced) begin(now);
-      else floor = floor * (1 - FLOOR_ALPHA) + level * FLOOR_ALPHA;
+      else floor = adaptFloor(floor, level, false);
       if (recorder && voiced) voicedFrames += 1;
       return;
     }
     if (voiced) {
       lastVoiceAt = now;
       voicedFrames += 1;
-    }
+    } else floor = adaptFloor(floor, level, false); // keeps adapting while recording
     if (now - lastVoiceAt >= VOICE_LIMITS.silenceMs || now - startedAt >= VOICE_LIMITS.maxMs) finish(false);
   };
 

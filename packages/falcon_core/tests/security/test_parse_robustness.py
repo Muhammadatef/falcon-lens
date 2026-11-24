@@ -251,9 +251,11 @@ def test_email_trailing_junk_never_lowers_label_or_score(size: int) -> None:
 def test_hostile_padding_stays_fast(junk: str) -> None:
     import time
 
-    t0 = time.perf_counter()
+    # CPU time of this process, not wall-clock: a busy machine (parallel CI jobs) must not fail the test,
+    # while catastrophic backtracking still burns CPU and trips the same 3 s budget.
+    t0 = time.process_time()
     analyze_message(junk + LINK)
-    assert time.perf_counter() - t0 < 3.0
+    assert time.process_time() - t0 < 3.0
 
 
 def test_base64_body_link_survives_an_extra_deep_wrapper() -> None:

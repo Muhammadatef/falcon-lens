@@ -62,7 +62,7 @@ from falcon_core.signals.base import SignalFn, SignalSpec
 from falcon_core.signals.brands.registry import BrandRegistry
 from falcon_core.signals.url.canonical import CanonicalURL, canonicalize
 from falcon_core.signals.url.textutil import defang
-from falcon_core.telemetry.tracing import fl_span, set_span_attrs, verdict_span
+from falcon_core.telemetry.tracing import current_trace_id, fl_span, set_span_attrs, verdict_span
 
 log = logging.getLogger("falcon.cascade")
 
@@ -274,6 +274,11 @@ class Cascade:
     async def _publish(self, sink: VerdictSink, run: _Run, doc: dict[str, Any]) -> None:
         if run.final_emitted:
             raise RuntimeError("a final verdict was already emitted for this run")
+        tid = current_trace_id()
+        if tid:
+            doc["trace_id"] = tid
+        else:
+            doc.pop("trace_id", None)  # a re-issued doc must not carry the original check's trace
         if doc["final"]:
             run.final_emitted = True  # set first: a failed final must not be re-scored into another
         try:
@@ -352,9 +357,13 @@ class Cascade:
         """Message / email / image check (``cascade.inputs``): child URLs go through ``run_url`` (H5)."""
         from falcon_core.cascade.inputs import run_input
 
-        return await run_input(
-            self, verdict_id, input_type, data, sink, source=source, input_fingerprint=input_fingerprint
-        )
+        with verdict_span(f"cascade.{input_type}", verdict_id) as root:
+            set_span_attrs(
+                root, **{"openinference.span.kind": "CHAIN", "fl.input_type": input_type, "fl.source": source}
+            )
+            return await run_input(
+                self, verdict_id, input_type, data, sink, source=source, input_fingerprint=input_fingerprint
+            )
 
     # --- T0 --------------------------------------------------------------------------------
 

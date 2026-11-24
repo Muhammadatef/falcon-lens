@@ -28,6 +28,8 @@ export interface VerdictSummary {
   source: DataSource;
   /** Which client asked; absent when the check did not say. */
   channel?: Channel;
+  /** OpenTelemetry trace id; used only for the operator-only Phoenix link. */
+  trace_id?: string;
   agent: AgentSummary;
 }
 
@@ -59,6 +61,7 @@ export function parseSummary(raw: unknown): VerdictSummary | null {
     model_route: oneOf(raw.model_route, ["cloud", "local", "none"] as const) ?? "none",
     source: oneOf(raw.source, ["live", "replay", "synthetic", "fixture"] as const) ?? "live",
     ...(oneOf(raw.channel, CHANNEL_VALUES) ? { channel: oneOf(raw.channel, CHANNEL_VALUES) as Channel } : {}),
+    ...(typeof raw.trace_id === "string" && /^[0-9a-f]{32}$/.test(raw.trace_id) ? { trace_id: raw.trace_id } : {}),
     agent: {
       tiers_run: tiers.length ? tiers : TIERS.slice(0, TIERS.indexOf(tier) + 1),
       extractor_ran: a.extractor_ran === true,

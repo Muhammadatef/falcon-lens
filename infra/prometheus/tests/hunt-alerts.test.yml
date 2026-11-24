@@ -1,0 +1,75 @@
+# promtool unit tests for the hunt alerts: promtool test rules infra/prometheus/tests/hunt-alerts.test.yml
+rule_files:
+  - ../rules/falcon-alerts.yml
+evaluation_interval: 1m
+
+tests:
+  # Enabled, no cycle at all for an hour: HuntStalled fires.
+  - interval: 1m
+    input_series:
+      - series: 'fl_hunt_enabled{source="live"}'
+        values: '1x70'
+    alert_rule_test:
+      - eval_time: 60m
+        alertname: HuntStalled
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Hunt mode is on but no hunt cycle completed in 45 minutes"
+              runbook_url: docs/RUNBOOK.md#hunt-stalled
+
+  # Enabled and cycling every 15 minutes: quiet. Paused cycles count as alive too.
+  - interval: 15m
+    input_series:
+      - series: 'fl_hunt_enabled{source="live"}'
+        values: '1x6'
+      - series: 'fl_hunt_cycles_total{outcome="paused",source="live"}'
+        values: '0+1x6'
+    alert_rule_test:
+      - eval_time: 75m
+        alertname: HuntStalled
+        exp_alerts: []
+
+  # Off (the default): quiet even with no cycle.
+  - interval: 1m
+    input_series:
+      - series: 'fl_hunt_enabled{source="live"}'
+        values: '0x70'
+    alert_rule_test:
+      - eval_time: 60m
+        alertname: HuntStalled
+        exp_alerts: []
+
+  # crt.sh in backoff for over an hour with no ok: HuntSourceBackoff fires; dns is fine and stays quiet.
+  - interval: 1m
+    input_series:
+      - series: 'fl_hunt_source_requests_total{source_id="ct_lookup",outcome="backoff",source="live"}'
+        values: '0+1x90'
+      - series: 'fl_hunt_source_requests_total{source_id="dns",outcome="ok",source="live"}'
+        values: '0+5x90'
+    alert_rule_test:
+      - eval_time: 80m
+        alertname: HuntSourceBackoff
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              source_id: ct_lookup
+            exp_annotations:
+              summary: "Hunt source ct_lookup has been in backoff for over an hour"
+              runbook_url: docs/RUNBOOK.md#hunt-source-backoff
+
+  # Quota at 0 for 10 minutes: info alert.
+  - interval: 1m
+    input_series:
+      - series: 'fl_hunt_quota_remaining{quota="hour",source="live"}'
+        values: '0x15'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: HuntQuotaExhausted
+        exp_alerts:
+          - exp_labels:
+              severity: info
+            exp_annotations:
+              summary: "Hunt submission quota for this hour is used up"
+              runbook_url: docs/RUNBOOK.md#hunt-quota-exhausted

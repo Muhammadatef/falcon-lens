@@ -15,7 +15,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
-from falcon_core.signals.brands.registry import BrandRegistry, default_registry
+from falcon_core.signals.brands.registry import Brand, BrandRegistry, default_registry
 from falcon_core.signals.limits import HARD_MAX_MESSAGE_CHARS, InputTooLarge
 from falcon_core.signals.message.extract import (
     ChildInput,
@@ -23,13 +23,14 @@ from falcon_core.signals.message.extract import (
     extract_urls,
     mask_phone,
 )
+from falcon_core.signals.message.helpline import helpline_evidence, named_brands
 from falcon_core.signals.message.intent import floor_evidence, scam_intent
-from falcon_core.signals.message.normalize import MAX_MESSAGE_CHARS, normalize
+from falcon_core.signals.message.normalize import MAX_MESSAGE_CHARS
 from falcon_core.signals.message.rules import RuleHit, find_rules
 from falcon_core.signals.message.scripts import script_match_offline
 from falcon_core.signals.url.canonical import canonicalize, psl_split
 from falcon_core.signals.url.display import display_url
-from falcon_core.signals.url.textutil import compact, defang
+from falcon_core.signals.url.textutil import defang
 
 T1_MS = 100
 # Rules and the brand check read the first and last MAX_LINK_SCAN_CHARS // 2 characters in 8 KiB windows (expensive,
@@ -243,18 +244,7 @@ def _rule_evidence(hits: list[RuleHit], brand_named: bool = False) -> list[Evide
     return out
 
 
-def _brand_evidence(text: str, urls: list[ChildInput], reg: BrandRegistry) -> list[Evidence]:
-    nm = normalize(text, collapse=False).text
-    comp = compact(text)
-    found = []
-    for b in reg.brands:
-        hit = any(
-            (re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", nm) if len(t) < 6 else t in comp)
-            for t in b.tokens_en
-            if len(t) >= 4
-        ) or any(t in comp for t in b.tokens_ar)
-        if hit:
-            found.append(b)
+def _brand_evidence(found: list[Brand], urls: list[ChildInput], reg: BrandRegistry) -> list[Evidence]:
     if not found:
         return []
     out = [
@@ -313,11 +303,16 @@ def analyze_message(text: str, reg: BrandRegistry | None = None) -> MessageAnaly
     res.evidence += _data_uri_evidence(full)
     brand_ev: list[Evidence] = []
     seen_brand: set[str] = set()
+    named: dict[str, Brand] = {}
     for w in windows:  # a brand claim pushed past the first window by padding is still seen
-        for e_ in _brand_evidence(w, urls, reg):
+        found = named_brands(w, reg)
+        named.update((b.brand_id, b) for b in found)
+        for e_ in _brand_evidence(found, urls, reg):
             if e_.signal not in seen_brand:
                 seen_brand.add(e_.signal)
                 brand_ev.append(e_)
+    # Fake helpline numbers (T-036): numbers anywhere in the input, brands from any window. Weight 0 for now.
+    brand_ev += helpline_evidence(full, reg, brands=list(named.values()))
     res.evidence += _rule_evidence(
         _rules_over(windows), brand_named=any(e_.signal == "message.brand_mention" for e_ in brand_ev)
     )

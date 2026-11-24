@@ -98,3 +98,12 @@ Models in use, their roles, where they run and their status are listed in the RE
 | `infra/` | builder-observability |
 | `web/`, `extension/` | builder-frontend |
 | README, `submission/` | builder-docs |
+
+## Sentinel hunt mode (off by default)
+Design: `docs/design/HUNTER.md`. Shipped in T-033..T-035; `FL_HUNT_ENABLED=false` by default, and then no hunt task is created and no hunt request leaves.
+- **Find.** `sentinel_core/hunt/permute.py` builds look-alike names of each brand's verified domains (typo, homoglyph as punycode, combosquat, TLD swap; typos only for labels of 5+ characters). `falcon_sentinel/hunt/sources/dns.py` checks existence over DNS-over-HTTPS (`NS`, then `A` / `MX`). `sources/ct.py` can look a candidate up on crt.sh (off by default, `FL_HUNT_SOURCES`). `sources/fixture.py` replays a committed TEST FIXTURE file for the demo. Search, ads and Maps are interfaces only (`ready_needs_key`).
+- **Egress.** All hunt traffic leaves through `hunt-egress` (allow-list `crt.sh,dns.google`) on the internal `hunt` network. The Sentinel never contacts a candidate domain.
+- **Decide.** `scheduler.py` orders candidates by a queue priority (`prescore`, never a risk score) and submits those at or above `FL_HUNT_PRESCORE_MIN`, within `FL_HUNT_SUBMIT_MAX_PER_HOUR` / `_PER_DAY`, to `POST /v1/check/url` with `channel=hunt` and a `hunt`-scope key. The normal cascade and arbiter judge them; the one passive sandbox visit happens there. Pause: Redis `fl:hunt:paused` via `PUT /v1/admin/hunt`.
+- **Correlate.** The consumer marks a verdict as hunt-originated only when its `verdict_id` is in `hunt_candidates` (Postgres). Rule R6 `early_warning` opens an incident for a dangerous look-alike; incidents carry `detection {origin, found_before_report, first_hunt_seen, first_user_seen}`. The hunt never publishes `domain.observed`.
+- **Show.** `GET /v1/hunt/candidates` (read scope, confirmed only, defanged), `GET`/`PUT /v1/admin/hunt` (operator, audit-logged), `Meta.hunt`; web `/campaigns` section "Hunting | الرصد الاستباقي" and the `/ops` panel; Grafana row "Hunting" on dashboard 6; alerts `HuntStalled`, `HuntSourceBackoff`, `HuntQuotaExhausted`.
+

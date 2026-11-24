@@ -143,6 +143,8 @@ The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a
   <img src="docs/assets/agent-sentinel-steps.svg" width="390" alt="The Sentinel, step by step. One: it listens to every check. Two: it groups similar ones into a campaign. Three: rules decide it is an incident. Four: AI writes a bilingual summary. Five: it drafts a report and waits for a person to approve.">
 </p>
 
+**Hunt mode (Sentinel, off by default).** The Sentinel can also look for trouble before anyone reports it. It builds look-alike names of the brands in `data/brands.yaml` (typos, look-alike letters as punycode, brand name plus a word, other domain endings) and checks through DNS which of them exist. It sends the plausible ones to the Investigator through the normal API with `channel=hunt`, within hourly and daily quotas. The arbiter decides; rule R6 opens an `early_warning` incident for a dangerous look-alike, marked «رُصد قبل أي بلاغ» / "Found before any report" only when no person checked or reported that domain earlier. Its only way out is the `hunt-egress` proxy, which can reach the DNS-over-HTTPS resolver and crt.sh and nothing else. **Shipped switches:** `FL_HUNT_ENABLED=false` by default; the certificate-log lookup (crt.sh) is off by default because crt.sh publishes no terms of use; search results, ad libraries and Maps listings are interfaces only and show "Ready, needs API key". Public results list only arbiter-confirmed domains, defanged. Design: [`docs/design/HUNTER.md`](docs/design/HUNTER.md).
+
 **DSPy.** DSPy defines the typed contract of each AI role. The offline optimiser **ran** on five roles, on **synthetic** data, and **no optimised prompt was adopted** (every artifact says `adopted: false`, decision "not adopted (within noise)"). The shipped prompts are the hand-written ones. See [`evals/results/published/dspy/`](evals/results/published/dspy). **LangGraph.** The Sentinel is a graph because its steps must be visible, resumable and stopped by a human before anything leaves the system. The Investigator is deliberately a short bounded loop, not a graph.
 
 ## Architecture in three layers | <span dir="rtl">البنية في ثلاث طبقات</span>
@@ -413,7 +415,23 @@ make smoke               # end-to-end assertions against the running stack
 make demo                # the six scenarios and the Sentinel scene
 ```
 
-Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `demo-reset` `seed` `replay` `eval` `eval-gate` `redteam` `redteam-shipped` `scan` `openapi` `regress-legit` `tunnel` `submission` `ci-local`. Run `make help` for the full list. Scenarios and video shot list: [`docs/DEMO.md`](docs/DEMO.md).
+Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `demo-reset` `seed` `replay` `eval` `eval-gate` `redteam` `redteam-shipped` `scan` `openapi` `regress-legit` `batch` `tunnel` `submission` `ci-local`. Run `make help` for the full list. Scenarios and video shot list: [`docs/DEMO.md`](docs/DEMO.md).
+
+### Run your own test set
+
+Have a list of URLs, with or without labels? Run it through the real cascade against the running stack:
+
+```bash
+make batch FILE=urls.txt OUT=results.csv CONCURRENCY=4 MODE=strict
+```
+
+- `FILE` is one URL per line (blank lines and `#` comments skipped) or a CSV with a `url` column. An optional `label` column (`fraud` or `legit`) adds precision, recall, F1 and FPR with 95% Wilson intervals, for both modes.
+- Output CSV columns: `url, verdict, risk_score, binary_label, degraded, degraded_reasons, tier_reached, top_reasons, latency_ms, verdict_id, error`. Re-running with the same `OUT` resumes: answered URLs are kept, `could_not_check` rows are retried. Cells starting with `=`, `+`, `-` or `@` are written with a leading `'` so spreadsheets do not run them.
+- `MODE=strict` (default): fraud = `dangerous` or `suspicious`, because "suspicious" means "warn the user". `MODE=lenient`: fraud = `dangerous` only. A URL we could not check (not an http(s) URL, rejected, unreachable, no verdict in time) is fraud in strict, legit in lenient, and always counted separately in the summary.
+- Key and target: `FL_BATCH_API_KEY` in `.env` (a key with the `check` scope; read in-process, never printed), else `FL_OPERATOR_KEY`. The read key cannot submit. A 401 or 403 stops the run with "key lacks check scope" instead of writing failed rows. `FL_BATCH_BASE_URL` defaults to `https://localhost:8443`; `FL_BATCH_CA_BUNDLE` points at the local CA. 429 answers are retried with backoff.
+- In the browser, `/ops/batch` takes a `.txt` or `.csv` of up to 500 URLs, shows progress and offers the CSV. Type a key with the `check` scope (the same session-only key box as `/ops`); the page forwards it to the API, which enforces the scope. The server holds no key for this page. Per-IP limit: 240 checks a minute.
+
+Every URL is checked like any other: pages load only in the sandbox, passively. Use your own list; the repo ships no live phishing URLs. Numbers printed come from your file and your run, not from the project's eval artifacts.
 
 ## Engineering process
 
@@ -439,6 +457,7 @@ Unfinished only:
 - **A licence for the scam list.** The prototype uses the OpenPhish community list, which allows research use only.
 - **More warning feeds**, once access keys are available.
 - **A real connection** to a police or security system needs an agreement with that organisation.
+- **Hunt mode sources:** search results, ad libraries and Maps listings (need API keys and verified provider terms), Certificate Transparency log tailing, and a measured precision figure for hunting (none is claimed today).
 
 ## For engineers
 

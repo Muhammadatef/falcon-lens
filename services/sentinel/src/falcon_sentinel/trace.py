@@ -219,10 +219,13 @@ class TraceRecorder:
         )
         return run_id
 
-    async def run_end(self, iid: str, run_id: str, status: str, interrupt: dict[str, Any] | None) -> None:
-        await self._append(
-            self._row(iid, run_id, "run", None, {"phase": "end", "status": status, "interrupt": interrupt})
-        )
+    async def run_end(
+        self, iid: str, run_id: str, status: str, interrupt: dict[str, Any] | None, trace_id: str | None = None
+    ) -> None:
+        doc: dict[str, Any] = {"phase": "end", "status": status, "interrupt": interrupt}
+        if trace_id:
+            doc["trace_id"] = trace_id
+        await self._append(self._row(iid, run_id, "run", None, doc))
 
     async def step(self, iid: str, run_id: str | None, seq: int, doc: dict[str, Any]) -> None:
         await self._append(self._row(iid, run_id, "step", seq, doc))
@@ -262,6 +265,8 @@ def assemble_trace(incident_id: str, rows: list[dict[str, Any]]) -> dict[str, An
                 run["finished_at"] = _ts(r["at"])
                 run["status"] = doc["status"]
                 run["interrupt"] = doc.get("interrupt")
+                if doc.get("trace_id"):
+                    run["trace_id"] = doc["trace_id"]
         else:
             run["steps"][int(r["seq"])] = dict(doc, seq=int(r["seq"]))
     out_runs: list[dict[str, Any]] = []

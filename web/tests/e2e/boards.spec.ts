@@ -101,6 +101,20 @@ test.describe("operator incident board", () => {
     expect(log.decisions).toEqual([{ incident: id, action: "act_takedown_001", decision: "approve" }]);
   });
 
+  test("each linked check has a 'Download evidence pack' button for the operator", async ({ page, context, request, baseURL }) => {
+    const id = newIncidentId();
+    const linked = ["vd_01KB0DEM0DATA0000000000001", "vd_01KB0DEM0DATA0000000000004"];
+    const verdictDocs = Object.fromEntries(linked.map((v) => [v, { verdict_id: v, final: true }]));
+    await useBoards(context, request, baseURL!, { incidents: [liveIncident(id, { linked_verdicts: linked })], verdicts: [], requireKey: "op-test-key", verdictDocs });
+    await page.goto("/ops");
+    await page.getByTestId("key-input").fill("op-test-key");
+    await page.getByTestId("key-input").press("Enter");
+    const buttons = page.getByTestId("incident-evidence-packs").getByTestId("evidence-pack-download");
+    await expect(buttons).toHaveCount(2);
+    const [download] = await Promise.all([page.waitForEvent("download"), buttons.first().click()]);
+    expect(download.suggestedFilename()).toBe(`evidence-${linked[0]}.zip`);
+  });
+
   test("a new incident arrives over the stream; hostile strings stay text", async ({ page, context, request, baseURL }) => {
     const incoming = newIncidentId();
     await useBoards(context, request, baseURL!, {
@@ -123,7 +137,7 @@ test.describe("operator incident board", () => {
     await page.getByTestId("key-input").fill("op-test-key");
     await page.getByTestId("key-input").press("Enter");
     await expect(page.getByTestId("llm-route-panel")).toBeVisible();
-    await expect(page.getByTestId("route-effective")).toContainText("Claude");
+    await expect(page.getByTestId("route-effective")).toContainText(/Cloud LLM|نموذج لغوي سحابي/);
     await expect(page.getByTestId("route-model")).toHaveText("inkling-2-mini-chat");
     await expect(page.getByTestId("route-note")).toContainText("لا تغادر هذا الجهاز");
     await page.getByTestId("route-select").selectOption("local");

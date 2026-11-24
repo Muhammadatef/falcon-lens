@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { loadOne, type OneLoad } from "@/lib/agent-trace-api";
+import { FoundList } from "./CheckSteps";
+import { tierFindingLines } from "@/lib/findings";
 import { TIERS, parseVerdict, type Evidence, type Tier, type TraceStep, type Verdict } from "@/lib/contracts";
 import { plainDegradedReasons } from "@/lib/degraded-reasons";
 import { hostOnly } from "@/lib/history";
 import { hT, type HistoryKey } from "@/lib/i18n-history";
 import { formatTime, pick } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
+import { OperatorLinks } from "./OperatorLinks";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
+import { EvidencePackButton } from "./EvidencePackButton";
 import { Icon, PolarityMark } from "./Icon";
 
 const POLL_MS = 3000;
@@ -82,7 +86,10 @@ export function CheckTrace({ verdictId, demo }: { verdictId: string; demo: boole
                 <p className="muted">{t("ops.nc.body")}</p>
               </div>
             ) : (
-              <Body verdict={view.verdict} />
+              <>
+                <OperatorLinks id={view.verdict.verdict_id} createdAt={view.verdict.created_at} latencyMs={view.verdict.latency_ms} />
+                <Body verdict={view.verdict} />
+              </>
             )}
           </div>
         </section>
@@ -151,6 +158,8 @@ function Body({ verdict: v }: { verdict: Verdict }) {
         </dl>
       </article>
 
+      {v.source === "synthetic" ? null : <EvidencePackButton verdictId={v.verdict_id} final={v.final} />}
+
       <h2 className="h3 ck-h">{h("ck.tiers")}</h2>
       <ol className="ck-tiers" data-testid="check-tiers">
         {TIERS.map((tier) => <TierCard key={tier} tier={tier} v={v} />)}
@@ -185,6 +194,7 @@ function TierCard({ tier, v }: { tier: Tier; v: Verdict }) {
         <span className={ran ? "pill pill--brand" : "pill ck-skip"} data-testid="check-tier-state">{ran ? (items.length > 0 ? h("ck.ran") : h("ck.ran.empty")) : h("ck.skipped")}</span>
       </div>
       {why ? <p className="small" data-testid="check-tier-why">{why}</p> : null}
+      {ran && tier !== "T3" ? <FoundList lines={tierFindingLines(v.evidence, tier, lang, v.impersonated_brand?.brand_id ?? null)} testid="check-tier-found" /> : null}
       {shown.length > 0 ? (
         <>
           <p className="small">{h("ck.evidence.n", { n: shown.length })}</p>

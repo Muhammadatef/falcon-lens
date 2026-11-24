@@ -20,7 +20,7 @@ from .events import INCIDENT_SCHEMA_PATH, Event, parse_time
 from .ids import make_ulid
 from .rules import DEFAULT_RULES_PATH, SEVERITIES, Match, Rule, evaluate, load_rules
 
-CHANNELS = frozenset({"web", "extension", "api", "mcp", "voice"})
+CHANNELS = frozenset({"web", "extension", "api", "mcp", "voice", "hunt"})
 SOURCE_PRIORITY = ("live", "replay", "synthetic", "fixture")
 
 
@@ -90,6 +90,56 @@ def is_pristine(inc: dict[str, Any]) -> bool:
     return inc.get("status") == "open" and not inc.get("actions") and not inc.get("summary")
 
 
+# domain -> (first hunt verdict time, first user verdict-or-report time), over every event the Sentinel holds.
+Firsts = dict[str, tuple[datetime | None, datetime | None]]
+
+
+def detection_index(feats: Iterable[Features]) -> Firsts:
+    """First hunt sighting and first person sighting per registrable domain (HUNTER.md section 4).
+
+    Hunt = a verdict whose verdict_id is in the Sentinel's own hunt_candidates table (Features.origin).
+    Person = any other verdict, or a report.submitted whose verdict_id points at a verdict of that domain."""
+    feats = list(feats)
+    dom_of_vid = {f.event.verdict_id: f.domain for f in feats if f.event.verdict_id and f.domain}
+    hunt: dict[str, datetime] = {}
+    user: dict[str, datetime] = {}
+    for f in feats:
+        at = f.event.occurred_at
+        if f.event.type in ("verdict.created", "verdict.upgraded") and f.domain:
+            target = hunt if f.origin == "hunt" else user
+            if f.domain not in target or at < target[f.domain]:
+                target[f.domain] = at
+        elif f.event.type == "report.submitted":
+            vid = f.event.verdict_id or f.event.payload.get("verdict_id")
+            dom = dom_of_vid.get(vid) if isinstance(vid, str) else None
+            if dom and (dom not in user or at < user[dom]):
+                user[dom] = at
+    return {d: (hunt.get(d), user.get(d)) for d in sorted({*hunt, *user})}
+
+
+def detection_block(domains: Iterable[str], firsts: Firsts, existing: dict[str, Any] | None) -> dict[str, Any] | None:
+    """contracts/incident.schema.json `detection`; None when the hunt saw none of the domains.
+    found_before_report: every domain's first sighting is a hunt verdict with no older person sighting.
+    Once false it stays false (it never flips back)."""
+    doms = sorted(set(domains))
+    pairs = [firsts.get(d, (None, None)) for d in doms]
+    hunts = [h for h, _u in pairs if h is not None]
+    users = [u for _h, u in pairs if u is not None]
+    if not hunts:
+        return None
+    before = bool(doms) and all(h is not None and (u is None or h < u) for h, u in pairs)
+    old = (existing or {}).get("detection") or {}
+    if old.get("found_before_report") is False:
+        before = False
+    origin = "hunt" if not users else ("mixed" if hunts else "user")
+    return {
+        "origin": origin,
+        "found_before_report": before,
+        "first_hunt_seen": iso(min(hunts)),
+        "first_user_seen": iso(min(users)) if users else None,
+    }
+
+
 def build_incident(
     rule: Rule,
     feats: Sequence[Features],
@@ -97,6 +147,7 @@ def build_incident(
     existing: dict[str, Any] | None = None,
     group: str | None = None,
     absorbed: Sequence[dict[str, Any]] = (),
+    firsts: Firsts | None = None,
 ) -> dict[str, Any]:
     """Deterministic parts only. `existing` keeps agent-enriched fields (status, summary, actions...).
 
@@ -117,6 +168,8 @@ def build_incident(
         for c in cands:
             first_seen.setdefault(c, f.event.occurred_at)
     old_ind = {(i["kind"], i["value_defanged"]): i for i in (existing or {}).get("indicators", [])}
+    domains = sorted({f.domain for f in fs if f.domain})
+    detection = detection_block(domains, firsts or {}, existing)
     indicators = []
     for (kind, value), seen in sorted(first_seen.items()):
         ind = {
@@ -128,6 +181,10 @@ def build_incident(
         }
         if (kind, value) in old_ind:
             ind["blocked_until"] = old_ind[(kind, value)].get("blocked_until")
+        if detection is not None and kind == "domain":
+            h, u = (firsts or {}).get(value.replace("[.]", "."), (None, None))
+            if h is not None or u is not None:
+                ind["found_by"] = "hunt" if h is not None and (u is None or h < u) else "user"
         indicators.append(ind)
 
     same_type = existing is None or existing["type"] == rule.type
@@ -186,6 +243,8 @@ def build_incident(
     inc: dict[str, Any] = dict(existing or {})
     if channel_set:  # contracts/incident.schema.json `channels`: which clients the linked checks came from
         inc["channels"] = sorted(channel_set)
+    if detection is not None:  # contracts/incident.schema.json `detection` (hunt mode)
+        inc["detection"] = detection
     inc.update(
         {
             "incident_id": iid,
@@ -223,6 +282,7 @@ class Sentinel:
         self.rules = load_rules(rules_path or DEFAULT_RULES_PATH)
         self.official = frozenset(official_domains)
         self._feats: dict[str, Features] = {}
+        self._firsts: Firsts = {}
 
     def process(self, events: Iterable[Event]) -> list[str]:
         """Returns ids of incidents created or changed by this batch."""
@@ -234,6 +294,7 @@ class Sentinel:
         if not added:
             return []
         all_feats = sorted(self._feats.values(), key=lambda f: (f.event.occurred_at, f.event.event_id))
+        self._firsts = detection_index(all_feats)
         changed: list[str] = []
         for rule in self.rules:
             for m in evaluate(rule, all_feats, self.vectors):
@@ -274,7 +335,7 @@ class Sentinel:
                 eid = t.get("event_id")
                 if eid and eid in self._feats:
                     feats.setdefault(eid, self._feats[eid])
-        inc = build_incident(m.rule, list(feats.values()), m.triggered_at, survivor, m.group, absorbed)
+        inc = build_incident(m.rule, list(feats.values()), m.triggered_at, survivor, m.group, absorbed, self._firsts)
         if survivor == inc and not absorbed:
             return None
         for a in absorbed:
