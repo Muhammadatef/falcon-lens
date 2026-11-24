@@ -163,9 +163,13 @@ Do not narrate a verdict before it is on screen. The "Expected" rows below descr
 | Say | "The page tries to talk the model into clearing it. The model that reads page text has no tools and cannot touch the score, so the attempt only adds evidence against the page." |
 | Proof shot | `make redteam` in the terminal, ending with its summary line. Read the injection result from that output on screen; do not quote it from memory. |
 
+## The voice scene: "Hey Falcon"
+
+Shows both agents being narrated live. Open `/voice`, allow the microphone, copy one demo message (kit item M1), then say "Hey Falcon, check what I copied" (<span dir="rtl">يا فالكون، افحص اللي نسخته</span> works too). Keep the screen in frame: the assistant reads the message, narrates the Investigator (Baseer | بصير) tier by tier, says what it found, the verdict and what to do now, then the Sentinel (Dir' | درع) hand-over. The English voice is Kokoro; the Arabic voice is macOS `say` (Majed). A cloned Emirati voice is pending an owner-consented recording and must not be claimed. After the take the checks appear in `/history` with the Voice badge. Rehearse with `make voice-rehearsal`; native speech engine with `make voice-native`. The speech benchmark is on synthetic speech only (`evals/results/published/voice/`); do not quote it as real-microphone accuracy. Say "no warning signs found", never "safe".
+
 ## The Sentinel scene
 
-Shows the second agent: single checks become one incident, internal actions run, external actions wait for a human.
+Shows the second agent, the Sentinel (Dir' | درع): single checks become one incident, internal actions run, external actions wait for a human.
 
 Before the take, return to a clean seeded state so no old incident is on the board:
 

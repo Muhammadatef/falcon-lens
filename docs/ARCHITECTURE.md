@@ -21,7 +21,27 @@
 1. `POST /v1/check/url`: the API validates, rate-limits, assigns a `verdict_id` (ULID), puts a job on the `fl:jobs` stream, and returns `202` with the SSE URL. Single-flight: if a check of the same canonical URL is already in flight, the API attaches to that job.
 2. The worker runs T0, T1 and T2, and T3 if needed. After each tier it publishes a partial verdict to `fl:verdict:<id>` (pub/sub), which the API relays to SSE as `event: verdict`.
 3. The arbiter produces the final verdict. It is stored in Postgres (`verdicts`, `evidence`) and a `verdict.created` event goes to `fl:events`.
-4. The Sentinel consumes `fl:events`, correlates and applies rules. If an incident results, the LangGraph triage runs and the incident is published to `fl:board`, then to SSE on the incident board and to Alertmanager.
+4. The Sentinel (Dir' | درع) consumes `fl:events`, correlates and applies rules. If an incident results, the LangGraph triage runs and the incident is published to `fl:board`, then to SSE on the incident board and to Alertmanager.
+
+### Voice path ("Hey Falcon")
+The browser (`/voice`) sends one short clip to `POST /v1/voice/utterance`. The API passes it to a local Whisper engine (native `mlx-whisper` on the Mac, else the `voice` container with `faster-whisper`), decodes it in memory and drops it. Wake phrase and intent come from fixed rules in `falcon_core.voice`. For a check intent the browser then calls the same public check API as the Check page and narrates the Investigator (Baseer | بصير) tiers and verdict, then the Sentinel (Dir' | درع) hand-over, from pre-generated clips (`web/public/voice/<lang>/manifest.json`). The voice service has no direct internet access. Details: `docs/PRIVACY.md`, `docs/RUNBOOK.md`.
+
+```mermaid
+sequenceDiagram
+    participant U as You
+    participant B as Browser (/voice)
+    participant S as Speech-to-text (our own machine)
+    participant I as Investigator (Baseer)
+    participant N as Sentinel (Dir')
+    U->>B: "Hey Falcon, check what I copied"
+    B->>S: one short clip (held in memory only)
+    S-->>B: wake phrase and intent (fixed rules)
+    B->>I: same public check API as the Check page
+    I-->>B: tiers, findings, verdict (narrated step by step)
+    B-->>U: verdict and what to do now
+    N-->>B: incident or campaign link, human approval pending
+    B-->>U: Sentinel hand-over narrated
+```
 
 Synchronous mode: `?wait=8` blocks up to 8 s and returns the best verdict so far, for simple clients and the MCP.
 
@@ -36,6 +56,8 @@ Synchronous mode: `?wait=8` blocks up to 8 s and returns the best verdict so far
 - Before any cloud call, inputs are redacted (phone numbers, Emirates ID, card numbers, emails) and spotlighted: untrusted text sits between `<<<UNTRUSTED:{nonce}>>>` markers and each line is datamarked with `^`.
 - Output is schema-validated (pydantic) with one repair retry, then falls back to templates.
 - Shadow mode: `FL_SHADOW_RATE` sends a fraction of traffic to the other route in the background, to measure `fl_route_agreement_ratio`.
+
+Models in use, their roles, where they run and their status are listed in the README section "Models we use" (sources: `.env.example`, `DECISIONS.md`, the voice manifests). Cloud: `claude-sonnet-5-5` and `claude-haiku-5-5` (only with an API key and sovereign mode off). Local: `inkling-2-mini-chat`, `gemma3:27b` (vision), `qwen3-embedding:4b`. Voice: Whisper large-v3-turbo (`mlx-whisper`) with `faster-whisper` fallback; Kokoro and macOS `say` clips. `qwen3.8:27b` is available locally (sovereign-mode proof pending); the Chatterbox clone is planned, not used.
 
 ## Data stores
 - **Postgres + pgvector**:

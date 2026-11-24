@@ -54,7 +54,7 @@ def build(a: Artifacts) -> list[Block]:
     add(
         (
             "ar_p",
-            "**كيف يعمل الفحص.** يمر كل فحص عبر طبقات متتالية يمكن أن تنتهي عند أي منها: ذاكرة وقوائم معروفة (T0)، ثم تحليل العنوان ومصنِّف مدرَّب (T1)، ثم متصفح معزول يفتح الصفحة مرة واحدة دون أن يكتب فيها شيئاً ويقارن ما تدّعيه بمن يملك العنوان فعلاً (T2)، ثم «المحقّق» الذكي للحالات الملتبسة فقط (T3). وفي النهاية يحدد **حَكَم برمجي ثابت** الدرجة والنتيجة، ولا يستطيع أي نموذج ذكاء اصطناعي تغييرها.",
+            "**كيف يعمل الفحص.** يمر كل فحص عبر طبقات متتالية يمكن أن تنتهي عند أي منها: ذاكرة وقوائم معروفة (T0)، ثم تحليل العنوان ومصنِّف مدرَّب (T1)، ثم متصفح معزول يفتح الصفحة مرة واحدة دون أن يكتب فيها شيئاً ويقارن ما تدّعيه بمن يملك العنوان فعلاً (T2)، ثم «بصير» الذكي للحالات الملتبسة فقط (T3). وفي النهاية يحدد **حَكَم برمجي ثابت** الدرجة والنتيجة، ولا يستطيع أي نموذج ذكاء اصطناعي تغييرها.",
         )
     )
     add(
@@ -66,7 +66,7 @@ def build(a: Artifacts) -> list[Block]:
     add(
         (
             "ar_p",
-            "**الوكيلان.** «المحقّق» يدرس حالة واحدة عبر آلة حالات محدودة وأدوات مفحوصة. و«الحارس» يعمل على مدار الساعة، فيربط الفحوص المتشابهة في حملة واحدة، ويحظر المؤشرات السيئة داخل النظام بحظر مؤقت قابل للتراجع، ويكتب مسودات بلاغات وطلبات إزالة تنتظر موافقة موظف بشري قبل أن يخرج أي شيء من النظام.",
+            "**الوكيلان.** «بصير» يدرس حالة واحدة عبر آلة حالات محدودة وأدوات مفحوصة. و«درع» يعمل على مدار الساعة، فيربط الفحوص المتشابهة في حملة واحدة، ويحظر المؤشرات السيئة داخل النظام بحظر مؤقت قابل للتراجع، ويكتب مسودات بلاغات وطلبات إزالة تنتظر موافقة موظف بشري قبل أن يخرج أي شيء من النظام.",
         )
     )
     add(
@@ -78,7 +78,7 @@ def build(a: Artifacts) -> list[Block]:
     add(
         (
             "ar_p",
-            f"**النتائج المقاسة.** على مجموعة الاختبار المحجوزة (عدد العناصر {a.raw('test.n')}) التي لم تُستعمل في الضبط، بلغ الاستدعاء {a.pct('test.recall')} ومعدل الإنذار الخاطئ {a.pct('test.fpr')} (نطاق ثقة تقريبي من {a.ci('test.fpr').replace(' to ', ' إلى ')}). والمقياس يخص مرحلة تحليل العنوان فقط. أما في تشغيل حيّ على النظام كاملاً لعدد {a.fp_n()} موقعاً مشروعاً محجوزاً فقد نُبِّه خطأً إلى {a.fp_pct()} منها، وهو أعلى بكثير من هدفنا، ونذكر ذلك صراحة. ولم تُقَس بعدُ طبقة المتصفح المعزول ولا المحقق الذكي ولا مقاومة حقن التعليمات ولا الوضع السيادي، ولذلك لا نذكر أي رقم عنها.",
+            f"**النتائج المقاسة.** على مجموعة الاختبار المحجوزة (عدد العناصر {a.raw('test.n')}) التي لم تُستعمل في الضبط، بلغ الاستدعاء {a.pct('test.recall')} ومعدل الإنذار الخاطئ {a.pct('test.fpr')} (نطاق ثقة تقريبي من {a.ci('test.fpr').replace(' to ', ' إلى ')}). والمقياس يخص مرحلة تحليل العنوان فقط. أما في تشغيل حيّ على النظام كاملاً لعدد {a.fp_n()} موقعاً مشروعاً محجوزاً فقد نُبِّه خطأً إلى {a.fp_pct()} منها، وهو أعلى بكثير من هدفنا، ونذكر ذلك صراحة. ولم تُقَس بعدُ طبقة المتصفح المعزول ولا بصير الذكي ولا مقاومة حقن التعليمات ولا الوضع السيادي، ولذلك لا نذكر أي رقم عنها.",
         )
     )
     add(
@@ -102,9 +102,21 @@ def build(a: Artifacts) -> list[Block]:
         (
             "ul",
             [
-                "**The Investigator** judges one input. It is a tiered cascade of checks (T0 to T3). Fixed code settles clear cases early. An AI model is used only for the unclear band, and it can never set or change the score.",
-                "**The Sentinel** runs around the clock as a backend agent. It links single checks into incidents and campaigns, blocks known-bad indicators inside our own system (every block expires and can be undone), and drafts takedown requests and police reports that wait for a human to approve. It sends nothing itself.",
+                "**The Investigator (Baseer | بصير)** judges one input. It is a tiered cascade of checks (T0 to T3). Fixed code settles clear cases early. An AI model is used only for the unclear band, and it can never set or change the score.",
+                "**The Sentinel (Dir' | درع)** runs around the clock as a backend agent. It links single checks into incidents and campaigns, blocks known-bad indicators inside our own system (every block expires and can be undone), and drafts takedown requests and police reports that wait for a human to approve. It sends nothing itself.",
             ],
+        )
+    )
+    add(
+        (
+            "p",
+            '**Hey Falcon.** Say "Hey Falcon" (يا فالكون) on the voice page and the assistant checks what you copied and narrates the live steps of both agents in English or Arabic. Speech is recognised on our own machine, and audio and transcripts are not stored or logged. The Arabic clips use a stock voice; a cloned Emirati voice is pending an owner-consented recording.',
+        )
+    )
+    add(
+        (
+            "p",
+            "**On-premise deployment.** If an authority adopts it, the same stack runs inside its own network. In sovereign mode every model role runs on a local model on its own servers, speech recognition is local, and integration is through REST, SSE, MCP, STIX export and signed webhooks: ready to connect, not connected. A production deployment would still need the authority's own sign-on and roles, scaling and high availability (proven on one machine only), closed-network feeds for link lookups, and its own security review and penetration test.",
         )
     )
     add(("h3", "What makes it different"))
