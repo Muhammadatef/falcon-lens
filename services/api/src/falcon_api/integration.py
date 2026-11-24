@@ -16,6 +16,7 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 from ulid import ULID
 
+from falcon_api.admin import public_route
 from falcon_api.auth import Principal
 from falcon_api.canon import canonicalize_url, sha256_hex
 from falcon_api.db import SubmissionStore
@@ -93,6 +94,9 @@ class Meta(BaseModel):
     model_ids: dict[str, str]
     sovereign_mode: bool
     feeds: dict[str, bool]
+    llm_route: dict[str, Any] | None = Field(
+        default=None, description="Active language-model route (read-only): mode, local_model, sovereign."
+    )
 
 
 @dataclass
@@ -501,7 +505,9 @@ def register(app: FastAPI, c: Ctx) -> None:
     @app.get("/v1/meta", tags=["meta"], response_model=Meta)
     async def get_meta() -> dict[str, Any]:
         """Public runtime facts for UIs: verdict band thresholds, model ids, sovereign mode, enabled feeds."""
-        return meta(c.settings)
+        out = meta(c.settings)
+        out["llm_route"] = await public_route(c.settings, c.state.get("redis"))
+        return out
 
 
 def _is_stream_id(v: str) -> bool:

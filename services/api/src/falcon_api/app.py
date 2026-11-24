@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
-from falcon_api import history, integration, voice
+from falcon_api import admin, history, integration, voice
 from falcon_api.auth import (
     AuditLog,
     Authenticator,
@@ -472,7 +472,7 @@ def build_app(
             resp = await _guarded(request, call_next, principal)
         resp.headers["X-Request-ID"] = request.state.request_id
         if principal is not None:
-            await audit_call(request, resp.status_code, principal)
+            await audit_call(request, resp.status_code, principal, getattr(request.state, "audit_note", None))
         return resp
 
     async def _guarded(
@@ -741,6 +741,8 @@ def build_app(
         count=count,
         client_ip=client_ip,
     )
+
+    admin.register(app, settings=settings, get_redis=lambda: cast("Redis | None", state["redis"]), require=require)
 
     voice.register(
         app,

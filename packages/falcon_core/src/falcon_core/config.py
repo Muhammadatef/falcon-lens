@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Local LLM
     ollama_base_url: str = "http://host.docker.internal:11434"
     fl_local_model: str = "inkling-2-mini-chat"
+    fl_llm_route: str = "auto"
+    fl_local_base_url: str | None = None
+    fl_local_qwen_base_url: str | None = None
     fl_local_vision_model: str = "gemma3:27b"
     fl_local_worker_model: str = "qwen3:4b"
     fl_embed_model: str = "qwen3-embedding:4b"

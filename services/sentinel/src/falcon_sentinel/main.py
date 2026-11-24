@@ -44,6 +44,7 @@ from sentinel_core.incidents import Sentinel
 
 from falcon_core.config import get_settings
 from falcon_core.llm import LLMRouter, RouterConfig
+from falcon_core.llm.route import route_source_from_env
 from falcon_core.service import create_app, run
 from falcon_core.tools.sentinel import ToolContext
 
@@ -74,7 +75,7 @@ def make_llm() -> LLMClient:
     PII redaction and the canary run inside the router for both routes."""
     if os.environ.get("FL_SENTINEL_LLM", "auto") == "stub":
         return StubLLM()
-    return RouterLLM(LLMRouter(RouterConfig.from_env()))
+    return RouterLLM(LLMRouter(RouterConfig.from_env(), route_source=route_source_from_env()))
 
 
 class Runtime:
