@@ -15,7 +15,7 @@
     "verdict_id": { "type": ["string", "null"] },
     "payload": {
       "type": "object",
-      "description": "Per type. verdict.*: {verdict, channel? (web|extension|api|mcp|voice; the client that asked), previous_verdict? (verdict.upgraded and re-checks), risk_score, input_type, registrable_domain, brand_id, fingerprints{dom_simhash, favicon_hash, script_embedding_id, asn, registrar, cert_issuer, registered_at}, top_signals[]}. report/feedback: {verdict_id?, kind, script_fingerprint? (script embedding cluster id, used by R3), signal? (used by R5)}. domain.observed: {domain_defanged, brand_candidates[], first_seen, source}. feed.updated: {feed, entries, age_s}. Never raw page or message text."
+      "description": "Per type. verdict.*: {verdict, channel? (web|extension|api|mcp|voice|hunt; the client that asked; hunt = Sentinel hunt mode, a metric label only, the Sentinel trusts its own hunt_candidates table), hunt? {candidate_id, discovery} (hunt checks only), previous_verdict? (verdict.upgraded and re-checks), risk_score, input_type, registrable_domain, brand_id, fingerprints{dom_simhash, favicon_hash, script_embedding_id, asn, registrar, cert_issuer, registered_at}, top_signals[]}. report/feedback: {verdict_id?, kind, script_fingerprint? (script embedding cluster id, used by R3), signal? (used by R5)}. domain.observed: {domain_defanged, brand_candidates[], first_seen, source}. feed.updated: {feed, entries, age_s}. Never raw page or message text."
     }
   }
 }

@@ -1,0 +1,64 @@
+# Sentinel hunt mode (docs/design/HUNTER.md). Declarative, like rules.yaml; the LLM agent cannot edit this file.
+# Loaded by sentinel_core/hunt/config.py. Brands come only from data/brands.yaml; no brand name lives here.
+# Runtime switches (kill switch, interval, quotas, proxy) are environment variables (HUNTER.md section 5).
+version: 1
+
+sources:
+  # id -> kind, terms page, default state. A source whose terms could not be verified stays off by default
+  # (DECISIONS.md records the terms URL and retrieval date).
+  permutation:
+    kind: permutation
+    terms_url: null           # in-repo generator, no third party
+    default_enabled: true
+  dns:
+    kind: permutation         # existence check (DoH) for permutation candidates
+    terms_url: https://developers.google.com/speed/public-dns/terms
+    default_enabled: true
+  ct_lookup:
+    kind: ct
+    terms_url: https://crt.sh/
+    default_enabled: true
+  ct_search:
+    kind: ct
+    terms_url: https://crt.sh/
+    default_enabled: false    # experimental: substring search returned empty lists in every probe (HUNTER.md section 9)
+  fixture:
+    kind: ct
+    terms_url: null           # committed TEST FIXTURE file, falcon-demo-bank*.test only
+    default_enabled: false
+  search:
+    kind: search
+    terms_url: null           # unverified; needs an API key (HUNTER.md section 8)
+    default_enabled: false
+  ads:
+    kind: ads
+    terms_url: null
+    default_enabled: false
+  maps:
+    kind: maps
+    terms_url: null
+    default_enabled: false
+
+permutation:
+  typo_min_label: 5           # typo and homoglyph variants only for labels of 5+ characters
+  cap_per_brand: 300          # after interleaving the kinds, so every kind is represented
+  homoglyphs_per_letter: 2    # confusables (UTS #39) mapped onto each ASCII letter, lowest code points first
+  # Combosquat words tried first (then the rest of COMBO_EN / COMBO_TRANSLIT from falcon_core squatting.py).
+  combo_priority: [secure, login, pay, update, fine, refund, verify, account, payment, support, online, portal]
+  # TLDs tried for the TLD swap (and as homes for typos of labels whose suffix is closed to the public).
+  tlds: [ae, com, net, org, co, info, online, site, xyz, top, app, shop, live, me, cc, vip]
+  # Suffixes nobody can register under: typos and combosquats of these labels go on fallback_suffixes instead.
+  restricted_suffixes: [gov.ae, abudhabi, dubai, test]
+  fallback_suffixes: [ae, com]
+  # The demo brand's suffix is restricted (.test) but its fixture hosts live there: keep it for the demo brand.
+  keep_suffix_for_demo: true
+
+prescore:
+  # Queue priority 0..100 (never a risk score; never reaches the arbiter). All weights are >= 0, so adding a
+  # reason can never lower the priority (monotone; tested).
+  base: 10
+  discovery: {ct: 20, permutation: 10, search: 15, ads: 15, maps: 15}
+  permutation_kind: {homoglyph: 20, combosquat: 15, typo: 10, tld_swap: 5}
+  reasons: {resolves_a: 15, has_mx: 10, cert_fresh: 25, brand_token_in_cert: 10}
+  category: {bank: 10, police: 10, government: 10, regulator: 5, telecom: 5, utility: 5, postal: 5, transport: 5, demo: 10}
+  cert_fresh_days: 7

@@ -86,7 +86,7 @@
     },
     "screenshot_url": { "type": ["string", "null"], "description": "Only for authenticated integration keys; never for anonymous callers." },
     "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"], "default": "live" },
-    "channel": { "type": "string", "enum": ["web", "extension", "api", "mcp", "voice"], "description": "Optional. Which client asked for this check (set by the client on the check request; low-cardinality metadata, not an identity). Absent when the client did not say." },
+    "channel": { "type": "string", "enum": ["web", "extension", "api", "mcp", "voice", "hunt"], "description": "Optional. Which client asked for this check (set by the client on the check request; low-cardinality metadata, not an identity). Absent when the client did not say. `hunt` = submitted by the Sentinel hunt mode (accepted only from an API key with the `hunt` scope); it is not a truth label, `source` still says live/replay/synthetic/fixture." },
     "latency_ms": { "type": "integer", "minimum": 0 },
     "created_at": { "type": "string", "format": "date-time" }
   },

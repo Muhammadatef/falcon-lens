@@ -932,6 +932,7 @@ components:
             - api
             - mcp
             - voice
+            - hunt
             type: string
           - type: 'null'
           title: Channel
