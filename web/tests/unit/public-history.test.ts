@@ -196,7 +196,7 @@ const incidentDoc = () => ({
 describe("toPublicIncident", () => {
   const out = toPublicIncident(incidentDoc())!;
   it("keeps title, severity, counts and action types with status", () => {
-    expect((out.summary as { en: string }).en).toBe("Phishing campaign");
+    expect((out.summary as { en: string }).en).toBe("Suspected scam campaign impersonating Falcon Demo Bank"); // structured title, never the free-text summary
     expect(out.severity).toBe("high");
     expect(out.linked_verdicts).toEqual([VID]);
     expect((out.actions as { tool: string; status: string }[]).map((a) => [a.tool, a.status])).toEqual([["draft_takedown", "awaiting_approval"], ["block_indicator", "executed"]]);
