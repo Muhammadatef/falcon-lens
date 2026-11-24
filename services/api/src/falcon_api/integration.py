@@ -32,6 +32,7 @@ from falcon_api.intel import (
 from falcon_api.problem import PROBLEM_RESPONSES, Problem
 from falcon_core.config import Settings
 from falcon_core.contracts.agent_trace import AgentTrace
+from falcon_core.telemetry.metrics import record_campaign_board_view
 
 EVENTS_STREAM = "fl:events"
 BOARD_STREAM = "fl:board"
@@ -377,6 +378,7 @@ def register(app: FastAPI, c: Ctx) -> None:
         last_event_id: Annotated[str | None, Header()] = None,
     ) -> AsyncIterator[ServerSentEvent]:
         """SSE: `event: campaign`, data = one campaign object (contracts/campaign.schema.json)."""
+        record_campaign_board_view("stream")
         async for e in board_stream(request, last_event_id, project_campaign, "campaign"):
             yield e
 
@@ -402,6 +404,7 @@ def register(app: FastAPI, c: Ctx) -> None:
         _p: Annotated[Principal, Read], cursor: Cursor = None, limit: Limit = 25
     ) -> dict[str, Any]:
         """Campaign cards (incidents of type campaign / kit_reuse), newest first."""
+        record_campaign_board_view("list")
         cards = [campaign_of(i) for i in await c.sentinel().incidents() if is_campaign(i)]
         return paginate(cards, id_key="campaign_id", cursor=cursor, limit=limit, ts_key="last_seen")
 

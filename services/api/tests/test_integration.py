@@ -315,6 +315,17 @@ async def test_campaigns_shape_and_pagination(api: httpx.AsyncClient, env: Env) 
     assert (await api.get("/v1/campaigns", params={"cursor": "!!"}, headers=h)).status_code == 422
 
 
+async def test_campaign_board_views_are_counted(api: httpx.AsyncClient, env: Env) -> None:
+    from falcon_core.telemetry.metrics import REGISTRY
+
+    def views() -> float:
+        return REGISTRY.get_sample_value("fl_campaign_board_views_total", {"surface": "list"}) or 0.0
+
+    before = views()
+    assert (await api.get("/v1/campaigns", headers=key(env.read_key))).status_code == 200
+    assert views() == before + 1
+
+
 async def test_incidents_list_filter_get(api: httpx.AsyncClient, env: Env) -> None:
     h = key(env.read_key)
     allr = (await api.get("/v1/incidents", headers=h)).json()

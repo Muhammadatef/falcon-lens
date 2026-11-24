@@ -171,3 +171,120 @@ def test_fits_export_only_measured_values_not_configuration(tmp_path: Path) -> N
     assert 'fl_eval_n{metric="fpr_form"' in text and "} 104.0" in text
     for config in ("seed", "constraints", "margin", "strong_adj", "n_legit", "grid"):
         assert f'metric="{config}' not in text
+
+
+def test_redteam_summary_exports_answered_and_per_category(tmp_path: Path) -> None:
+    cat = {"cases": 38, "harmful": 1, "rate": 0.0263, "ci95": [0.0047, 0.135], "llm_ran": 37, "llm_calls_failed": 0}
+    _w(
+        tmp_path,
+        "redteam/r.json",
+        {
+            "generated_at": "20261123T143553Z",
+            "summary": {
+                "overall": {**cat, "cases": 113, "llm_ran": 90, "by_outcome": {"pipeline_error": 1}},
+                "by_category": {"message": cat},
+            },
+        },
+    )
+    text, _, errors = X.render(tmp_path)
+    assert errors == 0
+    base = 'split="all",source="redteam",artifact="r",provenance="synthetic"}'
+    assert f'fl_eval_metric{{metric="answered",{base} 90.0' in text
+    assert f'fl_eval_metric{{metric="answered.message",{base} 37.0' in text
+    assert f'fl_eval_metric{{metric="harmful.message",{base} 1.0' in text
+    assert f'fl_eval_metric{{metric="outcome.pipeline_error",{base} 1.0' in text
+    assert f'fl_eval_ci_high{{metric="harmful_rate.message",{base} 0.135' in text
+    # compact YYYYmmddTHHMMSSZ dates are parsed into the artifact timestamp
+    ts = re.search(r'fl_eval_artifact_timestamp\{source="redteam",artifact="r"\} (\S+)', text)
+    assert ts and float(ts.group(1)) == 1795444553.0
+
+
+def test_provenance_is_bounded_and_per_row_for_mixed_sources(tmp_path: Path) -> None:
+    n = X.normalise_provenance
+    assert n("synthetic, single-author, supervisor-audited") == "synthetic"
+    assert n("synthetic fixtures (Falcon Demo Bank)") == "fixture"
+    assert n("real (val/test) + synthetic (fixtures)") == "mixed"
+    assert n("real") == "real" and n(None) == "unknown" and n("whatever") == "unknown"
+    _w(
+        tmp_path,
+        "synthetic_split/s.json",
+        {
+            "created_at": "2026-11-23T14:00:00Z",
+            "provenance": "real (manifest items) and synthetic (fixtures), reported side by side",
+            "real_items_scored": {"fpr_warning": {"value": 0.1, "ci95": [0.05, 0.2], "n": 80}},
+            "synthetic_messages_scored": {"fpr_warning": {"value": 0.0, "n": 8}},
+        },
+    )
+    text, _, _ = X.render(tmp_path)
+    real = 'metric="real_items_scored.fpr_warning",split="all",source="synthetic_split",artifact="s",provenance="real"'
+    synth = (
+        'metric="synthetic_messages_scored.fpr_warning",split="all",source="synthetic_split",'
+        'artifact="s",provenance="synthetic"'
+    )
+    assert real in text
+    assert synth in text
+
+
+def test_dspy_adopted_flag_and_info_labels(tmp_path: Path) -> None:
+    _w(
+        tmp_path,
+        "dspy/extractor_x.json",
+        {
+            "role": "extractor",
+            "route": "local",
+            "synthetic_data": True,
+            "adopted": False,
+            "before_val": {"mean": 0.74, "n": 12},
+            "after_val": {"mean": 0.77, "n": 12},
+        },
+    )
+    text, _, _ = X.render(tmp_path)
+    assert 'metric="adopted",split="all",source="dspy",artifact="extractor_x",provenance="synthetic"} 0.0' in text
+    assert 'metric="before_val.mean",split="all",source="dspy"' in text
+    assert 'role="extractor",route="local"' in text
+
+
+def test_fp_regress_extras_and_set_label(tmp_path: Path) -> None:
+    grp = {
+        "n": 141,
+        "false_dangerous": 1,
+        "partial_reads": 10,
+        "false_positive_rate": {"value": 0.15, "ci95": [0.1, 0.2]},
+    }
+    _w(
+        tmp_path,
+        "fp_regress/f.json",
+        {
+            "set": "heldout_legit_2.csv",
+            "created_at": "2026-11-23T16:31:04Z",
+            "n": 200,
+            "false_dangerous": 1,
+            "false_positive_rate": {"value": 0.265, "ci95": [0.2, 0.3]},
+            "counts": {"suspicious": 52},
+            "by_serves_web": {"serves_web_page": grp},
+        },
+    )
+    text, _, _ = X.render(tmp_path)
+    assert 'metric="false_dangerous",split="heldout",source="fp_regress",artifact="f",provenance="real"} 1.0' in text
+    assert 'metric="partial_reads_serves_web"' in text
+    assert 'metric="verdict.suspicious"' in text
+    assert 'set="heldout_legit_2.csv"' in text
+
+
+def test_published_artifacts_every_series_has_bounded_provenance() -> None:
+    text, count, errors = X.render(PUBLISHED)
+    assert count > 20 and errors == 0
+    provs = set(re.findall(r'^fl_eval_metric\{.*provenance="([^"]*)"\}', text, re.M))
+    assert provs <= set(X.PROVENANCE_VALUES)
+    series = [ln for ln in text.splitlines() if ln.startswith("fl_eval_metric{")]
+    for source in (
+        "redteam",
+        "route_compare",
+        "cost_per_check",
+        "dspy",
+        "message_text",
+        "synthetic_split",
+        "t3_investigator",
+    ):
+        assert any(f'source="{source}"' in ln for ln in series), source
+    assert len(set(re.findall(r'^fl_eval_metric\{metric="([^"]*)"', text, re.M))) < 900
