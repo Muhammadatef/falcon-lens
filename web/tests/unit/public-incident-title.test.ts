@@ -36,8 +36,11 @@ describe("public incident title is built from structured fields only", () => {
     for (const [, id, en, ar] of found) expect(BRAND_NAMES[id!]).toEqual({ ar: ar!.trim(), en: en!.trim() });
     expect(Object.keys(BRAND_NAMES)).toHaveLength(found.length);
   });
+  it("R1 Arabic reads correctly for any count", () => {
+    for (const d of [1, 2, 5, 12]) expect(publicSeverityLine(["R1"], 9, d).ar).toBe(`رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة (العدد: ${d}).`);
+  });
   it("R1: lookalike domains for one brand, counts domains, omits 0", () => {
-    expect(publicSeverityLine(["R1"], 9, 3)).toEqual({ ar: "رُصد 3 نطاقات جديدًا تشبه علامة واحدة خلال ساعة.", en: "3 new lookalike domains for one brand within an hour." });
+    expect(publicSeverityLine(["R1"], 9, 3)).toEqual({ ar: "رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة (العدد: 3).", en: "3 new lookalike domains for one brand within an hour." });
     expect(publicSeverityLine(["R1"], 9, 1).en).toBe("1 new lookalike domain for one brand within an hour.");
     expect(publicSeverityLine(["R1"], 9, 0)).toEqual({ ar: "رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة.", en: "New lookalike domains for one brand within an hour." });
   });

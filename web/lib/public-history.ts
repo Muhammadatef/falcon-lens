@@ -291,7 +291,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  */
 const RULE_LINES: Readonly<Record<string, Line>> = {
   R1: (d) => ({
-    ar: d > 0 ? `رُصد ${arCount(d, DOMAINS)} جديدًا تشبه علامة واحدة خلال ساعة.` : "رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة.",
+    ar: d > 0 ? `رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة (العدد: ${d}).` : "رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة.",
     en: d > 0 ? `${plural(d, "new lookalike domain", "new lookalike domains")} for one brand within an hour.` : "New lookalike domains for one brand within an hour.",
   }),
   R2: (d) => ({
