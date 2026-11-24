@@ -77,6 +77,50 @@ function numberWords(n: number): Pair {
   return u === 0 ? [TENS_AR[t]!, TENS_EN[t]!] : [`${NUM_AR[u]} ${TENS_AR_AND[t]}`, `${TENS_EN[t]}-${NUM_EN[u]}`];
 }
 
+/**
+ * Scam-safety FAQ: pre-written answers, never generated. The id is `faq.<name>`; the Python matcher
+ * (falcon_core/voice/faq.py) returns the name and the web plays the clip. Scams only, no phone numbers or links.
+ */
+export const FAQ: readonly (readonly [name: string, ar_ae: string, en: string])[] = [
+  ["otp", "البنك ما يطلب منك الرمز أبداً. لا تعطيه لأي أحد، حتى لو قال إنه من البنك.", "Your bank never asks for your one-time code. Never share it with anyone, even if they say they are the bank."],
+  ["clicked_link", "لا تخاف، بس تصرّف بسرعة. لا تدخل أي بيانات، وكلّم بنكك، وغيّر أرقامك السرية.", "Don't panic, but act fast. Don't enter any details, call your bank, and change your passcodes."],
+  ["shared_card", "كلّم بنكك الحين على الرقم اللي ورا بطاقتك، وقل لهم يوقفون البطاقة. وبعدها بلّغ عن اللي صار.", "Call your bank right now on the number on your card and ask them to block it. Then report what happened."],
+  ["fake_police", "الشرطة ما تطلب فلوس بالتلفون. سكّر المكالمة، وبلّغ من القنوات الرسمية.", "The police never ask for money over the phone. Hang up, and report it through the official channels."],
+  ["parcel_fee", "رسالة رسوم التوصيل غالباً نصب. لا تضغط الرابط، واسأل شركة الشحن من تطبيقها الرسمي.", "A delivery fee message is often a scam. Don't tap the link, and ask the courier through its official app."],
+  ["prize", "ما تربح جايزة في سحب ما دخلته. لا ترد على الرسالة، ولا تدفع رسوم عشان تستلمها.", "You can't win a draw you never entered. Don't reply, and never pay a fee to collect a prize."],
+  ["investment", "أي عرض يوعدك بربح سريع ومضمون هو نصب غالباً. لا تحوّل فلوس، واسأل جهة مرخصة.", "An offer promising fast, guaranteed profit is usually a scam. Don't transfer money, and ask a licensed firm."],
+  ["fake_job", "الوظيفة الحقيقية ما تطلب منك فلوس قبل لا تبدأ. تأكد من الشركة من موقعها الرسمي.", "A real job never asks you to pay before you start. Check the company on its official website."],
+  ["report", "بلّغ من القنوات الرسمية للجهات المختصة في الدولة. واحتفظ بالرسالة، ولا تحذفها.", "Report it through the official channels of the authorities. Keep the message, and don't delete it."],
+  ["about", "أنا عدسة الصقر. أفحص الرسائل والروابط، وأقول لك إذا فيها علامات نصب، وأعطيك الأدلة.", "I'm Falcon Lens. I check messages and links for scam signs, and show you the evidence."],
+  ["agents", "بصير يفحص الرسالة، ودرع يراقب ويربط البلاغات المتشابهة. وما يُرسل شي للخارج من غير موافقة شخص.", "Baseer checks the message. Dir watches and links similar reports. Nothing is sent outside without a person's approval."],
+  ["data_stored", "كلامك ينعالج على جهازنا وينحذف. وما نحفظ نص رسالتك، بس بصمتها ونتيجة الفحص.", "What you say is processed on our own machine and deleted. We don't store your message text, only its fingerprint and the result."],
+  ["bank_link", "البنك ما يرسل لك رابط عشان تحدّث بياناتك. افتح تطبيق البنك بنفسك، أو كلّمه.", "Your bank doesn't send links to update your details. Open your bank app yourself, or call it."],
+  ["friend_money", "إذا واحد من ربعك يطلب فلوس برسالة، كلّمه بالتلفون أول. يمكن حسابه انسرق.", "If a friend asks for money by message, call them first. Their account may have been hacked."],
+  ["relative_urgent", "اتصال عن قريب محتاج فلوس بسرعة؟ سكّر، وكلّم قريبك على رقمه اللي تعرفه.", "A call saying a relative urgently needs money? Hang up and call your relative on the number you know."],
+  ["remote_access", "لا تحمّل برنامج ولا تشارك شاشتك مع أحد يتصل فيك. هذي طريقة النصابين عشان يدخلون جهازك.", "Never install an app or share your screen for a caller. That's how scammers get into your phone."],
+  ["qr_code", "لا تمسح رمز كيو آر من مصدر ما تعرفه. افتح الموقع بنفسك بدل ما تمسحه.", "Don't scan a QR code from a source you don't know. Open the website yourself instead."],
+  ["online_shop", "الأسعار الرخيصة مرة ممكن تكون فخ. اشتر من مواقع تعرفها، وادفع بطريقة فيها حماية.", "Prices that look too good can be a trap. Buy from sites you know, and pay by a method with protection."],
+  ["sent_money", "كلّم بنكك فوراً، يمكن يقدرون يوقفون التحويل. وبلّغ من القنوات الرسمية، وكل ما أسرعت أحسن.", "Call your bank immediately, they may be able to stop the transfer. Then report it through the official channels."],
+  ["shared_login", "غيّر رقمك السري الحين، وكلّم بنكك. وفعّل التحقق بخطوتين.", "Change your passcode right now and call your bank. Then turn on two-step verification."],
+  ["spot_scam", "علامات النصب: استعجال، وتهديد، ورابط غريب، وطلب رمز أو فلوس. إذا شفت وحدة منها، وقّف.", "Scam signs: urgency, threats, a strange link, or a request for a code or money. If you see one, stop."],
+  ["limits", "ما فيه نظام يكشف كل شي. أنا أعطيك علامات وأدلة، وإذا شكيت، كلّم بنكك.", "No system catches everything. I show you signs and evidence, and if in doubt, call your bank."],
+];
+/** Polite redirects for anything outside scams; the web rotates through them. */
+export const OFF_TOPIC: readonly Pair[] = [
+  ["هذا خارج شغلي. أنا هنا أحميك من رسائل النصب. قل: يا صقر، افحص رسائلي.", "That's outside my job. I'm here to protect you from scam messages. Say: Hey Falcon, check my messages."],
+  ["ما أقدر أساعدك في هذا. أنا متخصص بالنصب والاحتيال. انسخ رسالتك، وقل: يا صقر، افحصها.", "I can't help with that. I only handle scams and fraud. Copy your message and say: Hey Falcon, check it."],
+  ["سؤالك حلو، بس مو من اختصاصي. اسألني عن رسائل النصب، أو قل: يا صقر، ساعدني.", "Good question, but not my area. Ask me about scam messages, or say: Hey Falcon, help me."],
+];
+export const FAQ_PREFIXES = ["faq.", "offtopic.", "ack."] as const;
+/** Keys that belong to the FAQ script file (voice_faq.yaml), not to voice_script.yaml. */
+export const isFaqKey = (key: string): boolean => FAQ_PREFIXES.some((p) => key.startsWith(p));
+/** Spoken the moment speech ends, before the transcript returns. */
+export const ACK_KEY = "ack.moment";
+export const offTopicKey = (i: number): string => `offtopic.${(((Math.floor(i) % OFF_TOPIC.length) + OFF_TOPIC.length) % OFF_TOPIC.length) + 1}`;
+export const faqKey = (name: string): string => `faq.${name}`;
+/** The FAQ answer keys the API may return (validated before anything is played). */
+export const FAQ_KEYS: readonly string[] = FAQ.map(([n]) => faqKey(n));
+
 export const ARBITER_VERDICTS = ["dangerous", "suspicious", "no_warning_signs", "could_not_check"] as const;
 
 function build(): Record<VoiceLang, Record<string, string>> {
@@ -147,6 +191,9 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("clip.denied", "ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة.", "I couldn't read what you copied. Paste it in the box on the screen.");
   put("error", "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط.", "Something went wrong. Try again, and don't open any link.");
   put("goodbye", "يزاك الله خير. الله يحفظك.", "Thank you. Take care.");
+  for (const [name, a, e] of FAQ) put(faqKey(name), a, e);
+  OFF_TOPIC.forEach(([a, e], i) => put(`offtopic.${i + 1}`, a, e));
+  put(ACK_KEY, "لحظة…", "One moment…");
   return { ar_ae: ar, en };
 }
 

@@ -159,6 +159,11 @@ const VOICE_REPLIES = {
   "help-ar": { transcript: "يا فالكون ساعدني", lang: "ar", wake: true, intent: "help", command: "ساعدني" },
   "none-ar": { transcript: "يا فالكون", lang: "ar", wake: true, intent: "none", command: "" },
   stop: { transcript: "Falcon stop", lang: "en", wake: true, intent: "stop", command: "stop" },
+  "faq-otp-ar": { transcript: "يا صقر، هل البنك يطلب مني الرمز", lang: "ar", wake: true, intent: "faq", command: "هل البنك يطلب مني الرمز", answer_id: "faq.otp" },
+  "faq-clicked-en": { transcript: "Hey Falcon, I already clicked the link, what now?", lang: "en", wake: true, intent: "faq", command: "I already clicked the link, what now?", answer_id: "faq.clicked_link" },
+  "faq-follow-ar": { transcript: "وش أسوي إذا ضغطت على الرابط", lang: "ar", wake: true, intent: "faq", command: "وش أسوي إذا ضغطت على الرابط", answer_id: "faq.clicked_link" },
+  "offtopic-en": { transcript: "Hey Falcon, what is the weather", lang: "en", wake: true, intent: "off_topic", command: "what is the weather", answer_id: null },
+  "offtopic-ar": { transcript: "يا صقر، احكي لي نكتة", lang: "ar", wake: true, intent: "off_topic", command: "احكي لي نكتة", answer_id: null },
   noise: { transcript: "what is for dinner", lang: "en", wake: false, intent: "none", command: "" },
 };
 const voiceCalls = [];
@@ -166,11 +171,11 @@ async function voice(req, res) {
   if (req.headers["x-api-key"] !== "test-read-key") return problem(req, res, 401, "unauthorized", "Unauthorized");
   const raw = await readBody(req);
   const text = raw.toString("latin1");
-  voiceCalls.push({ bytes: raw.length, hasAudioPart: /name="audio"/.test(text), langHint: /name="lang_hint"\r\n\r\n(\w+)/.exec(text)?.[1] ?? null, marker: /;T:([a-z0-9]+)/.exec(text)?.[1] ?? null });
+  voiceCalls.push({ bytes: raw.length, hasAudioPart: /name="audio"/.test(text), followUp: /name="follow_up"\r\n\r\n(\d)/.exec(text)?.[1] ?? null, langHint: /name="lang_hint"\r\n\r\n(\w+)/.exec(text)?.[1] ?? null, marker: /;T:([a-z0-9]+)/.exec(text)?.[1] ?? null });
   if (text.includes("VOICE:fail")) return problem(req, res, 503, "unavailable", "Unavailable");
   const reply = VOICE_REPLIES[/VOICE:([a-z-]+)/.exec(text)?.[1] ?? ""];
   if (!reply) return problem(req, res, 422, "invalid-request", "Invalid request");
-  return json(res, 200, { duration_ms: 3200, model: "mock-asr", ...reply });
+  return json(res, 200, { duration_ms: 3200, model: "mock-asr", answer_id: null, ...reply });
 }
 
 async function api(req, res, path) {

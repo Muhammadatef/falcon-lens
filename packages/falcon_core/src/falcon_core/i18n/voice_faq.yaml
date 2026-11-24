@@ -1,0 +1,114 @@
+# GENERATED from web/lib/voice-script.ts by web/scripts/gen-voice-script.mjs. Do not edit by hand.
+# Pre-written scam-safety FAQ answers (faq.*), polite off-topic redirects (offtopic.*) and the instant acknowledgement (ack.*).
+# Nothing here is generated at runtime: the assistant only ever plays these recorded lines. Scams only; no word that promises protection;
+# no phone numbers or links (reporting is generic until a channel is verified in config).
+version: 1
+clip_count: 52
+languages: [ar_ae, en]
+ar_ae:
+  "faq.otp": "البنك ما يطلب منك الرمز أبداً. لا تعطيه لأي أحد، حتى لو قال إنه من البنك."
+  "faq.clicked_link": "لا تخاف، بس تصرّف بسرعة. لا تدخل أي بيانات، وكلّم بنكك، وغيّر أرقامك السرية."
+  "faq.shared_card": "كلّم بنكك الحين على الرقم اللي ورا بطاقتك، وقل لهم يوقفون البطاقة. وبعدها بلّغ عن اللي صار."
+  "faq.fake_police": "الشرطة ما تطلب فلوس بالتلفون. سكّر المكالمة، وبلّغ من القنوات الرسمية."
+  "faq.parcel_fee": "رسالة رسوم التوصيل غالباً نصب. لا تضغط الرابط، واسأل شركة الشحن من تطبيقها الرسمي."
+  "faq.prize": "ما تربح جايزة في سحب ما دخلته. لا ترد على الرسالة، ولا تدفع رسوم عشان تستلمها."
+  "faq.investment": "أي عرض يوعدك بربح سريع ومضمون هو نصب غالباً. لا تحوّل فلوس، واسأل جهة مرخصة."
+  "faq.fake_job": "الوظيفة الحقيقية ما تطلب منك فلوس قبل لا تبدأ. تأكد من الشركة من موقعها الرسمي."
+  "faq.report": "بلّغ من القنوات الرسمية للجهات المختصة في الدولة. واحتفظ بالرسالة، ولا تحذفها."
+  "faq.about": "أنا عدسة الصقر. أفحص الرسائل والروابط، وأقول لك إذا فيها علامات نصب، وأعطيك الأدلة."
+  "faq.agents": "بصير يفحص الرسالة، ودرع يراقب ويربط البلاغات المتشابهة. وما يُرسل شي للخارج من غير موافقة شخص."
+  "faq.data_stored": "كلامك ينعالج على جهازنا وينحذف. وما نحفظ نص رسالتك، بس بصمتها ونتيجة الفحص."
+  "faq.bank_link": "البنك ما يرسل لك رابط عشان تحدّث بياناتك. افتح تطبيق البنك بنفسك، أو كلّمه."
+  "faq.friend_money": "إذا واحد من ربعك يطلب فلوس برسالة، كلّمه بالتلفون أول. يمكن حسابه انسرق."
+  "faq.relative_urgent": "اتصال عن قريب محتاج فلوس بسرعة؟ سكّر، وكلّم قريبك على رقمه اللي تعرفه."
+  "faq.remote_access": "لا تحمّل برنامج ولا تشارك شاشتك مع أحد يتصل فيك. هذي طريقة النصابين عشان يدخلون جهازك."
+  "faq.qr_code": "لا تمسح رمز كيو آر من مصدر ما تعرفه. افتح الموقع بنفسك بدل ما تمسحه."
+  "faq.online_shop": "الأسعار الرخيصة مرة ممكن تكون فخ. اشتر من مواقع تعرفها، وادفع بطريقة فيها حماية."
+  "faq.sent_money": "كلّم بنكك فوراً، يمكن يقدرون يوقفون التحويل. وبلّغ من القنوات الرسمية، وكل ما أسرعت أحسن."
+  "faq.shared_login": "غيّر رقمك السري الحين، وكلّم بنكك. وفعّل التحقق بخطوتين."
+  "faq.spot_scam": "علامات النصب: استعجال، وتهديد، ورابط غريب، وطلب رمز أو فلوس. إذا شفت وحدة منها، وقّف."
+  "faq.limits": "ما فيه نظام يكشف كل شي. أنا أعطيك علامات وأدلة، وإذا شكيت، كلّم بنكك."
+  "offtopic.1": "هذا خارج شغلي. أنا هنا أحميك من رسائل النصب. قل: يا صقر، افحص رسائلي."
+  "offtopic.2": "ما أقدر أساعدك في هذا. أنا متخصص بالنصب والاحتيال. انسخ رسالتك، وقل: يا صقر، افحصها."
+  "offtopic.3": "سؤالك حلو، بس مو من اختصاصي. اسألني عن رسائل النصب، أو قل: يا صقر، ساعدني."
+  "ack.moment": "لحظة…"
+en:
+  "faq.otp": "Your bank never asks for your one-time code. Never share it with anyone, even if they say they are the bank."
+  "faq.clicked_link": "Don't panic, but act fast. Don't enter any details, call your bank, and change your passcodes."
+  "faq.shared_card": "Call your bank right now on the number on your card and ask them to block it. Then report what happened."
+  "faq.fake_police": "The police never ask for money over the phone. Hang up, and report it through the official channels."
+  "faq.parcel_fee": "A delivery fee message is often a scam. Don't tap the link, and ask the courier through its official app."
+  "faq.prize": "You can't win a draw you never entered. Don't reply, and never pay a fee to collect a prize."
+  "faq.investment": "An offer promising fast, guaranteed profit is usually a scam. Don't transfer money, and ask a licensed firm."
+  "faq.fake_job": "A real job never asks you to pay before you start. Check the company on its official website."
+  "faq.report": "Report it through the official channels of the authorities. Keep the message, and don't delete it."
+  "faq.about": "I'm Falcon Lens. I check messages and links for scam signs, and show you the evidence."
+  "faq.agents": "Baseer checks the message. Dir watches and links similar reports. Nothing is sent outside without a person's approval."
+  "faq.data_stored": "What you say is processed on our own machine and deleted. We don't store your message text, only its fingerprint and the result."
+  "faq.bank_link": "Your bank doesn't send links to update your details. Open your bank app yourself, or call it."
+  "faq.friend_money": "If a friend asks for money by message, call them first. Their account may have been hacked."
+  "faq.relative_urgent": "A call saying a relative urgently needs money? Hang up and call your relative on the number you know."
+  "faq.remote_access": "Never install an app or share your screen for a caller. That's how scammers get into your phone."
+  "faq.qr_code": "Don't scan a QR code from a source you don't know. Open the website yourself instead."
+  "faq.online_shop": "Prices that look too good can be a trap. Buy from sites you know, and pay by a method with protection."
+  "faq.sent_money": "Call your bank immediately, they may be able to stop the transfer. Then report it through the official channels."
+  "faq.shared_login": "Change your passcode right now and call your bank. Then turn on two-step verification."
+  "faq.spot_scam": "Scam signs: urgency, threats, a strange link, or a request for a code or money. If you see one, stop."
+  "faq.limits": "No system catches everything. I show you signs and evidence, and if in doubt, call your bank."
+  "offtopic.1": "That's outside my job. I'm here to protect you from scam messages. Say: Hey Falcon, check my messages."
+  "offtopic.2": "I can't help with that. I only handle scams and fraud. Copy your message and say: Hey Falcon, check it."
+  "offtopic.3": "Good question, but not my area. Ask me about scam messages, or say: Hey Falcon, help me."
+  "ack.moment": "One moment…"
+clips:
+  - {id: "ar_ae.faq.otp", lang: ar_ae, text: "البنك ما يطلب منك الرمز أبداً. لا تعطيه لأي أحد، حتى لو قال إنه من البنك."}
+  - {id: "ar_ae.faq.clicked_link", lang: ar_ae, text: "لا تخاف، بس تصرّف بسرعة. لا تدخل أي بيانات، وكلّم بنكك، وغيّر أرقامك السرية."}
+  - {id: "ar_ae.faq.shared_card", lang: ar_ae, text: "كلّم بنكك الحين على الرقم اللي ورا بطاقتك، وقل لهم يوقفون البطاقة. وبعدها بلّغ عن اللي صار."}
+  - {id: "ar_ae.faq.fake_police", lang: ar_ae, text: "الشرطة ما تطلب فلوس بالتلفون. سكّر المكالمة، وبلّغ من القنوات الرسمية."}
+  - {id: "ar_ae.faq.parcel_fee", lang: ar_ae, text: "رسالة رسوم التوصيل غالباً نصب. لا تضغط الرابط، واسأل شركة الشحن من تطبيقها الرسمي."}
+  - {id: "ar_ae.faq.prize", lang: ar_ae, text: "ما تربح جايزة في سحب ما دخلته. لا ترد على الرسالة، ولا تدفع رسوم عشان تستلمها."}
+  - {id: "ar_ae.faq.investment", lang: ar_ae, text: "أي عرض يوعدك بربح سريع ومضمون هو نصب غالباً. لا تحوّل فلوس، واسأل جهة مرخصة."}
+  - {id: "ar_ae.faq.fake_job", lang: ar_ae, text: "الوظيفة الحقيقية ما تطلب منك فلوس قبل لا تبدأ. تأكد من الشركة من موقعها الرسمي."}
+  - {id: "ar_ae.faq.report", lang: ar_ae, text: "بلّغ من القنوات الرسمية للجهات المختصة في الدولة. واحتفظ بالرسالة، ولا تحذفها."}
+  - {id: "ar_ae.faq.about", lang: ar_ae, text: "أنا عدسة الصقر. أفحص الرسائل والروابط، وأقول لك إذا فيها علامات نصب، وأعطيك الأدلة."}
+  - {id: "ar_ae.faq.agents", lang: ar_ae, text: "بصير يفحص الرسالة، ودرع يراقب ويربط البلاغات المتشابهة. وما يُرسل شي للخارج من غير موافقة شخص."}
+  - {id: "ar_ae.faq.data_stored", lang: ar_ae, text: "كلامك ينعالج على جهازنا وينحذف. وما نحفظ نص رسالتك، بس بصمتها ونتيجة الفحص."}
+  - {id: "ar_ae.faq.bank_link", lang: ar_ae, text: "البنك ما يرسل لك رابط عشان تحدّث بياناتك. افتح تطبيق البنك بنفسك، أو كلّمه."}
+  - {id: "ar_ae.faq.friend_money", lang: ar_ae, text: "إذا واحد من ربعك يطلب فلوس برسالة، كلّمه بالتلفون أول. يمكن حسابه انسرق."}
+  - {id: "ar_ae.faq.relative_urgent", lang: ar_ae, text: "اتصال عن قريب محتاج فلوس بسرعة؟ سكّر، وكلّم قريبك على رقمه اللي تعرفه."}
+  - {id: "ar_ae.faq.remote_access", lang: ar_ae, text: "لا تحمّل برنامج ولا تشارك شاشتك مع أحد يتصل فيك. هذي طريقة النصابين عشان يدخلون جهازك."}
+  - {id: "ar_ae.faq.qr_code", lang: ar_ae, text: "لا تمسح رمز كيو آر من مصدر ما تعرفه. افتح الموقع بنفسك بدل ما تمسحه."}
+  - {id: "ar_ae.faq.online_shop", lang: ar_ae, text: "الأسعار الرخيصة مرة ممكن تكون فخ. اشتر من مواقع تعرفها، وادفع بطريقة فيها حماية."}
+  - {id: "ar_ae.faq.sent_money", lang: ar_ae, text: "كلّم بنكك فوراً، يمكن يقدرون يوقفون التحويل. وبلّغ من القنوات الرسمية، وكل ما أسرعت أحسن."}
+  - {id: "ar_ae.faq.shared_login", lang: ar_ae, text: "غيّر رقمك السري الحين، وكلّم بنكك. وفعّل التحقق بخطوتين."}
+  - {id: "ar_ae.faq.spot_scam", lang: ar_ae, text: "علامات النصب: استعجال، وتهديد، ورابط غريب، وطلب رمز أو فلوس. إذا شفت وحدة منها، وقّف."}
+  - {id: "ar_ae.faq.limits", lang: ar_ae, text: "ما فيه نظام يكشف كل شي. أنا أعطيك علامات وأدلة، وإذا شكيت، كلّم بنكك."}
+  - {id: "ar_ae.offtopic.1", lang: ar_ae, text: "هذا خارج شغلي. أنا هنا أحميك من رسائل النصب. قل: يا صقر، افحص رسائلي."}
+  - {id: "ar_ae.offtopic.2", lang: ar_ae, text: "ما أقدر أساعدك في هذا. أنا متخصص بالنصب والاحتيال. انسخ رسالتك، وقل: يا صقر، افحصها."}
+  - {id: "ar_ae.offtopic.3", lang: ar_ae, text: "سؤالك حلو، بس مو من اختصاصي. اسألني عن رسائل النصب، أو قل: يا صقر، ساعدني."}
+  - {id: "ar_ae.ack.moment", lang: ar_ae, text: "لحظة…"}
+  - {id: "en.faq.otp", lang: en, text: "Your bank never asks for your one-time code. Never share it with anyone, even if they say they are the bank."}
+  - {id: "en.faq.clicked_link", lang: en, text: "Don't panic, but act fast. Don't enter any details, call your bank, and change your passcodes."}
+  - {id: "en.faq.shared_card", lang: en, text: "Call your bank right now on the number on your card and ask them to block it. Then report what happened."}
+  - {id: "en.faq.fake_police", lang: en, text: "The police never ask for money over the phone. Hang up, and report it through the official channels."}
+  - {id: "en.faq.parcel_fee", lang: en, text: "A delivery fee message is often a scam. Don't tap the link, and ask the courier through its official app."}
+  - {id: "en.faq.prize", lang: en, text: "You can't win a draw you never entered. Don't reply, and never pay a fee to collect a prize."}
+  - {id: "en.faq.investment", lang: en, text: "An offer promising fast, guaranteed profit is usually a scam. Don't transfer money, and ask a licensed firm."}
+  - {id: "en.faq.fake_job", lang: en, text: "A real job never asks you to pay before you start. Check the company on its official website."}
+  - {id: "en.faq.report", lang: en, text: "Report it through the official channels of the authorities. Keep the message, and don't delete it."}
+  - {id: "en.faq.about", lang: en, text: "I'm Falcon Lens. I check messages and links for scam signs, and show you the evidence."}
+  - {id: "en.faq.agents", lang: en, text: "Baseer checks the message. Dir watches and links similar reports. Nothing is sent outside without a person's approval."}
+  - {id: "en.faq.data_stored", lang: en, text: "What you say is processed on our own machine and deleted. We don't store your message text, only its fingerprint and the result."}
+  - {id: "en.faq.bank_link", lang: en, text: "Your bank doesn't send links to update your details. Open your bank app yourself, or call it."}
+  - {id: "en.faq.friend_money", lang: en, text: "If a friend asks for money by message, call them first. Their account may have been hacked."}
+  - {id: "en.faq.relative_urgent", lang: en, text: "A call saying a relative urgently needs money? Hang up and call your relative on the number you know."}
+  - {id: "en.faq.remote_access", lang: en, text: "Never install an app or share your screen for a caller. That's how scammers get into your phone."}
+  - {id: "en.faq.qr_code", lang: en, text: "Don't scan a QR code from a source you don't know. Open the website yourself instead."}
+  - {id: "en.faq.online_shop", lang: en, text: "Prices that look too good can be a trap. Buy from sites you know, and pay by a method with protection."}
+  - {id: "en.faq.sent_money", lang: en, text: "Call your bank immediately, they may be able to stop the transfer. Then report it through the official channels."}
+  - {id: "en.faq.shared_login", lang: en, text: "Change your passcode right now and call your bank. Then turn on two-step verification."}
+  - {id: "en.faq.spot_scam", lang: en, text: "Scam signs: urgency, threats, a strange link, or a request for a code or money. If you see one, stop."}
+  - {id: "en.faq.limits", lang: en, text: "No system catches everything. I show you signs and evidence, and if in doubt, call your bank."}
+  - {id: "en.offtopic.1", lang: en, text: "That's outside my job. I'm here to protect you from scam messages. Say: Hey Falcon, check my messages."}
+  - {id: "en.offtopic.2", lang: en, text: "I can't help with that. I only handle scams and fraud. Copy your message and say: Hey Falcon, check it."}
+  - {id: "en.offtopic.3", lang: en, text: "Good question, but not my area. Ask me about scam messages, or say: Hey Falcon, help me."}
+  - {id: "en.ack.moment", lang: en, text: "One moment…"}

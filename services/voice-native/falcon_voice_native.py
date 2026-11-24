@@ -43,6 +43,8 @@ HF_REPO = "mlx-community/whisper-large-v3-turbo"
 MODEL_NAME = "whisper-large-v3-turbo"
 # Per language (Neo lesson): the Arabic phrases only bias Arabic audio, a mixed prompt is echoed on English/noise.
 PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا فالكون. عدسة الصقر. هاي فالكون."}
+# Optional speed knob (default off, decoding unchanged): skip Whisper's timestamp tokens (scripts/voice_stt_bench.py).
+NO_TIMESTAMPS = os.environ.get("FL_WHISPER_NO_TIMESTAMPS", "") == "1"
 TOKENS_PER_WORD = 6
 SAMPLE_LEN_MAX = 224
 
@@ -128,6 +130,7 @@ def transcribe(audio: np.ndarray, lang: str | None) -> tuple[str, str]:
             no_speech_threshold=0.5,
             temperature=0.0,
             sample_len=min(SAMPLE_LEN_MAX, cap_words * TOKENS_PER_WORD),
+            **({"without_timestamps": True} if NO_TIMESTAMPS else {}),
         )
     text = clean_transcript(str(r.get("text") or ""), seconds, r.get("segments") or [])
     return text, str(r.get("language") or language)

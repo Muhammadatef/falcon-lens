@@ -1862,5 +1862,213 @@
     "ms": 1016,
     "engine": "kokoro",
     "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.otp",
+    "file": "en.faq.otp.mp3",
+    "text": "Your bank never asks for your one-time code. Never share it with anyone, even if they say they are the bank.",
+    "ms": 6214,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.clicked_link",
+    "file": "en.faq.clicked_link.mp3",
+    "text": "Don't panic, but act fast. Don't enter any details, call your bank, and change your passcodes.",
+    "ms": 5168,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.shared_card",
+    "file": "en.faq.shared_card.mp3",
+    "text": "Call your bank right now on the number on your card and ask them to block it. Then report what happened.",
+    "ms": 5854,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.fake_police",
+    "file": "en.faq.fake_police.mp3",
+    "text": "The police never ask for money over the phone. Hang up, and report it through the official channels.",
+    "ms": 5450,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.parcel_fee",
+    "file": "en.faq.parcel_fee.mp3",
+    "text": "A delivery fee message is often a scam. Don't tap the link, and ask the courier through its official app.",
+    "ms": 6209,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.prize",
+    "file": "en.faq.prize.mp3",
+    "text": "You can't win a draw you never entered. Don't reply, and never pay a fee to collect a prize.",
+    "ms": 5431,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.investment",
+    "file": "en.faq.investment.mp3",
+    "text": "An offer promising fast, guaranteed profit is usually a scam. Don't transfer money, and ask a licensed firm.",
+    "ms": 6913,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.fake_job",
+    "file": "en.faq.fake_job.mp3",
+    "text": "A real job never asks you to pay before you start. Check the company on its official website.",
+    "ms": 5688,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.report",
+    "file": "en.faq.report.mp3",
+    "text": "Report it through the official channels of the authorities. Keep the message, and don't delete it.",
+    "ms": 4921,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.about",
+    "file": "en.faq.about.mp3",
+    "text": "I'm Falcon Lens. I check messages and links for scam signs, and show you the evidence.",
+    "ms": 4879,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.agents",
+    "file": "en.faq.agents.mp3",
+    "text": "Baseer checks the message. Dir watches and links similar reports. Nothing is sent outside without a person's approval.",
+    "ms": 7250,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.data_stored",
+    "file": "en.faq.data_stored.mp3",
+    "text": "What you say is processed on our own machine and deleted. We don't store your message text, only its fingerprint and the result.",
+    "ms": 7575,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.bank_link",
+    "file": "en.faq.bank_link.mp3",
+    "text": "Your bank doesn't send links to update your details. Open your bank app yourself, or call it.",
+    "ms": 5340,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.friend_money",
+    "file": "en.faq.friend_money.mp3",
+    "text": "If a friend asks for money by message, call them first. Their account may have been hacked.",
+    "ms": 4833,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.relative_urgent",
+    "file": "en.faq.relative_urgent.mp3",
+    "text": "A call saying a relative urgently needs money? Hang up and call your relative on the number you know.",
+    "ms": 5743,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.remote_access",
+    "file": "en.faq.remote_access.mp3",
+    "text": "Never install an app or share your screen for a caller. That's how scammers get into your phone.",
+    "ms": 5302,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.qr_code",
+    "file": "en.faq.qr_code.mp3",
+    "text": "Don't scan a QR code from a source you don't know. Open the website yourself instead.",
+    "ms": 4786,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.online_shop",
+    "file": "en.faq.online_shop.mp3",
+    "text": "Prices that look too good can be a trap. Buy from sites you know, and pay by a method with protection.",
+    "ms": 5740,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.sent_money",
+    "file": "en.faq.sent_money.mp3",
+    "text": "Call your bank immediately, they may be able to stop the transfer. Then report it through the official channels.",
+    "ms": 5930,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.shared_login",
+    "file": "en.faq.shared_login.mp3",
+    "text": "Change your passcode right now and call your bank. Then turn on two-step verification.",
+    "ms": 4914,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.spot_scam",
+    "file": "en.faq.spot_scam.mp3",
+    "text": "Scam signs: urgency, threats, a strange link, or a request for a code or money. If you see one, stop.",
+    "ms": 6539,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.faq.limits",
+    "file": "en.faq.limits.mp3",
+    "text": "No system catches everything. I show you signs and evidence, and if in doubt, call your bank.",
+    "ms": 5406,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.offtopic.1",
+    "file": "en.offtopic.1.mp3",
+    "text": "That's outside my job. I'm here to protect you from scam messages. Say: Hey Falcon, check my messages.",
+    "ms": 6378,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.offtopic.2",
+    "file": "en.offtopic.2.mp3",
+    "text": "I can't help with that. I only handle scams and fraud. Copy your message and say: Hey Falcon, check it.",
+    "ms": 6246,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.offtopic.3",
+    "file": "en.offtopic.3.mp3",
+    "text": "Good question, but not my area. Ask me about scam messages, or say: Hey Falcon, help me.",
+    "ms": 5549,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.ack.moment",
+    "file": "en.ack.moment.mp3",
+    "text": "One moment…",
+    "ms": 737,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
   }
 ]

@@ -7,42 +7,13 @@ matching and the intents are Falcon's. Transcripts are never logged here.
 
 from __future__ import annotations
 
-import re
-import unicodedata
 from dataclasses import dataclass
 from typing import Literal
 
-Intent = Literal["check_clipboard", "check_text", "help", "stop", "none"]
-MAX_CHARS = 300
+from falcon_core.voice.faq import is_injection, match_rules
+from falcon_core.voice.textnorm import _TOKEN, MAX_CHARS, edit_distance, norm_word, normalise
 
-_MARKS = re.compile("[ً-ٰٟـ]")  # diacritics + tatweel
-_FOLD = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ٱ": "ا", "ى": "ي", "ة": "ه", "ئ": "ي", "ؤ": "و"})
-_TOKEN = re.compile("[\\wً-ٰٟـ']+")
-
-
-def norm_word(word: str) -> str:
-    """Lowercase, NFKC, no diacritics/tatweel, alef/yeh/teh-marbuta folded, no punctuation."""
-    w = unicodedata.normalize("NFKC", word).lower()
-    w = _MARKS.sub("", w).translate(_FOLD)
-    return "".join(ch for ch in w if ch.isalnum())
-
-
-def normalise(text: str) -> str:
-    """Normalised text with single spaces (punctuation becomes a space)."""
-    return " ".join(t for t in (norm_word(m.group()) for m in _TOKEN.finditer(text)) if t)
-
-
-def edit_distance(a: str, b: str) -> int:
-    if a == b:
-        return 0
-    prev = list(range(len(b) + 1))
-    for i, ca in enumerate(a, 1):
-        cur = [i]
-        for j, cb in enumerate(b, 1):
-            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
-        prev = cur
-    return prev[-1]
-
+Intent = Literal["check_clipboard", "check_text", "help", "stop", "faq", "off_topic", "none"]
 
 # --- wake phrase -----------------------------------------------------------------------------
 
@@ -157,6 +128,10 @@ _CLIPBOARD_EN = ("clipboard", "copied", "copy", "paste")
 _CLIPBOARD_AR = ("نسخت", "الحافظه", "حافظه", "نسخ")
 _TEXT_TOKENS = frozenset({"text", "sms", "نص", "النص", "نصي", "نصيه"})
 _VERBS_EN = ("check", "scan", "verif", "analy", "examin", "investigat")
+_QUESTION_WORDS = frozenset(
+    {"should", "does", "do", "is", "are", "how", "what", "where", "who", "why", "when", "which"}
+    | {"هل", "كيف", "شو", "وش", "ليش", "وين", "شلون", "منو", "ايش", "شنو", "لماذا", "ماذا", "متى", "اين", "مين"}
+)
 _VERBS_AR = ("افحص", "فحص", "تحقق", "تاكد", "حلل")
 
 
@@ -168,24 +143,33 @@ def _contains(toks: list[str], stems: tuple[str, ...]) -> bool:
     return any(s in t for t in toks for s in stems)
 
 
-def _classify(command: str) -> Intent:
+def _classify(command: str) -> tuple[Intent, str | None, bool]:
+    """(intent, FAQ name when intent is `faq`, True when the text tried to override the assistant's instructions)."""
     norm = normalise(command)
     toks = norm.split()
     if not toks:
-        return "none"
+        return "none", None, False
     padded = f" {norm} "
     if any(t in _STOP for t in toks) or any(f" {p} " in padded for p in _STOP_PHRASES):
-        return "stop"
+        return "stop", None, False
+    if is_injection(command):
+        return "off_topic", None, True
     run_lens = "run" in toks and ("lens" in toks or any(_is_falcon(t) for t in toks))
-    if run_lens or _contains(toks, _CLIP_AR) or _prefix(toks, _CLIP_EN):
+    clipish = run_lens or _contains(toks, _CLIP_AR) or _prefix(toks, _CLIP_EN)
+    verb = _prefix([t for t in toks if not t.startswith("verification")], _VERBS_EN) or _contains(toks, _VERBS_AR)
+    faq = match_rules(command)
+    # An imperative check ("check this message about a prize") stays a check; a question or a story gets its FAQ answer.
+    if faq and not (clipish and verb and toks[0] not in _QUESTION_WORDS):
+        return "faq", faq, False
+    if clipish:
         has_clip = _prefix(toks, _CLIPBOARD_EN) or _contains(toks, _CLIPBOARD_AR)
-        verb = _prefix(toks, _VERBS_EN) or _contains(toks, _VERBS_AR)
         named_text = any(t in _TEXT_TOKENS for t in toks) and not any(t.startswith("messag") for t in toks)
         # "check this text" / «افحص هذا النص» names the content; everything else reads the clipboard.
-        return "check_text" if named_text and verb and not has_clip else "check_clipboard"
+        return ("check_text" if named_text and verb and not has_clip else "check_clipboard"), None, False
     if any(t in _HELP_TOKENS for t in toks) or any(p in padded for p in _HELP_PHRASES):
-        return "help"
-    return "none"
+        return "help", None, False
+    # Something was said after the wake phrase that is not ours: a fixed polite redirect (one word is just noise).
+    return ("off_topic" if len(toks) >= 2 else "none"), None, False
 
 
 @dataclass(frozen=True)
@@ -193,18 +177,28 @@ class VoiceResult:
     wake: bool
     intent: Intent
     command: str
+    #: Name of the pre-written FAQ answer (`faq.<name>` clip) when intent is `faq`.
+    answer_id: str | None = None
+    #: True when the command tried to override the assistant's instructions (always answered with a redirect).
+    injection: bool = False
 
 
-def analyse(transcript: str) -> VoiceResult:
+def analyse(transcript: str, *, follow_up: bool = False) -> VoiceResult:
     """Wake + intent for one transcript.
 
     Intent is read from the command after the wake phrase. Without the wake phrase only a short,
     bare stop word («توقف», "stop") counts, so the user can interrupt without saying the name.
+    `follow_up` marks the utterance right after a bare wake phrase: it is a command even without the wake phrase.
     """
     woke, rest = match_wake(transcript)
     if woke:
-        return VoiceResult(True, _classify(rest), rest)
+        intent, answer, inj = _classify(rest)
+        return VoiceResult(True, intent, rest, answer, inj)
+    if follow_up:
+        command = transcript.strip()[:MAX_CHARS]
+        intent, answer, inj = _classify(command)
+        return VoiceResult(True, intent, command, answer, inj)
     toks = normalise(transcript).split()
-    if 0 < len(toks) <= 3 and _classify(transcript) == "stop":
+    if 0 < len(toks) <= 3 and _classify(transcript)[0] == "stop":
         return VoiceResult(False, "stop", transcript.strip()[:MAX_CHARS])
     return VoiceResult(False, "none", "")

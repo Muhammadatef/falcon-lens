@@ -9,30 +9,36 @@ import type { Lang, Verdict, VerdictLabel } from "./contracts";
 import { looksLikeSingleUrl, refang } from "./defang";
 import { pick } from "./i18n";
 import { voiceText, type VoiceKey } from "./i18n-voice";
+import { FAQ_KEYS } from "./voice-script";
 /** Set to true only once the backend PR confirms: audio recognised by a local model on our own server and deleted. */
 export const PRIVACY_LINE_CONFIRMED = false;
 
-export const VOICE_LIMITS = { maxBytes: 1_000_000, maxMs: 12_000, minMs: 400, silenceMs: 800, maxItems: 10, maxItemChars: 3500 } as const;
+export const VOICE_LIMITS = { maxBytes: 1_000_000, maxMs: 12_000, minMs: 400, silenceMs: 650, maxItems: 10, maxItemChars: 3500 } as const;
 
-export type VoiceIntent = "check_clipboard" | "check_text" | "help" | "stop" | "none";
+export type VoiceIntent = "check_clipboard" | "check_text" | "help" | "stop" | "faq" | "off_topic" | "none";
 export interface VoiceReply {
   transcript: string;
   lang: "ar" | "en" | "other";
   wake: boolean;
   intent: VoiceIntent;
   command: string;
+  /** Clip key of the pre-written FAQ answer (`faq.<name>`), only for intent "faq" and only if the script has it. */
+  answerId: string | null;
   duration_ms: number;
   model: string;
 }
 
-const INTENTS: readonly VoiceIntent[] = ["check_clipboard", "check_text", "help", "stop", "none"];
+const INTENTS: readonly VoiceIntent[] = ["check_clipboard", "check_text", "help", "stop", "faq", "off_topic", "none"];
 
 /** Everything from the network is validated: unknown intents collapse to "none", text is capped. */
 export function parseVoiceReply(raw: unknown): VoiceReply | null {
   if (typeof raw !== "object" || raw === null) return null;
   const r = raw as Record<string, unknown>;
   if (typeof r.wake !== "boolean") return null;
-  const intent = INTENTS.find((i) => i === r.intent) ?? "none";
+  let intent = INTENTS.find((i) => i === r.intent) ?? "none";
+  // An answer id is only trusted when the script has that exact line: anything else is a redirect, never invented speech.
+  const answerId = typeof r.answer_id === "string" && FAQ_KEYS.includes(r.answer_id) ? r.answer_id : null;
+  if (intent === "faq" && !answerId) intent = "off_topic";
   const lang = r.lang === "ar" || r.lang === "en" ? r.lang : "other";
   const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
   return {
@@ -41,6 +47,7 @@ export function parseVoiceReply(raw: unknown): VoiceReply | null {
     wake: r.wake,
     intent,
     command: str(r.command, 1000),
+    answerId: intent === "faq" ? answerId : null,
     duration_ms: typeof r.duration_ms === "number" && Number.isFinite(r.duration_ms) ? r.duration_ms : 0,
     model: str(r.model, 80),
   };

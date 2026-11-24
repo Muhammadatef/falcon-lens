@@ -25,8 +25,9 @@ from falcon_api.auth import Principal
 from falcon_api.problem import PROBLEM_RESPONSES, Problem
 from falcon_core.contracts.voice import SttResult, VoiceUtterance
 from falcon_core.telemetry.tracing import fl_span, set_span_attrs, traceparent_of
+from falcon_core.voice.faq_semantic import FaqSemantic, ollama_embedder
 from falcon_core.voice.guard import sniff
-from falcon_core.voice.intent import analyse
+from falcon_core.voice.intent import VoiceResult, analyse
 
 log = logging.getLogger("falcon.api.voice")
 
@@ -142,6 +143,7 @@ def register(
     client_ip: Callable[[Request], str],
     registry: CollectorRegistry,
     router_factory: Callable[[], SttRouter] | None = None,
+    faq_semantic: FaqSemantic | None = None,
 ) -> None:
     utterances = Counter(
         "fl_voice_utterances_total", "Voice utterances handled", ["wake", "intent", "lang", "engine"], registry=registry
@@ -156,6 +158,20 @@ def register(
     errors = Counter("fl_voice_errors_total", "Voice request failures", ["reason"], registry=registry)
     per_min = int(os.environ.get("FL_VOICE_RATE_PER_MIN", "30"))
     holder: dict[str, SttRouter] = {}
+    # Semantic FAQ fallback (local embedding model, no text generation). Off unless an embedder is injected or
+    # OLLAMA_BASE_URL is configured (FL_VOICE_FAQ_SEMANTIC=0 turns it off).
+    semantic = faq_semantic
+    if semantic is None and os.environ.get("OLLAMA_BASE_URL") and os.environ.get("FL_VOICE_FAQ_SEMANTIC", "1") != "0":
+        semantic = FaqSemantic(ollama_embedder())
+
+    async def with_faq(result: VoiceResult) -> VoiceResult:
+        """An unmatched command after the wake phrase: nearest FAQ question, else the off-topic redirect."""
+        if semantic is None or result.intent != "off_topic" or result.injection or not result.command:
+            return result
+        name = await semantic.match(result.command)
+        if name is None:
+            return result
+        return VoiceResult(result.wake, "faq", result.command, name)
 
     def stt_router() -> SttRouter:
         if "r" not in holder:
@@ -178,7 +194,7 @@ def register(
         200: {"model": VoiceUtterance, "description": "Transcript, wake flag and intent."},
     }
 
-    async def read_form(request: Request) -> tuple[bytes, str, str | None]:
+    async def read_form(request: Request) -> tuple[bytes, str, str | None, bool]:
         """Stream-limit the body, then parse the multipart ourselves so nothing spools to disk.
 
         The body is counted as it arrives (413 past MAX_BODY_BYTES, whatever Content-Length said) and the
@@ -194,7 +210,7 @@ def register(
                     raise fail(413, "payload-too-large", "Audio larger than 1 MB", "too_large")
                 yield chunk
 
-        parser = MultiPartParser(request.headers, limited(), max_files=1, max_fields=2)
+        parser = MultiPartParser(request.headers, limited(), max_files=1, max_fields=3)
         parser.spool_max_size = 2 * MAX_BODY_BYTES  # never reached: the stream is capped below it
         try:
             form = await parser.parse()
@@ -208,7 +224,9 @@ def register(
         hint = form.get("lang_hint")
         data = await audio.read()
         await form.close()
-        return data, (audio.content_type or "").split(";")[0].strip().lower(), hint if isinstance(hint, str) else None
+        follow = form.get("follow_up") == "1"
+        ctype = (audio.content_type or "").split(";")[0].strip().lower()
+        return data, ctype, hint if isinstance(hint, str) else None, follow
 
     @app.post(
         "/v1/voice/utterance",
@@ -232,6 +250,11 @@ def register(
                                     "description": "audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB",
                                 },
                                 "lang_hint": {"type": "string", "enum": ["ar", "en"], "description": "optional"},
+                                "follow_up": {
+                                    "type": "string",
+                                    "enum": ["1"],
+                                    "description": "optional: this utterance follows a bare wake phrase, so it is read as a command without the wake phrase",  # noqa: E501
+                                },
                             },
                         }
                     }
@@ -260,7 +283,9 @@ def register(
                 "rate_limited",
                 {"Retry-After": str(60 - int(time.time() % 60)), "X-RateLimit-Limit": str(per_min)},
             )
-        data, declared, lang_hint = await read_form(request)
+        if semantic is not None:
+            semantic.start_warming()  # STT takes seconds: the FAQ question embeddings are ready by the time it returns
+        data, declared, lang_hint, follow_up = await read_form(request)
         if lang_hint is not None and lang_hint not in ("ar", "en"):
             raise fail(422, "invalid-lang-hint", "lang_hint must be ar or en", "bad_lang_hint")
         if len(data) > MAX_AUDIO_BYTES:
@@ -287,7 +312,7 @@ def register(
         except SttUnavailableError as exc:
             raise fail(503, "stt-unavailable", "Speech recognition unavailable", "stt_unavailable") from exc
         transcript = res.text.strip()[:300]
-        result = analyse(transcript)
+        result = await with_faq(analyse(transcript, follow_up=follow_up))
         lang = res.lang if res.lang in ("ar", "en") else "other"
         elapsed = time.perf_counter() - t0
         utterances.labels(str(result.wake).lower(), result.intent, lang, engine).inc()
@@ -311,6 +336,7 @@ def register(
             wake=result.wake,
             intent=result.intent,
             command=result.command[:300],
+            answer_id=f"faq.{result.answer_id}" if result.intent == "faq" and result.answer_id else None,
             duration_ms=res.duration_ms,
             model=f"{engine}:{res.model}",
         )

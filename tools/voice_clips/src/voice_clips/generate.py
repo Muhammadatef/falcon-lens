@@ -7,6 +7,7 @@ uv run --extra mlx python -m voice_clips.generate --engine macos --lang ar_ae \
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from pathlib import Path
@@ -15,6 +16,7 @@ from . import audio, engines
 from .script import Clip, load_script, manifest_entry, validate_manifest, write_manifest
 
 REPO_SCRIPT = "packages/falcon_core/src/falcon_core/i18n/voice_script.yaml"
+REPO_FAQ_SCRIPT = "packages/falcon_core/src/falcon_core/i18n/voice_faq.yaml"
 
 
 def render(
@@ -46,7 +48,18 @@ def main(argv: list[str] | None = None) -> int:
         "--ref", type=Path, default=None, help="reference wav (cloning). Default: FL_VOICE_REF_AR_AE if present"
     )
     p.add_argument("--voice", default=None)
-    p.add_argument("--script", type=Path, default=Path(REPO_SCRIPT))
+    p.add_argument(
+        "--script",
+        type=Path,
+        action="append",
+        default=None,
+        help="script yaml (repeatable). Default: voice_script.yaml plus voice_faq.yaml (one manifest per language)",
+    )
+    p.add_argument(
+        "--merge",
+        action="store_true",
+        help="keep clips already in <out>/manifest.json (same id and text) and render only the new or changed ones",
+    )
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--rate", type=int, default=audio.DEFAULT_RATE, choices=[22050, 24000])
     a = p.parse_args(argv)
@@ -57,12 +70,24 @@ def main(argv: list[str] | None = None) -> int:
     if ref is not None and not ref.is_file():
         print(f"reference clip not found: {ref}", file=sys.stderr)
         return 2
-    clips = [c for c in load_script(a.script) if c.lang == a.lang]
+    scripts = a.script or [Path(REPO_SCRIPT), Path(REPO_FAQ_SCRIPT)]
+    clips = [c for path in scripts for c in load_script(path) if c.lang == a.lang]
     if not clips:
-        print(f"no clips for lang {a.lang} in {a.script}", file=sys.stderr)
+        print(f"no clips for lang {a.lang} in {', '.join(map(str, scripts))}", file=sys.stderr)
+        return 2
+    if len({c.id for c in clips}) != len(clips):
+        print("duplicate clip ids across the script files", file=sys.stderr)
         return 2
     eng = engines.make(a.engine, voice=a.voice, ref=ref)
-    manifest = render(clips, eng, a.lang, a.out, a.rate)
+    kept: dict[str, dict[str, object]] = {}
+    todo = clips
+    if a.merge and (a.out / "manifest.json").is_file():
+        old = {m["id"]: m for m in json.loads((a.out / "manifest.json").read_text(encoding="utf-8"))}
+        kept = {c.id: old[c.id] for c in clips if c.id in old and old[c.id]["text"] == c.text}
+        todo = [c for c in clips if c.id not in kept]
+        print(f"merge: keeping {len(kept)} clips, rendering {len(todo)}", flush=True)
+    fresh = {str(m["id"]): m for m in render(todo, eng, a.lang, a.out, a.rate)} if todo else {}
+    manifest = [kept.get(c.id) or fresh[c.id] for c in clips]
     validate_manifest(manifest, clips)
     write_manifest(a.out, manifest)
     print(f"wrote {len(manifest)} clips to {a.out}")

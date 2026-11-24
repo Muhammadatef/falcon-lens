@@ -1070,6 +1070,12 @@ components:
     VoiceUtterance:
       additionalProperties: false
       properties:
+        answer_id:
+          anyOf:
+          - pattern: ^faq\.[a-z_]+$
+            type: string
+          - type: 'null'
+          title: Answer Id
         command:
           maxLength: 300
           title: Command
@@ -1084,6 +1090,8 @@ components:
           - check_text
           - help
           - stop
+          - faq
+          - off_topic
           - none
           title: Intent
           type: string
@@ -2548,6 +2556,12 @@ paths:
                 audio:
                   description: audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB
                   format: binary
+                  type: string
+                follow_up:
+                  description: 'optional: this utterance follows a bare wake phrase, so it is read as
+                    a command without the wake phrase'
+                  enum:
+                  - '1'
                   type: string
                 lang_hint:
                   description: optional
