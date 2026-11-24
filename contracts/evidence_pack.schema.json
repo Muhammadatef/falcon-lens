@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/evidence_pack.schema.json",
+  "title": "EvidencePack evidence.json",
+  "description": "evidence.json inside the ZIP from GET /v1/verdicts/{id}/evidence-pack (operator scope). URLs are defanged with userinfo, query and fragment removed. Facts the pipeline did not capture are null/empty and listed in `gaps`; they are never invented.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "generator", "notice", "verdict", "subject", "reasons", "evidence", "tier_trace", "registration", "tls", "hosting", "screenshot", "gaps", "privacy"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "generated_at": { "type": "string", "format": "date-time", "description": "UTC" },
+    "generator": { "type": "object", "required": ["tool", "git_sha"], "properties": { "tool": { "type": "string" }, "git_sha": { "type": "string" } } },
+    "notice": { "type": "object", "required": ["en", "ar"] },
+    "verdict": { "type": "object", "required": ["verdict_id", "verdict", "label", "risk_score", "input_type", "created_at"] },
+    "subject": {
+      "type": "object",
+      "required": ["url_defanged", "final_url_defanged", "redirect_chain_defanged", "registrable_domain", "page_title", "form_targets_defanged"]
+    },
+    "reasons": { "type": "array", "items": { "type": "object", "required": ["ar", "en", "evidence"] } },
+    "evidence": { "type": "array", "items": { "type": "object", "required": ["id", "code", "tier", "source", "weight"] } },
+    "tier_trace": { "type": "object", "required": ["tiers", "steps"] },
+    "registration": { "type": "object", "required": ["registrar", "created", "expires", "nameservers", "abuse_contact", "source"] },
+    "tls": { "type": "object", "required": ["issuer", "not_before", "not_after", "source"] },
+    "hosting": { "type": "object", "required": ["resolved_ips", "asn", "as_name", "country", "source", "retrieved_at"] },
+    "screenshot": { "type": "object", "required": ["included", "file", "sha256"] },
+    "gaps": { "type": "array", "items": { "type": "string" } },
+    "privacy": { "type": "string" }
+  }
+}

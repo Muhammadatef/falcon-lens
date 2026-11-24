@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
-from falcon_api import admin, history, integration, voice
+from falcon_api import admin, evidence_pack, history, integration, voice
 from falcon_api.auth import (
     AuditLog,
     Authenticator,
@@ -778,6 +778,45 @@ def build_app(
             raise Problem(404, "verdict-not-found", "Verdict not found")
         await jobs().note_final(doc)
         return JSONResponse(public_doc(doc, is_authed(request)), status_code=200 if doc.get("final") else 202)
+
+    @app.get(
+        "/v1/verdicts/{verdict_id}/evidence-pack",
+        tags=["verdicts"],
+        responses={
+            **PROBLEM_RESPONSES,
+            200: {
+                "content": {"application/zip": {}},
+                "description": "ZIP: evidence.json, takedown.txt, stix.json, manifest.json, screenshot.png if captured",
+            },
+            404: {"description": "Unknown verdict id (problem+json)"},
+            409: {"description": "Verdict is not final yet (problem+json)"},
+        },
+    )
+    async def get_evidence_pack(
+        verdict_id: VerdictId, _p: Annotated[Principal, Depends(require("operator"))]
+    ) -> Response:
+        """Police evidence pack for one final verdict. Operator scope only; no public variant."""
+        try:
+            doc = await jobs().latest(verdict_id)
+        except (RedisError, StoreUnavailableError) as exc:
+            raise Problem(503, "queue-unavailable", "Queue unavailable") from exc
+        if doc is None:
+            raise Problem(404, "verdict-not-found", "Verdict not found")
+        if not doc.get("final"):
+            raise Problem(409, "verdict-not-final", "Verdict is not final yet")
+        shot: bytes | None = None
+        fetch = getattr(app.state, "screenshot_fetch", None)
+        if fetch is not None and doc.get("screenshot_url"):
+            shot = await fetch(str(doc["screenshot_url"]))
+        body = evidence_pack.build_pack(doc, screenshot=shot)
+        return Response(
+            body,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="evidence-{verdict_id}.zip"',
+                "Cache-Control": "no-store",
+            },
+        )
 
     async def known_verdict(verdict_id: VerdictId) -> str:
         try:

@@ -2732,6 +2732,65 @@ paths:
       summary: Verdict Events
       tags:
       - verdicts
+  /v1/verdicts/{verdict_id}/evidence-pack:
+    get:
+      description: Police evidence pack for one final verdict. Operator scope only; no public variant.
+      operationId: get_evidence_pack_v1_verdicts__verdict_id__evidence_pack_get
+      parameters:
+      - in: path
+        name: verdict_id
+        required: true
+        schema:
+          pattern: ^vd_[0-9A-HJKMNP-TV-Z]{26}$
+          title: Verdict Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+            application/zip: {}
+          description: 'ZIP: evidence.json, takedown.txt, stix.json, manifest.json, screenshot.png if
+            captured'
+        '404':
+          description: Unknown verdict id (problem+json)
+        '409':
+          description: Verdict is not final yet (problem+json)
+        '413':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Payload too large
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Unsupported media type
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Invalid request
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Rate limited
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+          description: Dependency unavailable
+      security:
+      - APIKeyHeader: []
+      summary: Get Evidence Pack
+      tags:
+      - verdicts
   /v1/version:
     get:
       operationId: version_v1_version_get

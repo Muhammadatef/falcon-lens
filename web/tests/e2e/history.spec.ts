@@ -173,3 +173,19 @@ for (const lang of ["ar", "en"] as const) {
     expect(await scan()).toEqual([]);
   });
 }
+
+test.describe("evidence pack", () => {
+  test("public visitors see a note; an operator key reveals the download", async ({ page, context, request, baseURL }) => {
+    const id = newVerdictId();
+    await useBoards(context, request, baseURL!, { verdicts: [], verdictDocs: { [id]: { ...DEMO_DANGEROUS, verdict_id: id, source: "live", final: true } } });
+    await page.goto(`/checks/${id}`);
+    await expect(page.getByTestId("evidence-pack-public")).toBeVisible();
+    await expect(page.getByTestId("evidence-pack-download")).toHaveCount(0);
+    await page.getByTestId("evidence-pack-key").fill("operator-test-key");
+    await page.getByTestId("evidence-pack-key").press("Enter");
+    const button = page.getByTestId("evidence-pack-download");
+    await expect(button).toContainText("Download evidence pack | تنزيل ملف الأدلة");
+    const [download] = await Promise.all([page.waitForEvent("download"), button.click()]);
+    expect(download.suggestedFilename()).toBe(`evidence-${id}.zip`);
+  });
+});
