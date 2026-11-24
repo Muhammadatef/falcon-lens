@@ -1,0 +1,19 @@
+# Demo mode config (owner-edited). `make demo-mode-on` pauses ONLY what is named here, plus every other
+# docker compose project except `falcon`. Nothing from Neo, Siyaq or Insytra is touched unless the owner
+# lists it below. Processes are matched by case-insensitive substring of the command line and are only ever
+# stopped with SIGSTOP and resumed with SIGCONT (never killed).
+keep_projects: [falcon]
+pause_processes:
+  - Google Chrome for Testing
+  - flowplan
+# Never paused even if a pattern above would match them (unless the owner's own match text contains the word).
+protect_processes:
+  - Docker
+  - com.docker
+  - ollama
+  - Falcon
+  - cloudflared
+  - python
+  - Terminal
+  - iTerm
+  - claude
