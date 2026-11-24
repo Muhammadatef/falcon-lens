@@ -20,6 +20,8 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from falcon_core.signals.url.textutil import normalize_arabic
+
 E164_UAE = re.compile(r"^\+971\d{6,10}$")
 SHORT_CODE = re.compile(r"^\d{3,5}$")
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -80,11 +82,60 @@ def to_e164(raw: str) -> str | None:
     return "+971" + nat if _national_ok(nat) else None
 
 
+# Unprefixed 600/800 numbers are accepted only in the spaced or dashed form organisations print ("800 555",
+# "800-4354", "600 54 0000") AND next to a phone/contact word; a bare "800412" is far more often a code or amount.
+_BARE_STYLE = re.compile(r"^(?:800|600)[ \t\u00a0-]+\d")
+_CONTACT_WORDS = (
+    "call", "phone", "contact", "hotline", "helpline", "whatsapp", "whats app", "tel", "dial", "toll free",
+    "toll-free", "customer service", "customer care", "support", "mobile",
+    "اتصل", "اتصال", "الاتصال", "رقم", "هاتف", "الهاتف", "خدمة العملاء", "واتساب", "واتس", "تواصل", "الخط الساخن",
+    "مركز الاتصال", "جوال",
+)  # fmt: skip
+# Next to these words a digit run is a code or an amount, never a phone number (any form, prefixed or not).
+_NOT_PHONE_WORDS = (
+    "otp", "code", "pin", "password", "passcode", "aed", "dhs", "dh", "usd", "amount",
+    "رمز", "كود", "الرمز", "كلمة السر", "رقم سري", "الرقم السري", "رقم التحقق", "درهم", "د.إ", "دإ", "المبلغ", "مبلغ",
+)  # fmt: skip
+_CONTACT_BEFORE, _CONTACT_AFTER = 48, 24
+_NOT_BEFORE, _NOT_AFTER = 16, 12
+
+
+def _has_word(window: str, words: tuple[str, ...]) -> bool:
+    w = normalize_arabic(window.lower())
+    for word in words:
+        k = normalize_arabic(word)
+        if k.isascii():
+            if re.search(rf"(?<![a-z]){re.escape(k)}(?![a-z])", w):
+                return True
+        elif k in w:
+            return True
+    return False
+
+
+def _context_ok(text: str, start: int, end: int, raw: str) -> bool:
+    """Reject codes and amounts; demand a contact word for unprefixed 600/800 numbers."""
+    if (start >= 2 and text[start - 1] in ".," and text[start - 2].isdigit()) or (
+        end + 1 < len(text) and text[end] in ".," and text[end + 1].isdigit()
+    ):
+        return False  # part of a decimal or thousands-separated amount
+    if _has_word(text[max(0, start - _NOT_BEFORE) : start], _NOT_PHONE_WORDS) or _has_word(
+        text[end : end + _NOT_AFTER], _NOT_PHONE_WORDS
+    ):
+        return False
+    if re.sub(r"\D", "", raw).startswith(("800", "600")) and not raw.lstrip().startswith("+"):
+        if not _BARE_STYLE.match(raw) or "." in raw:
+            return False
+        near = text[max(0, start - _CONTACT_BEFORE) : start] + " " + text[end : end + _CONTACT_AFTER]
+        return _has_word(near, _CONTACT_WORDS)
+    return True
+
+
 def extract_numbers(text: str) -> list[tuple[str, tuple[int, int]]]:
-    """Distinct UAE numbers in ``text`` as (E.164, span), in order, at most ``MAX_NUMBERS``.
+    """Distinct UAE phone numbers in ``text`` as (E.164, span), in order, at most ``MAX_NUMBERS``.
 
     A run like "600 54 0000 600 54 0044" holds two numbers: inside each run the longest group sequence that
-    normalises is taken first, then the scan continues after it."""
+    normalises is taken first, then the scan continues after it. ``to_e164`` only normalises; this function also
+    decides whether the run is presented as a phone number (``_context_ok``)."""
     cleaned = ascii_digits(text)  # same length as text: spans stay valid
     out: list[tuple[str, tuple[int, int]]] = []
     seen: set[str] = set()
@@ -95,28 +146,34 @@ def extract_numbers(text: str) -> list[tuple[str, tuple[int, int]]]:
             hit = None
             for j in range(min(len(groups), i + 13), i, -1):
                 start, end = groups[i].start(), groups[j - 1].end()
-                e = to_e164(m.group(0)[start:end])
+                raw = m.group(0)[start:end]
+                e = to_e164(raw)
                 if e is not None:
-                    hit = (e, (m.start() + start, m.start() + end), j)
+                    hit = (e, (m.start() + start, m.start() + end), j, raw)
                     break
             if hit is None:
                 i += 1
                 continue
-            e164, span, i = hit
-            if e164 not in seen:
-                seen.add(e164)
-                out.append((e164, span))
-                if len(out) >= MAX_NUMBERS:
-                    return out
+            e164, span, i, raw = hit
+            if e164 in seen or not _context_ok(cleaned, span[0], span[1], raw):
+                continue
+            seen.add(e164)
+            out.append((e164, span))
+            if len(out) >= MAX_NUMBERS:
+                return out
     return out
 
 
 def mask_number(e164: str) -> str:
-    """Masked form for evidence: country code, first two national digits, then only the last two ("+971 80•••••67")."""
+    """Masked form for evidence: country code and service prefix (800/600, 5x, area code), then bullets and at most
+    the last two digits, so that at least half of the subscriber digits are always hidden ("+971 800•••••67")."""
     if not e164.startswith("+971") or len(e164) < 10:
         return "+971 •••"
     nat = e164[4:]
-    return f"+971 {nat[:2]}{'•' * (len(nat) - 4)}{nat[-2:]}"
+    plen = 3 if nat.startswith(("800", "600")) else 2 if nat.startswith("5") else 1
+    prefix, sub = nat[:plen], nat[plen:]
+    tail = min(2, len(sub) // 2)
+    return f"+971 {prefix}{'•' * (len(sub) - tail)}{sub[len(sub) - tail :] if tail else ''}"
 
 
 HMAC_ENV = "FL_EVIDENCE_HMAC_KEY"
