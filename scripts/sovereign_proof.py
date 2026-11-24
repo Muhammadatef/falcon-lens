@@ -309,7 +309,7 @@ def classify_hosts(hosts: list[str]) -> dict[str, Any]:
         "lookup_hosts": lookup,
         "cloud_llm_hosts": cloud,
         "page_visit_hosts_count": len(hosts) - len(lookup),
-        "note": "page-visit hosts are sites the sandbox visited passively during the 90 s replay plus their "
+        "note": "page-visit hosts are sites the sandbox visited passively during the run plus their "
         "sub-resources; they are lookups about the checked site, not user data and not LLM traffic",
     }
 
@@ -320,6 +320,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--model", required=True, help="local model id the stack is configured with")
     ap.add_argument("--host-llm-url", required=True, help="host-side URL of that model server (warm-up only)")
     ap.add_argument("--sink-log", required=True, type=Path)
+    ap.add_argument("--sink-url", default="http://127.0.0.1:18999", help="host URL of the sink, for the self-test")
     ap.add_argument("--prom-url", default="")
     ap.add_argument("--publish", action="store_true")
     a = ap.parse_args(argv)
@@ -343,7 +344,17 @@ def main(argv: list[str]) -> int:
         "model_server": a.host_llm_url,
         "status": "failed",
     }
-    sink_before = len(a.sink_log.read_text().splitlines()) if a.sink_log.exists() else 0
+
+    def sink_lines() -> int:
+        return len(a.sink_log.read_text().splitlines()) if a.sink_log.exists() else 0
+
+    n0 = sink_lines()
+    try:
+        httpx.get(a.sink_url.rstrip("/") + "/selftest", timeout=5)
+    except httpx.HTTPError:
+        pass
+    sink_selftest_ok = sink_lines() == n0 + 1  # the sink is listening and logging
+    sink_before = sink_lines()
     try:
         artifact["service_env"] = env_audit()
         print("warming the local model ...")
@@ -385,6 +396,7 @@ def main(argv: list[str]) -> int:
             "sovereign_flag_in_every_llm_service": all(
                 str(e["FL_SOVEREIGN_MODE"]).lower() in ("1", "true") for e in envs.values()
             ),
+            "anthropic_sink_selftest_ok": sink_selftest_ok,
             "anthropic_sink_hits": sink_hits,
             "sink_note": "ANTHROPIC_BASE_URL of api/worker/sentinel/mcp points at a host sink that counts requests; "
             "0 means no SDK call to a cloud LLM was attempted.",
@@ -403,6 +415,7 @@ def main(argv: list[str]) -> int:
         no_cloud = (
             not ea["anthropic_api_key_present_in_any_llm_service"]
             and ea["sovereign_flag_in_every_llm_service"]
+            and sink_selftest_ok
             and sink_hits == 0
             and not mentions
         )
