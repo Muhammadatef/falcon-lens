@@ -1047,3 +1047,22 @@ a.btn:hover { text-decoration: none; }
   .rs-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (min-width: 1024px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ── Campaigns explainer: compact intro + collapsible panel ─────────────────────────────────── */
+.cx { display: grid; gap: var(--fl-space-3); margin-block-end: var(--fl-space-5); }
+.cx-intro { max-width: var(--fl-read-max); }
+.cx-toggle { justify-self: start; min-height: var(--fl-tap); text-align: start; flex-wrap: wrap; }
+.cx-toggle small { color: var(--fl-text-muted); font-size: var(--fl-text-sm); }
+.cx-panel { display: grid; gap: var(--fl-space-4); }
+.cx-panel[hidden] { display: none; }
+.cx-why, .cx-steps, .cx-read { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--fl-space-3); }
+.cx-why li, .cx-steps li { display: flex; gap: var(--fl-space-3); align-items: flex-start; }
+.cx-why h3 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); }
+.cx-why p, .cx-steps p, .cx-read li { line-height: 1.7; }
+.cx-read { list-style: disc; padding-inline-start: var(--fl-space-5); }
+.cx-more { font-weight: var(--fl-weight-bold); text-decoration: underline; min-height: var(--fl-tap); display: inline-flex; align-items: center; }
+@media (min-width: 900px) {
+  .cx-why { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cx-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cx-steps li { flex-direction: column; }
+}
