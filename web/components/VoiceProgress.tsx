@@ -36,7 +36,7 @@ export function VoiceProgress({ stages, tiers, lang, total, offline }: { stages:
                     {tiers.map((r) => (
                       <li key={r.tier} data-testid="voice-tier" data-tier={r.tier} data-status={r.status}>
                         <span className="voice-tier-name">{t(r.tier === "T0" ? "voice.prog.t0" : r.tier === "T1" ? (r.step === "lookalike" ? "voice.prog.t1.url" : "voice.prog.t1.message") : r.tier === "T2" ? "voice.prog.t2" : "voice.prog.t3")}</span>
-                        <span className="voice-tier-note">{r.status === "skipped" ? t("voice.prog.skipped") : (r.found ?? "")}</span>
+                        <span className="voice-tier-note">{r.status === "skipped" ? t("voice.prog.skipped") : (r.found ?? t("voice.prog.nothing"))}</span>
                       </li>
                     ))}
                   </ul>
