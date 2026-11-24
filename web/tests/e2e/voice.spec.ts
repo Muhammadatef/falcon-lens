@@ -5,6 +5,7 @@ import { dangerousStream, nwsStream } from "../fixtures";
 import { VOICE_MESSAGES } from "../../lib/i18n-voice";
 import { DEMO_INCIDENT } from "../../lib/demo";
 import { DEMO_TRACE } from "../../lib/demo-trace";
+import { SCRIPT } from "../../lib/voice-script";
 import { expect, newIncidentId, newVerdictId, registerScenario, setPrefs, test, token, useBoards } from "./helpers";
 
 const AR = VOICE_MESSAGES.ar;
@@ -134,10 +135,11 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-trace").first()).toHaveAttribute("href", `/checks/${ids[0]}`);
     const ar = await spoken(page);
     expect(ar.every((s) => s.lang === "ar-SA")).toBe(true);
-    expect(ar.map((s) => s.text).join(" ")).toContain("فحصت ثلاث رسائل.");
-    expect(ar.map((s) => s.text).join(" ")).toContain("لا تضغط على الروابط ولا ترسل أي رمز.");
-    expect(ar.map((s) => s.text)).toContain(AR["sentinel.handover"]);
-    expect(ar.map((s) => s.text).join(" ")).toContain(AR["voice.sum.inv"]);
+    const arSpoken = ar.map((s) => s.text).join(" ");
+    // No Sentinel is connected in this test: it hands over, then truthfully says it is still watching.
+    for (const key of ["wake.ack", "found.3", "investigator.start.1", "investigator.lists", "todo.otp", "sentinel.handover", "sentinel.watching", "final.sentinel_watching"]) expect(arSpoken, key).toContain(SCRIPT.ar_ae[key]!);
+    for (const key of ["sentinel.linked.2", "sentinel.linked.3", "sentinel.summary", "sentinel.draft", "sentinel.awaiting_approval", "final.both_agents"]) expect(arSpoken, key).not.toContain(SCRIPT.ar_ae[key]!);
+    expect(arSpoken).not.toContain("فحصت"); // the formal screen wording is never the spoken one
     expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b/i);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 15_000 });
 
@@ -147,15 +149,16 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-todo")).toContainText("", { timeout: 25_000 });
     await expect(page.getByTestId("voice-step").first()).toContainText("Heard you: checking three messages from your clipboard");
     await expect(page.getByTestId("voice-card-verdict")).toHaveText(["Dangerous", "Dangerous", "No warning signs found"], { timeout: 25_000 });
+    await expect(page.getByTestId("voice-steps")).toContainText(EN["sentinel.watching"], { timeout: 20_000 });
+    await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.listening"], { timeout: 20_000 });
     const en = (await spoken(page)).slice(before);
     expect(en.length).toBeGreaterThan(0);
     expect(en.every((s) => s.lang === "en-GB")).toBe(true);
-    expect(en.map((s) => s.text).join(" ")).toContain("I checked three messages.");
-    expect(en.map((s) => s.text).join(" ")).toContain("Two are dangerous: don't tap the links and never share a code.");
-    // Each spoken line is queued, never overlapping: the per-message lines come before the summary.
-    expect(en[0]!.text).toBe("Checking three messages from your clipboard.");
-    expect(en.map((x) => x.text)).toContain("Handing the results to the Sentinel agent");
-    expect(en.map((x) => x.text).join(" ")).toContain("The Investigator agent checked every message.");
+    const enSpoken = en.map((s) => s.text).join(" ");
+    for (const key of ["found.3", "investigator.start.1", "sum.dangerous.2", "todo.otp", "sentinel.handover", "final.sentinel_watching"]) expect(enSpoken, key).toContain(SCRIPT.en[key]!);
+    expect(enSpoken).not.toContain(SCRIPT.en["sentinel.linked.3"]!);
+    // Each spoken line is queued, never overlapping: the acknowledgement first, then the count.
+    expect(en[0]!.text).toBe(SCRIPT.en["wake.ack"]);
 
     // Stop works and the mic is released.
     await page.getByTestId("voice-stop").click();
@@ -182,9 +185,8 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(at(AR["sentinel.watching"])).toBe(-1); // never "still watching" when an incident was found
     const said = (await spoken(page)).map((x) => x.text).join(" ");
-    expect(said).toContain(AR["sentinel.handover"]);
-    expect(said).toContain(AR["sentinel.awaiting_approval"]);
-    expect(said).toContain(AR["voice.sum.sen.found"]);
+    for (const key of ["sentinel.handover", "sentinel.linked.3", "sentinel.summary", "sentinel.draft", "sentinel.awaiting_approval", "final.both_agents"]) expect(said, key).toContain(SCRIPT.ar_ae[key]!);
+    for (const key of ["sentinel.watching", "final.sentinel_watching"]) expect(said, key).not.toContain(SCRIPT.ar_ae[key]!);
     expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b|\bT[0-3]\b/i);
   });
 
@@ -200,8 +202,8 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect(await page.getByTestId("voice-step").allTextContents()).toContain(EN["sentinel.watching"]);
     await expect(page.getByTestId("voice-sentinel")).toHaveCount(0);
     const said = (await spoken(page)).map((x) => x.text).join(" ");
-    expect(said).toContain("The Sentinel is still watching for similar reports.");
-    expect(said).toContain(EN["voice.sum.inv"]);
+    for (const key of ["sentinel.handover", "sentinel.watching", "final.sentinel_watching"]) expect(said, key).toContain(SCRIPT.en[key]!);
+    for (const key of ["sentinel.linked.3", "sentinel.summary", "sentinel.draft", "sentinel.awaiting_approval", "final.both_agents"]) expect(said, key).not.toContain(SCRIPT.en[key]!);
   });
 
   test("stop intent by voice turns listening off; help and 'just Hey Falcon' are answered aloud", async ({ page, request }) => {
@@ -214,7 +216,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await say(page, "none-ar");
     await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.none"]);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
-    expect((await spoken(page)).map((s) => s.text).join(" ")).toContain("يا فالكون، افحص رسائلي");
+    expect((await spoken(page)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["didnt"]!);
     await say(page, "stop");
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.stopped"]);
     await expect(page.getByTestId("voice-on")).toBeVisible();
@@ -228,7 +230,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await say(page, "check-ar");
     await expect(page.getByTestId("voice-paste")).toBeVisible();
     await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.paste"]);
-    expect((await spoken(page)).map((s) => s.text)).toContain("لم أتمكن من قراءة ما نسخته.");
+    expect((await spoken(page)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["clip.denied"]!);
     await page.getByTestId("voice-paste-input").fill(msgs);
     await page.getByTestId("voice-paste-submit").click();
     await expect(page.getByTestId("voice-card")).toHaveCount(3);

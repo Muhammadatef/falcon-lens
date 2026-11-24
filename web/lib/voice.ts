@@ -9,7 +9,6 @@ import type { Lang, Verdict, VerdictLabel } from "./contracts";
 import { looksLikeSingleUrl, refang } from "./defang";
 import { pick } from "./i18n";
 import { voiceText, type VoiceKey } from "./i18n-voice";
-
 /** Set to true only once the backend PR confirms: audio recognised by a local model on our own server and deleted. */
 export const PRIVACY_LINE_CONFIRMED = false;
 
@@ -267,6 +266,10 @@ export interface SentinelIncident {
   severity: "low" | "medium" | "high" | "critical";
   linked: number;
   summary: { ar?: string; en?: string };
+  /** The incident holds an external takedown draft (from its action types). */
+  drafted: boolean;
+  /** That draft is awaiting an officer's approval (from the action status). */
+  awaiting: boolean;
 }
 
 /** The first public incident whose linked verdict ids include any of ours; null when none does. Opaque ids only. */
@@ -280,23 +283,32 @@ export function findIncident(list: unknown, verdictIds: readonly string[]): Sent
     const sev = (["low", "medium", "high", "critical"] as const).find((x) => x === raw.severity);
     const sum = isObj(raw.summary) ? raw.summary : {};
     const cut = (x: unknown) => (typeof x === "string" ? x.slice(0, 240) : undefined);
-    return { id: raw.incident_id, severity: sev ?? "low", linked: linked.length, summary: { ar: cut(sum.ar), en: cut(sum.en) } };
+    const drafts = (Array.isArray(raw.actions) ? raw.actions : []).filter(isObj).filter((a) => a.mode === "external_draft" && a.status !== "rejected" && a.status !== "failed");
+    return {
+      id: raw.incident_id,
+      severity: sev ?? "low",
+      linked: linked.length,
+      summary: { ar: cut(sum.ar), en: cut(sum.en) },
+      drafted: drafts.length > 0,
+      awaiting: drafts.some((a) => a.status === "awaiting_approval"),
+    };
   }
   return null;
 }
 
 export type SentinelStep = "linked" | "summary" | "draft" | "awaiting_approval";
 
-/** Plain-words steps that the incident's real LangGraph trace proves; nothing else is narrated. */
-export function sentinelSteps(trace: unknown): SentinelStep[] {
+/**
+ * Plain-words steps, each proven by data: linking and the summary by the incident's real LangGraph trace,
+ * the takedown draft and the approval wait by the incident's own action types and status.
+ */
+export function sentinelSteps(trace: unknown, incident: Pick<SentinelIncident, "drafted" | "awaiting">): SentinelStep[] {
   const runs = isObj(trace) && Array.isArray(trace.runs) ? trace.runs.filter(isObj) : [];
-  const steps = runs.flatMap((r) => (Array.isArray(r.steps) ? r.steps.filter(isObj) : []));
-  const nodes = new Set(steps.map((x) => x.node));
+  const nodes = new Set(runs.flatMap((r) => (Array.isArray(r.steps) ? r.steps.filter(isObj) : [])).map((x) => x.node));
   const out: SentinelStep[] = [];
   if (nodes.has("enrich") || nodes.has("compare")) out.push("linked");
   if (nodes.has("summarise")) out.push("summary");
-  const drafted = steps.some((x) => Array.isArray(x.tools) && x.tools.some((t) => isObj(t) && t.mode === "external_draft"));
-  if (drafted) out.push("draft");
-  if (runs.some((r) => isObj(r.interrupt) && r.interrupt.decision == null)) out.push("awaiting_approval");
+  if (incident.drafted) out.push("draft");
+  if (incident.drafted && incident.awaiting) out.push("awaiting_approval");
   return out;
 }

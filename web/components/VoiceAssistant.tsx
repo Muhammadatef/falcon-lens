@@ -37,6 +37,8 @@ import {
   type SentinelStep,
   type VoiceReply,
 } from "@/lib/voice";
+import { spoken, speakArbiter, speakChecking, speakFinal, speakFinding, speakFound, speakHandover, speakStep, speakWatching } from "@/lib/voice-speech";
+import type { SentinelFinding } from "@/lib/voice-script";
 import { UntrustedText } from "./Chrome";
 import { Icon } from "./Icon";
 
@@ -55,7 +57,10 @@ interface Step {
   lang: Lang;
 }
 interface Spoken {
+  /** Shown on screen (formal Arabic). */
   text: string;
+  /** Spoken aloud (Emirati Arabic / English, from lib/voice-script.ts); defaults to `text`. */
+  say?: string;
   lang: Lang;
   /** "msg" lines are dropped when the final summary is queued (the check finished faster than the speech). */
   kind: "msg" | "final";
@@ -163,7 +168,7 @@ async function findSentinelIncident(ids: string[], alive: () => boolean): Promis
         const incident = findIncident(await res.json(), ids);
         if (incident) {
           const detail = await fetch(`/api/public/incidents/${incident.id}`, { cache: "no-store", credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-          return { incident, steps: sentinelSteps((detail as { trace?: unknown } | null)?.trace) };
+          return { incident, steps: sentinelSteps((detail as { trace?: unknown } | null)?.trace, incident) };
         }
         misses = 0;
       } else if (++misses >= 2) return null;
@@ -232,7 +237,7 @@ export function VoiceAssistant() {
         const next = queue.current.shift()!;
         setCaption(next.text);
         setSpeaking(true);
-        await speak(next.text, next.lang, () => run.current === token);
+        await speak(next.say ?? next.text, next.lang, () => run.current === token);
       }
       if (drainId.current === id) {
         setSpeaking(false);
@@ -246,8 +251,8 @@ export function VoiceAssistant() {
 
   /** Shows the line on screen and says it aloud (when the device has a voice for the language). */
   const say = useCallback(
-    async (text: string, lang: Lang, token: number) => {
-      enqueue({ text, lang, kind: "final" }, token);
+    async (text: string, lang: Lang, token: number, clips?: readonly string[]) => {
+      enqueue({ text, say: clips ? spoken(lang, clips) : undefined, lang, kind: "final" }, token);
       await drain();
     },
     [drain, enqueue],
@@ -267,7 +272,7 @@ export function VoiceAssistant() {
       setSteps([]);
       if (!split.items.length) {
         setRows([]);
-        await say(voiceText(lang, "voice.say.empty"), lang, token);
+        await say(voiceText(lang, "voice.say.empty"), lang, token, ["clip.empty"]);
         return;
       }
       const alive = () => run.current === token;
@@ -276,7 +281,7 @@ export function VoiceAssistant() {
       setPhase("checking");
       setCaption("");
       addStep(voiceText(lang, "voice.step.heard", { total: totalWords(lang, split.items.length) }), lang);
-      enqueue({ text: narStart(lang, split.items.length), lang, kind: "msg" }, token);
+      enqueue({ text: narStart(lang, split.items.length), say: speakFound(lang, split.items.length), lang, kind: "msg" }, token);
 
       const outcomes: Outcome[] = [];
       // One message at a time, so the steps on screen and the narration tell one story in order.
@@ -284,19 +289,21 @@ export function VoiceAssistant() {
         const n = at + 1;
         const start = narMessage(lang, n);
         addStep(start, lang);
-        enqueue({ text: start, lang, kind: "msg" }, token);
+        enqueue({ text: start, say: speakChecking(lang, n, split.items.length), lang, kind: "msg" }, token);
         const seen = new Set<ProgressStep>();
         let aiShown = false;
         const outcome = await checkOne(
           item,
           (v) =>
             newProgressSteps(v, item.kind, seen).forEach((st) => {
-              if (st !== "ai") return addStep(voiceText(lang, stepKey(st)), lang);
-              const ai = aiStepText(lang, v);
-              if (ai) {
+              if (st === "ai") {
+                const ai = aiStepText(lang, v);
+                if (!ai) return;
                 aiShown = true;
                 addStep(ai, lang);
-              }
+              } else addStep(voiceText(lang, stepKey(st)), lang);
+              const line = speakStep(lang, st, v);
+              if (line) enqueue({ text: voiceText(lang, stepKey(st)), say: line, lang, kind: "msg" }, token);
             }),
           alive,
         );
@@ -312,35 +319,33 @@ export function VoiceAssistant() {
             : voiceText(lang, "voice.step.failed", { i: String(n) }),
           lang,
         );
-        enqueue({ text: narResult(lang, n, v), lang, kind: "msg" }, token);
+        enqueue({ text: narResult(lang, n, v), say: speakArbiter(lang, v), lang, kind: "msg" }, token);
       }
 
       // Hand over to the Sentinel and look for the REAL incident that links these checks.
       setIncident(null);
       const handover = voiceText(lang, "sentinel.handover");
       addStep(handover, lang);
-      enqueue({ text: handover, lang, kind: "final" }, token);
+      enqueue({ text: handover, say: speakHandover(lang), lang, kind: "final" }, token);
       const ids = outcomes.flatMap((o) => (o.id ? [o.id] : []));
       const found = ids.length ? await findSentinelIncident(ids, alive) : null;
       if (!alive()) return;
       if (found) {
-        setIncident(found.incident);
-        const lines: string[] = [];
-        for (const st of found.steps) {
-          const line = voiceText(lang, `sentinel.${st}` as VoiceKey, { n: String(found.incident.linked) });
-          lines.push(line);
-          addStep(line, lang);
-          enqueue({ text: line, lang, kind: "final" }, token);
-        }
+        const inc = found.incident;
+        setIncident(inc);
+        // Screen and speech say exactly what the incident shows: nothing more.
+        for (const st of found.steps) addStep(voiceText(lang, `sentinel.${st}` as VoiceKey, { n: String(inc.linked) }), lang);
+        const facts: SentinelFinding = { linked: inc.linked, linkStep: found.steps.includes("linked"), summary: found.steps.includes("summary"), drafted: found.steps.includes("draft"), awaiting: found.steps.includes("awaiting_approval") };
+        for (const line of speakFinding(lang, facts)) enqueue({ text: line, say: line, lang, kind: "final" }, token);
       } else {
         const watching = voiceText(lang, "sentinel.watching");
         addStep(watching, lang);
-        enqueue({ text: watching, lang, kind: "final" }, token);
+        enqueue({ text: watching, say: speakWatching(lang), lang, kind: "final" }, token);
       }
       addStep(buildSummary(lang, countOutcomes(outcomes)), lang);
       // The check may have finished before the narration caught up: the summary replaces any per-message lines still waiting.
       queue.current = queue.current.filter((q) => q.kind === "final"); // keeps the Sentinel lines
-      enqueue({ text: buildSpeech(lang, outcomes, { sentinelFound: !!found }), lang, kind: "final" }, token);
+      enqueue({ text: buildSpeech(lang, outcomes, { sentinelFound: !!found }), say: speakFinal(lang, outcomes, found ? "found" : "watching"), lang, kind: "final" }, token);
       await drain();
       if (alive()) finishSteps();
     },
@@ -375,9 +380,11 @@ export function VoiceAssistant() {
       if (run.current !== token) return;
       if (reply.intent === "stop") {
         stopAll();
+        void speak(spoken(lang, ["stop"]), lang, () => true);
         return;
       }
-      if (reply.intent === "help") await say(voiceText(lang, "voice.say.help"), lang, token);
+      enqueue({ text: voiceText(lang, "voice.state.heard"), say: spoken(lang, ["wake.ack"]), lang, kind: "msg" }, token);
+      if (reply.intent === "help") await say(voiceText(lang, "voice.say.help"), lang, token, ["help"]);
       else if (reply.intent === "check_clipboard" || reply.intent === "check_text") {
         const typed = reply.intent === "check_text" ? reply.command.trim() : "";
         const text = typed.length >= 8 ? typed : await readClipboard();
@@ -386,13 +393,13 @@ export function VoiceAssistant() {
           setShowPaste(true);
           setRows([]);
           setSteps([]);
-          await say(voiceText(lang, "voice.say.paste"), lang, token);
+          await say(voiceText(lang, "voice.say.paste"), lang, token, ["clip.denied"]);
           pasteRef.current?.focus();
         } else await runChecks(text, lang, token);
-      } else await say(voiceText(lang, "voice.say.none"), lang, token);
+      } else await say(voiceText(lang, "voice.say.none"), lang, token, ["didnt"]);
       backToListening(token);
     },
-    [backToListening, runChecks, say, stopAll],
+    [backToListening, enqueue, runChecks, say, stopAll],
   );
 
   const sendUtterance = useCallback(
