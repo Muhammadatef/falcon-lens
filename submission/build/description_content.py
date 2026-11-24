@@ -110,7 +110,7 @@ def build(a: Artifacts) -> list[Block]:
     add(
         (
             "p",
-            '**Hey Falcon.** Say "Hey Falcon" (يا فالكون) on the voice page and the assistant checks what you copied and narrates the live steps of both agents in English or Arabic. Speech is recognised on our own machine, and audio and transcripts are not stored or logged. The Arabic clips use a stock voice; a cloned Emirati voice is pending an owner-consented recording.',
+            '**Hey Falcon.** Say "Hey Falcon" (يا صقر) on the voice page and the assistant checks what you copied and narrates the live steps of both agents in English or Arabic. Speech is recognised on our own machine, and audio and transcripts are not stored or logged. The Arabic clips use a stock voice; a cloned Emirati voice is pending an owner-consented recording.',
         )
     )
     add(

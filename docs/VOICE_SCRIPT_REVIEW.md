@@ -237,7 +237,7 @@ Lines: 233. Digits are written out in words (`num.0` to `num.100`).
 | وبلّغ عن المسج من القنوات الرسمية. | Report the message through the official channels. |  |
 | بس خلّك حذر. | But stay careful. |  |
 | لا تفتح الرابط لين نشيّكه. | Don't open the link until it is checked. |  |
-| انسخ المسجات، وقل: يا فالكون، شيّك مسجاتي. | Copy your messages, then say: Hey Falcon, check my messages. |  |
+| انسخ المسجات، وقل: يا صقر، شيّك مسجاتي. | Copy your messages, then say: Hey Falcon, check my messages. |  |
 | تمام، وقّفت. | Okay, I've stopped. |  |
 | ما فهمت عليك. عيد، لو سمحت. | Sorry, I didn't catch that. Please say it again. |  |
 | ما لقيت مسجات في اللي نسخته. انسخها وعيد علي. | I found no messages in what you copied. Copy them and try again. |  |

@@ -99,7 +99,7 @@ async def test_owner_demo_line_and_arabic() -> None:
     async with c:
         r = await c.post("/v1/voice/utterance", files=files(wav_bytes(3)), headers={"X-API-Key": key})
     assert (r.json()["wake"], r.json()["intent"]) == (True, "check_clipboard")
-    ar = "يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر"
+    ar = "يا صقر، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر"
     c, key = await make_client(Engines(nat=ok(text=ar, lang="ar"), con=ok()))
     async with c:
         r = await c.post("/v1/voice/utterance", files=files(wav_bytes(3)), headers={"X-API-Key": key})
@@ -221,7 +221,7 @@ async def test_hint_is_passed_through_but_result_lang_follows_detection() -> Non
 
     def engine(req: httpx.Request) -> httpx.Response:
         seen.append(req.url.params.get("lang", ""))
-        return httpx.Response(200, json=stt_reply(text="هاي فالكون افحص الرابط", lang="ar"))
+        return httpx.Response(200, json=stt_reply(text="يا صقر افحص الرابط", lang="ar"))
 
     c, key = await make_client(Engines(nat=engine, con=ok()))
     async with c:

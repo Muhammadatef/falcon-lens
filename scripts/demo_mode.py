@@ -578,7 +578,7 @@ def cmd_off() -> int:
 # ---------------------------------------------------------------- rehearsal
 
 LINE_EN = "Hey Falcon, I have received multiple messages that I feel it's scam, run Falcon Lens"
-LINE_AR = "يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر"
+LINE_AR = "يا صقر، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر"
 
 
 def rehearsal_messages(kit: Path = KIT_MESSAGES) -> list[str]:

@@ -14,12 +14,17 @@ const EN = VOICE_MESSAGES.en;
 
 /** Fake microphone, voice-activity input, recorder, clipboard and speech engine (no real audio device is needed). */
 async function installMocks(page: Page) {
+  await mockClips(page);
+  await installDeviceMocks(page);
+}
+async function installDeviceMocks(page: Page) {
   await page.addInitScript(() => {
     const w = window as any;
     w.__level = 0;
     w.__voice = "noise";
     w.__tok = Math.random().toString(36).slice(2, 10);
     w.__spoken = [];
+    w.__played = [];
     w.__clip = "";
     w.__clipDenied = false;
     w.__gum = 0;
@@ -36,6 +41,13 @@ async function installMocks(page: Page) {
     });
     w.AudioContext = class {
       state = "running";
+      destination = {};
+      // Clip playback: a clip's "audio" is its own id, so the test can see exactly which clips were played, in order.
+      decodeAudioData(ab: ArrayBuffer) { return Promise.resolve({ id: new TextDecoder().decode(ab) }); }
+      createBufferSource() {
+        const src: any = { buffer: null, onended: null, connect() {}, stop() {}, start() { w.__played.push(src.buffer.id); setTimeout(() => src.onended?.(), 8); } };
+        return src;
+      }
       createMediaStreamSource() { return { connect() {}, disconnect() {} }; }
       createAnalyser() { return { fftSize: 1024, connect() {}, getFloatTimeDomainData(b: Float32Array) { b.fill(w.__level); } }; }
       resume() { return Promise.resolve(); }
@@ -78,7 +90,16 @@ async function say(page: Page, voice: string) {
   await page.evaluate(() => { (window as any).__level = 0; });
 }
 
-const spoken = (page: Page): Promise<{ text: string; lang: string }[]> => page.evaluate(() => (window as any).__spoken);
+/** The clips played so far, as their script text (and the BCP-47 tag of their language). Device speech is NOT included: it must stay empty. */
+const spoken = async (page: Page): Promise<{ text: string; lang: string }[]> => {
+  const ids: string[] = await page.evaluate(() => (window as any).__played);
+  return ids.map((id) => {
+    const ar = id.startsWith("ar_ae.");
+    return { text: (ar ? SCRIPT.ar_ae : SCRIPT.en)[id.slice(ar ? 6 : 3)]!, lang: ar ? "ar-SA" : "en-GB" };
+  });
+};
+/** Lines read by the device's own voice (a different voice): none is allowed on any flow, because every line is a pre-generated clip. */
+const deviceSpeech = (page: Page): Promise<unknown[]> => page.evaluate(() => (window as any).__spoken ?? []);
 /** The narration is a queue of clips with short gaps: wait until the assistant has finished speaking and is listening again. */
 const narrationDone = (page: Page) => expect(page.getByTestId("voice")).toHaveAttribute("data-phase", "listening", { timeout: 30_000 });
 
@@ -98,10 +119,25 @@ async function setup(page: Page, request: any) {
   return { ids, text: msgs.join("\n\n") };
 }
 
+/** Serves a manifest and clip files for both languages built from the script itself (a clip's body is its id). */
+async function mockClips(page: Page) {
+  for (const [dir, lang] of [["ar_ae", "ar_ae"], ["en", "en"]] as const) {
+    const list = Object.entries(SCRIPT[lang]).map(([key, text]) => ({ id: `${lang}.${key}`, file: `${lang}.${key}.mp3`, text, ms: 500, engine: lang === "ar_ae" ? "polly" : "kokoro", voice: lang === "ar_ae" ? "Zayd" : "am_fenrir" }));
+    await page.route(`**/voice/${dir}/manifest.json`, (route) => route.fulfill({ json: list }));
+    await page.route(new RegExp(`/voice/${dir}/[^/]+\\.mp3$`), (route) => route.fulfill({ contentType: "audio/mpeg", body: decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop()!.replace(/\.mp3$/, "")) }));
+  }
+}
+
 const listening = (lang: typeof AR | typeof EN) => lang["voice.state.listening"];
 
 test.describe("voice assistant: hands-free mode with mocked microphone, clipboard and speech", () => {
   test.setTimeout(120_000);
+
+  // One voice only: every spoken line on every flow is a pre-generated clip; device speech (a different voice) never runs.
+  test.afterEach(async ({ page }) => {
+    expect(await deviceSpeech(page), "device speech used").toEqual([]);
+    expect(await page.evaluate(() => (window as any).__voiceFallbacks ?? []), "clips missing").toEqual([]);
+  });
 
   test("wake, three messages, live steps in order, spoken in each speaker's language, results and campaign", async ({ page, request }) => {
     const { ids } = await setup(page, request);
@@ -125,12 +161,12 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await say(page, "check-ar");
     await expect(page.getByTestId("voice-card")).toHaveCount(3);
     await expect(page.getByTestId("voice-todo")).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId("voice-steps")).toContainText(AR["sentinel.unavailable"], { timeout: 20_000 }); // no Sentinel is connected here: it must say so, not 'still watching'
+    await expect(page.getByTestId("voice-steps")).toContainText(SCRIPT.ar_ae["sentinel.unavailable"]!, { timeout: 20_000 }); // no Sentinel is connected here: it must say so, not 'still watching'
     const texts = await page.getByTestId("voice-step").allTextContents();
     const at = (needle: string) => texts.findIndex((t) => t.includes(needle));
-    const order = [at("سمعتك"), at("يفحص الرسالة الأولى"), at(AR["investigator.lists"]), at("الرسالة 1: حكم"), at("يفحص الرسالة الثانية"), at("الرسالة 3: حكم"), at(AR["sentinel.handover"]), at(AR["sentinel.unavailable"])];
-    expect(texts.some((t) => t.includes("بصير")) && texts.some((t) => t.includes("«درع»"))).toBe(true); // both agents are named on screen
-    expect(at(AR["investigator.rules_only"]) >= 0 || at("نظرة ثانية") >= 0).toBe(true); // either the rules decided or a model answered, never silent
+    const order = [at(SCRIPT.ar_ae["found.3"]!), at(SCRIPT.ar_ae["investigator.start.1"]!), at(SCRIPT.ar_ae["investigator.lists"]!), at(SCRIPT.ar_ae["investigator.arbiter_result.dangerous"]!), at(SCRIPT.ar_ae["investigator.start.2"]!), at(SCRIPT.ar_ae["investigator.arbiter_result.no_warning_signs"]!), at(SCRIPT.ar_ae["sentinel.handover"]!), at(SCRIPT.ar_ae["sentinel.unavailable"]!)];
+    expect(texts.some((t) => t.includes("بصير")) && texts.some((t) => t.includes("درع"))).toBe(true); // both agents are named on screen
+    expect(at(SCRIPT.ar_ae["investigator.rules_only"]!) >= 0 || at("نظرة ثانية") >= 0).toBe(true); // either the rules decided or a model answered, never silent
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(texts.join(" ")).not.toMatch(/\bT[0-3]\b|آمن|\bsafe\b/i);
     await expect(page.getByTestId("voice-step").first()).toHaveAttribute("data-done", "true");
@@ -152,9 +188,9 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     const before = (await spoken(page)).length;
     await say(page, "check-en");
     await expect(page.getByTestId("voice-todo")).toContainText("", { timeout: 25_000 });
-    await expect(page.getByTestId("voice-step").first()).toContainText("Heard you: checking three messages from your clipboard");
+    await expect(page.getByTestId("voice-step").first()).toContainText(SCRIPT.en["found.3"]!);
     await expect(page.getByTestId("voice-card-verdict")).toHaveText(["Dangerous", "Dangerous", "No warning signs found"], { timeout: 25_000 });
-    await expect(page.getByTestId("voice-steps")).toContainText(EN["sentinel.unavailable"], { timeout: 20_000 });
+    await expect(page.getByTestId("voice-steps")).toContainText(SCRIPT.en["sentinel.unavailable"]!, { timeout: 20_000 });
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.listening"], { timeout: 20_000 });
     await narrationDone(page);
     const en = (await spoken(page)).slice(before);
@@ -172,6 +208,68 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-on")).toBeVisible();
   });
 
+  test("the caption is exactly what is spoken: every caption equals the joined texts of the clips played for it (ar_ae and en)", async ({ page, request }) => {
+    await setup(page, request);
+    await page.addInitScript(() => {
+      const w = window as any;
+      w.__caps = [];
+      new MutationObserver(() => {
+        const el = document.querySelector('[data-testid="voice-caption"]');
+        const t = el?.textContent ?? "";
+        if (t && w.__caps[w.__caps.length - 1] !== t) w.__caps.push(t);
+      }).observe(document, { childList: true, subtree: true, characterData: true });
+    });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    for (const voice of ["check-ar", "check-en"]) {
+      await say(page, voice);
+      await expect(page.getByTestId("voice-todo")).toBeVisible({ timeout: 40_000 });
+      await narrationDone(page);
+    }
+    const caps: string[] = await page.evaluate(() => (window as any).__caps);
+    const pieces = (await spoken(page)).map((p) => p.text);
+    expect(caps.length).toBeGreaterThan(8);
+    let i = 0;
+    for (const c of caps) {
+      let acc = "";
+      const used: string[] = [];
+      while (acc !== c && i < pieces.length && c.startsWith(acc)) {
+        used.push(pieces[i]!);
+        acc = used.join(" ");
+        i++;
+      }
+      expect(acc, `caption "${c}" is not the text of the clips played for it`).toBe(c);
+    }
+    expect(i).toBe(pieces.length);
+  });
+
+  test("steps are numbered 1..n and each is word-for-word the clip(s) spoken for it; Arabic uses only Zayd (polly) clips, no device speech", async ({ page, request }) => {
+    await setup(page, request);
+    const manifests: Record<string, { id: string; engine: string; voice: string }[]> = {};
+    page.on("response", async (r) => {
+      const m = r.url().match(/\/voice\/(ar_ae|en)\/manifest\.json$/);
+      if (m) manifests[m[1]!] = await r.json();
+    });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "check-ar");
+    await expect(page.getByTestId("voice-todo")).toBeVisible({ timeout: 40_000 });
+    await narrationDone(page);
+    const items = page.getByTestId("voice-step");
+    const n = await items.count();
+    expect(n).toBeGreaterThan(5);
+    for (let i = 0; i < n; i++) await expect(items.nth(i)).toHaveAttribute("data-n", String(i + 1));
+    expect(await items.first().evaluate((el) => getComputedStyle(el, "::before").content)).toContain("counter");
+    const texts = (await items.allTextContents()).map((t) => t.trim());
+    const played = await page.evaluate(() => (window as any).__played as string[]);
+    expect(played.every((id) => id.startsWith("ar_ae."))).toBe(true);
+    const pieces = (await spoken(page)).map((p) => p.text);
+    expect(texts.join(" ")).toBe(pieces.slice(1).join(" ")); // the first clip is the wake acknowledgement, shown as the caption
+    await expect.poll(() => manifests["ar_ae"]?.length ?? 0).toBeGreaterThan(0);
+    const byId = new Map(manifests["ar_ae"]!.map((e) => [e.id, e]));
+    for (const id of played) expect([byId.get(id)?.engine, byId.get(id)?.voice], id).toEqual(["polly", "Zayd"]);
+  });
+
   test("Sentinel hand-over: a real incident linking these checks gets a card, its trace is narrated, approval is stated", async ({ page, request, context, baseURL }) => {
     const { ids } = await setup(page, request);
     const inc = newIncidentId();
@@ -186,10 +284,10 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 30_000 });
     const texts = await page.getByTestId("voice-step").allTextContents();
     const at = (needle: string) => texts.findIndex((t) => t.includes(needle));
-    const order = [at(AR["sentinel.handover"]), at("ربط «درع» 3 بلاغات"), at(AR["sentinel.summary"]), at(AR["sentinel.draft"]), at(AR["sentinel.awaiting_approval"])];
+    const order = [at(SCRIPT.ar_ae["sentinel.handover"]!), at(SCRIPT.ar_ae["sentinel.linked.3"]!), at(SCRIPT.ar_ae["sentinel.summary"]!), at(SCRIPT.ar_ae["sentinel.draft"]!), at(SCRIPT.ar_ae["sentinel.awaiting_approval"]!)];
     expect(order.every((i) => i >= 0), JSON.stringify(texts)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
-    expect(at(AR["sentinel.watching"])).toBe(-1); // never "still watching" when an incident was found
+    expect(at(SCRIPT.ar_ae["sentinel.watching"]!)).toBe(-1); // never "still watching" when an incident was found
     const said = (await spoken(page)).map((x) => x.text).join(" ");
     for (const key of ["sentinel.handover", "sentinel.linked.3", "sentinel.summary", "sentinel.draft", "sentinel.awaiting_approval", "final.both_agents"]) expect(said, key).toContain(SCRIPT.ar_ae[key]!);
     for (const key of ["sentinel.watching", "final.sentinel_watching"]) expect(said, key).not.toContain(SCRIPT.ar_ae[key]!);
@@ -202,11 +300,11 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.goto("/voice");
     await page.getByTestId("voice-on").click();
     await say(page, "help-en");
-    await expect(page.getByTestId("voice-caption")).toHaveText(EN["voice.say.help"]);
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.en["help"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(EN["voice.state.listening"], { timeout: 10_000 });
     const before = (await spoken(page)).length;
     await say(page, "help-ar");
-    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.help"]);
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["help"]!);
     const ar = (await spoken(page)).slice(before);
     expect(ar.length).toBeGreaterThan(0);
     expect(ar.every((s) => s.lang === "ar-SA")).toBe(true);
@@ -220,9 +318,9 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.goto("/voice");
     await page.getByTestId("voice-on").click();
     await say(page, "check-en");
-    await expect(page.getByTestId("voice-steps")).toContainText(EN["sentinel.watching"], { timeout: 70_000 });
+    await expect(page.getByTestId("voice-steps")).toContainText(SCRIPT.en["sentinel.watching"]!, { timeout: 70_000 });
     await expect(page.getByTestId("voice-state")).toHaveText(EN["voice.state.listening"], { timeout: 30_000 });
-    expect(await page.getByTestId("voice-step").allTextContents()).toContain(EN["sentinel.watching"]);
+    expect(await page.getByTestId("voice-step").allTextContents()).toContain(SCRIPT.en["sentinel.watching"]!);
     await expect(page.getByTestId("voice-sentinel")).toHaveCount(0);
     const said = (await spoken(page)).map((x) => x.text).join(" ");
     for (const key of ["sentinel.handover", "sentinel.watching", "final.sentinel_watching"]) expect(said, key).toContain(SCRIPT.en[key]!);
@@ -243,8 +341,8 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.getByTestId("voice-on").click();
     await say(page, "check-ar");
     await expect(page.getByTestId("voice-card")).toHaveCount(1);
-    await expect(page.getByTestId("voice-steps")).toContainText(AR["investigator.route.local"], { timeout: 20_000 });
-    await expect(page.getByTestId("voice-steps")).not.toContainText(AR["investigator.rules_only"]);
+    await expect(page.getByTestId("voice-steps")).toContainText(SCRIPT.ar_ae["investigator.ai_second_look_local"]!, { timeout: 20_000 });
+    await expect(page.getByTestId("voice-steps")).not.toContainText(SCRIPT.ar_ae["investigator.rules_only"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 40_000 });
     const said = (await spoken(page)).map((x) => x.text).join(" ");
     expect(said).toContain(SCRIPT.ar_ae["investigator.ai_second_look_local"]!);
@@ -257,8 +355,8 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.goto("/voice");
     await page.getByTestId("voice-on").click();
     await say(page, "check-ar");
-    await expect(page.getByTestId("voice-steps")).toContainText(AR["voice.nothing_checked"], { timeout: 30_000 });
-    await expect(page.getByTestId("voice-steps")).not.toContainText(AR["sentinel.handover"]);
+    await expect(page.getByTestId("voice-steps")).toContainText(SCRIPT.ar_ae["nothing_checked"]!, { timeout: 30_000 });
+    await expect(page.getByTestId("voice-steps")).not.toContainText(SCRIPT.ar_ae["sentinel.handover"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 30_000 });
     const said = (await spoken(page)).map((x) => x.text).join(" ");
     expect(said).toContain(SCRIPT.ar_ae["nothing_checked"]!);
@@ -281,7 +379,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
       await say(page, "fail");
       await expect(page.getByTestId("voice-problem")).toHaveAttribute("data-problem", "unavailable", { timeout: 4_000 });
     }).toPass({ timeout: 30_000 });
-    await expect(page.getByTestId("voice-problem")).toContainText(AR["voice.unavailable.msg"]);
+    await expect(page.getByTestId("voice-problem")).toContainText(SCRIPT.ar_ae["voice.unavailable"]!);
     await expect(page.getByTestId("voice-paste")).toBeVisible();
   });
 
@@ -290,7 +388,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.goto("/voice");
     await page.getByTestId("voice-on").click();
     await say(page, "check-ar");
-    await expect(page.getByTestId("voice-steps")).toContainText(AR["investigator.lists"]);
+    await expect(page.getByTestId("voice-steps")).toContainText(SCRIPT.ar_ae["investigator.lists"]!);
     await page.getByTestId("voice-stop").click();
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.stopped"]);
     const after = await page.getByTestId("voice-step").count();
@@ -305,10 +403,10 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.goto("/voice");
     await page.getByTestId("voice-on").click();
     await say(page, "help-ar");
-    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.help"]);
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["help"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
     await say(page, "none-ar");
-    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.none"]);
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["didnt"]!);
     const tok = await page.evaluate(() => (window as any).__tok as string);
     const calls = ((await (await request.get("/__mock/voice")).json()) as { calls: { marker: string | null; langHint: string | null }[] }).calls.filter((c) => c.marker === tok);
     expect(calls.map((c) => c.langHint)).toEqual([null, "ar"]);
@@ -319,10 +417,10 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.goto("/voice");
     await page.getByTestId("voice-on").click();
     await say(page, "help-ar");
-    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.help"]);
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["help"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
     await say(page, "none-ar");
-    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.none"]);
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["didnt"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
     expect((await spoken(page)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["didnt"]!);
     await say(page, "stop");
@@ -337,7 +435,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.getByTestId("voice-on").click();
     await say(page, "check-ar");
     await expect(page.getByTestId("voice-paste")).toBeVisible();
-    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.paste"]);
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["clip.denied"]!);
     expect((await spoken(page)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["clip.denied"]!);
     await page.getByTestId("voice-paste-input").fill(msgs);
     await page.getByTestId("voice-paste-submit").click();
@@ -368,7 +466,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR));
     await page.evaluate(() => { (window as any).__voice = "help-ar"; });
     await page.locator("body").press("Space");
-    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.help"], { timeout: 10_000 });
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["help"]!, { timeout: 10_000 });
   });
 
   test("the voice route enforces its limits and the microphone policy is scoped to /voice", async ({ request }) => {

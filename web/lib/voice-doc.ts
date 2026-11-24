@@ -22,7 +22,7 @@ export interface VoiceDoc {
 
 const en: VoiceDoc = {
   title: "Voice assistant | المساعد الصوتي",
-  lead: "Say \"Hey Falcon | يا فالكون\" and the assistant checks what you copied, then tells you each step aloud: Baseer (the Investigator) first, then Dir' (the Sentinel).",
+  lead: "Say \"Hey Falcon | يا صقر\" and the assistant checks what you copied, then tells you each step aloud: Baseer (the Investigator) first, then Dir' (the Sentinel).",
   stepsLabel: "The voice path, step by step",
   steps: [
     { tag: "MIC", title: "Wake phrase", body: "You switch on the microphone and say \"Hey Falcon\". The browser records one short clip (at most fifteen seconds) and sends it to our own web route, /api/voice." },
@@ -45,10 +45,10 @@ const en: VoiceDoc = {
 
 const ar: VoiceDoc = {
   title: "المساعد الصوتي | Voice assistant",
-  lead: "قل «يا فالكون» فيفحص المساعد ما نسخته، ثم يخبرك بكل خطوة بصوت مسموع: «بصير»، المحقّق، أولاً ثم «درع»، الحارس.",
+  lead: "قل «يا صقر» فيفحص المساعد ما نسخته، ثم يخبرك بكل خطوة بصوت مسموع: «بصير»، المحقّق، أولاً ثم «درع»، الحارس.",
   stepsLabel: "المسار الصوتي خطوة بخطوة",
   steps: [
-    { tag: "MIC", title: "عبارة التنبيه", body: "تشغّل الميكروفون وتقول «يا فالكون». يسجّل المتصفح مقطعاً قصيراً (خمس عشرة ثانية على الأكثر) ويرسله إلى مسار الويب لدينا /api/voice." },
+    { tag: "MIC", title: "عبارة التنبيه", body: "تشغّل الميكروفون وتقول «يا صقر». يسجّل المتصفح مقطعاً قصيراً (خمس عشرة ثانية على الأكثر) ويرسله إلى مسار الويب لدينا /api/voice." },
     { tag: "STT", title: "تحويل الكلام إلى نص محلياً", body: "تمرّر الواجهة البرمجية المقطع إلى نموذج Whisper على جهازنا نفسه: محرّك mlx-whisper الأصلي أولاً، وحاوية الصوت (faster-whisper بالنموذج الصغير) احتياطاً. يبقى الصوت في الذاكرة فقط، ولا يُخزَّن الصوت ولا النص المفرَّغ ولا يُسجَّلان." },
     { tag: "INTENT", title: "فهم الطلب بقواعد ثابتة", body: "قواعد ثابتة، لا نموذج، تحدد ما طلبته: فحص ما نسخته، أو فحص نص، أو مساعدة، أو إيقاف." },
     { tag: "CHECK", title: "الفحص نفسه في صفحة الفحص", body: "تمرّ كل رسالة نسختها عبر واجهة الفحص العامة نفسها التي تستخدمها صفحة الفحص بقناة «صوت». لا يختلف الفحص لأنك تحدثت." },

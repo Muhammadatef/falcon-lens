@@ -231,7 +231,7 @@ ar_ae:
   "todo.report": "وبلّغ عن المسج من القنوات الرسمية."
   "todo.careful": "بس خلّك حذر."
   "todo.wait": "لا تفتح الرابط لين نشيّكه."
-  "help": "انسخ المسجات، وقل: يا فالكون، شيّك مسجاتي."
+  "help": "انسخ المسجات، وقل: يا صقر، شيّك مسجاتي."
   "stop": "تمام، وقّفت."
   "didnt": "ما فهمت عليك. عيد، لو سمحت."
   "clip.empty": "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي."
@@ -699,7 +699,7 @@ clips:
   - {id: "ar_ae.todo.report", lang: ar_ae, text: "وبلّغ عن المسج من القنوات الرسمية."}
   - {id: "ar_ae.todo.careful", lang: ar_ae, text: "بس خلّك حذر."}
   - {id: "ar_ae.todo.wait", lang: ar_ae, text: "لا تفتح الرابط لين نشيّكه."}
-  - {id: "ar_ae.help", lang: ar_ae, text: "انسخ المسجات، وقل: يا فالكون، شيّك مسجاتي."}
+  - {id: "ar_ae.help", lang: ar_ae, text: "انسخ المسجات، وقل: يا صقر، شيّك مسجاتي."}
   - {id: "ar_ae.stop", lang: ar_ae, text: "تمام، وقّفت."}
   - {id: "ar_ae.didnt", lang: ar_ae, text: "ما فهمت عليك. عيد، لو سمحت."}
   - {id: "ar_ae.clip.empty", lang: ar_ae, text: "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي."}

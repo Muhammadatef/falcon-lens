@@ -25,7 +25,7 @@ const ar = {
   "ck.channel.extension": "الإضافة",
   "ck.channel.api": "واجهة البرمجة",
   "ck.channel.mcp": "MCP",
-  "ck.channel.voice": "صوت (يا فالكون)",
+  "ck.channel.voice": "صوت (يا صقر)",
   "hs.risk": "الخطورة",
   "hs.tier": "المستوى",
   "hs.degraded": "فحص ناقص",

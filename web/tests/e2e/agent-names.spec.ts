@@ -25,7 +25,7 @@ for (const lang of ["ar", "en"] as const) {
         await expect(page.getByTestId("lane-sen")).toContainText("Sentinel");
       }
       const card = page.getByTestId("agents-voice-biz");
-      await expect(card).toContainText("يا فالكون");
+      await expect(card).toContainText(lang === "ar" ? "يا صقر" : "Hey Falcon");
       await expect(card).toContainText(lang === "ar" ? "«بصير»" : "Baseer");
       expect(await axe(page)).toEqual([]);
     });
@@ -33,7 +33,7 @@ for (const lang of ["ar", "en"] as const) {
     test("/docs/agents has the voice path with seven ordered steps and the architecture voice nodes, axe clean", async ({ page }) => {
       await page.goto("/docs/agents");
       const voice = page.getByTestId("agents-voice-tech");
-      await expect(voice).toContainText("يا فالكون");
+      await expect(voice).toContainText("يا صقر");
       await expect(page.getByTestId("voice-flow").locator("li")).toHaveCount(7);
       await expect(voice).toContainText("/api/voice");
       await expect(voice).toContainText(lang === "ar" ? "«بصير»" : "Baseer");

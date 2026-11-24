@@ -165,7 +165,7 @@ Do not narrate a verdict before it is on screen. The "Expected" rows below descr
 
 ## The voice scene: "Hey Falcon"
 
-Shows both agents being narrated live. Open `/voice`, allow the microphone, copy one demo message (kit item M1), then say "Hey Falcon, check what I copied" (<span dir="rtl">يا فالكون، افحص اللي نسخته</span> works too). Keep the screen in frame: the assistant reads the message, narrates the Investigator (Baseer | بصير) tier by tier, says what it found, the verdict and what to do now, then the Sentinel (Dir' | درع) hand-over. The English voice is Kokoro; the Arabic voice is macOS `say` (Majed). A cloned Emirati voice is pending an owner-consented recording and must not be claimed. After the take the checks appear in `/history` with the Voice badge. Rehearse with `make voice-rehearsal`; native speech engine with `make voice-native`. The speech benchmark is on synthetic speech only (`evals/results/published/voice/`); do not quote it as real-microphone accuracy. Say "no warning signs found", never "safe".
+Shows both agents being narrated live. Open `/voice`, allow the microphone, copy one demo message (kit item M1), then say "Hey Falcon, check what I copied" (<span dir="rtl">يا صقر، افحص اللي نسخته</span> works too). Keep the screen in frame: the assistant reads the message, narrates the Investigator (Baseer | بصير) tier by tier, says what it found, the verdict and what to do now, then the Sentinel (Dir' | درع) hand-over. The English voice is Kokoro; the Arabic voice is macOS `say` (Majed). A cloned Emirati voice is pending an owner-consented recording and must not be claimed. After the take the checks appear in `/history` with the Voice badge. Rehearse with `make voice-rehearsal`; native speech engine with `make voice-native`. The speech benchmark is on synthetic speech only (`evals/results/published/voice/`); do not quote it as real-microphone accuracy. Say "no warning signs found", never "safe".
 
 ## The Sentinel scene
 
@@ -235,7 +235,7 @@ Record the phone with a screen recording plus one shot of the hand holding it, s
 
 ## The voice scene: "Hey Falcon"
 
-Needs the stack up (`make up`), the speech engine (`make voice-native`, or the container engine alone, a little slower) and a browser on `/voice` with the microphone allowed. Copy the three Falcon Demo Bank test messages (fixtures only, never a real brand), tap hands-free, and say: «يا فالكون، افحص رسائلي» or "Hey Falcon, check my messages".
+Needs the stack up (`make up`), the speech engine (`make voice-native`, or the container engine alone, a little slower) and a browser on `/voice` with the microphone allowed. Copy the three Falcon Demo Bank test messages (fixtures only, never a real brand), tap hands-free, and say: «يا صقر، افحص رسائلي» or "Hey Falcon, check my messages".
 
 | What you see and hear | What proves it |
 |---|---|

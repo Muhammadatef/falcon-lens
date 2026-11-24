@@ -25,7 +25,7 @@ pytestmark = pytest.mark.integration
 
 URLS = os.environ.get("FL_VOICE_INTEGRATION_URLS", "")
 EN = "Hey Falcon, I have received multiple messages that I feel it's scam, run Falcon Lens"
-AR = "يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر"
+AR = "يا صقر، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر"
 
 
 def have_voice(name: str) -> bool:

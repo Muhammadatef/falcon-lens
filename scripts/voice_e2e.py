@@ -55,7 +55,7 @@ WEB = ROOT / "web"
 # The owner's demo lines (same as `make voice-rehearsal`).
 LINES = {
     "en": ("Samantha", "Hey Falcon, I have received multiple messages that I feel it's scam, run Falcon Lens"),
-    "ar": ("Majed", "يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر"),
+    "ar": ("Majed", "يا صقر، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر"),
 }
 RATE = 16000
 LEAD_S = 3.0  # silence before the line: the listener is up before the speech starts
