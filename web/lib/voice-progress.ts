@@ -5,7 +5,7 @@
  * verdict says it ran and "skipped" only once the final verdict says it did not.
  */
 import type { Lang, Verdict } from "./contracts";
-import { newProgressSteps, type ProgressStep } from "./voice";
+import type { ProgressStep } from "./voice";
 import { tierFoundText } from "./voice-speech";
 
 export type StageId = "heard" | "understand" | "investigate" | "link" | "answer" | "reply";
@@ -42,7 +42,6 @@ export interface TierRow {
   found?: string;
 }
 
-const STEP_TIER: Record<ProgressStep, TierId> = { lists: "T0", lookalike: "T1", wording: "T1", browser: "T2", ai: "T3" };
 const ORDER: TierId[] = ["T0", "T1", "T2", "T3"];
 
 /**
@@ -50,17 +49,28 @@ const ORDER: TierId[] = ["T0", "T1", "T2", "T3"];
  * verdict is in, a tier that did not run is shown as "skipped". While the check is running only reached tiers are listed.
  */
 export function tierRows(v: Verdict, kind: "url" | "message", lang: Lang, final: boolean): TierRow[] {
-  const ran = newProgressSteps(v, kind, new Set<ProgressStep>());
-  const byTier = new Map<TierId, ProgressStep>(ran.map((s) => [STEP_TIER[s], s]));
   const rows: TierRow[] = [];
   for (const tier of ORDER) {
-    if (tier === "T2" && kind !== "url" && !v.evidence.some((e) => e.tier === "T2")) continue;
-    const step = byTier.get(tier);
-    if (step) rows.push({ tier, step, status: "done", found: tierFoundText(lang, step, v) });
-    else if (final) rows.push({ tier, step: tier === "T0" ? "lists" : tier === "T1" ? (kind === "url" ? "lookalike" : "wording") : tier === "T2" ? "browser" : "ai", status: "skipped" });
+    const step: ProgressStep = tier === "T0" ? "lists" : tier === "T1" ? (kind === "url" ? "lookalike" : "wording") : tier === "T2" ? "browser" : "ai";
+    // A tier that ran says what THIS check found there (or "nothing notable at this layer"), never "skipped".
+    if (tierRan(v, tier)) rows.push({ tier, step, status: "done", found: tierFoundText(lang, step, v) });
+    else if (tier === "T2" && kind !== "url") continue; // a message without a link never visits a page
+    else if (final) rows.push({ tier, step, status: "skipped" });
   }
   return rows;
 }
+
+/** A tier ran when the verdict reached it AND it left evidence or a trace step (T3: the model call), even if it found nothing. */
+export function tierRan(v: Verdict, tier: TierId): boolean {
+  if (tier === "T0") return true;
+  if (RANK[v.tier_reached] < RANK[tier]) return false;
+  if (v.evidence.some((e) => e.tier === tier)) return true;
+  const trace = v.trace ?? [];
+  if (tier === "T3") return trace.some((s) => s.kind === "llm");
+  return trace.some((s) => s.kind === "tier" && `${s.name ?? ""} ${s.summary}`.includes(tier));
+}
+
+const RANK = { T0: 0, T1: 1, T2: 2, T3: 3 } as const;
 
 /** "3.2" for 3240 ms. */
 export const seconds = (ms: number): string => (Math.max(0, ms) / 1000).toFixed(1);

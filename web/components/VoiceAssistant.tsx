@@ -405,7 +405,6 @@ export function VoiceAssistant() {
       setRows(split.items.map((item, key) => ({ key, item, outcome: null })));
       setPhase("checking");
       stage("investigate", voiceText(lang, "voice.prog.msgn", { i: "1", n: String(split.items.length) }));
-      stage("investigate", voiceText(lang, "voice.prog.msgn", { i: "1", n: String(split.items.length) }));
       addStep(spoken(lang, foundKeys(split.items.length)), lang);
       enqueue({ text: narStart(lang, split.items.length), keys: foundKeys(split.items.length), lang, kind: "msg" }, token);
 

@@ -72,6 +72,9 @@ class ArbiterContext:
     # Signals with criticality "enrichment": their errors are informational, never degrading.
     enrichment_signals: frozenset[str] = frozenset()
     params: ScoringParams | None = None
+    # False when the cascade exited before T1 by design (e.g. a T0 feed hit): the missing T1 model is then
+    # not a degradation, only a required-but-absent model is.
+    t1_required: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -358,7 +361,7 @@ def score(
             + list(ctx.extra_degraded_reasons)
             # No fitted T1 probability for a URL: the draft fallback is used and the verdict is degraded, so by
             # contract invariant 4 it can never be no_warning_signs (SCORING §4).
-            + (["t1_model_unavailable"] if p_clf is None and ctx.input_type == "url" else [])
+            + (["t1_model_unavailable"] if p_clf is None and ctx.input_type == "url" and ctx.t1_required else [])
         )
     )
     degraded = bool(reasons)

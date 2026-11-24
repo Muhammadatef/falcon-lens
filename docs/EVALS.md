@@ -19,6 +19,12 @@ Data lives under `data/`. Live URLs, snapshots and logos are in `data/private/`,
 
 **Held-out legitimate sets (`heldout_legit*.csv`, `scripts/fp_regress.py`).** Sets 1 and 2 were inspected while the sandbox budget and payload rules were being fixed, so any figure measured on them after those fixes is **post-hoc** (fit to the set it is measured on) and must be labelled so. Set 3 (a fresh seeded Tranco draw, disjoint from sets 1 and 2, `legit_urls.csv` and every split) was used only for a single measurement with the rules frozen; its artifact is the unseen number. Each artifact flags items read only partially (`partial`) and counts them (`partial_reads`).
 
+**Fresh-200 live run (`evals/fresh200/`, artifact `evals/results/published/fresh200/fresh200_0e91e66c04f8_20261124T143656Z.json`; real data collected 2026-11-24).** 100 phishing URLs (newest OpenPhish community rows) and 100 legitimate sites (80 Tranco `Q2464` ranks 2,000-50,000 plus 20 UAE/Gulf official domains), none in any dataset split, held-out set, fp_regress artifact, message_text, red-team, fixture or the verdict store (deduplicated by canonical URL and registered domain), submitted to the live API.
+- Main set (n=200, any warning = suspicious or dangerous): recall 1.00 (Wilson 95% 0.963-1.000), false-positive rate 0.09 (bootstrap 0.04-0.15), precision 0.917 (0.861-0.964), F1 0.957 (0.925-0.982); dangerous-only: recall 1.00, FPR 0.00 (0 of 100). All 9 false warnings were `suspicious` with `degraded=true` (`partial_render` or sandbox timeout); 8 of 80 global and 1 of 20 UAE sites.
+- Read the main-set recall as reputation-feed coverage, not model skill: all 100 phishing URLs were already listed by the OpenPhish feed the stack ingests, stopped at T0 as `dangerous`, and were marked `degraded` (`t1_model_unavailable`). A second set of 100 hosts from Phishing.Database (not in OpenPhish) gives the model-path view: 99 `suspicious` and 1 `dangerous`; 47 of the 100 were dead in the sandbox (DNS failure or timeout) and are reported apart, leaving 53 live pages with 52 `suspicious` and 1 `dangerous`, of which 51 reached the T3 investigator.
+- Degraded ("could not fully check") rate: legit 0.09, main phishing 1.00 (T0 short-circuit), second-source phishing 0.48 (0.019 among live pages). Server latency p50/p95 over the 200 main checks 0.29 s / 7.8 s; client-side wall time is not a latency figure (the judge key was rate-limited and retried).
+- Caveats: legit labels are "served and on no keyless public blocklist" (Google Safe Browsing was not used), not hand-audited; one day, one feed per set, small n; not tuned on. 23 of the 200 main-set URLs were first submitted in a discarded pilot of this same run (raw rows thrown away, all 200 resubmitted), so those 23 may have been served from the verdict cache and their latency is not a cold-path figure. Phishing URLs stay in `data/private/` (the feed bars redistribution); the artifact holds aggregates and defanged examples only.
+
 **Targets** (report the real numbers; never tune on test): recall ≥ 90%, FPR ≤ 2%, zero false-dangerous on official sites, 0% injection success, 100% faithfulness.
 
 **Merge gate (CI, on the validation split, against `evals/baseline.json`).** A PR fails if any of these happens:
@@ -71,6 +77,14 @@ make redteam-shipped BUDGET=extended PAIRED=evals/results/published/redteam/<pro
 | `sovereign/` | sovereign-mode proof (`scripts/sovereign_proof.py`): FL_SOVEREIGN_MODE=1, no cloud key, per local model: demo scenarios, voice utterance, Sentinel LLM summary, which model each role used, egress audit; failed runs are published too | synthetic fixtures, synthetic speech |
 
 Fixtures are the invented Falcon Demo Bank on `.test` hosts, labelled as test fixtures, served only by an offline fixture renderer; no live page is visited. The red-team shipped-cascade artifact (PR #84) covers prompt injection and is not repeated here.
+
+### Voice live bench (synthetic speech, on-site vs public tunnel)
+
+Source: `evals/results/published/voice/voice_live_bench_<sha>_<ts>.json`, written by `evals/voice_live_bench.py`. 85 synthetic clips (macOS `say` Majed/Daniel/Samantha/Karen/Rishi at several speeds, Amazon Polly Zayd/Hala/Matthew, three synthetic noise variants), sent through the web route to the live API; the artifact labels `SYNTHETIC_SPEECH: true`.
+- Synthetic speech, not real speakers: read every number as an upper bound. Local = gateway on the Mac Studio, tunnel = public `falconlens.app`; both used the native `whisper-large-v3-turbo` engine.
+- Local (83 scored clips): wake 97.6%, intent 89.2%, FAQ answer 84.6%, language 100%, off-topic and injection redirected 8 of 8, round trip p50 0.26 s / p95 0.66 s; tunnel (72 scored): wake 97.2%, intent 91.7%, p50 0.96 s / p95 1.97 s.
+- Tunnel pass had 13 errors in 85 requests (4 read timeouts at 30 s, 6 instant connection errors in a row, 2 HTTP 502 including the expected over-limit clip) against 2 in the local pass; the remaining failures are listed with the exact utterance and the transcript in the artifact.
+- Server latency is a Prometheus histogram delta (the response carries no timing), local pass only; the rate limit (20 a minute) forces pacing of 3.3 s between requests.
 
 ### Sovereign-mode proof (what "runs fully locally" may and may not claim)
 
