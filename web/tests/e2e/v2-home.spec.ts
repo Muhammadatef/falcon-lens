@@ -37,10 +37,10 @@ test.describe("navigation and redirects (W2-02)", () => {
     await setPrefs(context, baseURL!, { lang: "en" });
     await page.goto("/");
     const links = await page.locator("header nav a").evaluateAll((els) => els.map((e) => e.getAttribute("href")));
-    expect(links).toEqual(["/", "/agents", "/campaigns", "/history", "/results", "/authorities", "/docs", "/privacy"]);
+    expect(links).toEqual(["/", "/voice", "/agents", "/campaigns", "/history", "/results", "/authorities", "/docs", "/privacy"]);
     await expect(page.locator('footer a[href="/campaigns"]')).toHaveCount(1);
     await expect(page.locator('footer a[href="/ops"]')).toHaveCount(1);
-    for (const href of ["/", "/agents", "/campaigns", "/results", "/authorities", "/privacy"]) {
+    for (const href of ["/", "/voice", "/agents", "/campaigns", "/results", "/authorities", "/privacy"]) {
       await page.goto(href);
       await expect(page.locator('header nav a[aria-current="page"]')).toHaveAttribute("href", href);
       await expect(page.locator('header nav a[aria-current="page"]')).toHaveCount(1);

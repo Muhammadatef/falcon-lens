@@ -1,0 +1,96 @@
+/* Hands-free voice assistant (/voice) and its Home entry. Big text, high contrast, 60 fps (transform/opacity only). */
+.voice { display: grid; gap: var(--fl-space-5); margin-block-start: var(--fl-space-4); }
+.voice-preview {
+  display: inline-flex; align-items: center; font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); letter-spacing: 0.02em;
+  color: var(--fl-brand); border: 1.5px solid var(--fl-brand); border-radius: 999px; padding: 0.1rem 0.7rem; vertical-align: middle;
+}
+
+.voice-stage { display: grid; justify-items: center; gap: var(--fl-space-4); padding: var(--fl-space-6) var(--fl-space-4); text-align: center; }
+.voice-orb {
+  position: relative; width: 9.5rem; height: 9.5rem; border-radius: 50%; display: grid; place-items: center;
+  color: var(--fl-text); background: var(--fl-surface-2); border: 3px solid var(--fl-border-strong);
+  transition: border-color var(--fl-dur-base) var(--fl-ease-out), color var(--fl-dur-base) var(--fl-ease-out);
+}
+.voice-ring { position: absolute; inset: -3px; border-radius: 50%; border: 3px solid transparent; pointer-events: none; opacity: 0; }
+.voice-stage[data-state="listening"] .voice-orb { border-color: var(--fl-brand); color: var(--fl-brand); }
+.voice-stage[data-state="heard"] .voice-orb { border-color: var(--fl-brand); background: var(--fl-brand); color: var(--fl-brand-ink); }
+.voice-stage[data-state="checking"] .voice-orb { border-color: var(--fl-suspicious-fg); color: var(--fl-suspicious-fg); }
+.voice-stage[data-state="speaking"] .voice-orb { border-color: var(--fl-brand); color: var(--fl-brand); border-style: dashed; }
+.voice-stage[data-voice="on"] .voice-orb { background: var(--fl-surface-1); }
+.voice-stage[data-state="listening"] .voice-ring, .voice-stage[data-state="speaking"] .voice-ring, .voice-stage[data-state="checking"] .voice-ring { border-color: currentColor; opacity: 0.35; }
+
+.voice-state { font-size: var(--fl-text-2xl); font-weight: var(--fl-weight-bold); line-height: var(--fl-leading-tight); }
+.voice-heard { font-size: var(--fl-text-lg); color: var(--fl-text-muted); max-inline-size: 38rem; }
+.voice-say { font-size: var(--fl-text-xl); line-height: 1.7; max-inline-size: 40rem; padding: var(--fl-space-3) var(--fl-space-4); border-radius: var(--fl-radius-md); background: var(--fl-surface-2); border: 1px solid var(--fl-border-strong); }
+.voice-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--fl-space-3); inline-size: 100%; }
+.voice-big { min-height: 4.5rem; padding-inline: 2rem; font-size: var(--fl-text-xl); font-weight: var(--fl-weight-bold); inline-size: min(100%, 26rem); gap: 0.75rem; }
+.voice-stop { border-color: var(--fl-dangerous-line); color: var(--fl-text); }
+.voice-stage[data-state="off"] .voice-stop { min-height: var(--fl-tap); }
+
+.voice-paste { display: grid; gap: var(--fl-space-3); padding: var(--fl-space-5); }
+.voice-paste-box {
+  inline-size: 100%; min-height: 11rem; padding: var(--fl-space-4); font: inherit; font-size: var(--fl-text-lg); line-height: 1.7; color: var(--fl-text);
+  background: var(--fl-surface-2); border: 2px solid var(--fl-border-strong); border-radius: var(--fl-radius-md); resize: vertical;
+}
+.voice-paste-box:focus-visible { outline: 3px solid var(--fl-brand); outline-offset: 2px; }
+
+.voice-results { display: grid; gap: var(--fl-space-4); }
+.voice-todo { display: grid; gap: var(--fl-space-2); padding: var(--fl-space-4); font-size: var(--fl-text-lg); line-height: 1.7; border-color: var(--fl-brand); }
+.voice-campaign { display: flex; gap: var(--fl-space-3); align-items: flex-start; padding: var(--fl-space-4); font-size: var(--fl-text-lg); }
+.voice-campaign a, .voice-trace { color: var(--fl-brand); text-decoration: underline; text-underline-offset: 0.25em; font-weight: var(--fl-weight-medium); }
+.voice-cards { display: grid; gap: var(--fl-space-3); list-style: none; padding: 0; margin: 0; }
+.voice-card { padding: var(--fl-space-4); display: grid; gap: var(--fl-space-2); font-size: var(--fl-text-lg); line-height: 1.7; border-inline-start: 6px solid var(--v-line, var(--fl-border-strong)); }
+.voice-card[data-verdict="pending"] { --v-fg: var(--fl-text-muted); }
+.voice-card-top { display: flex; align-items: center; gap: var(--fl-space-3); flex-wrap: wrap; }
+.voice-card-top .icon { color: var(--v-fg, var(--fl-text)); flex: none; }
+.voice-verdict { font-size: var(--fl-text-xl); color: var(--v-fg, var(--fl-text)); }
+.voice-snippet { font-size: var(--fl-text-md); color: var(--fl-text-muted); overflow-wrap: anywhere; }
+.voice-trace { min-height: var(--fl-tap); display: inline-flex; align-items: center; }
+.voice-sentinel { padding: var(--fl-space-4); display: grid; gap: var(--fl-space-2); font-size: var(--fl-text-lg); line-height: 1.7; border-color: var(--fl-sand, var(--fl-brand)); }
+.voice-sentinel-title { font-weight: var(--fl-weight-bold); }
+.voice-sentinel-links { display: flex; flex-wrap: wrap; gap: var(--fl-space-3); }
+.voice-how ol { padding-inline-start: 1.5rem; display: grid; gap: var(--fl-space-2); font-size: var(--fl-text-lg); margin-block-end: var(--fl-space-3); }
+
+.voice-entry { margin-block: var(--fl-space-5); }
+.voice-entry-card { display: flex; align-items: center; gap: var(--fl-space-4); padding: var(--fl-space-5); flex-wrap: wrap; border-color: var(--fl-brand); }
+.voice-entry-card > .icon { color: var(--fl-brand); flex: none; }
+.voice-entry-card > div { flex: 1 1 16rem; }
+.voice-entry-card p { font-size: var(--fl-text-lg); color: var(--fl-text-muted); }
+.voice-entry-card .voice-big { inline-size: auto; flex: 0 1 auto; }
+
+@media (max-width: 640px) {
+  .voice-orb { width: 7.5rem; height: 7.5rem; }
+  .voice-state { font-size: var(--fl-text-xl); }
+  .voice-big { inline-size: 100%; padding-inline: 1rem; }
+  .voice-entry-card .voice-big { inline-size: 100%; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .voice-stage[data-state="listening"] .voice-ring { animation: voice-pulse 2.4s var(--fl-ease-out) infinite; }
+  .voice-stage[data-state="listening"] .voice-ring--2 { animation-delay: 1.2s; }
+  .voice-stage[data-state="listening"][data-voice="on"] .voice-ring { animation-duration: 0.9s; }
+  .voice-stage[data-state="checking"] .voice-ring { animation: voice-pulse 1.4s var(--fl-ease-in-out) infinite; }
+  .voice-stage[data-state="speaking"] .voice-ring { animation: voice-pulse 1.1s var(--fl-ease-out) infinite; }
+  .voice-card { animation: voice-in var(--fl-dur-base) var(--fl-ease-out) both; }
+}
+@keyframes voice-pulse { from { transform: scale(1); opacity: 0.5; } to { transform: scale(1.45); opacity: 0; } }
+@keyframes voice-in { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: none; } }
+
+/* Live steps: readable from the back of a room (24 px at 1440), one step per line. */
+.voice-meter { inline-size: min(100%, 22rem); block-size: 0.6rem; border-radius: 999px; background: var(--fl-surface-2); border: 1px solid var(--fl-border-strong); overflow: hidden; }
+.voice-meter-bar { display: block; inline-size: 100%; block-size: 100%; background: var(--fl-brand); transform-origin: left center; transition: transform 90ms linear; }
+html[dir="rtl"] .voice-meter-bar { transform-origin: right center; }
+.voice-hint { font-size: var(--fl-text-sm); }
+.voice-steps { padding: var(--fl-space-5); }
+.voice-steps ol { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--fl-space-3); }
+.voice-steps li { display: flex; align-items: flex-start; gap: var(--fl-space-3); font-size: 1.375rem; line-height: 1.6; color: var(--fl-text); font-weight: var(--fl-weight-medium); }
+.voice-steps li[data-done="false"] { color: var(--fl-brand-strong); }
+.voice-step-mark { flex: none; inline-size: 1.75rem; block-size: 1.75rem; display: grid; place-items: center; margin-block-start: 0.15rem; color: var(--fl-brand); }
+.voice-dot { inline-size: 0.8rem; block-size: 0.8rem; border-radius: 50%; background: currentColor; }
+@media (min-width: 1100px) { .voice-steps li { font-size: 1.75rem; } .voice-step-mark { inline-size: 2.25rem; block-size: 2.25rem; } .voice-tick { inline-size: 1.75rem; block-size: 1.75rem; } }
+@media (prefers-reduced-motion: no-preference) {
+  .voice-steps li { animation: voice-step-in var(--fl-dur-slow) var(--fl-ease-out) both; }
+  .voice-steps li[data-done="false"] .voice-dot { animation: voice-blink 1s var(--fl-ease-in-out) infinite alternate; }
+}
+@keyframes voice-step-in { from { opacity: 0; transform: translateX(calc(var(--sign, 1) * 1.25rem)); } to { opacity: 1; transform: none; } }
+@keyframes voice-blink { from { opacity: 1; } to { opacity: 0.3; } }
