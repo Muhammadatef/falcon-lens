@@ -112,6 +112,45 @@ def _iso(d: datetime) -> str:
     return d.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+_TOKEN = re.compile(
+    r"(?i)(?<![\w@.-])(?:(?:https?|hxxps?)://[^\s\"'<>]+|(?:[^\s/@\"'<>]+@)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:[/?#][^\s\"'<>]*)?)"
+)
+# Values that are not hosts/URLs even though they contain dots, or are the registrar's own published contact.
+_EXEMPT_KEYS = frozenset(
+    {"file", "sha256", "id", "verdict_id", "abuse_contact", "abuse_email", "abuse_phone",
+     "registrar_abuse_email", "registrar_abuse_phone", "generated_at", "created_at", "git_sha"}
+)  # fmt: skip
+
+
+def _scrub_token(m: re.Match[str]) -> str:
+    raw = m.group(0)
+    try:
+        p = urlsplit(raw if "://" in raw else "//" + raw)
+        host = (p.hostname or "").lower()
+        port = f":{p.port}" if p.port else ""
+    except ValueError:
+        return "[redacted-url]"
+    if not host or re.fullmatch(r"[\d.]+", host):
+        return raw  # an IP literal is evidence, not a name
+    scheme = f"{p.scheme}://" if "://" in raw else ""
+    return defang(f"{scheme}{host}{port}{p.path}")  # userinfo, query and fragment are dropped
+
+
+def scrub_text(s: str) -> str:
+    """Defang every host/URL-like token (with or without scheme) and drop userinfo, query and fragment."""
+    return _TOKEN.sub(_scrub_token, s.replace("[.]", ".").replace("hxxp", "http"))
+
+
+def scrub_tree(v: Any, key: str = "") -> Any:
+    if isinstance(v, str):
+        return v if key in _EXEMPT_KEYS else scrub_text(v)
+    if isinstance(v, dict):
+        return {k: scrub_tree(x, str(k)) for k, x in v.items()}
+    if isinstance(v, list):
+        return [scrub_tree(x, key) for x in v]
+    return v
+
+
 def evidence_has(evs: list[dict[str, Any]], signal: str) -> bool:
     return any(e.get("signal") == signal and not e.get("error") and e.get("observed") for e in evs)
 
@@ -249,7 +288,7 @@ def build_evidence(
         gaps.append("screenshot: not captured for this check")
     if url_input and not evidence_has(evs, "infra.rdap_registrar") and not any(g.startswith("whois") for g in gaps):
         gaps.append("whois: registrar abuse contact not captured")
-    return {
+    doc_out = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": _iso(now),
         "generator": {"tool": "Falcon Lens", "git_sha": git_sha},
@@ -292,6 +331,8 @@ def build_evidence(
         "gaps": gaps,
         "privacy": "URLs are defanged with userinfo, query and fragment removed. No raw message or email text.",
     }
+    result: dict[str, Any] = scrub_tree(doc_out)
+    return result
 
 
 def build_takedown(ev: dict[str, Any]) -> str:
@@ -394,7 +435,7 @@ def build_pack(
 
 
 ScreenshotFetch = Callable[[str], Awaitable[bytes | None]]
-_SHA_RE = re.compile(r"^[0-9a-f]{64}$")
+_SHA_RE = re.compile(r"[0-9a-f]{64}")
 MAX_SHOT_BYTES = 8 * 1024 * 1024
 
 
@@ -403,7 +444,7 @@ def screenshot_sha(doc: dict[str, Any]) -> str | None:
     for ev in doc.get("evidence", []):
         if isinstance(ev, dict) and ev.get("signal") == "page.screenshot" and isinstance(ev.get("observed"), dict):
             sha = str(ev["observed"].get("sha256", ""))
-            if _SHA_RE.match(sha):
+            if _SHA_RE.fullmatch(sha):
                 return sha
     return None
 
@@ -416,14 +457,18 @@ def snapshot_fetcher(root: str | os.PathLike[str]) -> ScreenshotFetch:
     base = Path(root) / "screens"
 
     async def fetch(sha: str) -> bytes | None:
-        if not _SHA_RE.match(sha):
+        if not _SHA_RE.fullmatch(sha):
             return None
         path = base / f"{sha}.png"
         try:
-            if path.is_symlink() or path.stat().st_size > MAX_SHOT_BYTES:
+            if base.is_symlink():
                 return None
-            data = path.read_bytes()
+            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)  # a symlinked file is refused
+            with os.fdopen(fd, "rb") as fh:
+                data = fh.read(MAX_SHOT_BYTES + 1)
         except OSError:
+            return None
+        if len(data) > MAX_SHOT_BYTES:
             return None
         return data if hashlib.sha256(data).hexdigest() == sha else None
 

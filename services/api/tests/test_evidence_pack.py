@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import re
 import zipfile
 from collections.abc import AsyncIterator
 from typing import Any
@@ -145,7 +146,7 @@ def full_infra_doc() -> dict[str, Any]:
                 "created": "2026-11-20T00:00:00+00:00",
                 "expires": "2027-11-20T00:00:00+00:00",
                 "updated": "2026-11-21T00:00:00+00:00",
-                "nameservers": ["ns1.example-dns.test"],
+                "nameservers": ["ns1[.]example-dns[.]test"],
                 "status": ["client transfer prohibited"],
                 "abuse_email": "abuse@registrar.test",
                 "abuse_phone": "+1.5550100",
@@ -195,7 +196,7 @@ def test_pack_fills_hosting_whois_and_screenshot_and_drops_gaps() -> None:
         "AE",
     )
     assert "Team Cymru" in h["source"] and h["retrieved_at"] == "2026-11-24T10:00:01Z"
-    assert w["registrar_abuse_email"] == "abuse@registrar.test" and w["nameservers"] == ["ns1.example-dns.test"]
+    assert w["registrar_abuse_email"] == "abuse@registrar.test" and w["nameservers"] == ["ns1[.]example-dns[.]test"]
     assert w["updated"] and w["status"] == ["client transfer prohibited"] and w["retrieved_at"]
     assert ev["screenshot"]["included"] and ev["screenshot"]["captured_at_utc"]
     assert ev["tls"]["issuer"] == "Synthetic CA" and ev["tls"]["not_after"].startswith("2027-02-18")
@@ -241,3 +242,75 @@ async def test_endpoint_includes_screenshot_via_state_fetch(redis: Any, store: F
         r = await c.get(f"/v1/verdicts/{VID}/evidence-pack", headers={"X-API-Key": OPERATOR_KEY})
     z = zipfile.ZipFile(io.BytesIO(r.content))
     assert z.read("screenshot.png") == SHOT
+
+
+_SCHEMA = json.loads(
+    (__import__("pathlib").Path(__file__).parents[3] / "contracts" / "evidence_pack.schema.json").read_text()
+)
+_EXEMPT = evidence_pack._EXEMPT_KEYS
+
+
+def _strings(obj: Any, key: str = "") -> Any:
+    if isinstance(obj, str):
+        yield key, obj
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _strings(v, str(k))
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _strings(v, key)
+
+
+def hostile_doc() -> dict[str, Any]:
+    d = full_infra_doc()
+    d["canonical_url"] = "https://user:pw@Evil.Example:8443/a/b?token=SECRET#frag"
+    d["evidence"][0]["observed"].update(
+        {
+            "final_url": "evil.example/landing?token=SECRET2",
+            "redirect_chain": ["http://a.example/x?q=SECRET3", "b.example/y#SECRET4", "u:p@c.example/z"],
+            "post_targets": ["collect.example/post?k=SECRET5"],
+            "title": "Login at www.evil.example/login?sid=SECRET6 now",
+            "nameserver_hint": "ns.evil.example",
+        }
+    )
+    d["evidence"][1]["observed"]["host"] = "login.evil.example"
+    d["reasons"][0]["en"] = "Domain evil.example?x=SECRET7 is new"
+    return d
+
+
+def test_every_host_and_url_in_the_pack_is_defanged_and_stripped() -> None:
+    raw = evidence_pack.build_pack(hostile_doc(), screenshot=SHOT, git_sha="x")
+    z = zipfile.ZipFile(io.BytesIO(raw))
+    ev = json.loads(z.read("evidence.json"))
+    blob = json.dumps(ev) + z.read("takedown.txt").decode()
+    for secret in ("SECRET", "user:pw", "u:p@"):
+        assert secret not in blob
+    host_re = re.compile(r"(?i)(?<![\w@.-])(?:[a-z0-9-]+\.)+[a-z]{2,}\b")
+    for key, text in _strings(ev):
+        if key in _EXEMPT:
+            continue
+        assert evidence_pack.scrub_text(text) == text, (key, text)  # nothing raw is left to defang
+        assert not host_re.search(text), (key, text)
+        if "[.]" in text or "hxxp" in text:
+            assert not re.search(r"[?#@]", text), (key, text)
+    assert ev["hosting"]["host"] == "login[.]evil[.]example"
+    assert ev["subject"]["url_defanged"] == "hxxps://evil[.]example:8443/a/b"
+
+
+def test_pack_validates_against_contract_schema() -> None:
+    import jsonschema
+
+    for d, shot in ((hostile_doc(), SHOT), (doc_with_evidence(), None)):
+        ev = json.loads(zipfile.ZipFile(io.BytesIO(evidence_pack.build_pack(d, screenshot=shot))).read("evidence.json"))
+        jsonschema.validate(ev, _SCHEMA)
+
+
+async def test_snapshot_fetcher_refuses_symlinks_and_trailing_newline(tmp_path: Any) -> None:
+    screens = tmp_path / "screens"
+    screens.mkdir()
+    real = tmp_path / "real.png"
+    real.write_bytes(SHOT)
+    (screens / f"{SHOT_SHA}.png").symlink_to(real)
+    fetch = evidence_pack.snapshot_fetcher(tmp_path)
+    assert await fetch(SHOT_SHA) is None
+    assert await fetch(SHOT_SHA + "\n") is None

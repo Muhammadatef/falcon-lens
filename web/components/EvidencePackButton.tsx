@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { authHeaders } from "@/lib/api";
 import { hT } from "@/lib/i18n-history";
 import { usePrefs } from "@/lib/prefs";
@@ -9,13 +9,12 @@ const KEY_STORE = "fl_operator_key";
 
 /**
  * Operator-only download of the police evidence pack (GET /v1/verdicts/{id}/evidence-pack).
- * Without a key, public visitors see a note that the pack is available to authorities. The key stays in
- * sessionStorage (shared with /ops), never in a cookie or URL.
+ * Public visitors only see a note that the pack is available to authorities: there is no key form here.
+ * The key is entered on /ops and read from sessionStorage (never a cookie or URL).
  */
 export function EvidencePackButton({ verdictId, final, compact = false }: { verdictId: string; final: boolean; compact?: boolean }) {
   const { lang } = usePrefs();
   const [key, setKey] = useState("");
-  const [draft, setDraft] = useState("");
   const [msg, setMsg] = useState<"" | "denied" | "notfinal" | "failed">("");
   const [busy, setBusy] = useState(false);
 
@@ -26,19 +25,6 @@ export function EvidencePackButton({ verdictId, final, compact = false }: { verd
       /* storage blocked */
     }
   }, []);
-
-  const save = (e: FormEvent) => {
-    e.preventDefault();
-    const next = draft.trim();
-    if (!next) return;
-    try {
-      window.sessionStorage.setItem(KEY_STORE, next);
-    } catch {
-      /* in memory only */
-    }
-    setKey(next);
-    setDraft("");
-  };
 
   const download = async () => {
     setBusy(true);
@@ -53,7 +39,7 @@ export function EvidencePackButton({ verdictId, final, compact = false }: { verd
       a.href = url;
       a.download = `evidence-${verdictId}.zip`;
       a.click();
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000); // after the browser has taken the download
     } catch {
       setMsg("failed");
     } finally {
@@ -82,14 +68,7 @@ export function EvidencePackButton({ verdictId, final, compact = false }: { verd
           {hT("en", "ep.button")} | <span lang="ar">{hT("ar", "ep.button")}</span>
         </button>
       ) : (
-        <>
-          <p className="small" data-testid="evidence-pack-public">{hT(lang, "ep.public")}</p>
-          <form className="keybox-row" onSubmit={save}>
-            <label htmlFor="ep-key" className="small">{hT(lang, "ep.key")}</label>
-            <input id="ep-key" className="mono" type="password" autoComplete="off" spellCheck={false} dir="ltr" value={draft} onChange={(e) => setDraft(e.target.value)} data-testid="evidence-pack-key" />
-            <button className="btn btn--sm" type="submit">OK</button>
-          </form>
-        </>
+        <p className="small" data-testid="evidence-pack-public">{hT(lang, "ep.public")}</p>
       )}
       {msg ? <p className="small" role="status" data-testid="evidence-pack-msg">{hT(lang, `ep.${msg}` as "ep.denied")}</p> : null}
     </section>

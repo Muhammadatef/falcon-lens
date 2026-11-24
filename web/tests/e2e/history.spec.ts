@@ -175,14 +175,16 @@ for (const lang of ["ar", "en"] as const) {
 }
 
 test.describe("evidence pack", () => {
-  test("public visitors see a note; an operator key reveals the download", async ({ page, context, request, baseURL }) => {
+  test("public visitors see only a note; a key already set on /ops reveals the download", async ({ page, context, request, baseURL }) => {
     const id = newVerdictId();
     await useBoards(context, request, baseURL!, { verdicts: [], verdictDocs: { [id]: { ...DEMO_DANGEROUS, verdict_id: id, source: "live", final: true } } });
     await page.goto(`/checks/${id}`);
     await expect(page.getByTestId("evidence-pack-public")).toBeVisible();
     await expect(page.getByTestId("evidence-pack-download")).toHaveCount(0);
-    await page.getByTestId("evidence-pack-key").fill("operator-test-key");
-    await page.getByTestId("evidence-pack-key").press("Enter");
+    await expect(page.getByTestId("evidence-pack-key")).toHaveCount(0);
+    await expect(page.getByTestId("key-input")).toHaveCount(0);
+    await page.evaluate(() => window.sessionStorage.setItem("fl_operator_key", "operator-test-key")); // what /ops does
+    await page.reload();
     const button = page.getByTestId("evidence-pack-download");
     await expect(button).toContainText("Download evidence pack | تنزيل ملف الأدلة");
     const [download] = await Promise.all([page.waitForEvent("download"), button.click()]);
