@@ -98,7 +98,7 @@ async function installClipMocks(page: Page) {
     const realFetch = window.fetch.bind(window);
     window.fetch = ((input: any, init?: any) => {
       const url = typeof input === "string" ? input : input.url;
-      const m = /\/voice\/(?:ar_ae|en)\/([^/]+\.mp3)$/.exec(url);
+      const m = /\/voice\/(?:ar_ae|en|sfx)\/([^/]+\.mp3)$/.exec(url);
       return m ? Promise.resolve(new Response(new TextEncoder().encode(m[1]))) : realFetch(input, init);
     }) as typeof fetch;
     const Base = w.AudioContext;
@@ -194,7 +194,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-steps")).toContainText(SCRIPT.ar_ae["sentinel.unavailable"]!, { timeout: 20_000 }); // no Sentinel is connected here: it must say so, not 'still watching'
     const texts = await page.getByTestId("voice-step").allTextContents();
     const at = (needle: string) => texts.findIndex((t) => t.includes(needle));
-    const order = [at(SCRIPT.ar_ae["found.3"]!), at(SCRIPT.ar_ae["investigator.start.1"]!), at(SCRIPT.ar_ae["investigator.lists"]!), at(SCRIPT.ar_ae["investigator.arbiter_result.dangerous"]!), at(SCRIPT.ar_ae["investigator.start.2"]!), at(SCRIPT.ar_ae["investigator.arbiter_result.no_warning_signs"]!), at(SCRIPT.ar_ae["sentinel.handover"]!), at(SCRIPT.ar_ae["sentinel.unavailable"]!)];
+    const order = [at(SCRIPT.ar_ae["found.3"]!), at(SCRIPT.ar_ae["investigator.start.1"]!), at(SCRIPT.ar_ae["investigator.lists"]!), at(`${SCRIPT.ar_ae["msg.ord.1"]} ${SCRIPT.ar_ae["msg.verdict.dangerous"]}`), at(SCRIPT.ar_ae["investigator.start.2"]!), at(`${SCRIPT.ar_ae["msg.ord.3"]} ${SCRIPT.ar_ae["msg.verdict.no_warning_signs"]}`), at(SCRIPT.ar_ae["sentinel.handover"]!), at(SCRIPT.ar_ae["sentinel.unavailable"]!)];
     expect(texts.some((t) => t.includes("بصير")) && texts.some((t) => t.includes("درع"))).toBe(true); // both agents are named on screen
     expect(at(SCRIPT.ar_ae["investigator.rules_only"]!) >= 0 || at("نظرة ثانية") >= 0).toBe(true); // either the rules decided or a model answered, never silent
     expect([...order].sort((a, b) => a - b)).toEqual(order);
@@ -494,6 +494,181 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect(played[0]).toMatch(/^en\.offtopic\.[123]\.mp3$/);
     expect(played[1]).toMatch(/^ar_ae\.offtopic\.[123]\.mp3$/);
     expect(await spoken(page)).toEqual([]);
+  });
+
+  test("the answer is in the language the person spoke, on an Arabic page and on an English page (FAQ, off-topic, follow-up)", async ({ page, request, context, baseURL }) => {
+    await setup(page, request);
+    await installClipMocks(page);
+    await setPrefs(context, baseURL!, { lang: "ar" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "faq-clicked-en"); // English speaker on an Arabic page
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.en["faq.clicked_link"]!);
+    await expect.poll(() => clips(page)).toEqual(["en.faq.clicked_link.mp3"]);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
+    await say(page, "offtopic-en");
+    await expect.poll(async () => (await clips(page)).length).toBe(2);
+    expect((await clips(page))[1]).toMatch(/^en\.offtopic\.[123]\.mp3$/);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
+    // "Hey Falcon" alone in English: the ack and the "One moment" follow the WAKE language; the Arabic follow-up is answered in Arabic.
+    await say(page, "none-en");
+    await expect.poll(async () => (await clips(page)).length).toBe(3);
+    expect((await clips(page))[2]).toBe("en.wake.ack.mp3");
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
+    await say(page, "faq-follow-ar");
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["faq.clicked_link"]!);
+    await expect.poll(async () => (await clips(page)).slice(3)).toEqual(["en.ack.moment.mp3", "ar_ae.faq.clicked_link.mp3"]);
+    expect(await spoken(page)).toEqual([]);
+  });
+
+  test("an Arabic speaker on an English page is answered by Zayd clips with Arabic captions", async ({ page, request, context, baseURL }) => {
+    await setup(page, request);
+    await installClipMocks(page);
+    await setPrefs(context, baseURL!, { lang: "en" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "offtopic-ar");
+    await expect.poll(async () => SCRIPT.ar_ae[`offtopic.${(await clips(page))[0]?.match(/offtopic\.(\d)/)?.[1]}`] ?? "").not.toBe("");
+    const caption = (await page.getByTestId("voice-caption").textContent()) ?? "";
+    expect([1, 2, 3].map((i) => SCRIPT.ar_ae[`offtopic.${i}`])).toContain(caption);
+    expect((await clips(page))[0]).toMatch(/^ar_ae\.offtopic\.[123]\.mp3$/);
+  });
+
+  test("each spoken result: the verdict earcon, then 'Message N: verdict + what to do', caption = spoken text, no device speech", async ({ page, request, context, baseURL }) => {
+    await setup(page, request);
+    await installClipMocks(page);
+    await setPrefs(context, baseURL!, { lang: "en" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "check-ar");
+    await expect(page.getByTestId("voice-card")).toHaveCount(3);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(EN), { timeout: 60_000 });
+    const played = await clips(page);
+    const at = (f: string, from = 0) => played.indexOf(f, from);
+    // dangerous, dangerous, no warning signs: the earcon sits right before its own spoken result.
+    for (const [n, sfx, verdict] of [[1, "dangerous.mp3", "dangerous"], [2, "dangerous.mp3", "dangerous"], [3, "clear.mp3", "no_warning_signs"]] as const) {
+      const ord = at(`ar_ae.msg.ord.${n}.mp3`);
+      expect(ord, `ord ${n}`).toBeGreaterThan(0);
+      expect(played[ord - 1], `sfx before message ${n}`).toBe(sfx);
+      expect(played[ord + 1]).toBe(`ar_ae.msg.verdict.${verdict}.mp3`);
+    }
+    expect(await spoken(page)).toEqual([]);
+    const steps = (await page.getByTestId("voice-step").allTextContents()).join(" | ");
+    expect(steps).toContain(`${SCRIPT.ar_ae["msg.ord.1"]} ${SCRIPT.ar_ae["msg.verdict.dangerous"]}`);
+    expect(steps).toContain(`${SCRIPT.ar_ae["msg.ord.3"]} ${SCRIPT.ar_ae["msg.verdict.no_warning_signs"]}`);
+    expect(steps + (await page.locator("main").innerText())).not.toMatch(/آمن|\bsafe\b/i);
+  });
+
+  test("the caption of a spoken result equals the spoken text and carries the verdict icon; the mute toggle silences only the effects", async ({ page, request }) => {
+    const t = token();
+    const id = newVerdictId();
+    const steps = buildStream(withId(DEMO_DANGEROUS, id, { model_route: "none" }), [
+      { tier: "T0", delayMs: 100, verdict: "no_warning_signs", risk: 22, ms: 40 },
+      { tier: "T1", delayMs: 150, verdict: "suspicious", risk: 55, ms: 610 },
+    ]);
+    await registerScenario(request, { match: t, verdictId: id, steps });
+    await installMocks(page);
+    await installClipMocks(page);
+    await page.addInitScript((c) => { (window as any).__clip = c; }, `Verify your account now ${t} https://falcon-demo-bank-secure.test/login`);
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await expect(page.getByTestId("voice-sfx")).toHaveAttribute("aria-pressed", "true");
+    await say(page, "check-ar");
+    await expect(page.getByTestId("voice-card")).toHaveCount(1);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 60_000 });
+    let played = await clips(page);
+    const ord = played.indexOf("ar_ae.msg.ord.1.mp3");
+    expect(ord).toBeGreaterThan(0);
+    const shown = ((await page.getByTestId("voice-card-verdict").first().textContent()) ?? "").trim();
+    const verdict = shown === "خطِر" ? "dangerous" : shown === "مشكوك فيه" ? "suspicious" : "no_warning_signs";
+    expect(played[ord - 1]).toBe(verdict === "no_warning_signs" ? "clear.mp3" : `${verdict}.mp3`);
+    expect(played[ord + 1]).toBe(`ar_ae.msg.verdict.${verdict}.mp3`);
+    await expect(page.getByTestId("voice-tone")).toHaveCount(0); // the icon belongs to the caption being spoken only
+    // Mute: the next check plays the same spoken result with no earcon.
+    await page.getByTestId("voice-sfx").click();
+    await expect(page.getByTestId("voice-sfx")).toHaveAttribute("aria-pressed", "false");
+    const before = played.length;
+    await say(page, "check-ar");
+    await expect.poll(async () => (await clips(page)).filter((c) => c === `ar_ae.msg.verdict.${verdict}.mp3`).length, { timeout: 60_000 }).toBe(2);
+    played = await clips(page);
+    expect(played.slice(before).some((c) => /^(clear|suspicious|dangerous)\.mp3$/.test(c))).toBe(false);
+    expect(played.slice(before)).toContain("ar_ae.msg.ord.1.mp3");
+  });
+
+  test("progress panel: stages arrive in order with ticks and times, tiers that did not run are skipped, total time shown (Arabic page)", async ({ page, request }) => {
+    await setup(page, request);
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "check-ar");
+    await expect(page.getByTestId("voice-card")).toHaveCount(3);
+    await expect(page.getByTestId("voice-elapsed")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 60_000 });
+    const progress = page.getByTestId("voice-progress");
+    expect(await progress.getByTestId("voice-stage").evaluateAll((els) => els.map((e) => e.getAttribute("data-stage")))).toEqual(["heard", "understand", "investigate", "link", "answer"]);
+    expect(await progress.getByTestId("voice-stage").evaluateAll((els) => els.map((e) => e.getAttribute("data-status")))).toEqual(["done", "done", "done", "done", "done"]);
+    await expect(progress.getByTestId("voice-stage").first()).toContainText("سمعتك");
+    await expect(progress.getByTestId("voice-stage").first()).toContainText("يا صقر"); // the transcript, as soon as STT returned
+    await expect(progress.getByTestId("voice-stage").nth(1)).toContainText("فحص الرسائل المنسوخة");
+    await expect(progress.getByTestId("voice-stage").nth(2)).toContainText("«بصير» يفحص");
+    await expect(progress.getByTestId("voice-stage").nth(3)).toContainText("«درع» يربط");
+    expect(await progress.getByTestId("voice-stage-time").first().textContent()).toMatch(/^\d+\.\d s$/);
+    const states = await progress.getByTestId("voice-tier").evaluateAll((els) => els.map((e) => e.getAttribute("data-status")));
+    expect(states).toContain("done");
+    expect(states).toContain("skipped"); // the last message was cleared at the first tier: the deeper tiers did not run
+    await expect(progress.getByTestId("voice-elapsed")).toHaveText(/^تم الفحص في \d+\.\d ث$/);
+    expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b/i);
+  });
+
+  test("progress panel in English: a scam question goes Heard you, Understanding, Answer", async ({ page, request, context, baseURL }) => {
+    await setup(page, request);
+    await installClipMocks(page);
+    await setPrefs(context, baseURL!, { lang: "en" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "faq-clicked-en");
+    const progress = page.getByTestId("voice-progress");
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.en["faq.clicked_link"]!);
+    await expect(progress.getByTestId("voice-stage").nth(2)).toHaveAttribute("data-status", "done", { timeout: 15_000 });
+    expect(await progress.getByTestId("voice-stage").evaluateAll((els) => els.map((e) => e.getAttribute("data-stage")))).toEqual(["heard", "understand", "reply"]);
+    await expect(progress.getByTestId("voice-stage").first()).toContainText("Heard you");
+    await expect(progress.getByTestId("voice-stage").first()).toContainText("I already clicked the link");
+    await expect(progress.getByTestId("voice-stage").nth(1)).toContainText("Scam question · English");
+    await expect(progress.getByTestId("voice-stage").nth(2)).toContainText("Answer");
+    await expect(progress.getByTestId("voice-tier")).toHaveCount(0);
+    await expect(progress.getByTestId("voice-elapsed")).toHaveCount(0);
+  });
+
+  test("reduced motion turns the shimmer and the spinner animation off", async ({ page, request }) => {
+    await setup(page, request);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "faq-otp-ar");
+    await expect(page.getByTestId("voice-progress")).toBeVisible();
+    expect(await page.getByTestId("voice-progress").evaluate((e) => getComputedStyle(e).getPropertyValue("--prog-anim").trim())).toBe("0");
+  });
+
+  test("a slow request says 'Still checking' instead of staying silent; a lost connection shows a clear retry state", async ({ page, request }) => {
+    await setup(page, request);
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    let first = true;
+    await page.route("**/api/voice", async (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      if (first) {
+        first = false;
+        await new Promise((r) => setTimeout(r, 7000));
+        return route.continue();
+      }
+      return route.abort("connectionfailed");
+    });
+    await say(page, "faq-otp-ar");
+    await expect(page.getByTestId("voice-still")).toContainText("لا زلت أفحص", { timeout: 15_000 });
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["faq.otp"]!, { timeout: 30_000 });
+    await expect(page.getByTestId("voice-progress").getByTestId("voice-stage").nth(2)).toHaveAttribute("data-status", "done", { timeout: 30_000 });
+    await page.waitForTimeout(500);
+    await say(page, "faq-otp-ar");
+    await expect(page.getByTestId("voice-offline")).toContainText("انقطع الاتصال", { timeout: 15_000 });
   });
 
   test("a bare wake phrase is acknowledged, then the next utterance is a command; 'One moment' plays before the transcript returns", async ({ page, request }) => {

@@ -32,11 +32,13 @@ import {
   type SentinelStep,
   type VoiceReply,
 } from "@/lib/voice";
-import { arbiterKeys, checkingKeys, finalKeys, findingKeys, foundKeys, spoken, stepKeys } from "@/lib/voice-speech";
-import { ACK_KEY, SCRIPT, clipId, offTopicKey, toVoiceLang } from "@/lib/voice-script";
+import { checkingKeys, finalKeys, findingKeys, foundKeys, spoken, stepKeys } from "@/lib/voice-speech";
+import { ACK_KEY, SCRIPT, SFX_KEYS, clipId, isSfx, messageResultKeys, offTopicKey, toVoiceLang, type ResultTone } from "@/lib/voice-script";
 import { createVoicePlayer, type VoiceLang, type VoicePlayer } from "@/lib/voice-player";
 import type { SentinelFinding } from "@/lib/voice-script";
 import { UntrustedText } from "./Chrome";
+import { VoiceProgress } from "./VoiceProgress";
+import { closeStages, enterStage, tierRows, type Stage, type TierRow } from "@/lib/voice-progress";
 import { Icon } from "./Icon";
 
 type Phase = "off" | "starting" | "listening" | "heard" | "checking";
@@ -59,6 +61,8 @@ interface Spoken {
   /** Clip keys (lib/voice-script.ts) played through the pre-generated clip player; absent = nothing is spoken. */
   keys?: readonly string[];
   lang: Lang;
+  /** Verdict of a spoken per-message result: shows the matching icon with the caption. */
+  tone?: ResultTone;
   /** "msg" lines are dropped when the final summary is queued (the check finished faster than the speech). */
   kind: "msg" | "final";
 }
@@ -229,6 +233,36 @@ export function VoiceAssistant() {
   const lastLang = useRef<"ar" | "en" | null>(null);
   /** After a bare wake phrase the next utterance is a command even without the wake phrase, until this time. */
   const followUntil = useRef(0);
+  /** Sound effects before each spoken result (on by default; the choice is kept in this browser). */
+  const [sfxOnState, setSfxOnState] = useState(true);
+  const sfxOn = useRef(true);
+  const [tone, setTone] = useState<ResultTone | null>(null);
+  /** Live progress panel: stages of this request, the tiers of the message being checked, total time, connection state. */
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [tiers, setTiers] = useState<TierRow[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [offline, setOffline] = useState(false);
+  const sentAt = useRef(0);
+  const stage = useCallback((id: Stage["id"], detail?: string) => setStages((prev) => enterStage(prev, id, detail, Date.now())), []);
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem("fl_voice_sfx") === "off") {
+        sfxOn.current = false;
+        setSfxOnState(false);
+      }
+    } catch {
+      /* storage blocked: stays on */
+    }
+  }, []);
+  const toggleSfx = () => {
+    sfxOn.current = !sfxOn.current;
+    setSfxOnState(sfxOn.current);
+    try {
+      window.localStorage.setItem("fl_voice_sfx", sfxOn.current ? "on" : "off");
+    } catch {
+      /* ignore */
+    }
+  };
   /** Rotates the three polite off-topic redirects (random start, then in order). */
   const offTopicAt = useRef(Math.floor(Math.random() * 3));
 
@@ -245,6 +279,7 @@ export function VoiceAssistant() {
     if (have) return have;
     const made = createVoicePlayer({
       lang: vl,
+      sfx: SFX_KEYS,
       fallbackText: (id) => SCRIPT[vl][id.slice(vl.length + 1)],
       // One voice only: a missing clip is never read by a device voice. The caption already shows the line; the miss is logged below.
       speakFallback: () => Promise.resolve(),
@@ -258,7 +293,11 @@ export function VoiceAssistant() {
     players.current[vl] = made;
     return made;
   }, []);
-  const playKeys = useCallback((lang: Lang, keys: readonly string[]) => playerFor(lang).play(keys.map((k) => clipId(toVoiceLang(lang), k))), [playerFor]);
+  const playKeys = useCallback(
+    (lang: Lang, keys: readonly string[]) =>
+      playerFor(lang).play(keys.filter((k) => sfxOn.current || !isSfx(k)).map((k) => clipId(toVoiceLang(lang), k))),
+    [playerFor],
+  );
   const stopPlayers = useCallback(() => {
     for (const p of Object.values(players.current)) p?.stop();
   }, []);
@@ -278,6 +317,7 @@ export function VoiceAssistant() {
       while (queue.current.length && run.current === token && drainId.current === id) {
         const next = queue.current.shift()!;
         setCaption(next.keys?.length ? spoken(next.lang, next.keys) : next.text);
+        setTone(next.tone ?? null);
         setSpeaking(true);
         if (next.keys?.length) await playKeys(next.lang, next.keys);
       }
@@ -303,6 +343,7 @@ export function VoiceAssistant() {
   const backToListening = useCallback((token: number) => {
     if (run.current !== token || !listener.current) return;
     busy.current = false;
+    setStages((prev) => closeStages(prev, Date.now()));
     setPhase("listening");
     listener.current.resume();
   }, []);
@@ -324,6 +365,8 @@ export function VoiceAssistant() {
       setResultLang(lang);
       setRows(split.items.map((item, key) => ({ key, item, outcome: null })));
       setPhase("checking");
+      stage("investigate", voiceText(lang, "voice.prog.msgn", { i: "1", n: String(split.items.length) }));
+      stage("investigate", voiceText(lang, "voice.prog.msgn", { i: "1", n: String(split.items.length) }));
       addStep(spoken(lang, foundKeys(split.items.length)), lang);
       enqueue({ text: narStart(lang, split.items.length), keys: foundKeys(split.items.length), lang, kind: "msg" }, token);
 
@@ -333,6 +376,8 @@ export function VoiceAssistant() {
         const n = at + 1;
         const startKeys = checkingKeys(n, split.items.length);
         const start = spoken(lang, startKeys);
+        setTiers([]);
+        stage("investigate", voiceText(lang, "voice.prog.msgn", { i: String(n), n: String(split.items.length) }));
         addStep(start, lang);
         enqueue({ text: start, keys: startKeys, lang, kind: "msg" }, token);
         const seen = new Set<ProgressStep>();
@@ -341,6 +386,7 @@ export function VoiceAssistant() {
           item,
           (v) =>
             alive() &&
+            (setTiers(tierRows(v, item.kind, lang, false)), true) &&
             newProgressSteps(v, item.kind, seen).forEach((st) => {
               if (st === "ai") {
                 const ai = aiStepText(lang, v);
@@ -363,6 +409,7 @@ export function VoiceAssistant() {
         );
         if (!alive()) return;
         outcomes.push(outcome);
+        if (outcome.verdict) setTiers(tierRows(outcome.verdict, item.kind, lang, true));
         setRows((prev) => prev.map((r) => (r.key === at ? { ...r, outcome } : r)));
         const v = outcome.verdict;
         // One decision (usedModel) drives screen and speech: a model answered, or the fixed rules decided.
@@ -373,9 +420,10 @@ export function VoiceAssistant() {
             if (line.length) enqueue({ text: spoken(lang, line), keys: line, lang, kind: "msg" }, token);
           }
         }
-        const resKeys = arbiterKeys(v);
+        const rules = v?.model_route === "none" ? ["investigator.rules_only"] : [];
+        const resKeys = [...rules, ...messageResultKeys(n, v ? v.verdict : null)];
         addStep(spoken(lang, resKeys), lang);
-        enqueue({ text: spoken(lang, resKeys), keys: resKeys, lang, kind: "msg" }, token);
+        enqueue({ text: spoken(lang, resKeys), keys: resKeys, lang, tone: v?.verdict, kind: "msg" }, token);
       }
 
       // Hand over to the Sentinel only if at least one check completed, and look for the REAL incident linking them.
@@ -388,6 +436,7 @@ export function VoiceAssistant() {
         enqueue({ text: none, keys: ["nothing_checked"], lang, kind: "final" }, token);
       } else {
         const handover = spoken(lang, ["sentinel.handover"]);
+        stage("link");
         addStep(handover, lang);
         enqueue({ text: handover, keys: ["sentinel.handover"], lang, kind: "final" }, token);
         const result = await findSentinelIncident(done.map((o) => o.id as string), alive, ctl.signal);
@@ -415,6 +464,8 @@ export function VoiceAssistant() {
         }
       }
       const closing = finalKeys(outcomes, sentinel);
+      stage("answer");
+      setTotal(Date.now() - sentAt.current);
       addStep(spoken(lang, closing), lang);
       // Nothing is dropped when the check finishes before the narration catches up: every written step is also spoken, in order.
       enqueue({ text: spoken(lang, closing), keys: closing, lang, kind: "final" }, token);
@@ -441,6 +492,11 @@ export function VoiceAssistant() {
     setVoiceActive(false);
     setLevel(0);
     setCaption("");
+    setTone(null);
+    setStages([]);
+    setTiers([]);
+    setTotal(null);
+    setOffline(false);
     setHeard("");
     setStopped(true);
     finishSteps();
@@ -455,6 +511,7 @@ export function VoiceAssistant() {
       // A scam-safety question gets its pre-recorded answer at once: the caption is the spoken text, shown as soon as STT returns.
       if (reply.intent === "faq" || reply.intent === "off_topic") {
         const key = reply.intent === "faq" && reply.answerId ? reply.answerId : offTopicKey(offTopicAt.current++);
+        stage("reply");
         await say(SCRIPT[toVoiceLang(lang)][key] ?? "", lang, token, [key]);
         backToListening(token);
         return;
@@ -493,10 +550,11 @@ export function VoiceAssistant() {
   const voiceFailed = useCallback(
     async (token: number, status: number) => {
       failures.current += 1;
+      if (status === 0) setOffline(true);
       const first = failures.current === 1;
       setProblem(failures.current >= 2 ? "unavailable" : "server");
       if (failures.current >= 2) setShowPaste(true);
-      const l = langRef.current;
+      const l: Lang = lastLang.current ?? langRef.current; // the last speaker language, not the page language
       if (first || failures.current === 2) void playKeys(l, ["voice.unavailable"]);
       await sleep(status === 429 ? 4000 : voiceBackoffMs(failures.current));
       backToListening(token);
@@ -509,6 +567,10 @@ export function VoiceAssistant() {
       if (busy.current) return;
       busy.current = true;
       listener.current?.pause();
+      sentAt.current = Date.now();
+      setTotal(null);
+      setTiers([]);
+      setStages(enterStage([], "heard", undefined, sentAt.current));
       try {
         const form = new FormData();
         form.append("audio", audio, "utterance");
@@ -529,15 +591,26 @@ export function VoiceAssistant() {
         if (!reply) return await voiceFailed(token, 502);
         failures.current = 0;
         followUntil.current = 0;
+        setOffline(false);
         setProblem(null);
         if (reply.transcript) setHeard(reply.transcript);
-        if (!reply.wake) return backToListening(token); // not for us: stay quietly in "listening"
+        if (reply.wake) {
+          // The transcript is shown the moment STT returns; the intent follows as its own stage.
+          const l = speechLang(reply.lang, langRef.current);
+          setResultLang(l);
+          setStages((prev) => enterStage(prev, "heard", reply.transcript, Date.now(), sentAt.current));
+          stage("understand", `${voiceText(l, `voice.prog.intent.${reply.intent}` as VoiceKey)} · ${voiceText(l, `voice.prog.lang.${l}` as VoiceKey)}`);
+        }
+        if (!reply.wake) {
+          setStages([]); // not for us: no panel, stay quietly in "listening"
+          return backToListening(token);
+        }
         await onWake(reply, token);
       } catch {
         if (run.current === token) await voiceFailed(token, 0);
       }
     },
-    [backToListening, onWake, playKeys, voiceFailed],
+    [backToListening, onWake, playKeys, stage, voiceFailed],
   );
 
   const start = useCallback(async () => {
@@ -661,6 +734,11 @@ export function VoiceAssistant() {
             <span>{vt("voice.heard.label")}</span> <UntrustedText value={heard} />
           </p>
         ) : null}
+        {caption && tone && tone !== "could_not_check" ? (
+          <span className="voice-tone" data-testid="voice-tone" data-verdict={tone} role="img" aria-label={MESSAGES[resultLang][`v.${tone}`]}>
+            <Icon name={tone} size={32} />
+          </span>
+        ) : null}
         {caption ? <p className="voice-say" data-testid="voice-caption" lang={resultLang} dir={resultLang === "ar" ? "rtl" : "ltr"}>{caption}</p> : null}
         <div className="voice-actions">
           {!active ? (
@@ -673,6 +751,9 @@ export function VoiceAssistant() {
             <Icon name="x" size={active ? 28 : 20} />
             <span>{vt("voice.stop")}</span>
           </button>
+          <button type="button" className="btn" data-testid="voice-sfx" aria-pressed={sfxOnState} onClick={toggleSfx}>
+            <span>{vt(sfxOnState ? "voice.sfx.on" : "voice.sfx.off")}</span>
+          </button>
         </div>
         {active ? <p className="muted voice-hint">{vt("voice.hint.space")}</p> : null}
       </section>
@@ -683,6 +764,8 @@ export function VoiceAssistant() {
           <span>{problem === "denied" ? spoken(pageLang, ["mic.denied"]) : problem === "unsupported" ? vt("voice.mic.unsupported") : spoken(pageLang, ["voice.unavailable"])}</span>
         </p>
       ) : null}
+
+      <VoiceProgress stages={stages} tiers={tiers} lang={resultLang} total={total} offline={offline} />
 
       {steps.length ? (
         <section className="card voice-steps" aria-labelledby="voice-steps-h" data-testid="voice-steps">

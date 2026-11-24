@@ -1,0 +1,20 @@
+[
+  {
+    "id": "sfx.clear",
+    "file": "clear.mp3",
+    "ms": 490,
+    "lufs": -20.0
+  },
+  {
+    "id": "sfx.suspicious",
+    "file": "suspicious.mp3",
+    "ms": 480,
+    "lufs": -20.0
+  },
+  {
+    "id": "sfx.dangerous",
+    "file": "dangerous.mp3",
+    "ms": 540,
+    "lufs": -20.0
+  }
+]

@@ -80,11 +80,39 @@ def _match_at(t: list[str], i: int) -> int:
     return 0
 
 
-def match_wake(text: str) -> tuple[bool, str]:
-    """(woke, rest of the utterance after the wake phrase, in the speaker's own spelling).
+def script_ratio(text: str) -> float | None:
+    """Share of Arabic letters among all Arabic and Latin letters (None when there are none)."""
+    ar = sum(1 for ch in text if "\u0600" <= ch <= "\u06ff" and ch.isalpha())
+    en = sum(1 for ch in text if ch.isascii() and ch.isalpha())
+    return ar / (ar + en) if ar + en else None
 
-    Wakes only when the phrase opens the utterance, after at most two filler words.
-    """
+
+def script_lang(text: str) -> str | None:
+    """'ar' or 'en' from the script of the text itself (not a model's guess); None without letters."""
+    r = script_ratio(text)
+    return None if r is None else ("ar" if r >= 0.5 else "en")
+
+
+def wake_lang(head: str, rest: str) -> str:
+    """Language of an utterance that woke: the wake phrase's script, unless the command is clearly in the other one."""
+    lang = script_lang(head) or "en"
+    r = script_ratio(rest)
+    if r is not None:
+        if lang == "en" and r > 0.6:
+            return "ar"
+        if lang == "ar" and r < 0.4:
+            return "en"
+    return lang
+
+
+def match_wake(text: str) -> tuple[bool, str]:
+    """(woke, rest of the utterance after the wake phrase, in the speaker's own spelling)."""
+    woke, rest, _head = match_wake_head(text)
+    return woke, rest
+
+
+def match_wake_head(text: str) -> tuple[bool, str, str]:
+    """(woke, rest, the wake phrase as spoken). Wakes only when the phrase opens the utterance, after <= 2 fillers."""
     spans = [(m.start(), m.end(), norm_word(m.group())) for m in _TOKEN.finditer(text)]
     spans = [s for s in spans if s[2]]
     toks = [s[2] for s in spans]
@@ -95,8 +123,8 @@ def match_wake(text: str) -> tuple[bool, str]:
         if n:
             end = spans[i + n - 1][1]
             rest = text[end:].lstrip(" \t\n\r,.،؛;:!?؟-–—…\"'«»")
-            return True, rest.strip()[:MAX_CHARS]
-    return False, ""
+            return True, rest.strip()[:MAX_CHARS], text[: spans[i + n - 1][1]]
+    return False, "", ""
 
 
 # --- intent ----------------------------------------------------------------------------------
@@ -175,6 +203,8 @@ class VoiceResult:
     answer_id: str | None = None
     #: True when the command tried to override the assistant's instructions (always answered with a redirect).
     injection: bool = False
+    #: 'ar' or 'en' from the script of the wake phrase and command (never a model's guess); None without letters.
+    lang: str | None = None
 
 
 def analyse(transcript: str, *, follow_up: bool = False) -> VoiceResult:
@@ -184,15 +214,16 @@ def analyse(transcript: str, *, follow_up: bool = False) -> VoiceResult:
     bare stop word («توقف», "stop") counts, so the user can interrupt without saying the name.
     `follow_up` marks the utterance right after a bare wake phrase: it is a command even without the wake phrase.
     """
-    woke, rest = match_wake(transcript)
+    woke, rest, head = match_wake_head(transcript)
+    lang = script_lang(transcript)
     if woke:
         intent, answer, inj = _classify(rest)
-        return VoiceResult(True, intent, rest, answer, inj)
+        return VoiceResult(True, intent, rest, answer, inj, wake_lang(head, rest))
     if follow_up:
         command = transcript.strip()[:MAX_CHARS]
         intent, answer, inj = _classify(command)
-        return VoiceResult(True, intent, command, answer, inj)
+        return VoiceResult(True, intent, command, answer, inj, script_lang(command))
     toks = normalise(transcript).split()
     if 0 < len(toks) <= 3 and _classify(transcript)[0] == "stop":
-        return VoiceResult(False, "stop", transcript.strip()[:MAX_CHARS])
-    return VoiceResult(False, "none", "")
+        return VoiceResult(False, "stop", transcript.strip()[:MAX_CHARS], lang=lang)
+    return VoiceResult(False, "none", "", lang=lang)
