@@ -1,5 +1,5 @@
 import { WindowLimiter, visitorKey } from "@/lib/public-campaigns";
-import { VOICE_LIMITS, parseVoiceReply } from "@/lib/voice";
+import { AUDIO_TYPES, VOICE_LIMITS, parseVoiceReply } from "@/lib/voice";
 import { clipReason, retryAfterSeconds, type VoiceProblemReason } from "@/lib/voice-request";
 import { apiBase, notConnected, upstreamHeaders } from "../public/campaigns/shared";
 
@@ -13,7 +13,6 @@ export const dynamic = "force-dynamic";
 const limiter = new WindowLimiter(30, 60_000);
 /** Multipart overhead on top of the 1 MB audio cap. */
 const MAX_BODY = VOICE_LIMITS.maxBytes + 16 * 1024;
-const AUDIO_TYPES = /^(audio\/(webm|ogg|wav|x-wav|wave)|video\/webm)(;|$)/i;
 
 /**
  * A failure the page can explain: the status says what kind, `error` says exactly why (lib/voice-request.ts has the

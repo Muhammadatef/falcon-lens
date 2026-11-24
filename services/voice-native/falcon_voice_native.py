@@ -1,6 +1,6 @@
 """Falcon Lens native voice STT. Runs on the Mac (Metal GPU) through mlx-whisper, never in Docker.
 
-    POST /stt?lang=ar|en   body: audio bytes (webm/opus, ogg, wav, or raw PCM16 16 kHz with
+    POST /stt?lang=ar|en   body: audio bytes (webm/opus, ogg, wav, mp4/aac, aac, or raw PCM16 16 kHz with
                            Content-Type audio/L16)  ->  {text, lang, ms, duration_ms, model}
     GET  /healthz          always 200 once the process is up
     GET  /readyz           200 when the model is warm
@@ -71,7 +71,7 @@ _lock = threading.Lock()  # one GPU job at a time
 _state: dict[str, Any] = {"ready": False}
 
 
-DEMUXERS = {"wav": "wav", "ogg": "ogg", "webm": "matroska,webm"}
+DEMUXERS = {"wav": "wav", "ogg": "ogg", "webm": "matroska,webm", "mp4": "mov,mp4,m4a,3gp,3g2,mj2", "aac": "aac"}
 
 
 def decode(raw: bytes, content_type: str) -> np.ndarray:

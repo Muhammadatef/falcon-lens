@@ -21,6 +21,11 @@ export interface VoicePlayer {
   play(ids: string[]): Promise<void>;
   /** Stops immediately, including speech synthesis. Pending play() promises resolve. */
   stop(): void;
+  /**
+   * iOS Safari only lets audio start from a user gesture: call this synchronously inside the tap that enables voice
+   * (before any await). It resumes the audio context and plays one silent sample, so later clips are allowed.
+   */
+  unlock(): void;
   /** True when the id has a pre-generated clip. */
   has(id: string): boolean;
   /** Resolves once the manifest is loaded and every clip is decoded (or failed). */
@@ -198,6 +203,19 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
 
   return {
     ready,
+    unlock() {
+      const c = getCtx();
+      if (!c) return;
+      try {
+        void c.resume().catch(() => undefined);
+        const src = c.createBufferSource();
+        src.buffer = c.createBuffer(1, 1, 22050);
+        src.connect(c.destination);
+        src.start(0);
+      } catch {
+        /* no audio output: clips fall back as before */
+      }
+    },
     has: (id) => buffers.has(id),
     stop() {
       token++;

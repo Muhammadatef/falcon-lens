@@ -77,3 +77,16 @@ details[open] > .fold-sum::after, details[open] > summary::after { transform: ro
 .fold { margin-block: var(--fl-space-3); }
 .h3 { flex-wrap: wrap; }
 .prov-badge { white-space: normal; }
+
+/* Mobile P1: long artifact values (hashes, scopes, commit ids) wrap inside their list instead of widening the page. */
+main :is(li, p, dd) code { overflow-wrap: anywhere; word-break: break-word; }
+main li, main ul { min-width: 0; }
+/* Mobile P1: short header links get a 44 px wide tap target. */
+.nav a { min-width: 2.75rem; text-align: center; }
+.foot-nav a { min-width: 2.75rem; justify-content: center; }
+.docs-crumb a { display: inline-flex; align-items: center; min-height: 2.75rem; min-width: 2.75rem; justify-content: center; }
+/* Mobile P1: wide architecture diagrams keep a readable size and scroll sideways inside their box (pinch-zoom also works). */
+@media (max-width: 719.98px) {
+  .figure { overflow-x: auto; justify-items: start; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  .figure img { width: auto; min-width: 42rem; max-width: none; }
+}

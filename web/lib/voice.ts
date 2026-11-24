@@ -19,6 +19,8 @@ export function vadSilenceMs(raw: string | undefined): number {
   return Number.isFinite(n) && n >= 400 && n <= 1500 ? n : 800;
 }
 
+/** webm/ogg/wav, plus what iOS Safari records: audio/mp4 (AAC in MP4), audio/aac and the m4a aliases. */
+export const AUDIO_TYPES = /^(audio\/(webm|ogg|wav|x-wav|wave|mp4|aac|x-aac|x-m4a|m4a)|video\/(webm|mp4))(;|$)/i;
 export const VOICE_LIMITS = { maxBytes: 1_000_000, maxMs: 12_000, minMs: 400, silenceMs: vadSilenceMs(process.env.NEXT_PUBLIC_FL_VAD_SILENCE_MS), maxItems: 10, maxItemChars: 3500 } as const;
 
 export type VoiceIntent = "check_clipboard" | "check_text" | "help" | "stop" | "faq" | "off_topic" | "none";

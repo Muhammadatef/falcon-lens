@@ -41,6 +41,13 @@ ALLOWED_TYPES = {
     "video/webm": "webm",
     "audio/ogg": "ogg",
     "application/ogg": "ogg",
+    "audio/mp4": "mp4",
+    "video/mp4": "mp4",
+    "audio/x-m4a": "mp4",
+    "audio/m4a": "mp4",
+    "audio/aac": "aac",
+    "audio/x-aac": "aac",
+    "audio/aacp": "aac",
     "audio/wav": "wav",
     "audio/x-wav": "wav",
     "audio/wave": "wav",
@@ -295,7 +302,10 @@ def register(
                                 "audio": {
                                     "type": "string",
                                     "format": "binary",
-                                    "description": "audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB",
+                                    "description": (
+                                        "audio/webm;codecs=opus, audio/mp4 (AAC, iOS Safari), audio/aac, "
+                                        "audio/wav or audio/ogg; max 15 s and 1 MB"
+                                    ),
                                 },
                                 "lang_hint": {"type": "string", "enum": ["ar", "en"], "description": "optional"},
                                 "follow_up": {
@@ -344,7 +354,12 @@ def register(
             raise fail(422, "empty-audio", "Empty audio", "empty")
         family = ALLOWED_TYPES.get(declared)
         if family is None or sniff(data) != family:
-            raise fail(415, "unsupported-media-type", "Expected audio/webm (opus), audio/wav or audio/ogg", "bad_type")
+            raise fail(
+                415,
+                "unsupported-media-type",
+                "Expected audio/webm (opus), audio/mp4 (aac), audio/aac, audio/wav or audio/ogg",
+                "bad_type",
+            )
         secs = wav_seconds(data) if family == "wav" else None
         if secs is not None and secs > MAX_AUDIO_S:
             raise fail(422, "audio-too-long", "Audio longer than 15 seconds", "too_long")
