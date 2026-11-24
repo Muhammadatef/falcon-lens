@@ -12,6 +12,7 @@ import { BrandMark, Icon } from "./Icon";
 /** Header order (v2): Check · AI agents · Campaigns · History · Results · For authorities · Docs · Privacy. */
 export const NAV_LINKS = [
   { href: "/", key: "nav.check" },
+  { href: "/voice", key: "nav.voice" },
   { href: "/agents", key: "nav.agents" },
   { href: "/campaigns", key: "nav.campaigns" },
   { href: "/history", key: "nav.history" },

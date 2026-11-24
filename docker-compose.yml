@@ -274,6 +274,9 @@ services:
       FL_PUBLIC_BASE_URL: ${FL_PUBLIC_BASE_URL:-https://localhost:8443}
       # read-scope service key for the public /campaigns board (server-side only; see .env.example)
       FL_WEB_READ_KEY: ${FL_WEB_READ_KEY:-}
+      FL_VOICE_CLIPS_DIR: /data/private/voice/clips
+    # private voice clips (macOS / cloned voices; gitignored), read-only; the web falls back to committed clips
+    volumes: ["./data/private/voice/clips:/data/private/voice/clips:ro"]
     networks: [app]
     mem_limit: 384m
     cpus: 1

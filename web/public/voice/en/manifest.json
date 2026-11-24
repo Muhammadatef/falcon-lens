@@ -1,0 +1,1826 @@
+[
+  {
+    "id": "en.wake.ack",
+    "file": "en.wake.ack.mp3",
+    "text": "Yes, I'm listening.",
+    "ms": 1788,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.clip.reading",
+    "file": "en.clip.reading.mp3",
+    "text": "One moment, reading what you copied.",
+    "ms": 2461,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.1",
+    "file": "en.found.1.mp3",
+    "text": "I found one message.",
+    "ms": 1727,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.2",
+    "file": "en.found.2.mp3",
+    "text": "I found two messages.",
+    "ms": 1896,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.3",
+    "file": "en.found.3.mp3",
+    "text": "I found three messages.",
+    "ms": 2019,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.4",
+    "file": "en.found.4.mp3",
+    "text": "I found four messages.",
+    "ms": 2044,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.5",
+    "file": "en.found.5.mp3",
+    "text": "I found five messages.",
+    "ms": 2117,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.6",
+    "file": "en.found.6.mp3",
+    "text": "I found six messages.",
+    "ms": 2190,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.7",
+    "file": "en.found.7.mp3",
+    "text": "I found seven messages.",
+    "ms": 2241,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.8",
+    "file": "en.found.8.mp3",
+    "text": "I found eight messages.",
+    "ms": 1894,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.9",
+    "file": "en.found.9.mp3",
+    "text": "I found nine messages.",
+    "ms": 1870,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.found.10",
+    "file": "en.found.10.mp3",
+    "text": "I found ten messages.",
+    "ms": 2117,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.1",
+    "file": "en.checking.1.mp3",
+    "text": "Checking the first message",
+    "ms": 1893,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.2",
+    "file": "en.checking.2.mp3",
+    "text": "Checking the second message",
+    "ms": 1834,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.3",
+    "file": "en.checking.3.mp3",
+    "text": "Checking the third message",
+    "ms": 1873,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.4",
+    "file": "en.checking.4.mp3",
+    "text": "Checking the fourth message",
+    "ms": 1921,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.5",
+    "file": "en.checking.5.mp3",
+    "text": "Checking the fifth message",
+    "ms": 1911,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.6",
+    "file": "en.checking.6.mp3",
+    "text": "Checking the sixth message",
+    "ms": 1896,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.7",
+    "file": "en.checking.7.mp3",
+    "text": "Checking the seventh message",
+    "ms": 1945,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.8",
+    "file": "en.checking.8.mp3",
+    "text": "Checking the eighth message",
+    "ms": 1935,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.9",
+    "file": "en.checking.9.mp3",
+    "text": "Checking the ninth message",
+    "ms": 1912,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.checking.10",
+    "file": "en.checking.10.mp3",
+    "text": "Checking the tenth message",
+    "ms": 2008,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.2",
+    "file": "en.of.2.mp3",
+    "text": "of two.",
+    "ms": 937,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.3",
+    "file": "en.of.3.mp3",
+    "text": "of three.",
+    "ms": 1031,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.4",
+    "file": "en.of.4.mp3",
+    "text": "of four.",
+    "ms": 1032,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.5",
+    "file": "en.of.5.mp3",
+    "text": "of five.",
+    "ms": 991,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.6",
+    "file": "en.of.6.mp3",
+    "text": "of six.",
+    "ms": 1011,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.7",
+    "file": "en.of.7.mp3",
+    "text": "of seven.",
+    "ms": 1058,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.8",
+    "file": "en.of.8.mp3",
+    "text": "of eight.",
+    "ms": 822,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.9",
+    "file": "en.of.9.mp3",
+    "text": "of nine.",
+    "ms": 985,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.of.10",
+    "file": "en.of.10.mp3",
+    "text": "of ten.",
+    "ms": 1017,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.1",
+    "file": "en.investigator.start.1.mp3",
+    "text": "The Investigator agent is checking the first message.",
+    "ms": 3703,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.2",
+    "file": "en.investigator.start.2.mp3",
+    "text": "The Investigator agent is checking the second message.",
+    "ms": 3802,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.3",
+    "file": "en.investigator.start.3.mp3",
+    "text": "The Investigator agent is checking the third message.",
+    "ms": 3625,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.4",
+    "file": "en.investigator.start.4.mp3",
+    "text": "The Investigator agent is checking the fourth message.",
+    "ms": 3604,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.5",
+    "file": "en.investigator.start.5.mp3",
+    "text": "The Investigator agent is checking the fifth message.",
+    "ms": 3628,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.6",
+    "file": "en.investigator.start.6.mp3",
+    "text": "The Investigator agent is checking the sixth message.",
+    "ms": 3727,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.7",
+    "file": "en.investigator.start.7.mp3",
+    "text": "The Investigator agent is checking the seventh message.",
+    "ms": 3777,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.8",
+    "file": "en.investigator.start.8.mp3",
+    "text": "The Investigator agent is checking the eighth message.",
+    "ms": 3602,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.9",
+    "file": "en.investigator.start.9.mp3",
+    "text": "The Investigator agent is checking the ninth message.",
+    "ms": 3702,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.start.10",
+    "file": "en.investigator.start.10.mp3",
+    "text": "The Investigator agent is checking the tenth message.",
+    "ms": 3700,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.lists",
+    "file": "en.investigator.lists.mp3",
+    "text": "Checking known scam lists.",
+    "ms": 2111,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.address",
+    "file": "en.investigator.address.mp3",
+    "text": "Checking the web address for look-alike tricks.",
+    "ms": 2770,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.page",
+    "file": "en.investigator.page.mp3",
+    "text": "Opening the page in our isolated browser. Nothing is typed.",
+    "ms": 4102,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.ai_second_look_local",
+    "file": "en.investigator.ai_second_look_local.mp3",
+    "text": "AI second look, with our local model.",
+    "ms": 2846,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.ai_second_look_cloud",
+    "file": "en.investigator.ai_second_look_cloud.mp3",
+    "text": "AI second look, with Claude.",
+    "ms": 2372,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.rules_only",
+    "file": "en.investigator.rules_only.mp3",
+    "text": "The rules decided, without AI.",
+    "ms": 2743,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.arbiter_result.dangerous",
+    "file": "en.investigator.arbiter_result.dangerous.mp3",
+    "text": "The arbiter's decision: dangerous.",
+    "ms": 2652,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.arbiter_result.suspicious",
+    "file": "en.investigator.arbiter_result.suspicious.mp3",
+    "text": "The arbiter's decision: suspicious.",
+    "ms": 2801,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.arbiter_result.no_warning_signs",
+    "file": "en.investigator.arbiter_result.no_warning_signs.mp3",
+    "text": "The arbiter's decision: no warning signs found.",
+    "ms": 3351,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.investigator.arbiter_result.could_not_check",
+    "file": "en.investigator.arbiter_result.could_not_check.mp3",
+    "text": "The message could not be checked.",
+    "ms": 2293,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.score.lead",
+    "file": "en.score.lead.mp3",
+    "text": "The score is",
+    "ms": 1100,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.0",
+    "file": "en.num.0.mp3",
+    "text": "zero",
+    "ms": 741,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.1",
+    "file": "en.num.1.mp3",
+    "text": "one",
+    "ms": 650,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.2",
+    "file": "en.num.2.mp3",
+    "text": "two",
+    "ms": 566,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.3",
+    "file": "en.num.3.mp3",
+    "text": "three",
+    "ms": 639,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.4",
+    "file": "en.num.4.mp3",
+    "text": "four",
+    "ms": 653,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.5",
+    "file": "en.num.5.mp3",
+    "text": "five",
+    "ms": 644,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.6",
+    "file": "en.num.6.mp3",
+    "text": "six",
+    "ms": 713,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.7",
+    "file": "en.num.7.mp3",
+    "text": "seven",
+    "ms": 718,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.8",
+    "file": "en.num.8.mp3",
+    "text": "eight",
+    "ms": 528,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.9",
+    "file": "en.num.9.mp3",
+    "text": "nine",
+    "ms": 696,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.10",
+    "file": "en.num.10.mp3",
+    "text": "ten",
+    "ms": 649,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.11",
+    "file": "en.num.11.mp3",
+    "text": "eleven",
+    "ms": 770,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.12",
+    "file": "en.num.12.mp3",
+    "text": "twelve",
+    "ms": 690,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.13",
+    "file": "en.num.13.mp3",
+    "text": "thirteen",
+    "ms": 944,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.14",
+    "file": "en.num.14.mp3",
+    "text": "fourteen",
+    "ms": 897,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.15",
+    "file": "en.num.15.mp3",
+    "text": "fifteen",
+    "ms": 895,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.16",
+    "file": "en.num.16.mp3",
+    "text": "sixteen",
+    "ms": 892,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.17",
+    "file": "en.num.17.mp3",
+    "text": "seventeen",
+    "ms": 966,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.18",
+    "file": "en.num.18.mp3",
+    "text": "eighteen",
+    "ms": 872,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.19",
+    "file": "en.num.19.mp3",
+    "text": "nineteen",
+    "ms": 1020,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.20",
+    "file": "en.num.20.mp3",
+    "text": "twenty",
+    "ms": 732,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.21",
+    "file": "en.num.21.mp3",
+    "text": "twenty-one",
+    "ms": 854,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.22",
+    "file": "en.num.22.mp3",
+    "text": "twenty-two",
+    "ms": 940,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.23",
+    "file": "en.num.23.mp3",
+    "text": "twenty-three",
+    "ms": 1015,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.24",
+    "file": "en.num.24.mp3",
+    "text": "twenty-four",
+    "ms": 852,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.25",
+    "file": "en.num.25.mp3",
+    "text": "twenty-five",
+    "ms": 1011,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.26",
+    "file": "en.num.26.mp3",
+    "text": "twenty-six",
+    "ms": 1107,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.27",
+    "file": "en.num.27.mp3",
+    "text": "twenty-seven",
+    "ms": 1068,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.28",
+    "file": "en.num.28.mp3",
+    "text": "twenty-eight",
+    "ms": 917,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.29",
+    "file": "en.num.29.mp3",
+    "text": "twenty-nine",
+    "ms": 905,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.30",
+    "file": "en.num.30.mp3",
+    "text": "thirty",
+    "ms": 740,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.31",
+    "file": "en.num.31.mp3",
+    "text": "thirty-one",
+    "ms": 920,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.32",
+    "file": "en.num.32.mp3",
+    "text": "thirty-two",
+    "ms": 926,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.33",
+    "file": "en.num.33.mp3",
+    "text": "thirty-three",
+    "ms": 1069,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.34",
+    "file": "en.num.34.mp3",
+    "text": "thirty-four",
+    "ms": 958,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.35",
+    "file": "en.num.35.mp3",
+    "text": "thirty-five",
+    "ms": 1016,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.36",
+    "file": "en.num.36.mp3",
+    "text": "thirty-six",
+    "ms": 1083,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.37",
+    "file": "en.num.37.mp3",
+    "text": "thirty-seven",
+    "ms": 1143,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.38",
+    "file": "en.num.38.mp3",
+    "text": "thirty-eight",
+    "ms": 911,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.39",
+    "file": "en.num.39.mp3",
+    "text": "thirty-nine",
+    "ms": 970,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.40",
+    "file": "en.num.40.mp3",
+    "text": "forty",
+    "ms": 741,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.41",
+    "file": "en.num.41.mp3",
+    "text": "forty-one",
+    "ms": 872,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.42",
+    "file": "en.num.42.mp3",
+    "text": "forty-two",
+    "ms": 912,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.43",
+    "file": "en.num.43.mp3",
+    "text": "forty-three",
+    "ms": 1024,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.44",
+    "file": "en.num.44.mp3",
+    "text": "forty-four",
+    "ms": 891,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.45",
+    "file": "en.num.45.mp3",
+    "text": "forty-five",
+    "ms": 993,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.46",
+    "file": "en.num.46.mp3",
+    "text": "forty-six",
+    "ms": 1062,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.47",
+    "file": "en.num.47.mp3",
+    "text": "forty-seven",
+    "ms": 1121,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.48",
+    "file": "en.num.48.mp3",
+    "text": "forty-eight",
+    "ms": 912,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.49",
+    "file": "en.num.49.mp3",
+    "text": "forty-nine",
+    "ms": 921,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.50",
+    "file": "en.num.50.mp3",
+    "text": "fifty",
+    "ms": 729,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.51",
+    "file": "en.num.51.mp3",
+    "text": "fifty-one",
+    "ms": 881,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.52",
+    "file": "en.num.52.mp3",
+    "text": "fifty-two",
+    "ms": 888,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.53",
+    "file": "en.num.53.mp3",
+    "text": "fifty-three",
+    "ms": 999,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.54",
+    "file": "en.num.54.mp3",
+    "text": "fifty-four",
+    "ms": 923,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.55",
+    "file": "en.num.55.mp3",
+    "text": "fifty-five",
+    "ms": 964,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.56",
+    "file": "en.num.56.mp3",
+    "text": "fifty-six",
+    "ms": 1059,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.57",
+    "file": "en.num.57.mp3",
+    "text": "fifty-seven",
+    "ms": 1171,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.58",
+    "file": "en.num.58.mp3",
+    "text": "fifty-eight",
+    "ms": 888,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.59",
+    "file": "en.num.59.mp3",
+    "text": "fifty-nine",
+    "ms": 905,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.60",
+    "file": "en.num.60.mp3",
+    "text": "sixty",
+    "ms": 793,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.61",
+    "file": "en.num.61.mp3",
+    "text": "sixty-one",
+    "ms": 943,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.62",
+    "file": "en.num.62.mp3",
+    "text": "sixty-two",
+    "ms": 891,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.63",
+    "file": "en.num.63.mp3",
+    "text": "sixty-three",
+    "ms": 965,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.64",
+    "file": "en.num.64.mp3",
+    "text": "sixty-four",
+    "ms": 865,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.65",
+    "file": "en.num.65.mp3",
+    "text": "sixty-five",
+    "ms": 1009,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.66",
+    "file": "en.num.66.mp3",
+    "text": "sixty-six",
+    "ms": 1067,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.67",
+    "file": "en.num.67.mp3",
+    "text": "sixty-seven",
+    "ms": 1115,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.68",
+    "file": "en.num.68.mp3",
+    "text": "sixty-eight",
+    "ms": 901,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.69",
+    "file": "en.num.69.mp3",
+    "text": "sixty-nine",
+    "ms": 941,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.70",
+    "file": "en.num.70.mp3",
+    "text": "seventy",
+    "ms": 843,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.71",
+    "file": "en.num.71.mp3",
+    "text": "seventy-one",
+    "ms": 943,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.72",
+    "file": "en.num.72.mp3",
+    "text": "seventy-two",
+    "ms": 1014,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.73",
+    "file": "en.num.73.mp3",
+    "text": "seventy-three",
+    "ms": 1065,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.74",
+    "file": "en.num.74.mp3",
+    "text": "seventy-four",
+    "ms": 942,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.75",
+    "file": "en.num.75.mp3",
+    "text": "seventy-five",
+    "ms": 1059,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.76",
+    "file": "en.num.76.mp3",
+    "text": "seventy-six",
+    "ms": 1132,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.77",
+    "file": "en.num.77.mp3",
+    "text": "seventy-seven",
+    "ms": 1242,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.78",
+    "file": "en.num.78.mp3",
+    "text": "seventy-eight",
+    "ms": 963,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.79",
+    "file": "en.num.79.mp3",
+    "text": "seventy-nine",
+    "ms": 968,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.80",
+    "file": "en.num.80.mp3",
+    "text": "eighty",
+    "ms": 690,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.81",
+    "file": "en.num.81.mp3",
+    "text": "eighty-one",
+    "ms": 825,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.82",
+    "file": "en.num.82.mp3",
+    "text": "eighty-two",
+    "ms": 896,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.83",
+    "file": "en.num.83.mp3",
+    "text": "eighty-three",
+    "ms": 1045,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.84",
+    "file": "en.num.84.mp3",
+    "text": "eighty-four",
+    "ms": 898,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.85",
+    "file": "en.num.85.mp3",
+    "text": "eighty-five",
+    "ms": 960,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.86",
+    "file": "en.num.86.mp3",
+    "text": "eighty-six",
+    "ms": 1059,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.87",
+    "file": "en.num.87.mp3",
+    "text": "eighty-seven",
+    "ms": 1095,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.88",
+    "file": "en.num.88.mp3",
+    "text": "eighty-eight",
+    "ms": 845,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.89",
+    "file": "en.num.89.mp3",
+    "text": "eighty-nine",
+    "ms": 921,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.90",
+    "file": "en.num.90.mp3",
+    "text": "ninety",
+    "ms": 740,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.91",
+    "file": "en.num.91.mp3",
+    "text": "ninety-one",
+    "ms": 915,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.92",
+    "file": "en.num.92.mp3",
+    "text": "ninety-two",
+    "ms": 1022,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.93",
+    "file": "en.num.93.mp3",
+    "text": "ninety-three",
+    "ms": 1093,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.94",
+    "file": "en.num.94.mp3",
+    "text": "ninety-four",
+    "ms": 967,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.95",
+    "file": "en.num.95.mp3",
+    "text": "ninety-five",
+    "ms": 1067,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.96",
+    "file": "en.num.96.mp3",
+    "text": "ninety-six",
+    "ms": 1152,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.97",
+    "file": "en.num.97.mp3",
+    "text": "ninety-seven",
+    "ms": 1218,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.98",
+    "file": "en.num.98.mp3",
+    "text": "ninety-eight",
+    "ms": 969,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.99",
+    "file": "en.num.99.mp3",
+    "text": "ninety-nine",
+    "ms": 970,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.num.100",
+    "file": "en.num.100.mp3",
+    "text": "one hundred",
+    "ms": 1096,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.score.of",
+    "file": "en.score.of.mp3",
+    "text": "out of one hundred.",
+    "ms": 1684,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.handover",
+    "file": "en.sentinel.handover.mp3",
+    "text": "Handing the results to the Sentinel agent.",
+    "ms": 2880,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.2",
+    "file": "en.sentinel.linked.2.mp3",
+    "text": "The Sentinel linked two reports into one campaign.",
+    "ms": 3425,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.3",
+    "file": "en.sentinel.linked.3.mp3",
+    "text": "The Sentinel linked three reports into one campaign.",
+    "ms": 3495,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.4",
+    "file": "en.sentinel.linked.4.mp3",
+    "text": "The Sentinel linked four reports into one campaign.",
+    "ms": 3397,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.5",
+    "file": "en.sentinel.linked.5.mp3",
+    "text": "The Sentinel linked five reports into one campaign.",
+    "ms": 3573,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.6",
+    "file": "en.sentinel.linked.6.mp3",
+    "text": "The Sentinel linked six reports into one campaign.",
+    "ms": 3602,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.7",
+    "file": "en.sentinel.linked.7.mp3",
+    "text": "The Sentinel linked seven reports into one campaign.",
+    "ms": 3725,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.8",
+    "file": "en.sentinel.linked.8.mp3",
+    "text": "The Sentinel linked eight reports into one campaign.",
+    "ms": 3501,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.9",
+    "file": "en.sentinel.linked.9.mp3",
+    "text": "The Sentinel linked nine reports into one campaign.",
+    "ms": 3550,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.linked.10",
+    "file": "en.sentinel.linked.10.mp3",
+    "text": "The Sentinel linked ten reports into one campaign.",
+    "ms": 3550,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.summary",
+    "file": "en.sentinel.summary.mp3",
+    "text": "The Sentinel wrote a summary in Arabic and English.",
+    "ms": 3376,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.draft",
+    "file": "en.sentinel.draft.mp3",
+    "text": "The Sentinel prepared a takedown request draft.",
+    "ms": 3240,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.awaiting_approval",
+    "file": "en.sentinel.awaiting_approval.mp3",
+    "text": "Waiting for an officer's approval. Nothing is sent without it.",
+    "ms": 3773,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sentinel.watching",
+    "file": "en.sentinel.watching.mp3",
+    "text": "The Sentinel keeps watching for similar reports.",
+    "ms": 3127,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.final.both_agents",
+    "file": "en.final.both_agents.mp3",
+    "text": "The Investigator checked, and the Sentinel linked them and follows up.",
+    "ms": 4100,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.final.sentinel_watching",
+    "file": "en.final.sentinel_watching.mp3",
+    "text": "The Investigator checked, and the Sentinel keeps watching.",
+    "ms": 3623,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.1",
+    "file": "en.sum.dangerous.1.mp3",
+    "text": "One message is dangerous.",
+    "ms": 2209,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.1",
+    "file": "en.sum.suspicious.1.mp3",
+    "text": "One message looks suspicious.",
+    "ms": 2381,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.1",
+    "file": "en.sum.clear.1.mp3",
+    "text": "One message showed no warning signs.",
+    "ms": 2869,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.1",
+    "file": "en.sum.failed.1.mp3",
+    "text": "One message could not be checked.",
+    "ms": 2419,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.2",
+    "file": "en.sum.dangerous.2.mp3",
+    "text": "Two messages are dangerous.",
+    "ms": 2092,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.2",
+    "file": "en.sum.suspicious.2.mp3",
+    "text": "Two messages look suspicious.",
+    "ms": 2395,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.2",
+    "file": "en.sum.clear.2.mp3",
+    "text": "Two messages showed no warning signs.",
+    "ms": 2942,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.2",
+    "file": "en.sum.failed.2.mp3",
+    "text": "Two messages could not be checked.",
+    "ms": 2471,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.3",
+    "file": "en.sum.dangerous.3.mp3",
+    "text": "Three messages are dangerous.",
+    "ms": 2295,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.3",
+    "file": "en.sum.suspicious.3.mp3",
+    "text": "Three messages look suspicious.",
+    "ms": 2443,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.3",
+    "file": "en.sum.clear.3.mp3",
+    "text": "Three messages showed no warning signs.",
+    "ms": 2918,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.3",
+    "file": "en.sum.failed.3.mp3",
+    "text": "Three messages could not be checked.",
+    "ms": 2496,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.4",
+    "file": "en.sum.dangerous.4.mp3",
+    "text": "Four messages are dangerous.",
+    "ms": 2244,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.4",
+    "file": "en.sum.suspicious.4.mp3",
+    "text": "Four messages look suspicious.",
+    "ms": 2394,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.4",
+    "file": "en.sum.clear.4.mp3",
+    "text": "Four messages showed no warning signs.",
+    "ms": 2944,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.4",
+    "file": "en.sum.failed.4.mp3",
+    "text": "Four messages could not be checked.",
+    "ms": 2522,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.5",
+    "file": "en.sum.dangerous.5.mp3",
+    "text": "Five messages are dangerous.",
+    "ms": 2294,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.5",
+    "file": "en.sum.suspicious.5.mp3",
+    "text": "Five messages look suspicious.",
+    "ms": 2519,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.5",
+    "file": "en.sum.clear.5.mp3",
+    "text": "Five messages showed no warning signs.",
+    "ms": 3044,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.5",
+    "file": "en.sum.failed.5.mp3",
+    "text": "Five messages could not be checked.",
+    "ms": 2595,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.6",
+    "file": "en.sum.dangerous.6.mp3",
+    "text": "Six messages are dangerous.",
+    "ms": 2392,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.6",
+    "file": "en.sum.suspicious.6.mp3",
+    "text": "Six messages look suspicious.",
+    "ms": 2492,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.6",
+    "file": "en.sum.clear.6.mp3",
+    "text": "Six messages showed no warning signs.",
+    "ms": 2991,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.6",
+    "file": "en.sum.failed.6.mp3",
+    "text": "Six messages could not be checked.",
+    "ms": 2569,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.7",
+    "file": "en.sum.dangerous.7.mp3",
+    "text": "Seven messages are dangerous.",
+    "ms": 2446,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.7",
+    "file": "en.sum.suspicious.7.mp3",
+    "text": "Seven messages look suspicious.",
+    "ms": 2542,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.7",
+    "file": "en.sum.clear.7.mp3",
+    "text": "Seven messages showed no warning signs.",
+    "ms": 3016,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.7",
+    "file": "en.sum.failed.7.mp3",
+    "text": "Seven messages could not be checked.",
+    "ms": 2619,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.8",
+    "file": "en.sum.dangerous.8.mp3",
+    "text": "Eight messages are dangerous.",
+    "ms": 2319,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.8",
+    "file": "en.sum.suspicious.8.mp3",
+    "text": "Eight messages look suspicious.",
+    "ms": 2469,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.8",
+    "file": "en.sum.clear.8.mp3",
+    "text": "Eight messages showed no warning signs.",
+    "ms": 2917,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.8",
+    "file": "en.sum.failed.8.mp3",
+    "text": "Eight messages could not be checked.",
+    "ms": 2546,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.9",
+    "file": "en.sum.dangerous.9.mp3",
+    "text": "Nine messages are dangerous.",
+    "ms": 2346,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.9",
+    "file": "en.sum.suspicious.9.mp3",
+    "text": "Nine messages look suspicious.",
+    "ms": 2512,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.9",
+    "file": "en.sum.clear.9.mp3",
+    "text": "Nine messages showed no warning signs.",
+    "ms": 3062,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.9",
+    "file": "en.sum.failed.9.mp3",
+    "text": "Nine messages could not be checked.",
+    "ms": 2594,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.dangerous.10",
+    "file": "en.sum.dangerous.10.mp3",
+    "text": "Ten messages are dangerous.",
+    "ms": 2246,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.suspicious.10",
+    "file": "en.sum.suspicious.10.mp3",
+    "text": "Ten messages look suspicious.",
+    "ms": 2420,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.clear.10",
+    "file": "en.sum.clear.10.mp3",
+    "text": "Ten messages showed no warning signs.",
+    "ms": 2969,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.sum.failed.10",
+    "file": "en.sum.failed.10.mp3",
+    "text": "Ten messages could not be checked.",
+    "ms": 2498,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.result.dangerous",
+    "file": "en.result.dangerous.mp3",
+    "text": "This message is dangerous.",
+    "ms": 2226,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.result.suspicious",
+    "file": "en.result.suspicious.mp3",
+    "text": "This message looks suspicious.",
+    "ms": 2369,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.result.no_warning_signs",
+    "file": "en.result.no_warning_signs.mp3",
+    "text": "I found no warning signs in it.",
+    "ms": 2391,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.result.could_not_check",
+    "file": "en.result.could_not_check.mp3",
+    "text": "I could not check this message.",
+    "ms": 2143,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.todo.lead",
+    "file": "en.todo.lead.mp3",
+    "text": "What to do now:",
+    "ms": 1200,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.todo.link",
+    "file": "en.todo.link.mp3",
+    "text": "Don't tap the link.",
+    "ms": 1598,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.todo.otp",
+    "file": "en.todo.otp.mp3",
+    "text": "Never share a code with anyone.",
+    "ms": 2341,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.todo.bank",
+    "file": "en.todo.bank.mp3",
+    "text": "Call your bank on the number on your card.",
+    "ms": 2671,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.todo.report",
+    "file": "en.todo.report.mp3",
+    "text": "Report the message through the official channels.",
+    "ms": 2999,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.todo.careful",
+    "file": "en.todo.careful.mp3",
+    "text": "But stay careful.",
+    "ms": 1575,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.todo.wait",
+    "file": "en.todo.wait.mp3",
+    "text": "Don't open the link until it is checked.",
+    "ms": 2718,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.help",
+    "file": "en.help.mp3",
+    "text": "Copy your messages, then say: Hey Falcon, check my messages.",
+    "ms": 4219,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.stop",
+    "file": "en.stop.mp3",
+    "text": "Okay, I've stopped.",
+    "ms": 1792,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.didnt",
+    "file": "en.didnt.mp3",
+    "text": "Sorry, I didn't catch that. Please say it again.",
+    "ms": 3144,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.clip.empty",
+    "file": "en.clip.empty.mp3",
+    "text": "I found no messages in what you copied. Copy them and try again.",
+    "ms": 4153,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.clip.denied",
+    "file": "en.clip.denied.mp3",
+    "text": "I couldn't read what you copied. Paste it in the box on the screen.",
+    "ms": 3735,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.error",
+    "file": "en.error.mp3",
+    "text": "Something went wrong. Try again, and don't open any link.",
+    "ms": 3523,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  },
+  {
+    "id": "en.goodbye",
+    "file": "en.goodbye.mp3",
+    "text": "Thank you. Take care.",
+    "ms": 1911,
+    "engine": "kokoro",
+    "voice": "bm_fable"
+  }
+]

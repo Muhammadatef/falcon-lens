@@ -6,6 +6,7 @@ import type { Polarity, Severity } from "@/lib/contracts";
  * No tick marks, padlocks-as-good or shields anywhere (DESIGN.md §6).
  */
 const ICONS = {
+  mic: ["M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z", "M6 11a6 6 0 0 0 12 0", "M12 17v4"],
   dangerous: ["M8.3 2.6h7.4l5.7 5.7v7.4l-5.7 5.7H8.3l-5.7-5.7V8.3z", "M12 7.4v5.8", "M12 16.6v.1"],
   suspicious: ["M12 3.1 21.8 20.4H2.2z", "M10.1 11.3a2 2 0 1 1 3 1.7c-.7.4-1.1.9-1.1 1.6", "M12 17.4v.1"],
   no_warning_signs: ["M10.5 3.5a7 7 0 1 1 0 14 7 7 0 0 1 0-14z", "M15.6 15.6 21 21", "M7.6 10.5h5.8"],

@@ -25,6 +25,12 @@ export function buildCsp(nonce: string, isDev: boolean): string {
   ].join("; ");
 }
 
+/** The microphone is allowed for our own origin on the voice assistant page only; every other page keeps it off. */
+export function permissionsPolicy(pathname: string): string {
+  const mic = pathname === "/voice" || pathname.startsWith("/voice/") ? "(self)" : "()";
+  return `camera=(), microphone=${mic}, geolocation=(), payment=()`;
+}
+
 export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const csp = buildCsp(nonce, process.env.NODE_ENV === "development");
@@ -38,7 +44,7 @@ export function proxy(request: NextRequest) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "no-referrer");
   response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  response.headers.set("Permissions-Policy", permissionsPolicy(request.nextUrl.pathname));
   return response;
 }
 
