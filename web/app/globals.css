@@ -199,6 +199,7 @@ button { cursor: pointer; }
 @keyframes shimmer { to { transform: translateX(calc(var(--sign) * 260%)); } }
 @keyframes ping { from { transform: scale(1); opacity: 0.6; } to { transform: scale(3.2); opacity: 0; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes rise-view { from { transform: translateY(24px); } to { transform: none; } }
 
 /* ── Sections ───────────────────────────────────────────────────────── */
 section { padding-block: var(--fl-space-7); }
@@ -218,7 +219,8 @@ section { padding-block: var(--fl-space-7); }
 .how-foot .icon { color: var(--fl-brand); margin-block-start: 0.35rem; }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    .how-card { animation: rise-in linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+    /* Movement only: a card that rests half-way into the viewport must keep full text contrast (no partial opacity). */
+    .how-card { animation: rise-view linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
   }
 }
 
