@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 870" width="1200" height="870" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 990" width="1200" height="990" role="img" aria-labelledby="t d">
 <title id="t">Falcon Lens system architecture</title>
-<desc id="d">A check enters from the PWA, the Chrome extension or a police app through the Caddy gateway to the API. The API puts a job on a Redis stream. The worker runs the tiers T0 to T3 with an exit after each tier, and a deterministic arbiter sets the verdict, which returns to the user over SSE. The sandbox sits on an isolated network behind the egress proxy. A model router sends LLM calls to a local Ollama model in sovereign mode or to the Anthropic API in cloud mode. The Sentinel consumes verdict events. Postgres with pgvector and Redis hold the data, and an observability stack collects metrics, logs and traces.</desc>
+<desc id="d">A check enters from the PWA, the Chrome extension or a police app through the Caddy gateway to the API. The API puts a job on a Redis stream. The worker runs the tiers T0 to T3 with an exit after each tier, and a deterministic arbiter sets the verdict, which returns to the user over SSE. The sandbox sits on an isolated network behind the egress proxy. A model router sends LLM calls to a local Ollama model in sovereign mode or to the Anthropic API in cloud mode. The Sentinel (Dir' | درع) consumes verdict events. A voice path ("Hey Falcon") runs from the browser microphone through the web route and the API to a local speech-to-text service on its own internal network, then fixed-rule intent, then the same check. Postgres with pgvector and Redis hold the data, and an observability stack collects metrics, logs and traces.</desc>
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}
 .m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
@@ -52,8 +52,8 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 </marker>
 </defs>
 
-<rect width="1200" height="870" rx="22" fill="#070b14"/>
-<rect width="1200" height="870" rx="22" fill="url(#lat)" opacity=".55"/>
+<rect width="1200" height="990" rx="22" fill="#070b14"/>
+<rect width="1200" height="990" rx="22" fill="url(#lat)" opacity=".55"/>
 <rect width="1200" height="420" rx="22" fill="url(#halo)"/>
 
 <!-- header -->
@@ -153,7 +153,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <!-- worker -->
 <g>
 <rect class="card" x="700" y="104" width="460" height="262" rx="14"/>
-<text x="716" y="129" class="h">worker <tspan class="b" font-weight="400">· Investigator cascade</tspan></text>
+<text x="716" y="129" class="h">worker <tspan class="b" font-weight="400">· Investigator (Baseer | بصير) cascade</tspan></text>
 <g>
 <rect class="card" x="712" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow on" style="animation-delay:3.2s" x="712" y="142" width="100" height="90" rx="10"/>
 <rect class="card" x="824" y="142" width="100" height="90" rx="10" fill="#16203a"/><rect class="glow on" style="animation-delay:4.2s" x="824" y="142" width="100" height="90" rx="10"/>
@@ -189,7 +189,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <!-- sentinel -->
 <g>
 <rect class="card" x="700" y="396" width="216" height="144" rx="14"/><rect class="glow onl" style="animation-delay:12.8s" x="700" y="396" width="216" height="144" rx="14"/>
-<text x="716" y="421" class="h">sentinel <tspan class="b" font-weight="400">· LangGraph</tspan></text>
+<text x="716" y="421" class="h">sentinel <tspan class="b" font-weight="400">· درع · LangGraph</tspan></text>
 <text x="716" y="443" class="b">listen → correlate → trigger</text>
 <text x="716" y="461" class="b">→ triage → act</text>
 <text x="716" y="485" class="c">Rules decide what an incident is.</text>
@@ -226,7 +226,7 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <text x="24" y="606" class="m tag">LEGEND</text>
 <circle cx="32" cy="630" r="5" class="rq"/><text x="48" y="634.5" class="b">request and job</text>
 <circle cx="32" cy="654" r="5" class="vd"/><text x="48" y="658.5" class="b">verdict over SSE</text>
-<circle cx="32" cy="678" r="5" class="ev"/><text x="48" y="682.5" class="b">event for the Sentinel</text>
+<circle cx="32" cy="678" r="5" class="ev"/><text x="48" y="682.5" class="b">event for the Sentinel (Dir' | درع)</text>
 <circle cx="32" cy="702" r="5" fill="#16203a" stroke="#5a6c92" stroke-width="1.4"/><text x="48" y="706.5" class="b">tier exit: partial verdict re-emitted</text>
 <rect x="204" y="621" width="20" height="14" rx="4" class="zone"/><text x="232" y="634.5" class="b">Docker network</text>
 <rect x="204" y="645" width="20" height="14" rx="4" class="ext"/><text x="232" y="658.5" class="b">outside the stack</text>
@@ -278,5 +278,19 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 <g class="pk l vd" style="offset-path:path('M408 216H296V134H200');animation-delay:12.8s"><circle r="10"/><circle r="4.5"/></g>
 <g class="pk s ev" style="offset-path:path('M712 330H622V440H700');animation-delay:11.6s"><circle r="10"/><circle r="4.5"/></g>
 <g class="pk l ev" style="offset-path:path('M700 510H552V256H538');animation-delay:14.4s"><circle r="10"/><circle r="4.5"/></g>
+</g>
+
+<!-- voice path -->
+<rect class="zone" x="24" y="872" width="1152" height="98" rx="16"/>
+<g class="m tag"><rect x="40" y="864" width="260" height="16" fill="#070b14"/><text x="46" y="876">VOICE PATH · HEY FALCON · يا فالكون</text></g>
+<g class="w" marker-end="url(#a)"><path d="M205 924H229"/><path d="M394 924H418"/><path d="M583 924H607"/><path d="M772 924H796"/><path d="M961 924H985"/></g>
+<g class="f"><path d="M205 924H229"/><path d="M394 924H418"/><path d="M583 924H607"/><path d="M772 924H796"/><path d="M961 924H985"/></g>
+<g>
+<rect class="card" x="40" y="892" width="165" height="64" rx="12"/><text x="52" y="916" class="h">browser mic</text><text x="52" y="936" class="c">one clip, 15 s at most</text>
+<rect class="card" x="229" y="892" width="165" height="64" rx="12"/><text x="241" y="916" class="h">web /api/voice</text><text x="241" y="936" class="c">key stays on the server</text>
+<rect class="card" x="418" y="892" width="165" height="64" rx="12"/><text x="430" y="916" class="h">api</text><text x="430" y="936" class="m c">/v1/voice/utterance</text>
+<rect class="card" x="607" y="892" width="165" height="64" rx="12"/><text x="619" y="916" class="h">voice STT</text><text x="619" y="936" class="c">Whisper · local · own net</text>
+<rect class="card" x="796" y="892" width="165" height="64" rx="12"/><text x="808" y="916" class="h">intent</text><text x="808" y="936" class="c">fixed rules, no model</text>
+<rect class="card" x="985" y="892" width="165" height="64" rx="12"/><text x="997" y="916" class="h">Baseer → Dir'</text><text x="997" y="936" class="c">same check as the PWA</text>
 </g>
 </svg>

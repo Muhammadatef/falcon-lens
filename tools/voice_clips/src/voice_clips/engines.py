@@ -24,7 +24,7 @@ MODELS = Path(os.environ.get("FL_VOICE_MODELS", str(Path.home() / "neo-models"))
 DEFAULT_REF = "data/private/voice/ref_ar_ae.wav"
 
 MACOS_VOICES = {"ar_ae": "Majed", "ar": "Majed", "en": "Daniel"}
-KOKORO_VOICE_EN = "bm_fable"
+KOKORO_VOICE_EN = "am_fenrir"
 
 
 class Engine:

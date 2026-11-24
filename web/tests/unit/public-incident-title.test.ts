@@ -63,10 +63,10 @@ describe("public incident title is built from structured fields only", () => {
     expect(publicSeverityLine(["R5"], 7, 2).ar).toContain("إنذارًا خاطئًا");
   });
   it("unknown rule: generic line with Arabic number agreement; no count when 0", () => {
-    expect(publicSeverityLine(["R99", "<x>"], 1, 0)).toEqual({ ar: "ربط الحارس فحص واحد بهذه الحادثة.", en: "Sentinel linked 1 check to this incident." });
-    expect(publicSeverityLine([], 2, 0).ar).toBe("ربط الحارس فحصان بهذه الحادثة.");
-    expect(publicSeverityLine([], 5, 0).ar).toBe("ربط الحارس 5 فحوص بهذه الحادثة.");
-    expect(publicSeverityLine([], 11, 0).ar).toBe("ربط الحارس 11 فحصًا بهذه الحادثة.");
+    expect(publicSeverityLine(["R99", "<x>"], 1, 0)).toEqual({ ar: "ربط درع فحص واحد بهذه الحادثة.", en: "Sentinel linked 1 check to this incident." });
+    expect(publicSeverityLine([], 2, 0).ar).toBe("ربط درع فحصان بهذه الحادثة.");
+    expect(publicSeverityLine([], 5, 0).ar).toBe("ربط درع 5 فحوص بهذه الحادثة.");
+    expect(publicSeverityLine([], 11, 0).ar).toBe("ربط درع 11 فحصًا بهذه الحادثة.");
     expect(publicSeverityLine([], 0, 0).en).toBe("Sentinel recorded this incident.");
   });
   it("Arabic count helper", () => {

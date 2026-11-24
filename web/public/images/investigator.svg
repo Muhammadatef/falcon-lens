@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 790" width="1200" height="790" role="img" aria-labelledby="t d">
-<title id="t">The Investigator: the per-check AI agent and its guardrails</title>
+<title id="t">The Investigator (Baseer | بصير): the per-check AI agent and its guardrails</title>
 <desc id="d">Untrusted text is delimited and datamarked, then read only by a quarantined extractor that has no tools and returns a strict schema. The bounded investigator runs a plan, act, observe, decide loop with at most six typed tool calls. A provenance check blocks a tool call whose URL was injected by the page. The deterministic arbiter sets the score and no model can override it. The responder writes reasons that cite evidence ids, and a verifier rejects anything else.</desc>
 <style>
 text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:#f2eee6}

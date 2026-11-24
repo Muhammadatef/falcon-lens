@@ -36,16 +36,16 @@ ar_ae:
   "of.8": "من ثمان."
   "of.9": "من تسع."
   "of.10": "من عشر."
-  "investigator.start.1": "المحقق يشيّك المسج الأول."
-  "investigator.start.2": "المحقق يشيّك المسج الثاني."
-  "investigator.start.3": "المحقق يشيّك المسج الثالث."
-  "investigator.start.4": "المحقق يشيّك المسج الرابع."
-  "investigator.start.5": "المحقق يشيّك المسج الخامس."
-  "investigator.start.6": "المحقق يشيّك المسج السادس."
-  "investigator.start.7": "المحقق يشيّك المسج السابع."
-  "investigator.start.8": "المحقق يشيّك المسج الثامن."
-  "investigator.start.9": "المحقق يشيّك المسج التاسع."
-  "investigator.start.10": "المحقق يشيّك المسج العاشر."
+  "investigator.start.1": "بصير يشيّك على المسج الأول."
+  "investigator.start.2": "بصير يشيّك على المسج الثاني."
+  "investigator.start.3": "بصير يشيّك على المسج الثالث."
+  "investigator.start.4": "بصير يشيّك على المسج الرابع."
+  "investigator.start.5": "بصير يشيّك على المسج الخامس."
+  "investigator.start.6": "بصير يشيّك على المسج السادس."
+  "investigator.start.7": "بصير يشيّك على المسج السابع."
+  "investigator.start.8": "بصير يشيّك على المسج الثامن."
+  "investigator.start.9": "بصير يشيّك على المسج التاسع."
+  "investigator.start.10": "بصير يشيّك على المسج العاشر."
   "investigator.lists": "أطابقه مع قوائم النصب المعروفة."
   "investigator.address": "أشوف عنوان الموقع، يمكن فيه تشابه مخادع."
   "investigator.page": "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي."
@@ -159,27 +159,27 @@ ar_ae:
   "num.99": "تسعة وتسعين"
   "num.100": "مية"
   "score.of": "من مية."
-  "sentinel.handover": "أسلّم النتايج للحارس."
-  "sentinel.linked.2": "الحارس ربط مسجين في حملة نصب وحدة."
-  "sentinel.linked.3": "الحارس ربط ثلاث مسجات في حملة نصب وحدة."
-  "sentinel.linked.4": "الحارس ربط أربع مسجات في حملة نصب وحدة."
-  "sentinel.linked.5": "الحارس ربط خمس مسجات في حملة نصب وحدة."
-  "sentinel.linked.6": "الحارس ربط ست مسجات في حملة نصب وحدة."
-  "sentinel.linked.7": "الحارس ربط سبع مسجات في حملة نصب وحدة."
-  "sentinel.linked.8": "الحارس ربط ثمان مسجات في حملة نصب وحدة."
-  "sentinel.linked.9": "الحارس ربط تسع مسجات في حملة نصب وحدة."
-  "sentinel.linked.10": "الحارس ربط عشر مسجات في حملة نصب وحدة."
-  "sentinel.summary": "الحارس كتب ملخص بالعربي والإنجليزي."
-  "sentinel.draft": "الحارس جهّز مسودة طلب لإزالة الموقع."
+  "sentinel.handover": "أسلّم النتايج لدرع."
+  "sentinel.linked.2": "درع ربط مسجين في حملة نصب وحدة."
+  "sentinel.linked.3": "درع ربط ثلاث مسجات في حملة نصب وحدة."
+  "sentinel.linked.4": "درع ربط أربع مسجات في حملة نصب وحدة."
+  "sentinel.linked.5": "درع ربط خمس مسجات في حملة نصب وحدة."
+  "sentinel.linked.6": "درع ربط ست مسجات في حملة نصب وحدة."
+  "sentinel.linked.7": "درع ربط سبع مسجات في حملة نصب وحدة."
+  "sentinel.linked.8": "درع ربط ثمان مسجات في حملة نصب وحدة."
+  "sentinel.linked.9": "درع ربط تسع مسجات في حملة نصب وحدة."
+  "sentinel.linked.10": "درع ربط عشر مسجات في حملة نصب وحدة."
+  "sentinel.summary": "درع كتب ملخص بالعربي والإنجليزي."
+  "sentinel.draft": "درع جهّز مسودة طلب لإزالة الموقع."
   "sentinel.awaiting_approval": "ننتظر موافقة ضابط. ما يُرسل شي بدونها."
-  "sentinel.watching": "الحارس يظل يراقب أي بلاغات مشابهة."
-  "final.both_agents": "المحقق شيّك، والحارس ربطها وصار يتابع."
-  "sentinel.unavailable": "ما وصلت للحارس الحين، فما أعرف إذا فيه حملة."
-  "nothing_checked": "ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس."
+  "sentinel.watching": "درع يظل يراقب أي بلاغات مشابهة."
+  "final.both_agents": "بصير شيّك، ودرع ربطها وصار يتابع."
+  "sentinel.unavailable": "ما وصلت لدرع الحين، فما أعرف إذا فيه حملة."
+  "nothing_checked": "ما قدرنا نكمّل أي فحص، فما سلّمت شي لدرع."
   "mic.denied": "ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات."
   "voice.unavailable": "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."
-  "final.sentinel_unavailable": "المحقق شيّك، بس ما قدرت أوصل للحارس."
-  "final.sentinel_watching": "المحقق شيّك، والحارس يظل يراقب."
+  "final.sentinel_unavailable": "بصير شيّك، بس ما قدرت أوصل لدرع."
+  "final.sentinel_watching": "بصير شيّك، ودرع يظل يراقب."
   "sum.dangerous.1": "مسج وحدة منها خطر."
   "sum.suspicious.1": "مسج وحدة منها مشكوك فيها."
   "sum.clear.1": "مسج وحدة ما فيها علامات تحذير."
@@ -270,16 +270,16 @@ en:
   "of.8": "of eight."
   "of.9": "of nine."
   "of.10": "of ten."
-  "investigator.start.1": "The Investigator agent is checking the first message."
-  "investigator.start.2": "The Investigator agent is checking the second message."
-  "investigator.start.3": "The Investigator agent is checking the third message."
-  "investigator.start.4": "The Investigator agent is checking the fourth message."
-  "investigator.start.5": "The Investigator agent is checking the fifth message."
-  "investigator.start.6": "The Investigator agent is checking the sixth message."
-  "investigator.start.7": "The Investigator agent is checking the seventh message."
-  "investigator.start.8": "The Investigator agent is checking the eighth message."
-  "investigator.start.9": "The Investigator agent is checking the ninth message."
-  "investigator.start.10": "The Investigator agent is checking the tenth message."
+  "investigator.start.1": "Baseer, the Investigator, is checking the first message."
+  "investigator.start.2": "Baseer, the Investigator, is checking the second message."
+  "investigator.start.3": "Baseer, the Investigator, is checking the third message."
+  "investigator.start.4": "Baseer, the Investigator, is checking the fourth message."
+  "investigator.start.5": "Baseer, the Investigator, is checking the fifth message."
+  "investigator.start.6": "Baseer, the Investigator, is checking the sixth message."
+  "investigator.start.7": "Baseer, the Investigator, is checking the seventh message."
+  "investigator.start.8": "Baseer, the Investigator, is checking the eighth message."
+  "investigator.start.9": "Baseer, the Investigator, is checking the ninth message."
+  "investigator.start.10": "Baseer, the Investigator, is checking the tenth message."
   "investigator.lists": "Checking known scam lists."
   "investigator.address": "Checking the web address for look-alike tricks."
   "investigator.page": "Opening the page in our isolated browser. Nothing is typed."
@@ -393,27 +393,27 @@ en:
   "num.99": "ninety-nine"
   "num.100": "one hundred"
   "score.of": "out of one hundred."
-  "sentinel.handover": "Handing the results to the Sentinel agent."
-  "sentinel.linked.2": "The Sentinel linked two reports into one campaign."
-  "sentinel.linked.3": "The Sentinel linked three reports into one campaign."
-  "sentinel.linked.4": "The Sentinel linked four reports into one campaign."
-  "sentinel.linked.5": "The Sentinel linked five reports into one campaign."
-  "sentinel.linked.6": "The Sentinel linked six reports into one campaign."
-  "sentinel.linked.7": "The Sentinel linked seven reports into one campaign."
-  "sentinel.linked.8": "The Sentinel linked eight reports into one campaign."
-  "sentinel.linked.9": "The Sentinel linked nine reports into one campaign."
-  "sentinel.linked.10": "The Sentinel linked ten reports into one campaign."
-  "sentinel.summary": "The Sentinel wrote a summary in Arabic and English."
-  "sentinel.draft": "The Sentinel prepared a takedown request draft."
+  "sentinel.handover": "Handing the results to Dir, the Sentinel."
+  "sentinel.linked.2": "Dir linked two reports into one campaign."
+  "sentinel.linked.3": "Dir linked three reports into one campaign."
+  "sentinel.linked.4": "Dir linked four reports into one campaign."
+  "sentinel.linked.5": "Dir linked five reports into one campaign."
+  "sentinel.linked.6": "Dir linked six reports into one campaign."
+  "sentinel.linked.7": "Dir linked seven reports into one campaign."
+  "sentinel.linked.8": "Dir linked eight reports into one campaign."
+  "sentinel.linked.9": "Dir linked nine reports into one campaign."
+  "sentinel.linked.10": "Dir linked ten reports into one campaign."
+  "sentinel.summary": "Dir wrote a summary in Arabic and English."
+  "sentinel.draft": "Dir prepared a takedown request draft."
   "sentinel.awaiting_approval": "Waiting for an officer's approval. Nothing is sent without it."
-  "sentinel.watching": "The Sentinel keeps watching for similar reports."
-  "final.both_agents": "The Investigator checked, and the Sentinel linked them and follows up."
-  "sentinel.unavailable": "I couldn't reach the Sentinel right now, so I can't say whether there is a campaign."
-  "nothing_checked": "No check could be completed, so I handed nothing to the Sentinel."
+  "sentinel.watching": "Dir keeps watching for similar reports."
+  "final.both_agents": "Baseer checked, and Dir linked them and follows up."
+  "sentinel.unavailable": "I couldn't reach the Sentinel (Dir) right now, so I can't say whether there is a campaign."
+  "nothing_checked": "No check could be completed, so I handed nothing to Dir."
   "mic.denied": "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box."
   "voice.unavailable": "The voice service isn't available right now. Please use the paste box."
-  "final.sentinel_unavailable": "The Investigator checked, but I couldn't reach the Sentinel."
-  "final.sentinel_watching": "The Investigator checked, and the Sentinel keeps watching."
+  "final.sentinel_unavailable": "Baseer checked, but I couldn't reach Dir."
+  "final.sentinel_watching": "Baseer checked, and Dir keeps watching."
   "sum.dangerous.1": "One message is dangerous."
   "sum.suspicious.1": "One message looks suspicious."
   "sum.clear.1": "One message showed no warning signs."
@@ -504,16 +504,16 @@ clips:
   - {id: "ar_ae.of.8", lang: ar_ae, text: "من ثمان."}
   - {id: "ar_ae.of.9", lang: ar_ae, text: "من تسع."}
   - {id: "ar_ae.of.10", lang: ar_ae, text: "من عشر."}
-  - {id: "ar_ae.investigator.start.1", lang: ar_ae, text: "المحقق يشيّك المسج الأول."}
-  - {id: "ar_ae.investigator.start.2", lang: ar_ae, text: "المحقق يشيّك المسج الثاني."}
-  - {id: "ar_ae.investigator.start.3", lang: ar_ae, text: "المحقق يشيّك المسج الثالث."}
-  - {id: "ar_ae.investigator.start.4", lang: ar_ae, text: "المحقق يشيّك المسج الرابع."}
-  - {id: "ar_ae.investigator.start.5", lang: ar_ae, text: "المحقق يشيّك المسج الخامس."}
-  - {id: "ar_ae.investigator.start.6", lang: ar_ae, text: "المحقق يشيّك المسج السادس."}
-  - {id: "ar_ae.investigator.start.7", lang: ar_ae, text: "المحقق يشيّك المسج السابع."}
-  - {id: "ar_ae.investigator.start.8", lang: ar_ae, text: "المحقق يشيّك المسج الثامن."}
-  - {id: "ar_ae.investigator.start.9", lang: ar_ae, text: "المحقق يشيّك المسج التاسع."}
-  - {id: "ar_ae.investigator.start.10", lang: ar_ae, text: "المحقق يشيّك المسج العاشر."}
+  - {id: "ar_ae.investigator.start.1", lang: ar_ae, text: "بصير يشيّك على المسج الأول."}
+  - {id: "ar_ae.investigator.start.2", lang: ar_ae, text: "بصير يشيّك على المسج الثاني."}
+  - {id: "ar_ae.investigator.start.3", lang: ar_ae, text: "بصير يشيّك على المسج الثالث."}
+  - {id: "ar_ae.investigator.start.4", lang: ar_ae, text: "بصير يشيّك على المسج الرابع."}
+  - {id: "ar_ae.investigator.start.5", lang: ar_ae, text: "بصير يشيّك على المسج الخامس."}
+  - {id: "ar_ae.investigator.start.6", lang: ar_ae, text: "بصير يشيّك على المسج السادس."}
+  - {id: "ar_ae.investigator.start.7", lang: ar_ae, text: "بصير يشيّك على المسج السابع."}
+  - {id: "ar_ae.investigator.start.8", lang: ar_ae, text: "بصير يشيّك على المسج الثامن."}
+  - {id: "ar_ae.investigator.start.9", lang: ar_ae, text: "بصير يشيّك على المسج التاسع."}
+  - {id: "ar_ae.investigator.start.10", lang: ar_ae, text: "بصير يشيّك على المسج العاشر."}
   - {id: "ar_ae.investigator.lists", lang: ar_ae, text: "أطابقه مع قوائم النصب المعروفة."}
   - {id: "ar_ae.investigator.address", lang: ar_ae, text: "أشوف عنوان الموقع، يمكن فيه تشابه مخادع."}
   - {id: "ar_ae.investigator.page", lang: ar_ae, text: "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي."}
@@ -627,27 +627,27 @@ clips:
   - {id: "ar_ae.num.99", lang: ar_ae, text: "تسعة وتسعين"}
   - {id: "ar_ae.num.100", lang: ar_ae, text: "مية"}
   - {id: "ar_ae.score.of", lang: ar_ae, text: "من مية."}
-  - {id: "ar_ae.sentinel.handover", lang: ar_ae, text: "أسلّم النتايج للحارس."}
-  - {id: "ar_ae.sentinel.linked.2", lang: ar_ae, text: "الحارس ربط مسجين في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.linked.3", lang: ar_ae, text: "الحارس ربط ثلاث مسجات في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.linked.4", lang: ar_ae, text: "الحارس ربط أربع مسجات في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.linked.5", lang: ar_ae, text: "الحارس ربط خمس مسجات في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.linked.6", lang: ar_ae, text: "الحارس ربط ست مسجات في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.linked.7", lang: ar_ae, text: "الحارس ربط سبع مسجات في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.linked.8", lang: ar_ae, text: "الحارس ربط ثمان مسجات في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.linked.9", lang: ar_ae, text: "الحارس ربط تسع مسجات في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.linked.10", lang: ar_ae, text: "الحارس ربط عشر مسجات في حملة نصب وحدة."}
-  - {id: "ar_ae.sentinel.summary", lang: ar_ae, text: "الحارس كتب ملخص بالعربي والإنجليزي."}
-  - {id: "ar_ae.sentinel.draft", lang: ar_ae, text: "الحارس جهّز مسودة طلب لإزالة الموقع."}
+  - {id: "ar_ae.sentinel.handover", lang: ar_ae, text: "أسلّم النتايج لدرع."}
+  - {id: "ar_ae.sentinel.linked.2", lang: ar_ae, text: "درع ربط مسجين في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.3", lang: ar_ae, text: "درع ربط ثلاث مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.4", lang: ar_ae, text: "درع ربط أربع مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.5", lang: ar_ae, text: "درع ربط خمس مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.6", lang: ar_ae, text: "درع ربط ست مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.7", lang: ar_ae, text: "درع ربط سبع مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.8", lang: ar_ae, text: "درع ربط ثمان مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.9", lang: ar_ae, text: "درع ربط تسع مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.linked.10", lang: ar_ae, text: "درع ربط عشر مسجات في حملة نصب وحدة."}
+  - {id: "ar_ae.sentinel.summary", lang: ar_ae, text: "درع كتب ملخص بالعربي والإنجليزي."}
+  - {id: "ar_ae.sentinel.draft", lang: ar_ae, text: "درع جهّز مسودة طلب لإزالة الموقع."}
   - {id: "ar_ae.sentinel.awaiting_approval", lang: ar_ae, text: "ننتظر موافقة ضابط. ما يُرسل شي بدونها."}
-  - {id: "ar_ae.sentinel.watching", lang: ar_ae, text: "الحارس يظل يراقب أي بلاغات مشابهة."}
-  - {id: "ar_ae.final.both_agents", lang: ar_ae, text: "المحقق شيّك، والحارس ربطها وصار يتابع."}
-  - {id: "ar_ae.sentinel.unavailable", lang: ar_ae, text: "ما وصلت للحارس الحين، فما أعرف إذا فيه حملة."}
-  - {id: "ar_ae.nothing_checked", lang: ar_ae, text: "ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس."}
+  - {id: "ar_ae.sentinel.watching", lang: ar_ae, text: "درع يظل يراقب أي بلاغات مشابهة."}
+  - {id: "ar_ae.final.both_agents", lang: ar_ae, text: "بصير شيّك، ودرع ربطها وصار يتابع."}
+  - {id: "ar_ae.sentinel.unavailable", lang: ar_ae, text: "ما وصلت لدرع الحين، فما أعرف إذا فيه حملة."}
+  - {id: "ar_ae.nothing_checked", lang: ar_ae, text: "ما قدرنا نكمّل أي فحص، فما سلّمت شي لدرع."}
   - {id: "ar_ae.mic.denied", lang: ar_ae, text: "ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات."}
   - {id: "ar_ae.voice.unavailable", lang: ar_ae, text: "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."}
-  - {id: "ar_ae.final.sentinel_unavailable", lang: ar_ae, text: "المحقق شيّك، بس ما قدرت أوصل للحارس."}
-  - {id: "ar_ae.final.sentinel_watching", lang: ar_ae, text: "المحقق شيّك، والحارس يظل يراقب."}
+  - {id: "ar_ae.final.sentinel_unavailable", lang: ar_ae, text: "بصير شيّك، بس ما قدرت أوصل لدرع."}
+  - {id: "ar_ae.final.sentinel_watching", lang: ar_ae, text: "بصير شيّك، ودرع يظل يراقب."}
   - {id: "ar_ae.sum.dangerous.1", lang: ar_ae, text: "مسج وحدة منها خطر."}
   - {id: "ar_ae.sum.suspicious.1", lang: ar_ae, text: "مسج وحدة منها مشكوك فيها."}
   - {id: "ar_ae.sum.clear.1", lang: ar_ae, text: "مسج وحدة ما فيها علامات تحذير."}
@@ -737,16 +737,16 @@ clips:
   - {id: "en.of.8", lang: en, text: "of eight."}
   - {id: "en.of.9", lang: en, text: "of nine."}
   - {id: "en.of.10", lang: en, text: "of ten."}
-  - {id: "en.investigator.start.1", lang: en, text: "The Investigator agent is checking the first message."}
-  - {id: "en.investigator.start.2", lang: en, text: "The Investigator agent is checking the second message."}
-  - {id: "en.investigator.start.3", lang: en, text: "The Investigator agent is checking the third message."}
-  - {id: "en.investigator.start.4", lang: en, text: "The Investigator agent is checking the fourth message."}
-  - {id: "en.investigator.start.5", lang: en, text: "The Investigator agent is checking the fifth message."}
-  - {id: "en.investigator.start.6", lang: en, text: "The Investigator agent is checking the sixth message."}
-  - {id: "en.investigator.start.7", lang: en, text: "The Investigator agent is checking the seventh message."}
-  - {id: "en.investigator.start.8", lang: en, text: "The Investigator agent is checking the eighth message."}
-  - {id: "en.investigator.start.9", lang: en, text: "The Investigator agent is checking the ninth message."}
-  - {id: "en.investigator.start.10", lang: en, text: "The Investigator agent is checking the tenth message."}
+  - {id: "en.investigator.start.1", lang: en, text: "Baseer, the Investigator, is checking the first message."}
+  - {id: "en.investigator.start.2", lang: en, text: "Baseer, the Investigator, is checking the second message."}
+  - {id: "en.investigator.start.3", lang: en, text: "Baseer, the Investigator, is checking the third message."}
+  - {id: "en.investigator.start.4", lang: en, text: "Baseer, the Investigator, is checking the fourth message."}
+  - {id: "en.investigator.start.5", lang: en, text: "Baseer, the Investigator, is checking the fifth message."}
+  - {id: "en.investigator.start.6", lang: en, text: "Baseer, the Investigator, is checking the sixth message."}
+  - {id: "en.investigator.start.7", lang: en, text: "Baseer, the Investigator, is checking the seventh message."}
+  - {id: "en.investigator.start.8", lang: en, text: "Baseer, the Investigator, is checking the eighth message."}
+  - {id: "en.investigator.start.9", lang: en, text: "Baseer, the Investigator, is checking the ninth message."}
+  - {id: "en.investigator.start.10", lang: en, text: "Baseer, the Investigator, is checking the tenth message."}
   - {id: "en.investigator.lists", lang: en, text: "Checking known scam lists."}
   - {id: "en.investigator.address", lang: en, text: "Checking the web address for look-alike tricks."}
   - {id: "en.investigator.page", lang: en, text: "Opening the page in our isolated browser. Nothing is typed."}
@@ -860,27 +860,27 @@ clips:
   - {id: "en.num.99", lang: en, text: "ninety-nine"}
   - {id: "en.num.100", lang: en, text: "one hundred"}
   - {id: "en.score.of", lang: en, text: "out of one hundred."}
-  - {id: "en.sentinel.handover", lang: en, text: "Handing the results to the Sentinel agent."}
-  - {id: "en.sentinel.linked.2", lang: en, text: "The Sentinel linked two reports into one campaign."}
-  - {id: "en.sentinel.linked.3", lang: en, text: "The Sentinel linked three reports into one campaign."}
-  - {id: "en.sentinel.linked.4", lang: en, text: "The Sentinel linked four reports into one campaign."}
-  - {id: "en.sentinel.linked.5", lang: en, text: "The Sentinel linked five reports into one campaign."}
-  - {id: "en.sentinel.linked.6", lang: en, text: "The Sentinel linked six reports into one campaign."}
-  - {id: "en.sentinel.linked.7", lang: en, text: "The Sentinel linked seven reports into one campaign."}
-  - {id: "en.sentinel.linked.8", lang: en, text: "The Sentinel linked eight reports into one campaign."}
-  - {id: "en.sentinel.linked.9", lang: en, text: "The Sentinel linked nine reports into one campaign."}
-  - {id: "en.sentinel.linked.10", lang: en, text: "The Sentinel linked ten reports into one campaign."}
-  - {id: "en.sentinel.summary", lang: en, text: "The Sentinel wrote a summary in Arabic and English."}
-  - {id: "en.sentinel.draft", lang: en, text: "The Sentinel prepared a takedown request draft."}
+  - {id: "en.sentinel.handover", lang: en, text: "Handing the results to Dir, the Sentinel."}
+  - {id: "en.sentinel.linked.2", lang: en, text: "Dir linked two reports into one campaign."}
+  - {id: "en.sentinel.linked.3", lang: en, text: "Dir linked three reports into one campaign."}
+  - {id: "en.sentinel.linked.4", lang: en, text: "Dir linked four reports into one campaign."}
+  - {id: "en.sentinel.linked.5", lang: en, text: "Dir linked five reports into one campaign."}
+  - {id: "en.sentinel.linked.6", lang: en, text: "Dir linked six reports into one campaign."}
+  - {id: "en.sentinel.linked.7", lang: en, text: "Dir linked seven reports into one campaign."}
+  - {id: "en.sentinel.linked.8", lang: en, text: "Dir linked eight reports into one campaign."}
+  - {id: "en.sentinel.linked.9", lang: en, text: "Dir linked nine reports into one campaign."}
+  - {id: "en.sentinel.linked.10", lang: en, text: "Dir linked ten reports into one campaign."}
+  - {id: "en.sentinel.summary", lang: en, text: "Dir wrote a summary in Arabic and English."}
+  - {id: "en.sentinel.draft", lang: en, text: "Dir prepared a takedown request draft."}
   - {id: "en.sentinel.awaiting_approval", lang: en, text: "Waiting for an officer's approval. Nothing is sent without it."}
-  - {id: "en.sentinel.watching", lang: en, text: "The Sentinel keeps watching for similar reports."}
-  - {id: "en.final.both_agents", lang: en, text: "The Investigator checked, and the Sentinel linked them and follows up."}
-  - {id: "en.sentinel.unavailable", lang: en, text: "I couldn't reach the Sentinel right now, so I can't say whether there is a campaign."}
-  - {id: "en.nothing_checked", lang: en, text: "No check could be completed, so I handed nothing to the Sentinel."}
+  - {id: "en.sentinel.watching", lang: en, text: "Dir keeps watching for similar reports."}
+  - {id: "en.final.both_agents", lang: en, text: "Baseer checked, and Dir linked them and follows up."}
+  - {id: "en.sentinel.unavailable", lang: en, text: "I couldn't reach the Sentinel (Dir) right now, so I can't say whether there is a campaign."}
+  - {id: "en.nothing_checked", lang: en, text: "No check could be completed, so I handed nothing to Dir."}
   - {id: "en.mic.denied", lang: en, text: "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box."}
   - {id: "en.voice.unavailable", lang: en, text: "The voice service isn't available right now. Please use the paste box."}
-  - {id: "en.final.sentinel_unavailable", lang: en, text: "The Investigator checked, but I couldn't reach the Sentinel."}
-  - {id: "en.final.sentinel_watching", lang: en, text: "The Investigator checked, and the Sentinel keeps watching."}
+  - {id: "en.final.sentinel_unavailable", lang: en, text: "Baseer checked, but I couldn't reach Dir."}
+  - {id: "en.final.sentinel_watching", lang: en, text: "Baseer checked, and Dir keeps watching."}
   - {id: "en.sum.dangerous.1", lang: en, text: "One message is dangerous."}
   - {id: "en.sum.suspicious.1", lang: en, text: "One message looks suspicious."}
   - {id: "en.sum.clear.1", lang: en, text: "One message showed no warning signs."}

@@ -3,1824 +3,1864 @@
     "id": "en.wake.ack",
     "file": "en.wake.ack.mp3",
     "text": "Yes, I'm listening.",
-    "ms": 1788,
+    "ms": 936,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.clip.reading",
     "file": "en.clip.reading.mp3",
     "text": "One moment, reading what you copied.",
-    "ms": 2461,
+    "ms": 1598,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.1",
     "file": "en.found.1.mp3",
     "text": "I found one message.",
-    "ms": 1727,
+    "ms": 1081,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.2",
     "file": "en.found.2.mp3",
     "text": "I found two messages.",
-    "ms": 1896,
+    "ms": 1237,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.3",
     "file": "en.found.3.mp3",
     "text": "I found three messages.",
-    "ms": 2019,
+    "ms": 1217,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.4",
     "file": "en.found.4.mp3",
     "text": "I found four messages.",
-    "ms": 2044,
+    "ms": 1227,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.5",
     "file": "en.found.5.mp3",
     "text": "I found five messages.",
-    "ms": 2117,
+    "ms": 1267,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.6",
     "file": "en.found.6.mp3",
     "text": "I found six messages.",
-    "ms": 2190,
+    "ms": 1291,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.7",
     "file": "en.found.7.mp3",
     "text": "I found seven messages.",
-    "ms": 2241,
+    "ms": 1340,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.8",
     "file": "en.found.8.mp3",
     "text": "I found eight messages.",
-    "ms": 1894,
+    "ms": 1192,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.9",
     "file": "en.found.9.mp3",
     "text": "I found nine messages.",
-    "ms": 1870,
+    "ms": 1204,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.found.10",
     "file": "en.found.10.mp3",
     "text": "I found ten messages.",
-    "ms": 2117,
+    "ms": 1252,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.1",
     "file": "en.checking.1.mp3",
     "text": "Checking the first message",
-    "ms": 1893,
+    "ms": 1319,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.2",
     "file": "en.checking.2.mp3",
     "text": "Checking the second message",
-    "ms": 1834,
+    "ms": 1335,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.3",
     "file": "en.checking.3.mp3",
     "text": "Checking the third message",
-    "ms": 1873,
+    "ms": 1334,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.4",
     "file": "en.checking.4.mp3",
     "text": "Checking the fourth message",
-    "ms": 1921,
+    "ms": 1294,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.5",
     "file": "en.checking.5.mp3",
     "text": "Checking the fifth message",
-    "ms": 1911,
+    "ms": 1309,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.6",
     "file": "en.checking.6.mp3",
     "text": "Checking the sixth message",
-    "ms": 1896,
+    "ms": 1337,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.7",
     "file": "en.checking.7.mp3",
     "text": "Checking the seventh message",
-    "ms": 1945,
+    "ms": 1392,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.8",
     "file": "en.checking.8.mp3",
     "text": "Checking the eighth message",
-    "ms": 1935,
+    "ms": 1275,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.9",
     "file": "en.checking.9.mp3",
     "text": "Checking the ninth message",
-    "ms": 1912,
+    "ms": 1326,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.checking.10",
     "file": "en.checking.10.mp3",
     "text": "Checking the tenth message",
-    "ms": 2008,
+    "ms": 1293,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.2",
     "file": "en.of.2.mp3",
     "text": "of two.",
-    "ms": 937,
+    "ms": 593,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.3",
     "file": "en.of.3.mp3",
     "text": "of three.",
-    "ms": 1031,
+    "ms": 642,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.4",
     "file": "en.of.4.mp3",
     "text": "of four.",
-    "ms": 1032,
+    "ms": 616,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.5",
     "file": "en.of.5.mp3",
     "text": "of five.",
-    "ms": 991,
+    "ms": 642,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.6",
     "file": "en.of.6.mp3",
     "text": "of six.",
-    "ms": 1011,
+    "ms": 665,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.7",
     "file": "en.of.7.mp3",
     "text": "of seven.",
-    "ms": 1058,
+    "ms": 666,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.8",
     "file": "en.of.8.mp3",
     "text": "of eight.",
-    "ms": 822,
+    "ms": 562,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.9",
     "file": "en.of.9.mp3",
     "text": "of nine.",
-    "ms": 985,
+    "ms": 635,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.of.10",
     "file": "en.of.10.mp3",
     "text": "of ten.",
-    "ms": 1017,
+    "ms": 594,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.1",
     "file": "en.investigator.start.1.mp3",
-    "text": "The Investigator agent is checking the first message.",
-    "ms": 3703,
+    "text": "Baseer, the Investigator, is checking the first message.",
+    "ms": 3035,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.2",
     "file": "en.investigator.start.2.mp3",
-    "text": "The Investigator agent is checking the second message.",
-    "ms": 3802,
+    "text": "Baseer, the Investigator, is checking the second message.",
+    "ms": 3160,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.3",
     "file": "en.investigator.start.3.mp3",
-    "text": "The Investigator agent is checking the third message.",
-    "ms": 3625,
+    "text": "Baseer, the Investigator, is checking the third message.",
+    "ms": 2990,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.4",
     "file": "en.investigator.start.4.mp3",
-    "text": "The Investigator agent is checking the fourth message.",
-    "ms": 3604,
+    "text": "Baseer, the Investigator, is checking the fourth message.",
+    "ms": 2966,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.5",
     "file": "en.investigator.start.5.mp3",
-    "text": "The Investigator agent is checking the fifth message.",
-    "ms": 3628,
+    "text": "Baseer, the Investigator, is checking the fifth message.",
+    "ms": 2965,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.6",
     "file": "en.investigator.start.6.mp3",
-    "text": "The Investigator agent is checking the sixth message.",
-    "ms": 3727,
+    "text": "Baseer, the Investigator, is checking the sixth message.",
+    "ms": 3008,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.7",
     "file": "en.investigator.start.7.mp3",
-    "text": "The Investigator agent is checking the seventh message.",
-    "ms": 3777,
+    "text": "Baseer, the Investigator, is checking the seventh message.",
+    "ms": 3210,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.8",
     "file": "en.investigator.start.8.mp3",
-    "text": "The Investigator agent is checking the eighth message.",
-    "ms": 3602,
+    "text": "Baseer, the Investigator, is checking the eighth message.",
+    "ms": 2989,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.9",
     "file": "en.investigator.start.9.mp3",
-    "text": "The Investigator agent is checking the ninth message.",
-    "ms": 3702,
+    "text": "Baseer, the Investigator, is checking the ninth message.",
+    "ms": 2990,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.start.10",
     "file": "en.investigator.start.10.mp3",
-    "text": "The Investigator agent is checking the tenth message.",
-    "ms": 3700,
+    "text": "Baseer, the Investigator, is checking the tenth message.",
+    "ms": 3041,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.lists",
     "file": "en.investigator.lists.mp3",
     "text": "Checking known scam lists.",
-    "ms": 2111,
+    "ms": 1277,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.address",
     "file": "en.investigator.address.mp3",
     "text": "Checking the web address for look-alike tricks.",
-    "ms": 2770,
+    "ms": 1978,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.page",
     "file": "en.investigator.page.mp3",
     "text": "Opening the page in our isolated browser. Nothing is typed.",
-    "ms": 4102,
+    "ms": 3478,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.ai_second_look_local",
     "file": "en.investigator.ai_second_look_local.mp3",
     "text": "AI second look, with our local model.",
-    "ms": 2846,
+    "ms": 1989,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.ai_second_look_cloud",
     "file": "en.investigator.ai_second_look_cloud.mp3",
     "text": "AI second look, with Claude.",
-    "ms": 2372,
+    "ms": 1413,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.rules_only",
     "file": "en.investigator.rules_only.mp3",
     "text": "The rules decided, without AI.",
-    "ms": 2743,
+    "ms": 1710,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.arbiter_result.dangerous",
     "file": "en.investigator.arbiter_result.dangerous.mp3",
     "text": "The arbiter's decision: dangerous.",
-    "ms": 2652,
+    "ms": 1858,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.arbiter_result.suspicious",
     "file": "en.investigator.arbiter_result.suspicious.mp3",
     "text": "The arbiter's decision: suspicious.",
-    "ms": 2801,
+    "ms": 1899,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.arbiter_result.no_warning_signs",
     "file": "en.investigator.arbiter_result.no_warning_signs.mp3",
     "text": "The arbiter's decision: no warning signs found.",
-    "ms": 3351,
+    "ms": 2581,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.arbiter_result.could_not_check",
     "file": "en.investigator.arbiter_result.could_not_check.mp3",
     "text": "The message could not be checked.",
-    "ms": 2293,
+    "ms": 1390,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.score.lead",
     "file": "en.score.lead.mp3",
     "text": "The score is",
-    "ms": 1100,
+    "ms": 709,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.0",
     "file": "en.num.0.mp3",
     "text": "zero",
-    "ms": 741,
+    "ms": 523,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.1",
     "file": "en.num.1.mp3",
     "text": "one",
-    "ms": 650,
+    "ms": 447,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.2",
     "file": "en.num.2.mp3",
     "text": "two",
-    "ms": 566,
+    "ms": 404,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.3",
     "file": "en.num.3.mp3",
     "text": "three",
-    "ms": 639,
+    "ms": 485,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.4",
     "file": "en.num.4.mp3",
     "text": "four",
-    "ms": 653,
+    "ms": 503,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.5",
     "file": "en.num.5.mp3",
     "text": "five",
-    "ms": 644,
+    "ms": 433,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.6",
     "file": "en.num.6.mp3",
     "text": "six",
-    "ms": 713,
+    "ms": 552,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.7",
     "file": "en.num.7.mp3",
     "text": "seven",
-    "ms": 718,
+    "ms": 570,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.8",
     "file": "en.num.8.mp3",
     "text": "eight",
-    "ms": 528,
+    "ms": 441,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.9",
     "file": "en.num.9.mp3",
     "text": "nine",
-    "ms": 696,
+    "ms": 539,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.10",
     "file": "en.num.10.mp3",
     "text": "ten",
-    "ms": 649,
+    "ms": 466,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.11",
     "file": "en.num.11.mp3",
     "text": "eleven",
-    "ms": 770,
+    "ms": 578,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.12",
     "file": "en.num.12.mp3",
     "text": "twelve",
-    "ms": 690,
+    "ms": 505,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.13",
     "file": "en.num.13.mp3",
     "text": "thirteen",
-    "ms": 944,
+    "ms": 659,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.14",
     "file": "en.num.14.mp3",
     "text": "fourteen",
-    "ms": 897,
+    "ms": 663,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.15",
     "file": "en.num.15.mp3",
     "text": "fifteen",
-    "ms": 895,
+    "ms": 654,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.16",
     "file": "en.num.16.mp3",
     "text": "sixteen",
-    "ms": 892,
+    "ms": 716,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.17",
     "file": "en.num.17.mp3",
     "text": "seventeen",
-    "ms": 966,
+    "ms": 775,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.18",
     "file": "en.num.18.mp3",
     "text": "eighteen",
-    "ms": 872,
+    "ms": 631,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.19",
     "file": "en.num.19.mp3",
     "text": "nineteen",
-    "ms": 1020,
+    "ms": 669,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.20",
     "file": "en.num.20.mp3",
     "text": "twenty",
-    "ms": 732,
+    "ms": 624,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.21",
     "file": "en.num.21.mp3",
     "text": "twenty-one",
-    "ms": 854,
+    "ms": 714,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.22",
     "file": "en.num.22.mp3",
     "text": "twenty-two",
-    "ms": 940,
+    "ms": 770,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.23",
     "file": "en.num.23.mp3",
     "text": "twenty-three",
-    "ms": 1015,
+    "ms": 780,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.24",
     "file": "en.num.24.mp3",
     "text": "twenty-four",
-    "ms": 852,
+    "ms": 689,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.25",
     "file": "en.num.25.mp3",
     "text": "twenty-five",
-    "ms": 1011,
+    "ms": 784,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.26",
     "file": "en.num.26.mp3",
     "text": "twenty-six",
-    "ms": 1107,
+    "ms": 751,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.27",
     "file": "en.num.27.mp3",
     "text": "twenty-seven",
-    "ms": 1068,
+    "ms": 788,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.28",
     "file": "en.num.28.mp3",
     "text": "twenty-eight",
-    "ms": 917,
+    "ms": 624,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.29",
     "file": "en.num.29.mp3",
     "text": "twenty-nine",
-    "ms": 905,
+    "ms": 676,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.30",
     "file": "en.num.30.mp3",
     "text": "thirty",
-    "ms": 740,
+    "ms": 555,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.31",
     "file": "en.num.31.mp3",
     "text": "thirty-one",
-    "ms": 920,
+    "ms": 677,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.32",
     "file": "en.num.32.mp3",
     "text": "thirty-two",
-    "ms": 926,
+    "ms": 750,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.33",
     "file": "en.num.33.mp3",
     "text": "thirty-three",
-    "ms": 1069,
+    "ms": 744,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.34",
     "file": "en.num.34.mp3",
     "text": "thirty-four",
-    "ms": 958,
+    "ms": 683,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.35",
     "file": "en.num.35.mp3",
     "text": "thirty-five",
-    "ms": 1016,
+    "ms": 701,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.36",
     "file": "en.num.36.mp3",
     "text": "thirty-six",
-    "ms": 1083,
+    "ms": 736,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.37",
     "file": "en.num.37.mp3",
     "text": "thirty-seven",
-    "ms": 1143,
+    "ms": 732,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.38",
     "file": "en.num.38.mp3",
     "text": "thirty-eight",
-    "ms": 911,
+    "ms": 685,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.39",
     "file": "en.num.39.mp3",
     "text": "thirty-nine",
-    "ms": 970,
+    "ms": 654,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.40",
     "file": "en.num.40.mp3",
     "text": "forty",
-    "ms": 741,
+    "ms": 590,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.41",
     "file": "en.num.41.mp3",
     "text": "forty-one",
-    "ms": 872,
+    "ms": 719,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.42",
     "file": "en.num.42.mp3",
     "text": "forty-two",
-    "ms": 912,
+    "ms": 714,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.43",
     "file": "en.num.43.mp3",
     "text": "forty-three",
-    "ms": 1024,
+    "ms": 771,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.44",
     "file": "en.num.44.mp3",
     "text": "forty-four",
-    "ms": 891,
+    "ms": 704,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.45",
     "file": "en.num.45.mp3",
     "text": "forty-five",
-    "ms": 993,
+    "ms": 754,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.46",
     "file": "en.num.46.mp3",
     "text": "forty-six",
-    "ms": 1062,
+    "ms": 764,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.47",
     "file": "en.num.47.mp3",
     "text": "forty-seven",
-    "ms": 1121,
+    "ms": 815,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.48",
     "file": "en.num.48.mp3",
     "text": "forty-eight",
-    "ms": 912,
+    "ms": 679,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.49",
     "file": "en.num.49.mp3",
     "text": "forty-nine",
-    "ms": 921,
+    "ms": 660,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.50",
     "file": "en.num.50.mp3",
     "text": "fifty",
-    "ms": 729,
+    "ms": 606,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.51",
     "file": "en.num.51.mp3",
     "text": "fifty-one",
-    "ms": 881,
+    "ms": 675,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.52",
     "file": "en.num.52.mp3",
     "text": "fifty-two",
-    "ms": 888,
+    "ms": 780,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.53",
     "file": "en.num.53.mp3",
     "text": "fifty-three",
-    "ms": 999,
+    "ms": 762,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.54",
     "file": "en.num.54.mp3",
     "text": "fifty-four",
-    "ms": 923,
+    "ms": 715,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.55",
     "file": "en.num.55.mp3",
     "text": "fifty-five",
-    "ms": 964,
+    "ms": 750,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.56",
     "file": "en.num.56.mp3",
     "text": "fifty-six",
-    "ms": 1059,
+    "ms": 767,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.57",
     "file": "en.num.57.mp3",
     "text": "fifty-seven",
-    "ms": 1171,
+    "ms": 828,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.58",
     "file": "en.num.58.mp3",
     "text": "fifty-eight",
-    "ms": 888,
+    "ms": 676,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.59",
     "file": "en.num.59.mp3",
     "text": "fifty-nine",
-    "ms": 905,
+    "ms": 700,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.60",
     "file": "en.num.60.mp3",
     "text": "sixty",
-    "ms": 793,
+    "ms": 668,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.61",
     "file": "en.num.61.mp3",
     "text": "sixty-one",
-    "ms": 943,
+    "ms": 718,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.62",
     "file": "en.num.62.mp3",
     "text": "sixty-two",
-    "ms": 891,
+    "ms": 791,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.63",
     "file": "en.num.63.mp3",
     "text": "sixty-three",
-    "ms": 965,
+    "ms": 786,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.64",
     "file": "en.num.64.mp3",
     "text": "sixty-four",
-    "ms": 865,
+    "ms": 748,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.65",
     "file": "en.num.65.mp3",
     "text": "sixty-five",
-    "ms": 1009,
+    "ms": 802,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.66",
     "file": "en.num.66.mp3",
     "text": "sixty-six",
-    "ms": 1067,
+    "ms": 794,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.67",
     "file": "en.num.67.mp3",
     "text": "sixty-seven",
-    "ms": 1115,
+    "ms": 845,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.68",
     "file": "en.num.68.mp3",
     "text": "sixty-eight",
-    "ms": 901,
+    "ms": 664,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.69",
     "file": "en.num.69.mp3",
     "text": "sixty-nine",
-    "ms": 941,
+    "ms": 729,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.70",
     "file": "en.num.70.mp3",
     "text": "seventy",
-    "ms": 843,
+    "ms": 687,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.71",
     "file": "en.num.71.mp3",
     "text": "seventy-one",
-    "ms": 943,
+    "ms": 819,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.72",
     "file": "en.num.72.mp3",
     "text": "seventy-two",
-    "ms": 1014,
+    "ms": 893,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.73",
     "file": "en.num.73.mp3",
     "text": "seventy-three",
-    "ms": 1065,
+    "ms": 889,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.74",
     "file": "en.num.74.mp3",
     "text": "seventy-four",
-    "ms": 942,
+    "ms": 820,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.75",
     "file": "en.num.75.mp3",
     "text": "seventy-five",
-    "ms": 1059,
+    "ms": 864,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.76",
     "file": "en.num.76.mp3",
     "text": "seventy-six",
-    "ms": 1132,
+    "ms": 850,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.77",
     "file": "en.num.77.mp3",
     "text": "seventy-seven",
-    "ms": 1242,
+    "ms": 889,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.78",
     "file": "en.num.78.mp3",
     "text": "seventy-eight",
-    "ms": 963,
+    "ms": 727,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.79",
     "file": "en.num.79.mp3",
     "text": "seventy-nine",
-    "ms": 968,
+    "ms": 794,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.80",
     "file": "en.num.80.mp3",
     "text": "eighty",
-    "ms": 690,
+    "ms": 527,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.81",
     "file": "en.num.81.mp3",
     "text": "eighty-one",
-    "ms": 825,
+    "ms": 621,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.82",
     "file": "en.num.82.mp3",
     "text": "eighty-two",
-    "ms": 896,
+    "ms": 681,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.83",
     "file": "en.num.83.mp3",
     "text": "eighty-three",
-    "ms": 1045,
+    "ms": 716,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.84",
     "file": "en.num.84.mp3",
     "text": "eighty-four",
-    "ms": 898,
+    "ms": 633,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.85",
     "file": "en.num.85.mp3",
     "text": "eighty-five",
-    "ms": 960,
+    "ms": 723,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.86",
     "file": "en.num.86.mp3",
     "text": "eighty-six",
-    "ms": 1059,
+    "ms": 699,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.87",
     "file": "en.num.87.mp3",
     "text": "eighty-seven",
-    "ms": 1095,
+    "ms": 707,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.88",
     "file": "en.num.88.mp3",
     "text": "eighty-eight",
-    "ms": 845,
+    "ms": 598,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.89",
     "file": "en.num.89.mp3",
     "text": "eighty-nine",
-    "ms": 921,
+    "ms": 660,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.90",
     "file": "en.num.90.mp3",
     "text": "ninety",
-    "ms": 740,
+    "ms": 598,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.91",
     "file": "en.num.91.mp3",
     "text": "ninety-one",
-    "ms": 915,
+    "ms": 703,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.92",
     "file": "en.num.92.mp3",
     "text": "ninety-two",
-    "ms": 1022,
+    "ms": 730,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.93",
     "file": "en.num.93.mp3",
     "text": "ninety-three",
-    "ms": 1093,
+    "ms": 764,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.94",
     "file": "en.num.94.mp3",
     "text": "ninety-four",
-    "ms": 967,
+    "ms": 683,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.95",
     "file": "en.num.95.mp3",
     "text": "ninety-five",
-    "ms": 1067,
+    "ms": 751,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.96",
     "file": "en.num.96.mp3",
     "text": "ninety-six",
-    "ms": 1152,
+    "ms": 758,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.97",
     "file": "en.num.97.mp3",
     "text": "ninety-seven",
-    "ms": 1218,
+    "ms": 790,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.98",
     "file": "en.num.98.mp3",
     "text": "ninety-eight",
-    "ms": 969,
+    "ms": 658,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.99",
     "file": "en.num.99.mp3",
     "text": "ninety-nine",
-    "ms": 970,
+    "ms": 666,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.num.100",
     "file": "en.num.100.mp3",
     "text": "one hundred",
-    "ms": 1096,
+    "ms": 768,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.score.of",
     "file": "en.score.of.mp3",
     "text": "out of one hundred.",
-    "ms": 1684,
+    "ms": 964,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.handover",
     "file": "en.sentinel.handover.mp3",
-    "text": "Handing the results to the Sentinel agent.",
-    "ms": 2880,
+    "text": "Handing the results to Dir, the Sentinel.",
+    "ms": 1993,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.2",
     "file": "en.sentinel.linked.2.mp3",
-    "text": "The Sentinel linked two reports into one campaign.",
-    "ms": 3425,
+    "text": "Dir linked two reports into one campaign.",
+    "ms": 2255,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.3",
     "file": "en.sentinel.linked.3.mp3",
-    "text": "The Sentinel linked three reports into one campaign.",
-    "ms": 3495,
+    "text": "Dir linked three reports into one campaign.",
+    "ms": 2355,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.4",
     "file": "en.sentinel.linked.4.mp3",
-    "text": "The Sentinel linked four reports into one campaign.",
-    "ms": 3397,
+    "text": "Dir linked four reports into one campaign.",
+    "ms": 2280,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.5",
     "file": "en.sentinel.linked.5.mp3",
-    "text": "The Sentinel linked five reports into one campaign.",
-    "ms": 3573,
+    "text": "Dir linked five reports into one campaign.",
+    "ms": 2356,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.6",
     "file": "en.sentinel.linked.6.mp3",
-    "text": "The Sentinel linked six reports into one campaign.",
-    "ms": 3602,
+    "text": "Dir linked six reports into one campaign.",
+    "ms": 2384,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.7",
     "file": "en.sentinel.linked.7.mp3",
-    "text": "The Sentinel linked seven reports into one campaign.",
-    "ms": 3725,
+    "text": "Dir linked seven reports into one campaign.",
+    "ms": 2405,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.8",
     "file": "en.sentinel.linked.8.mp3",
-    "text": "The Sentinel linked eight reports into one campaign.",
-    "ms": 3501,
+    "text": "Dir linked eight reports into one campaign.",
+    "ms": 2305,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.9",
     "file": "en.sentinel.linked.9.mp3",
-    "text": "The Sentinel linked nine reports into one campaign.",
-    "ms": 3550,
+    "text": "Dir linked nine reports into one campaign.",
+    "ms": 2327,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.linked.10",
     "file": "en.sentinel.linked.10.mp3",
-    "text": "The Sentinel linked ten reports into one campaign.",
-    "ms": 3550,
+    "text": "Dir linked ten reports into one campaign.",
+    "ms": 2227,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.summary",
     "file": "en.sentinel.summary.mp3",
-    "text": "The Sentinel wrote a summary in Arabic and English.",
-    "ms": 3376,
+    "text": "Dir wrote a summary in Arabic and English.",
+    "ms": 2172,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.draft",
     "file": "en.sentinel.draft.mp3",
-    "text": "The Sentinel prepared a takedown request draft.",
-    "ms": 3240,
+    "text": "Dir prepared a takedown request draft.",
+    "ms": 1987,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.awaiting_approval",
     "file": "en.sentinel.awaiting_approval.mp3",
     "text": "Waiting for an officer's approval. Nothing is sent without it.",
-    "ms": 3773,
+    "ms": 3148,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sentinel.watching",
     "file": "en.sentinel.watching.mp3",
-    "text": "The Sentinel keeps watching for similar reports.",
-    "ms": 3127,
+    "text": "Dir keeps watching for similar reports.",
+    "ms": 2076,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.final.both_agents",
     "file": "en.final.both_agents.mp3",
-    "text": "The Investigator checked, and the Sentinel linked them and follows up.",
-    "ms": 4100,
+    "text": "Baseer checked, and Dir linked them and follows up.",
+    "ms": 2407,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.sentinel.unavailable",
+    "file": "en.sentinel.unavailable.mp3",
+    "text": "I couldn't reach the Sentinel (Dir) right now, so I can't say whether there is a campaign.",
+    "ms": 4674,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.nothing_checked",
+    "file": "en.nothing_checked.mp3",
+    "text": "No check could be completed, so I handed nothing to Dir.",
+    "ms": 3195,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.mic.denied",
+    "file": "en.mic.denied.mp3",
+    "text": "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box.",
+    "ms": 5423,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.voice.unavailable",
+    "file": "en.voice.unavailable.mp3",
+    "text": "The voice service isn't available right now. Please use the paste box.",
+    "ms": 3900,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.final.sentinel_unavailable",
+    "file": "en.final.sentinel_unavailable.mp3",
+    "text": "Baseer checked, but I couldn't reach Dir.",
+    "ms": 1869,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
   },
   {
     "id": "en.final.sentinel_watching",
     "file": "en.final.sentinel_watching.mp3",
-    "text": "The Investigator checked, and the Sentinel keeps watching.",
-    "ms": 3623,
+    "text": "Baseer checked, and Dir keeps watching.",
+    "ms": 1926,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.1",
     "file": "en.sum.dangerous.1.mp3",
     "text": "One message is dangerous.",
-    "ms": 2209,
+    "ms": 1402,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.1",
     "file": "en.sum.suspicious.1.mp3",
     "text": "One message looks suspicious.",
-    "ms": 2381,
+    "ms": 1492,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.1",
     "file": "en.sum.clear.1.mp3",
     "text": "One message showed no warning signs.",
-    "ms": 2869,
+    "ms": 1767,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.1",
     "file": "en.sum.failed.1.mp3",
     "text": "One message could not be checked.",
-    "ms": 2419,
+    "ms": 1490,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.2",
     "file": "en.sum.dangerous.2.mp3",
     "text": "Two messages are dangerous.",
-    "ms": 2092,
+    "ms": 1406,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.2",
     "file": "en.sum.suspicious.2.mp3",
     "text": "Two messages look suspicious.",
-    "ms": 2395,
+    "ms": 1532,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.2",
     "file": "en.sum.clear.2.mp3",
     "text": "Two messages showed no warning signs.",
-    "ms": 2942,
+    "ms": 1846,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.2",
     "file": "en.sum.failed.2.mp3",
     "text": "Two messages could not be checked.",
-    "ms": 2471,
+    "ms": 1590,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.3",
     "file": "en.sum.dangerous.3.mp3",
     "text": "Three messages are dangerous.",
-    "ms": 2295,
+    "ms": 1448,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.3",
     "file": "en.sum.suspicious.3.mp3",
     "text": "Three messages look suspicious.",
-    "ms": 2443,
+    "ms": 1558,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.3",
     "file": "en.sum.clear.3.mp3",
     "text": "Three messages showed no warning signs.",
-    "ms": 2918,
+    "ms": 1888,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.3",
     "file": "en.sum.failed.3.mp3",
     "text": "Three messages could not be checked.",
-    "ms": 2496,
+    "ms": 1633,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.4",
     "file": "en.sum.dangerous.4.mp3",
     "text": "Four messages are dangerous.",
-    "ms": 2244,
+    "ms": 1494,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.4",
     "file": "en.sum.suspicious.4.mp3",
     "text": "Four messages look suspicious.",
-    "ms": 2394,
+    "ms": 1528,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.4",
     "file": "en.sum.clear.4.mp3",
     "text": "Four messages showed no warning signs.",
-    "ms": 2944,
+    "ms": 1886,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.4",
     "file": "en.sum.failed.4.mp3",
     "text": "Four messages could not be checked.",
-    "ms": 2522,
+    "ms": 1655,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.5",
     "file": "en.sum.dangerous.5.mp3",
     "text": "Five messages are dangerous.",
-    "ms": 2294,
+    "ms": 1428,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.5",
     "file": "en.sum.suspicious.5.mp3",
     "text": "Five messages look suspicious.",
-    "ms": 2519,
+    "ms": 1532,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.5",
     "file": "en.sum.clear.5.mp3",
     "text": "Five messages showed no warning signs.",
-    "ms": 3044,
+    "ms": 1886,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.5",
     "file": "en.sum.failed.5.mp3",
     "text": "Five messages could not be checked.",
-    "ms": 2595,
+    "ms": 1603,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.6",
     "file": "en.sum.dangerous.6.mp3",
     "text": "Six messages are dangerous.",
-    "ms": 2392,
+    "ms": 1573,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.6",
     "file": "en.sum.suspicious.6.mp3",
     "text": "Six messages look suspicious.",
-    "ms": 2492,
+    "ms": 1626,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.6",
     "file": "en.sum.clear.6.mp3",
     "text": "Six messages showed no warning signs.",
-    "ms": 2991,
+    "ms": 1965,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.6",
     "file": "en.sum.failed.6.mp3",
     "text": "Six messages could not be checked.",
-    "ms": 2569,
+    "ms": 1719,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.7",
     "file": "en.sum.dangerous.7.mp3",
     "text": "Seven messages are dangerous.",
-    "ms": 2446,
+    "ms": 1653,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.7",
     "file": "en.sum.suspicious.7.mp3",
     "text": "Seven messages look suspicious.",
-    "ms": 2542,
+    "ms": 1732,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.7",
     "file": "en.sum.clear.7.mp3",
     "text": "Seven messages showed no warning signs.",
-    "ms": 3016,
+    "ms": 2065,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.7",
     "file": "en.sum.failed.7.mp3",
     "text": "Seven messages could not be checked.",
-    "ms": 2619,
+    "ms": 1795,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.8",
     "file": "en.sum.dangerous.8.mp3",
     "text": "Eight messages are dangerous.",
-    "ms": 2319,
+    "ms": 1361,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.8",
     "file": "en.sum.suspicious.8.mp3",
     "text": "Eight messages look suspicious.",
-    "ms": 2469,
+    "ms": 1490,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.8",
     "file": "en.sum.clear.8.mp3",
     "text": "Eight messages showed no warning signs.",
-    "ms": 2917,
+    "ms": 1818,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.8",
     "file": "en.sum.failed.8.mp3",
     "text": "Eight messages could not be checked.",
-    "ms": 2546,
+    "ms": 1562,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.9",
     "file": "en.sum.dangerous.9.mp3",
     "text": "Nine messages are dangerous.",
-    "ms": 2346,
+    "ms": 1430,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.9",
     "file": "en.sum.suspicious.9.mp3",
     "text": "Nine messages look suspicious.",
-    "ms": 2512,
+    "ms": 1565,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.9",
     "file": "en.sum.clear.9.mp3",
     "text": "Nine messages showed no warning signs.",
-    "ms": 3062,
+    "ms": 1890,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.9",
     "file": "en.sum.failed.9.mp3",
     "text": "Nine messages could not be checked.",
-    "ms": 2594,
+    "ms": 1638,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.dangerous.10",
     "file": "en.sum.dangerous.10.mp3",
     "text": "Ten messages are dangerous.",
-    "ms": 2246,
+    "ms": 1479,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.suspicious.10",
     "file": "en.sum.suspicious.10.mp3",
     "text": "Ten messages look suspicious.",
-    "ms": 2420,
+    "ms": 1582,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.clear.10",
     "file": "en.sum.clear.10.mp3",
     "text": "Ten messages showed no warning signs.",
-    "ms": 2969,
+    "ms": 1871,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.sum.failed.10",
     "file": "en.sum.failed.10.mp3",
     "text": "Ten messages could not be checked.",
-    "ms": 2498,
+    "ms": 1662,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.result.dangerous",
     "file": "en.result.dangerous.mp3",
     "text": "This message is dangerous.",
-    "ms": 2226,
+    "ms": 1375,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.result.suspicious",
     "file": "en.result.suspicious.mp3",
     "text": "This message looks suspicious.",
-    "ms": 2369,
+    "ms": 1465,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.result.no_warning_signs",
     "file": "en.result.no_warning_signs.mp3",
     "text": "I found no warning signs in it.",
-    "ms": 2391,
+    "ms": 1558,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.result.could_not_check",
     "file": "en.result.could_not_check.mp3",
     "text": "I could not check this message.",
-    "ms": 2143,
+    "ms": 1446,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.todo.lead",
     "file": "en.todo.lead.mp3",
     "text": "What to do now:",
-    "ms": 1200,
+    "ms": 861,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.todo.link",
     "file": "en.todo.link.mp3",
     "text": "Don't tap the link.",
-    "ms": 1598,
+    "ms": 963,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.todo.otp",
     "file": "en.todo.otp.mp3",
     "text": "Never share a code with anyone.",
-    "ms": 2341,
+    "ms": 1408,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.todo.bank",
     "file": "en.todo.bank.mp3",
     "text": "Call your bank on the number on your card.",
-    "ms": 2671,
+    "ms": 1893,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.todo.report",
     "file": "en.todo.report.mp3",
     "text": "Report the message through the official channels.",
-    "ms": 2999,
+    "ms": 2166,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.todo.careful",
     "file": "en.todo.careful.mp3",
     "text": "But stay careful.",
-    "ms": 1575,
+    "ms": 961,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.todo.wait",
     "file": "en.todo.wait.mp3",
     "text": "Don't open the link until it is checked.",
-    "ms": 2718,
+    "ms": 1816,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.help",
     "file": "en.help.mp3",
     "text": "Copy your messages, then say: Hey Falcon, check my messages.",
-    "ms": 4219,
+    "ms": 3584,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.stop",
     "file": "en.stop.mp3",
     "text": "Okay, I've stopped.",
-    "ms": 1792,
+    "ms": 989,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.didnt",
     "file": "en.didnt.mp3",
     "text": "Sorry, I didn't catch that. Please say it again.",
-    "ms": 3144,
+    "ms": 2254,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.clip.empty",
     "file": "en.clip.empty.mp3",
     "text": "I found no messages in what you copied. Copy them and try again.",
-    "ms": 4153,
+    "ms": 3610,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.clip.denied",
     "file": "en.clip.denied.mp3",
     "text": "I couldn't read what you copied. Paste it in the box on the screen.",
-    "ms": 3735,
+    "ms": 3264,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.error",
     "file": "en.error.mp3",
     "text": "Something went wrong. Try again, and don't open any link.",
-    "ms": 3523,
+    "ms": 2803,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   },
   {
     "id": "en.goodbye",
     "file": "en.goodbye.mp3",
     "text": "Thank you. Take care.",
-    "ms": 1911,
+    "ms": 1016,
     "engine": "kokoro",
-    "voice": "bm_fable"
+    "voice": "am_fenrir"
   }
 ]

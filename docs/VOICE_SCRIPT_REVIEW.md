@@ -42,16 +42,16 @@ Lines: 233. Digits are written out in words (`num.0` to `num.100`).
 | من ثمان. | of eight. |  |
 | من تسع. | of nine. |  |
 | من عشر. | of ten. |  |
-| المحقق يشيّك المسج الأول. | The Investigator agent is checking the first message. |  |
-| المحقق يشيّك المسج الثاني. | The Investigator agent is checking the second message. |  |
-| المحقق يشيّك المسج الثالث. | The Investigator agent is checking the third message. |  |
-| المحقق يشيّك المسج الرابع. | The Investigator agent is checking the fourth message. |  |
-| المحقق يشيّك المسج الخامس. | The Investigator agent is checking the fifth message. |  |
-| المحقق يشيّك المسج السادس. | The Investigator agent is checking the sixth message. |  |
-| المحقق يشيّك المسج السابع. | The Investigator agent is checking the seventh message. |  |
-| المحقق يشيّك المسج الثامن. | The Investigator agent is checking the eighth message. |  |
-| المحقق يشيّك المسج التاسع. | The Investigator agent is checking the ninth message. |  |
-| المحقق يشيّك المسج العاشر. | The Investigator agent is checking the tenth message. |  |
+| بصير يشيّك على المسج الأول. | Baseer, the Investigator, is checking the first message. |  |
+| بصير يشيّك على المسج الثاني. | Baseer, the Investigator, is checking the second message. |  |
+| بصير يشيّك على المسج الثالث. | Baseer, the Investigator, is checking the third message. |  |
+| بصير يشيّك على المسج الرابع. | Baseer, the Investigator, is checking the fourth message. |  |
+| بصير يشيّك على المسج الخامس. | Baseer, the Investigator, is checking the fifth message. |  |
+| بصير يشيّك على المسج السادس. | Baseer, the Investigator, is checking the sixth message. |  |
+| بصير يشيّك على المسج السابع. | Baseer, the Investigator, is checking the seventh message. |  |
+| بصير يشيّك على المسج الثامن. | Baseer, the Investigator, is checking the eighth message. |  |
+| بصير يشيّك على المسج التاسع. | Baseer, the Investigator, is checking the ninth message. |  |
+| بصير يشيّك على المسج العاشر. | Baseer, the Investigator, is checking the tenth message. |  |
 | أطابقه مع قوائم النصب المعروفة. | Checking known scam lists. |  |
 | أشوف عنوان الموقع، يمكن فيه تشابه مخادع. | Checking the web address for look-alike tricks. |  |
 | أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي. | Opening the page in our isolated browser. Nothing is typed. |  |
@@ -165,27 +165,27 @@ Lines: 233. Digits are written out in words (`num.0` to `num.100`).
 | تسعة وتسعين | ninety-nine |  |
 | مية | one hundred |  |
 | من مية. | out of one hundred. |  |
-| أسلّم النتايج للحارس. | Handing the results to the Sentinel agent. |  |
-| الحارس ربط مسجين في حملة نصب وحدة. | The Sentinel linked two reports into one campaign. |  |
-| الحارس ربط ثلاث مسجات في حملة نصب وحدة. | The Sentinel linked three reports into one campaign. |  |
-| الحارس ربط أربع مسجات في حملة نصب وحدة. | The Sentinel linked four reports into one campaign. |  |
-| الحارس ربط خمس مسجات في حملة نصب وحدة. | The Sentinel linked five reports into one campaign. |  |
-| الحارس ربط ست مسجات في حملة نصب وحدة. | The Sentinel linked six reports into one campaign. |  |
-| الحارس ربط سبع مسجات في حملة نصب وحدة. | The Sentinel linked seven reports into one campaign. |  |
-| الحارس ربط ثمان مسجات في حملة نصب وحدة. | The Sentinel linked eight reports into one campaign. |  |
-| الحارس ربط تسع مسجات في حملة نصب وحدة. | The Sentinel linked nine reports into one campaign. |  |
-| الحارس ربط عشر مسجات في حملة نصب وحدة. | The Sentinel linked ten reports into one campaign. |  |
-| الحارس كتب ملخص بالعربي والإنجليزي. | The Sentinel wrote a summary in Arabic and English. |  |
-| الحارس جهّز مسودة طلب لإزالة الموقع. | The Sentinel prepared a takedown request draft. |  |
+| أسلّم النتايج لدرع. | Handing the results to Dir, the Sentinel. |  |
+| درع ربط مسجين في حملة نصب وحدة. | Dir linked two reports into one campaign. |  |
+| درع ربط ثلاث مسجات في حملة نصب وحدة. | Dir linked three reports into one campaign. |  |
+| درع ربط أربع مسجات في حملة نصب وحدة. | Dir linked four reports into one campaign. |  |
+| درع ربط خمس مسجات في حملة نصب وحدة. | Dir linked five reports into one campaign. |  |
+| درع ربط ست مسجات في حملة نصب وحدة. | Dir linked six reports into one campaign. |  |
+| درع ربط سبع مسجات في حملة نصب وحدة. | Dir linked seven reports into one campaign. |  |
+| درع ربط ثمان مسجات في حملة نصب وحدة. | Dir linked eight reports into one campaign. |  |
+| درع ربط تسع مسجات في حملة نصب وحدة. | Dir linked nine reports into one campaign. |  |
+| درع ربط عشر مسجات في حملة نصب وحدة. | Dir linked ten reports into one campaign. |  |
+| درع كتب ملخص بالعربي والإنجليزي. | Dir wrote a summary in Arabic and English. |  |
+| درع جهّز مسودة طلب لإزالة الموقع. | Dir prepared a takedown request draft. |  |
 | ننتظر موافقة ضابط. ما يُرسل شي بدونها. | Waiting for an officer's approval. Nothing is sent without it. |  |
-| الحارس يظل يراقب أي بلاغات مشابهة. | The Sentinel keeps watching for similar reports. |  |
-| المحقق شيّك، والحارس ربطها وصار يتابع. | The Investigator checked, and the Sentinel linked them and follows up. |  |
-| ما وصلت للحارس الحين، فما أعرف إذا فيه حملة. | I couldn't reach the Sentinel right now, so I can't say whether there is a campaign. |  |
-| ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس. | No check could be completed, so I handed nothing to the Sentinel. |  |
+| درع يظل يراقب أي بلاغات مشابهة. | Dir keeps watching for similar reports. |  |
+| بصير شيّك، ودرع ربطها وصار يتابع. | Baseer checked, and Dir linked them and follows up. |  |
+| ما وصلت لدرع الحين، فما أعرف إذا فيه حملة. | I couldn't reach the Sentinel (Dir) right now, so I can't say whether there is a campaign. |  |
+| ما قدرنا نكمّل أي فحص، فما سلّمت شي لدرع. | No check could be completed, so I handed nothing to Dir. |  |
 | ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات. | I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box. |  |
 | خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق. | The voice service isn't available right now. Please use the paste box. |  |
-| المحقق شيّك، بس ما قدرت أوصل للحارس. | The Investigator checked, but I couldn't reach the Sentinel. |  |
-| المحقق شيّك، والحارس يظل يراقب. | The Investigator checked, and the Sentinel keeps watching. |  |
+| بصير شيّك، بس ما قدرت أوصل لدرع. | Baseer checked, but I couldn't reach Dir. |  |
+| بصير شيّك، ودرع يظل يراقب. | Baseer checked, and Dir keeps watching. |  |
 | مسج وحدة منها خطر. | One message is dangerous. |  |
 | مسج وحدة منها مشكوك فيها. | One message looks suspicious. |  |
 | مسج وحدة ما فيها علامات تحذير. | One message showed no warning signs. |  |

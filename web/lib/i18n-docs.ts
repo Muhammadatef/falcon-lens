@@ -7,9 +7,9 @@ import type { Lang } from "./contracts";
 
 const ar = {
   // Agent activity (check result)
-  "act.title": "«المحقّق» يفحص الرابط الآن…",
-  "act.done": "أنهى «المحقّق» الفحص خلال {latency_s} ث",
-  "act.done.nolat": "أنهى «المحقّق» الفحص",
+  "act.title": "«بصير»، المحقّق، يفحص الرابط الآن…",
+  "act.done": "أنهى «بصير» الفحص خلال {latency_s} ث",
+  "act.done.nolat": "أنهى «بصير» الفحص",
   "act.step.known": "يقارنه ببلاغات الاحتيال المعروفة",
   "act.step.address": "يدقّق في العنوان",
   "act.step.visit": "يفتح الصفحة في بيئة معزولة بدلاً منك",
@@ -19,8 +19,8 @@ const ar = {
   "act.st.pending": "بالانتظار",
   "act.st.skipped": "لم تكن لازمة",
   "act.wait": "لا تضغط على الرابط إلى أن يكتمل الفحص.",
-  "act.sentinel": "«الحارس» يقارن هذا الفحص بغيره لكشف الحملات مبكراً.",
-  "act.label": "نشاط المحقّق",
+  "act.sentinel": "«درع» يقارن هذا الفحص بغيره لكشف الحملات مبكراً.",
+  "act.label": "نشاط بصير، المحقّق",
   "act.steps": "خطوات الفحص",
 
   // Degraded because the page could not be opened
@@ -43,7 +43,7 @@ const ar = {
   "docs.architecture.title": "البنية",
   "docs.architecture.text": "الخدمات ومسار البيانات وعزل الشبكات.",
   "docs.agents.title": "أنماط الوكلاء",
-  "docs.agents.text": "حلقة «المحقّق» المحدودة، ومسار عمل «الحارس»، والأدوات ونقاط الموافقة البشرية.",
+  "docs.agents.text": "حلقة «بصير»، المحقّق، المحدودة، ومسار عمل «درع»، الحارس، والأدوات ونقاط الموافقة البشرية.",
   "docs.cascade.title": "طبقات الفحص T0–T3",
   "docs.cascade.text": "أربع طبقات تبدأ بالأسرع، ولا تتعمق إلا عند الحاجة.",
   "docs.arbiter.title": "المحكّم واحتساب الدرجة",
@@ -86,7 +86,7 @@ const ar = {
 export type DocKey = keyof typeof ar;
 
 const en: Record<DocKey, string> = {
-  "act.title": "The Investigator is checking your link…",
+  "act.title": "The Investigator (Baseer | بصير) is checking your link…",
   "act.done": "The Investigator finished in {latency_s} s",
   "act.done.nolat": "The Investigator finished the check",
   "act.step.known": "Comparing with reported scams",
@@ -99,7 +99,7 @@ const en: Record<DocKey, string> = {
   "act.st.skipped": "Not needed",
   "act.wait": "Don't tap the link until the check is complete.",
   "act.sentinel": "The Sentinel compares this check with others to spot campaigns early.",
-  "act.label": "Investigator activity",
+  "act.label": "Investigator · بصير activity",
   "act.steps": "Check steps",
 
   "noopen.dns.title": "No website answers at this address — treat it with caution",
@@ -119,7 +119,7 @@ const en: Record<DocKey, string> = {
   "docs.architecture.title": "Architecture",
   "docs.architecture.text": "Services, data flow and network isolation.",
   "docs.agents.title": "Agent patterns",
-  "docs.agents.text": "The Investigator's bounded loop, the Sentinel's workflow, tools and human gates.",
+  "docs.agents.text": "The bounded loop of the Investigator (Baseer | بصير), the workflow of the Sentinel (Dir' | درع), tools and human gates.",
   "docs.cascade.title": "Cascade T0–T3",
   "docs.cascade.text": "Four tiers, fastest first; deeper only when needed.",
   "docs.arbiter.title": "Arbiter and scoring",

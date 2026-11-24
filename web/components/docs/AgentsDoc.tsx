@@ -8,6 +8,7 @@ import { flag } from "@/lib/cap-flag";
 import { ArchDiagram } from "@/components/arch/ArchDiagram";
 import { WhyDspyLanggraph } from "@/components/arch/WhyDspyLanggraph";
 import { at } from "@/lib/i18n-arch";
+import { VoiceDoc } from "./VoiceDoc";
 
 /** The investigator loop. Labels are code identifiers, so the figure is always left-to-right. */
 function LoopDiagram({ c }: { c: ArchContent }) {
@@ -88,8 +89,8 @@ function Agent({ id, block, c, caps, lang, badge, children }: { id: string; bloc
 }
 
 const FIGS = {
-  investigator: { src: "/images/investigator.svg", width: 1200, height: 790, alt: { ar: "مخطط بنية المحقّق: الطبقات من الشلال الحتمي إلى المحكّم والمجيب.", en: "Diagram of the Investigator architecture: from the deterministic cascade to the arbiter and the responder." } },
-  sentinel: { src: "/images/sentinel.svg", width: 1200, height: 776, alt: { ar: "مخطط بنية الحارس: من تدفق الأحداث إلى الرسم والموافقة البشرية.", en: "Diagram of the Sentinel architecture: from the event stream to the graph and the human approval." } },
+  investigator: { src: "/images/investigator.svg", width: 1200, height: 790, alt: { ar: "مخطط بنية بصير: الطبقات من الشلال الحتمي إلى المحكّم والمجيب.", en: "Diagram of the Investigator architecture: from the deterministic cascade to the arbiter and the responder." } },
+  sentinel: { src: "/images/sentinel.svg", width: 1200, height: 776, alt: { ar: "مخطط بنية درع: من تدفق الأحداث إلى الرسم والموافقة البشرية.", en: "Diagram of the Sentinel architecture: from the event stream to the graph and the human approval." } },
 } as const;
 
 function Fig({ id, lang }: { id: keyof typeof FIGS; lang: Lang }) {
@@ -130,6 +131,8 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
       <Agent id="sentinel" block={c.sentinel} c={c} caps={caps} lang={lang} badge={flag(caps, "sentinel_agent")}>
         <Fig id="sentinel" lang={lang} />
       </Agent>
+
+      <VoiceDoc lang={lang} />
 
       <WhyDspyLanggraph lang={lang} dspyLive={flag(caps, "dspy_compiled_prompts")} tracingLive={flag(caps, "llm_tracing")} />
 

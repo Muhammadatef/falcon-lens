@@ -42,8 +42,8 @@ test.describe("public history", () => {
     await expect(page.getByTestId("key-form")).toHaveCount(0);
 
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-    await expect(page.getByTestId("tab-checks")).toContainText("المحقّق — الفحوص");
-    await expect(page.getByTestId("tab-incidents")).toContainText("الحارس — الحوادث");
+    await expect(page.getByTestId("tab-checks")).toContainText("بصير، المحقّق — الفحوص");
+    await expect(page.getByTestId("tab-incidents")).toContainText("درع، الحارس — الحوادث");
     await expect(page.getByTestId("check-row")).toHaveCount(2);
     // The live row streams in, newest first, and replay data is labelled.
     await expect(page.getByTestId("check-row")).toHaveCount(3);

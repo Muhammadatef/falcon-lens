@@ -127,7 +127,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     const texts = await page.getByTestId("voice-step").allTextContents();
     const at = (needle: string) => texts.findIndex((t) => t.includes(needle));
     const order = [at("سمعتك"), at("يفحص الرسالة الأولى"), at(AR["investigator.lists"]), at("الرسالة 1: حكم"), at("يفحص الرسالة الثانية"), at("الرسالة 3: حكم"), at(AR["sentinel.handover"]), at(AR["sentinel.unavailable"])];
-    expect(texts.some((t) => t.includes("المحقّق")) && texts.some((t) => t.includes("«الحارس»"))).toBe(true); // both agents are named on screen
+    expect(texts.some((t) => t.includes("بصير")) && texts.some((t) => t.includes("«درع»"))).toBe(true); // both agents are named on screen
     expect(at(AR["investigator.rules_only"]) >= 0 || at("نظرة ثانية") >= 0).toBe(true); // either the rules decided or a model answered, never silent
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(texts.join(" ")).not.toMatch(/\bT[0-3]\b|آمن|\bsafe\b/i);
@@ -182,7 +182,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 30_000 });
     const texts = await page.getByTestId("voice-step").allTextContents();
     const at = (needle: string) => texts.findIndex((t) => t.includes(needle));
-    const order = [at(AR["sentinel.handover"]), at("ربط «الحارس» 3 بلاغات"), at(AR["sentinel.summary"]), at(AR["sentinel.draft"]), at(AR["sentinel.awaiting_approval"])];
+    const order = [at(AR["sentinel.handover"]), at("ربط «درع» 3 بلاغات"), at(AR["sentinel.summary"]), at(AR["sentinel.draft"]), at(AR["sentinel.awaiting_approval"])];
     expect(order.every((i) => i >= 0), JSON.stringify(texts)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(at(AR["sentinel.watching"])).toBe(-1); // never "still watching" when an incident was found
