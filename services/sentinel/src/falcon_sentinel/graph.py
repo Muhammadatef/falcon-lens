@@ -29,7 +29,7 @@ from redis.exceptions import RedisError
 from sentinel_core.events import find_raw_text
 
 from falcon_core.telemetry.logging import incident_id_var
-from falcon_core.telemetry.tracing import fl_span
+from falcon_core.telemetry.tracing import current_trace_id, fl_span
 from falcon_core.tools.sentinel import (
     ARG_MODELS,
     DRAFT_TOOLS,
@@ -725,15 +725,17 @@ class TriageRunner:
         """One traced graph invocation = one run in the agent trace."""
         run_id = await self.tracer.run_start(iid, trigger, decision)
         tok = CUR_RUN.set(run_id)
+        trace_id: str | None = None
         try:
             token = incident_id_var.set(iid)
             try:
                 with fl_span("sentinel.triage", "AGENT"):
+                    trace_id = current_trace_id()
                     out = dict(await self.graph.ainvoke(inp, self._cfg(iid)))
             finally:
                 incident_id_var.reset(token)
         except Exception:
-            await self.tracer.run_end(iid, run_id, "failed", None)
+            await self.tracer.run_end(iid, run_id, "failed", None, trace_id)
             raise
         finally:
             CUR_RUN.reset(tok)
@@ -747,7 +749,9 @@ class TriageRunner:
                     "waiting_since": iso(self.deps.clock()),
                     "pending_count": len(pend),
                 }
-        await self.tracer.run_end(iid, run_id, "interrupted" if interrupt_info else "completed", interrupt_info)
+        await self.tracer.run_end(
+            iid, run_id, "interrupted" if interrupt_info else "completed", interrupt_info, trace_id
+        )
         return out
 
     async def run(self, incident_id: str) -> dict[str, Any]:

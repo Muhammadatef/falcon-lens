@@ -109,8 +109,17 @@ async def test_redaction_no_userinfo_no_raw_text(client: httpx.AsyncClient, redi
     }
     assert set(url_row) == {
         "verdict_id", "created_at", "input_type", "display", "verdict", "risk_score", "degraded",
-        "degraded_reasons", "tier_reached", "model_route", "source", "channel", "agent",
+        "degraded_reasons", "tier_reached", "model_route", "source", "channel", "trace_id", "agent",
     }  # fmt: skip
+
+
+async def test_summary_carries_a_valid_trace_id_only(client: httpx.AsyncClient, redis: Any, store: FakeStore) -> None:
+    good, bad = "0123456789abcdef0123456789abcdef", "not-a-trace-id"
+    await seed(redis, store, 7, trace_id=good)
+    await seed(redis, store, 8, trace_id=bad)
+    rows = {i["verdict_id"]: i for i in (await client.get("/v1/verdicts", headers=OP)).json()["items"]}
+    assert rows[vid(7)]["trace_id"] == good
+    assert rows[vid(8)]["trace_id"] is None
 
 
 def test_defanged_host_edge_cases() -> None:

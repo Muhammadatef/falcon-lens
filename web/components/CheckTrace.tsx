@@ -9,6 +9,7 @@ import { hostOnly } from "@/lib/history";
 import { hT, type HistoryKey } from "@/lib/i18n-history";
 import { formatTime, pick } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
+import { OperatorLinks } from "./OperatorLinks";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
 import { Icon, PolarityMark } from "./Icon";
 
@@ -82,7 +83,10 @@ export function CheckTrace({ verdictId, demo }: { verdictId: string; demo: boole
                 <p className="muted">{t("ops.nc.body")}</p>
               </div>
             ) : (
-              <Body verdict={view.verdict} />
+              <>
+                <OperatorLinks id={view.verdict.verdict_id} kind="verdict" traceId={view.verdict.trace_id} createdAt={view.verdict.created_at} latencyMs={view.verdict.latency_ms} />
+                <Body verdict={view.verdict} />
+              </>
             )}
           </div>
         </section>

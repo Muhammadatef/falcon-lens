@@ -9,6 +9,7 @@ import { parseIncident, type Incident } from "@/lib/contracts";
 import { formatTime, pick, translateMaybe } from "@/lib/i18n";
 import { trT, type TraceKey } from "@/lib/i18n-trace";
 import { usePrefs } from "@/lib/prefs";
+import { IncidentOperatorLinks } from "./OperatorLinks";
 import { DemoRibbon, SourceBadge, UntrustedText } from "./Chrome";
 import { Icon, SeverityMark, type IconName } from "./Icon";
 
@@ -104,6 +105,7 @@ export function IncidentTrace({ incidentId, demo }: { incidentId: string; demo: 
             ) : (
               <>
                 <Header incident={view.incident} />
+                <IncidentOperatorLinks incidentId={view.incident.incident_id} runs={view.trace.runs} />
                 <Timeline incident={view.incident} trace={view.trace} demo={demo} />
               </>
             )}

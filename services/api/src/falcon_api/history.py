@@ -71,6 +71,11 @@ class VerdictSummary(BaseModel):
     channel: Literal["web", "extension", "api", "mcp", "voice"] | None = Field(
         default=None, description="Which client asked for the check; null when it did not say."
     )
+    trace_id: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{32}$",
+        description="OpenTelemetry trace id of the check; null when tracing was off. Metadata for operator links.",
+    )
     agent: AgentActivity
 
 
@@ -135,6 +140,7 @@ def summarize(doc: dict[str, Any]) -> dict[str, Any] | None:
             "model_route": doc["model_route"],
             "source": effective_source(str(doc.get("source") or "live"), [_host_of(doc.get("canonical_url"))]),
             "channel": doc.get("channel"),
+            "trace_id": doc.get("trace_id") if re.fullmatch(r"[0-9a-f]{32}", str(doc.get("trace_id") or "")) else None,
             "agent": {
                 "tiers_run": tiers,
                 "extractor_ran": extractor,

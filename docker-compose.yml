@@ -280,6 +280,11 @@ services:
       FL_PUBLIC_BASE_URL: ${FL_PUBLIC_BASE_URL:-https://localhost:8443}
       # read-scope service key for the public /campaigns board (server-side only; see .env.example)
       FL_WEB_READ_KEY: ${FL_WEB_READ_KEY:-}
+      # operator-only deep links (/checks, /incidents, /ops); 127.0.0.1, not localhost (IPv6 on macOS)
+      FL_PHOENIX_UI_URL: ${FL_PHOENIX_UI_URL:-http://127.0.0.1:${FL_PHOENIX_PORT:-6006}}
+      FL_GRAFANA_UI_URL: ${FL_GRAFANA_UI_URL:-http://127.0.0.1:${FL_GRAFANA_PORT:-3001}}
+      FL_PROMETHEUS_UI_URL: ${FL_PROMETHEUS_UI_URL:-http://127.0.0.1:${FL_PROMETHEUS_PORT:-9090}}
+      FL_PHOENIX_PROJECT_ID: ${FL_PHOENIX_PROJECT_ID:-UHJvamVjdDox}
       FL_VOICE_CLIPS_DIR: /data/private/voice/clips
     # private voice clips (macOS / cloned voices; gitignored), read-only; the web falls back to committed clips
     volumes: ["./data/private/voice/clips:/data/private/voice/clips:ro"]
