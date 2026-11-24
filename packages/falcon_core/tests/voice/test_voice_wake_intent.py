@@ -67,43 +67,41 @@ EN_CASES: list[tuple[str, bool, str]] = [
 ]
 
 AR_CASES: list[tuple[str, bool, str]] = [
-    ("يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر", True, CC),
-    ("يا فالكون", True, "none"),
-    ("هاي فالكون افحص الرابط", True, CC),
-    ("هلا فالكون نسخت رسالة", True, CC),
+    ("يا صقر، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر", True, CC),
+    ("يا صقر", True, "none"),
+    ("هاي صقر افحص الرابط", True, CC),
+    ("هلا صقر نسخت رسالة", True, CC),
     ("يا صقر وصلتني رسالة مشبوهة", True, CC),
     ("هلا صقر تحقق من الإيميل", True, CC),
     ("عدسة الصقر افحص هذه الرسالة", True, CC),
     ("عدسة الصقر", True, "none"),
     ("يا عدسة الصقر شغل", True, CC),
     ("يا عدسة الصقر، وصلني رابط غريب", True, CC),
-    ("يافالكون افحص الرابط", True, CC),
-    ("هلافالكون وصلتني رسايل", True, CC),
-    ("يا فالكن شوف الرسالة", True, CC),
-    ("يا فلكون وصلني بريد مشبوه", True, CC),
-    ("هاي فلكون افحص", True, CC),
-    ("يا فالكان تحقق من الرابط", True, CC),
+    ("ياصقر افحص الرابط", True, CC),
+    ("هلاصقر وصلتني رسايل", True, CC),
+    ("يا صقر شوف الرسالة", True, CC),
+    ("يا صقر وصلني بريد مشبوه", True, CC),
+    ("هاي صقر افحص", True, CC),
+    ("يا صقر تحقق من الرابط", True, CC),
     ("ياصقر افحص الرسالة", True, CC),
     ("هلاصقر وصلتني رسالة", True, CC),
-    ("يا فالكون ساعدني", True, "help"),
-    ("يا فالكون مساعدة", True, "help"),
-    ("هلا فالكون ماذا تفعل", True, "help"),
-    ("يا فالكون كيف استخدم الخدمة", True, "help"),
-    ("يا فالكون توقف", True, "stop"),
-    ("يا فالكون إلغاء", True, "stop"),
+    ("يا صقر ساعدني", True, "help"),
+    ("يا صقر مساعدة", True, "help"),
+    ("هلا صقر ماذا تفعل", True, "help"),
+    ("يا صقر كيف استخدم الخدمة", True, "help"),
+    ("يا صقر توقف", True, "stop"),
+    ("يا صقر إلغاء", True, "stop"),
     ("هلا صقر كفاية", True, "stop"),
-    ("يا فالكون كيف حال الطقس", True, "off_topic"),
-    ("يا فالكون احكي لي نكتة", True, "off_topic"),
-    ("يا فالكون هذا احتيال؟", True, CC),
-    ("يا فالكون وصلتني رسالة نصب", True, CC),
-    ("هاي فالكون نسخت الرابط", True, CC),
-    ("يا فالكون الحافظة فيها رابط", True, CC),
-    ("يا فالكون افحص هذا النص", True, CT),
-    ("طيب يا فالكون افحص الرسالة", True, CC),
-    ("يا فالكون، شغّل", True, CC),
-    ("اهلا فالكون وصلني ايميل", True, CC),
-    ("يَا فَالْكُون افحص الرابط", True, CC),
-    ("يا فالكـــون افحص", True, CC),
+    ("يا صقر كيف حال الطقس", True, "off_topic"),
+    ("يا صقر احكي لي نكتة", True, "off_topic"),
+    ("يا صقر هذا احتيال؟", True, CC),
+    ("يا صقر وصلتني رسالة نصب", True, CC),
+    ("هاي صقر نسخت الرابط", True, CC),
+    ("يا صقر الحافظة فيها رابط", True, CC),
+    ("يا صقر افحص هذا النص", True, CT),
+    ("طيب يا صقر افحص الرسالة", True, CC),
+    ("يا صقر، شغّل", True, CC),
+    ("اهلا صقر وصلني ايميل", True, CC),
     ("يا عدسه الصقر افحص", True, CC),
     ("عدسةالصقر افحص الرابط", True, CC),
     ("يا صقر ساعدني", True, "help"),
@@ -117,8 +115,12 @@ AR_CASES: list[tuple[str, bool, str]] = [
     ("إلغاء", False, "stop"),
     ("وقف", False, "stop"),
     ("", False, "none"),
-    ("يا فالكون افحص الرسائل", True, CC),
+    ("يا صقر افحص الرسائل", True, CC),
     ("يا سكر توقف", True, "stop"),
+    ("يا الصقر افحص الرابط", True, CC),
+    ("يا فالكون افحص الرابط", False, "none"),
+    ("هلا فالكون وصلتني رسالة", False, "none"),
+    ("يافالكون افحص الرسالة", False, "none"),
 ]
 
 
@@ -142,7 +144,7 @@ def test_case_counts() -> None:
 def test_owner_demo_lines_command() -> None:
     en = analyse("Hey Falcon, I have received multiple messages that I feel it's scam, run Falcon Lens")
     assert en.command.startswith("I have received multiple messages")
-    ar = analyse("يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر")
+    ar = analyse("يا صقر، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر")
     assert ar.command.startswith("وصلتني رسائل")
 
 
@@ -153,7 +155,7 @@ def test_command_capped_and_empty_without_wake() -> None:
 
 
 def test_normalise() -> None:
-    assert normalise("يَا فَالْكُونْ!") == "يا فالكون"
+    assert normalise("يَا صَقْرْ!") == "يا صقر"
     assert normalise("عدسة الصقر") == "عدسه الصقر"
     assert normalise("أإآ ـــ ى") == "ااا ي"
     assert normalise("Hey, FALCON...") == "hey falcon"

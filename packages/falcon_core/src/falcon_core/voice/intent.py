@@ -18,8 +18,6 @@ Intent = Literal["check_clipboard", "check_text", "help", "stop", "faq", "off_to
 # --- wake phrase -----------------------------------------------------------------------------
 
 _FALCON_EN = "falcon"
-_FALCON_AR = "فالكون"
-_FALCON_AR_KNOWN = frozenset({"فالكون", "فالكن", "فلكون", "فالكان", "فولكون", "فالكونن", "فلكن", "فالقون", "فالكوون"})
 _GREET_EN = frozenset(
     {"hey", "hay", "hei", "heya", "hi", "hai", "hye", "ok", "okay", "okey", "okie", "ya", "yaa", "hala", "hello"}
 )
@@ -32,16 +30,12 @@ _MAX_START = 2
 
 
 def _is_falcon(tok: str) -> bool:
-    """Whisper writes the product name many ways: allow edit distance <= 2 on the wake token."""
+    """English wake token (Latin script). Whisper writes it many ways: allow edit distance <= 2."""
     if len(tok) < 4:
         return False
-    if tok.isascii():
-        return (
-            tok[0] in "fvp" and any(c in tok for c in "ckq") and len(tok) <= 9 and edit_distance(tok, _FALCON_EN) <= 2
-        )
-    if tok in _FALCON_AR_KNOWN:
-        return True
-    return tok[0] in "فقب" and any(c in tok for c in "كق") and edit_distance(tok, _FALCON_AR) <= 2
+    if not tok.isascii():
+        return False  # Arabic wakes only on «صقر» (see _SAQR); «فالكون» is not a wake word
+    return tok[0] in "fvp" and any(c in tok for c in "ckq") and len(tok) <= 9 and edit_distance(tok, _FALCON_EN) <= 2
 
 
 def _is_name(tok: str) -> bool:
@@ -49,7 +43,7 @@ def _is_name(tok: str) -> bool:
 
 
 def _glued(tok: str) -> bool:
-    """«يافالكون», «هلافالكون», «heyfalcon», «ياصقر»: greeting and name written as one word."""
+    """«ياصقر», «هلاصقر», «heyfalcon»: greeting and name written as one word."""
     for g in sorted(_GREETINGS, key=len, reverse=True):
         if tok.startswith(g) and len(tok) > len(g) and _is_name(tok[len(g) :]):
             return True

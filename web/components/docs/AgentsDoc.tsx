@@ -6,9 +6,9 @@ import { ARCH, type AgentBlock, type ArchContent } from "@/lib/arch-content";
 import { dt } from "@/lib/i18n-docs";
 import { flag } from "@/lib/cap-flag";
 import { ArchDiagram } from "@/components/arch/ArchDiagram";
+import { VoiceAgentsSection } from "@/components/VoiceAgentsSection";
 import { WhyDspyLanggraph } from "@/components/arch/WhyDspyLanggraph";
 import { at } from "@/lib/i18n-arch";
-import { VoiceDoc } from "./VoiceDoc";
 
 /** The investigator loop. Labels are code identifiers, so the figure is always left-to-right. */
 function LoopDiagram({ c }: { c: ArchContent }) {
@@ -132,7 +132,7 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
         <Fig id="sentinel" lang={lang} />
       </Agent>
 
-      <VoiceDoc lang={lang} />
+      <VoiceAgentsSection lang={lang} caps={caps} view="tech" />
 
       <WhyDspyLanggraph lang={lang} dspyLive={flag(caps, "dspy_compiled_prompts")} tracingLive={flag(caps, "llm_tracing")} />
 

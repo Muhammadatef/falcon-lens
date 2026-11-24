@@ -153,11 +153,11 @@ async function check(req, res, kind) {
 
 /** Voice: the multipart body carries a marker like VOICE:check-ar; the reply is canned. */
 const VOICE_REPLIES = {
-  "check-ar": { transcript: "يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر", lang: "ar", wake: true, intent: "check_clipboard", command: "شغّل عدسة الصقر" },
+  "check-ar": { transcript: "يا صقر، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر", lang: "ar", wake: true, intent: "check_clipboard", command: "شغّل عدسة الصقر" },
   "check-en": { transcript: "Hey Falcon, I have received multiple messages that I feel it's scam, run Falcon Lens", lang: "en", wake: true, intent: "check_clipboard", command: "run Falcon Lens" },
   "help-en": { transcript: "Hey Falcon help me", lang: "en", wake: true, intent: "help", command: "help me" },
-  "help-ar": { transcript: "يا فالكون ساعدني", lang: "ar", wake: true, intent: "help", command: "ساعدني" },
-  "none-ar": { transcript: "يا فالكون", lang: "ar", wake: true, intent: "none", command: "" },
+  "help-ar": { transcript: "يا صقر ساعدني", lang: "ar", wake: true, intent: "help", command: "ساعدني" },
+  "none-ar": { transcript: "يا صقر", lang: "ar", wake: true, intent: "none", command: "" },
   stop: { transcript: "Falcon stop", lang: "en", wake: true, intent: "stop", command: "stop" },
   "faq-otp-ar": { transcript: "يا صقر، هل البنك يطلب مني الرمز", lang: "ar", wake: true, intent: "faq", command: "هل البنك يطلب مني الرمز", answer_id: "faq.otp" },
   "faq-clicked-en": { transcript: "Hey Falcon, I already clicked the link, what now?", lang: "en", wake: true, intent: "faq", command: "I already clicked the link, what now?", answer_id: "faq.clicked_link" },

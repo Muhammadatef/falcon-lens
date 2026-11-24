@@ -184,7 +184,7 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("todo.report", "وبلّغ عن المسج من القنوات الرسمية.", "Report the message through the official channels.");
   put("todo.careful", "بس خلّك حذر.", "But stay careful.");
   put("todo.wait", "لا تفتح الرابط لين نشيّكه.", "Don't open the link until it is checked.");
-  put("help", "انسخ المسجات، وقل: يا فالكون، شيّك مسجاتي.", "Copy your messages, then say: Hey Falcon, check my messages.");
+  put("help", "انسخ المسجات، وقل: يا صقر، شيّك مسجاتي.", "Copy your messages, then say: Hey Falcon, check my messages.");
   put("stop", "تمام، وقّفت.", "Okay, I've stopped.");
   put("didnt", "ما فهمت عليك. عيد، لو سمحت.", "Sorry, I didn't catch that. Please say it again.");
   put("clip.empty", "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي.", "I found no messages in what you copied. Copy them and try again.");

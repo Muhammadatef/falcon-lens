@@ -42,7 +42,7 @@ MAX_BYTES = 1024 * 1024
 HF_REPO = "mlx-community/whisper-large-v3-turbo"
 MODEL_NAME = "whisper-large-v3-turbo"
 # Per language (Neo lesson): the Arabic phrases only bias Arabic audio, a mixed prompt is echoed on English/noise.
-PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا فالكون. عدسة الصقر. هاي فالكون."}
+PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا صقر. عدسة الصقر."}
 # Optional speed knob (default off, decoding unchanged): skip Whisper's timestamp tokens (scripts/voice_stt_bench.py).
 NO_TIMESTAMPS = os.environ.get("FL_WHISPER_NO_TIMESTAMPS", "") == "1"
 TOKENS_PER_WORD = 6

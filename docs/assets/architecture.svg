@@ -282,11 +282,11 @@ text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helveti
 
 <!-- voice path -->
 <rect class="zone" x="24" y="872" width="1152" height="98" rx="16"/>
-<g class="m tag"><rect x="40" y="864" width="260" height="16" fill="#070b14"/><text x="46" y="876">VOICE PATH · HEY FALCON · يا فالكون</text></g>
+<g class="m tag"><rect x="40" y="864" width="260" height="16" fill="#070b14"/><text x="46" y="876">VOICE PATH · HEY FALCON · يا صقر</text></g>
 <g class="w" marker-end="url(#a)"><path d="M205 924H229"/><path d="M394 924H418"/><path d="M583 924H607"/><path d="M772 924H796"/><path d="M961 924H985"/></g>
 <g class="f"><path d="M205 924H229"/><path d="M394 924H418"/><path d="M583 924H607"/><path d="M772 924H796"/><path d="M961 924H985"/></g>
 <g>
-<rect class="card" x="40" y="892" width="165" height="64" rx="12"/><text x="52" y="916" class="h">browser mic</text><text x="52" y="936" class="c">one clip, 15 s at most</text>
+<rect class="card" x="40" y="892" width="165" height="64" rx="12"/><text x="52" y="916" class="h">browser mic</text><text x="52" y="936" class="c">one short clip</text>
 <rect class="card" x="229" y="892" width="165" height="64" rx="12"/><text x="241" y="916" class="h">web /api/voice</text><text x="241" y="936" class="c">key stays on the server</text>
 <rect class="card" x="418" y="892" width="165" height="64" rx="12"/><text x="430" y="916" class="h">api</text><text x="430" y="936" class="m c">/v1/voice/utterance</text>
 <rect class="card" x="607" y="892" width="165" height="64" rx="12"/><text x="619" y="916" class="h">voice STT</text><text x="619" y="936" class="c">Whisper · local · own net</text>

@@ -1,0 +1,325 @@
+{
+  "kind": "sovereign_proof",
+  "created_at": "2026-11-24T12:57:26+00:00",
+  "git_sha": "bde4ef3",
+  "provenance": "Run on one developer machine (macOS host, Docker, local model servers). Fixtures are the invented Falcon Demo Bank; speech is synthetic (macOS `say`). Not a production deployment.",
+  "route": "local (FL_SOVEREIGN_MODE=1, no ANTHROPIC_API_KEY)",
+  "local_model": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+  "model_server": "http://127.0.0.1:8085",
+  "status": "failed",
+  "service_env": {
+    "api": {
+      "FL_SOVEREIGN_MODE": "1",
+      "OLLAMA_BASE_URL": "http://host.docker.internal:8085",
+      "FL_LOCAL_MODEL": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+      "FL_LOCAL_VISION_MODEL": "gemma3:27b",
+      "FL_LOCAL_NO_THINK": "1",
+      "ANTHROPIC_BASE_URL": "http://host.docker.internal:18999",
+      "ANTHROPIC_API_KEY_present": false
+    },
+    "worker": {
+      "FL_SOVEREIGN_MODE": "1",
+      "OLLAMA_BASE_URL": "http://host.docker.internal:8085",
+      "FL_LOCAL_MODEL": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+      "FL_LOCAL_VISION_MODEL": "gemma3:27b",
+      "FL_LOCAL_NO_THINK": "1",
+      "ANTHROPIC_BASE_URL": "http://host.docker.internal:18999",
+      "ANTHROPIC_API_KEY_present": false
+    },
+    "sentinel": {
+      "FL_SOVEREIGN_MODE": "1",
+      "OLLAMA_BASE_URL": "http://host.docker.internal:8085",
+      "FL_LOCAL_MODEL": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+      "FL_LOCAL_VISION_MODEL": "gemma3:27b",
+      "FL_LOCAL_NO_THINK": "1",
+      "ANTHROPIC_BASE_URL": "http://host.docker.internal:18999",
+      "ANTHROPIC_API_KEY_present": false
+    },
+    "mcp": {
+      "FL_SOVEREIGN_MODE": "1",
+      "OLLAMA_BASE_URL": "http://host.docker.internal:8085",
+      "FL_LOCAL_MODEL": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+      "FL_LOCAL_VISION_MODEL": "gemma3:27b",
+      "FL_LOCAL_NO_THINK": "1",
+      "ANTHROPIC_BASE_URL": "http://host.docker.internal:18999",
+      "ANTHROPIC_API_KEY_present": false
+    }
+  },
+  "warmup": {
+    "ok": true,
+    "status": 200,
+    "seconds": 4.2
+  },
+  "scenarios": [
+    {
+      "name": "1 feed phish (H2)",
+      "result": "PASS",
+      "verdict": "dangerous",
+      "verdict_id": "vd_01M86T411CQT7N7BN1863HG97M",
+      "note": "H2 via an invented .test feed entry (restored afterwards)",
+      "model_route": "none",
+      "tier_reached": "T0",
+      "latency_ms": 2,
+      "degraded": true,
+      "wall_s": 0.6
+    },
+    {
+      "name": "2 lookalike",
+      "result": "PASS",
+      "verdict": "dangerous",
+      "verdict_id": "vd_01M86T418G5HGG0AWHHRWYYV0Q",
+      "note": "H1 cited",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 3626,
+      "degraded": false,
+      "wall_s": 3.6
+    },
+    {
+      "name": "3 Arabic SMS",
+      "result": "PASS",
+      "verdict": "dangerous",
+      "verdict_id": "vd_01M86T44T798NNF5EZKPBSHTCB",
+      "note": "H5 cited",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 3717,
+      "degraded": false,
+      "wall_s": 3.7
+    },
+    {
+      "name": "4 phishing email",
+      "result": "PASS",
+      "verdict": "dangerous",
+      "verdict_id": "vd_01M86T48EST1JW94W11YPZMJPR",
+      "note": "display-name impersonation evidence",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 3736,
+      "degraded": false,
+      "wall_s": 3.9
+    },
+    {
+      "name": "5 verified official",
+      "result": "PASS",
+      "verdict": "no_warning_signs",
+      "verdict_id": "vd_01M86T4C75TZGH1T31CX1Q928C",
+      "note": "H3 cited, caution present",
+      "model_route": "none",
+      "tier_reached": "T1",
+      "latency_ms": 2045,
+      "degraded": false,
+      "wall_s": 2.1
+    },
+    {
+      "name": "6 injected page",
+      "result": "PASS",
+      "verdict": "suspicious",
+      "verdict_id": "vd_01M86T4E7JRACF0ZQY7YVW8R73",
+      "note": "instruction-like text counted as risk evidence",
+      "model_route": "local",
+      "tier_reached": "T3",
+      "latency_ms": 7961,
+      "degraded": false,
+      "wall_s": 8.0
+    },
+    {
+      "name": "S Sentinel scene",
+      "result": "PASS",
+      "verdict": "awaiting_approval",
+      "verdict_id": "inc_01M86T44T1GB9603NPKS7X582F",
+      "note": "inc_01M86T44T1GB9603NPKS7X582F status=awaiting_approval executed=6 awaiting_approval=2",
+      "wall_s": 89.2
+    }
+  ],
+  "scenario_counts": {
+    "PASS": 7
+  },
+  "message_probes": [
+    {
+      "kind": "message_probe",
+      "verdict": "no_warning_signs",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 1042,
+      "wall_s": 2.0
+    },
+    {
+      "kind": "message_probe",
+      "verdict": "suspicious",
+      "model_route": "local",
+      "tier_reached": "T2",
+      "latency_ms": 871,
+      "wall_s": 0.9
+    }
+  ],
+  "voice": {
+    "provenance": "SYNTHETIC speech from macOS `say` (not a human recording)",
+    "audio_seconds": 5.7,
+    "http_status": 200,
+    "wall_s": 1.12,
+    "model": "container:faster-whisper-small",
+    "wake": true,
+    "intent": "check_clipboard",
+    "lang": "en",
+    "duration_ms": 5731,
+    "transcript": "Hey Falcon. I have received multiple messages that I feel at scam. Run Falcon Lens.",
+    "ok": true
+  },
+  "sentinel_incident": {
+    "created_during_this_run": true,
+    "incident_id": "inc_01M86T44T1GB9603NPKS7X582F",
+    "type": "campaign",
+    "summary_generated_by": "template",
+    "summary_model_route": "none",
+    "severity_reason_generated_by": null,
+    "ok": false
+  },
+  "llm_calls_from_logs": {
+    "ok_calls": [
+      {
+        "role": "extractor",
+        "route": "local",
+        "model": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+        "n": 6,
+        "p50_ms": 1094,
+        "max_ms": 1234
+      },
+      {
+        "role": "investigator",
+        "route": "local",
+        "model": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+        "n": 3,
+        "p50_ms": 1156,
+        "max_ms": 1217
+      },
+      {
+        "role": "sentinel",
+        "route": "local",
+        "model": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+        "n": 3,
+        "p50_ms": 3593,
+        "max_ms": 4966
+      }
+    ],
+    "failed_calls": []
+  },
+  "metrics": {
+    "fl_llm_calls_total": [
+      {
+        "outcome": "ok",
+        "role": "extractor",
+        "route": "local",
+        "value": 6.0
+      },
+      {
+        "outcome": "ok",
+        "role": "investigator",
+        "route": "local",
+        "value": 3.0
+      },
+      {
+        "outcome": "ok",
+        "role": "sentinel",
+        "route": "local",
+        "value": 3.0
+      }
+    ],
+    "fl_llm_tokens_total_by_model": [
+      {
+        "model": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+        "role": "extractor",
+        "value": 6864.0
+      },
+      {
+        "model": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+        "role": "investigator",
+        "value": 4389.0
+      },
+      {
+        "model": "alibaba:qwen3.8:27b:mirai:mirai-m:4",
+        "role": "sentinel",
+        "value": 7236.0
+      }
+    ],
+    "fl_llm_results_total": [
+      {
+        "role": "extractor",
+        "status": "ok",
+        "value": 6.0
+      },
+      {
+        "role": "investigator",
+        "status": "ok",
+        "value": 3.0
+      },
+      {
+        "role": "sentinel",
+        "status": "ok",
+        "value": 3.0
+      }
+    ],
+    "fl_sentinel_text_total": [
+      {
+        "generated_by": "llm",
+        "task": "assess",
+        "value": 1.0
+      },
+      {
+        "generated_by": "template",
+        "task": "summarise",
+        "value": 1.0
+      }
+    ],
+    "fl_sentinel_llm_calls_total": [
+      {
+        "outcome": "ok",
+        "task": "assess",
+        "value": 1.0
+      },
+      {
+        "outcome": "ok",
+        "task": "summarise",
+        "value": 1.0
+      },
+      {
+        "outcome": "ok",
+        "task": "propose",
+        "value": 1.0
+      }
+    ]
+  },
+  "egress_audit": {
+    "anthropic_api_key_present_in_any_llm_service": false,
+    "sovereign_flag_in_every_llm_service": true,
+    "anthropic_sink_hits": 0,
+    "sink_note": "ANTHROPIC_BASE_URL of api/worker/sentinel/mcp points at a host sink that counts requests; 0 means no SDK call to a cloud LLM was attempted.",
+    "cloud_llm_host_mentions_in_service_logs": {},
+    "llm_routes_seen_in_logs": [
+      "local"
+    ],
+    "egress_proxy": {
+      "hosts_total": 0,
+      "lookup_hosts": [],
+      "cloud_llm_hosts": [],
+      "page_visit_hosts_count": 0,
+      "note": "page-visit hosts are sites the sandbox visited passively during the 90 s replay plus their sub-resources; they are lookups about the checked site, not user data and not LLM traffic"
+    },
+    "voice_egress_hosts": [
+      "cas-server.xethub.hf.co",
+      "huggingface.co",
+      "us.aws.cdn.hf.co"
+    ],
+    "log_lines_scanned_bytes": 10320
+  },
+  "failure_reasons": [
+    "Sentinel summary was not written by the local LLM"
+  ],
+  "finished_at": "2026-11-24T12:59:47+00:00",
+  "caveats": [
+    "Sovereign mode keeps the user's text and the model prompts on the machine; not every lookup is offline.",
+    "Still needs the internet: RDAP/WHOIS and certificate lookups about the checked domain, reputation feeds, and the sandbox's one passive visit to the checked site (all via the filtering egress proxy). These carry the URL's hostname, not the user's messages or the LLM prompts.",
+    "The container speech model downloads its weights once from huggingface.co through its own allow-listed proxy; audio then never leaves the machine.",
+    "Everything ran on one machine with fixtures; speech is synthetic; latencies are for this hardware and load."
+  ]
+}

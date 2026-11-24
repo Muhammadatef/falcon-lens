@@ -29,7 +29,7 @@
     },
     "wake": {
       "type": "boolean",
-      "description": "true when the utterance opens with a wake phrase (hey/hi/ok falcon, falcon lens, يا فالكون, يا صقر, عدسة الصقر, ...), tolerant of ASR spelling errors. Also true for the utterance sent with `follow_up=1` right after a bare wake phrase."
+      "description": "true when the utterance opens with a wake phrase (English: hey/hi/ok falcon, falcon lens; Arabic: يا صقر, عدسة الصقر, ...), tolerant of ASR spelling errors. Also true for the utterance sent with `follow_up=1` right after a bare wake phrase."
     },
     "intent": {
       "enum": [
@@ -48,6 +48,14 @@
       "maxLength": 300,
       "description": "The part after the wake phrase, empty when there is no wake phrase."
     },
+    "answer_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^faq\\.[a-z_]+$",
+      "description": "Name of the pre-written, pre-recorded answer clip (voice_faq.yaml: `<lang>.faq.<name>`) when `intent` is `faq`; otherwise null."
+    },
     "duration_ms": {
       "type": "integer",
       "minimum": 0,
@@ -56,14 +64,6 @@
     "model": {
       "type": "string",
       "description": "Engine and model that answered, e.g. `native:whisper-large-v3-turbo` or `container:faster-whisper-small`."
-    },
-    "answer_id": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "pattern": "^faq\\.[a-z_]+$",
-      "description": "Name of the pre-written, pre-recorded answer clip (voice_faq.yaml: `<lang>.faq.<name>`) when `intent` is `faq`; otherwise null."
     }
   }
 }

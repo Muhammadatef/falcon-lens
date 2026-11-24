@@ -82,7 +82,8 @@
 html[dir="rtl"] .voice-meter-bar { transform-origin: right center; }
 .voice-hint { font-size: var(--fl-text-sm); }
 .voice-steps { padding: var(--fl-space-5); }
-.voice-steps ol { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--fl-space-3); }
+.voice-steps ol { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--fl-space-3); counter-reset: vstep; }
+.voice-steps li::before { counter-increment: vstep; content: counter(vstep) "."; flex: none; min-inline-size: 2.25rem; font-weight: var(--fl-weight-bold); color: var(--fl-brand); font-variant-numeric: tabular-nums; }
 .voice-steps li { display: flex; align-items: flex-start; gap: var(--fl-space-3); font-size: 1.375rem; line-height: 1.6; color: var(--fl-text); font-weight: var(--fl-weight-medium); }
 .voice-steps li[data-done="false"] { color: var(--fl-brand-strong); }
 .voice-step-mark { flex: none; inline-size: 1.75rem; block-size: 1.75rem; display: grid; place-items: center; margin-block-start: 0.15rem; color: var(--fl-brand); }

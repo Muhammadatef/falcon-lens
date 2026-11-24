@@ -101,7 +101,7 @@ def test_lazy_model_is_not_loaded_at_import_or_startup() -> None:
 
 def test_prompts_are_per_language() -> None:
     p: Any = voice_app.PROMPTS
-    assert "فالكون" in p["ar"]
+    assert "صقر" in p["ar"]
     assert not any("؀" <= ch <= "ۿ" for ch in p["en"])
 
 
