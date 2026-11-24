@@ -172,6 +172,33 @@ async function api(req, res, path) {
     return void res.end(); // the real stream closes after `final: true`
   }
 
+  // Operator history (GET /v1/verdicts, /v1/verdicts/stream) and operator verdict lookup, per board cookie.
+  const hboard = boards.get(cookie(req, "mock_boards") ?? "");
+  const hkey = req.headers["x-api-key"] ?? (/^bearer /i.test(req.headers.authorization ?? "") ? req.headers.authorization.slice(7) : undefined);
+  const hAuthed = !hboard?.requireKey || hkey === hboard.requireKey;
+  if (hboard?.verdicts != null && req.method === "GET") {
+    if (path === "/v1/verdicts") {
+      if (!hAuthed) return problem(req, res, 401, "unauthorized", "Unauthorized");
+      return json(res, 200, { items: hboard.verdicts, next_cursor: hboard.nextCursor ?? null });
+    }
+    if (path === "/v1/verdicts/stream") {
+      if (!hAuthed) return problem(req, res, 401, "unauthorized", "Unauthorized");
+      sseHead(res);
+      let n = 0;
+      for (const v of hboard.verdictEvents ?? []) {
+        await sleep(400);
+        if (res.destroyed) return;
+        sseSend(res, "verdict", v, `${Date.now()}-${n++}`);
+      }
+      return;
+    }
+    const doc = /^\/v1\/verdicts\/([^/]+)$/.exec(path);
+    if (doc && hboard.verdictDocs?.[doc[1]]) {
+      if (!hAuthed) return problem(req, res, 401, "unauthorized", "Unauthorized");
+      return json(res, 200, hboard.verdictDocs[doc[1]]);
+    }
+  }
+
   const status = /^\/v1\/verdicts\/([^/]+)$/.exec(path);
   if (status && req.method === "GET") {
     const s = byId.get(status[1]);

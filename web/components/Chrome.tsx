@@ -23,6 +23,7 @@ export const NAV_LINKS = [
 export const FOOT_LINKS = [
   { href: "/campaigns", key: "nav.live" },
   { href: "/ops", key: "nav.ops" },
+  { href: "/history", key: "nav.history" },
 ] as const;
 
 const isCurrent = (pathname: string, href: string): "page" | "true" | undefined =>

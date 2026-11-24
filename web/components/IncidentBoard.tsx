@@ -204,7 +204,7 @@ function IncidentCard({ incident, demo, notice, onDecide }: { incident: Incident
     <article className="card incident" data-testid="incident-card" data-open={open ? "true" : undefined}>
       <div className="inc-head" data-sev={incident.severity}>
         <span className="sev"><SeverityMark severity={incident.severity} size={20} />{t("sev")}: {t(`sev.${incident.severity}`)}</span>
-        <h2 dir="auto">{title}</h2>
+        <h2 dir="auto"><Link className="hs-link" href={l.href} data-testid="incident-title-link">{title}</Link></h2>
         <SourceBadge source={incident.source} />
         <span className="pill">{translateMaybe(lang, "type", incident.type)}</span>
         <span className={incident.status === "awaiting_approval" ? "pill pill--wait pill--live" : "pill"} data-testid="incident-status">{t(`is.${incident.status}`)}</span>
