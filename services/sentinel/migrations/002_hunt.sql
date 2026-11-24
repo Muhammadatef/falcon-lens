@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS hunt_candidates (
   time_to_detection_s double precision,
   time_to_detection_basis text,
   checked_at timestamptz,
+  first_user_seen timestamptz,
+  scheme text NOT NULL DEFAULT 'https' CHECK (scheme IN ('https','http')),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS hunt_candidates_status_idx ON hunt_candidates (status, prescore DESC);

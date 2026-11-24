@@ -61,7 +61,7 @@ def test_every_alert_has_runbook_anchor() -> None:
         url = rule["annotations"]["runbook_url"]
         assert url.startswith("docs/RUNBOOK.md#"), rule["alert"]
         assert url.split("#", 1)[1] in anchors, f"{rule['alert']}: {url}"
-        assert rule["labels"]["severity"] in {"warning", "critical"}
+        assert rule["labels"]["severity"] in {"info", "warning", "critical"}  # info routes to the null receiver
 
 
 def test_alert_names_unique() -> None:
