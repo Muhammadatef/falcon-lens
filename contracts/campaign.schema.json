@@ -20,6 +20,8 @@
     "advice_ar": { "type": "string" },
     "advice_en": { "type": "string" },
     "incident_id": { "type": "string", "pattern": "^inc_[0-9A-HJKMNP-TV-Z]{26}$" },
-    "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"], "description": "Replayed or synthetic data stays labelled." }
+    "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"], "description": "Replayed or synthetic data stays labelled." },
+    "found_before_report": { "type": "boolean", "description": "Optional. The incident's detection.found_before_report (hunt mode found every domain before any person checked or reported it)." },
+    "hunt_count": { "type": "integer", "minimum": 0, "description": "Optional. Number of linked domain indicators first found by the hunt mode." }
   }
 }
