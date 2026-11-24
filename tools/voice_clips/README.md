@@ -32,3 +32,14 @@ then `FL_SILMA_PYTHON=silma-venv/bin/python FL_VOICE_REF_TEXT="<transcript of th
 `silma_worker.py` stubs `nemo-text-processing` and `catt-tashkeel` (no auto tashkeel).
 
 Models are read from `FL_VOICE_MODELS` (default `~/neo-models`); nothing is downloaded by this tool.
+
+## Amazon Polly (Arabic, owner decision 24 Nov)
+The live Arabic voice is **Amazon Polly neural `Zayd` (ar-AE, Emirati male)**. Polly is used ONLY offline here,
+to pre-generate clips from our own script text: no user data is ever sent, and nothing calls AWS at runtime.
+Credentials come from the environment (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`; an IAM user
+with `AmazonPollyReadOnlyAccess`). Clips go to the private folder (not committed), like the macOS clips:
+
+    cd ../.. && PYTHONPATH=tools/voice_clips/src uv run --project tools/voice_clips --extra polly \
+      python -m voice_clips.generate --engine polly --lang ar_ae --out data/private/voice/clips/ar_ae
+
+A full Arabic render is about 9,000 characters.
