@@ -84,7 +84,7 @@ async def test_happy_path_matches_contract() -> None:
     c, key = await make_client(Engines(nat=ok(), con=ok()))
     async with c:
         r = await c.post("/v1/voice/utterance", files=files(wav_bytes(2)), headers={"X-API-Key": key})
-    assert r.status_code == 200
+    assert r.status_code == 200, r.text
     body = r.json()
     jsonschema.validate(body, SCHEMA)
     assert body["wake"] is True

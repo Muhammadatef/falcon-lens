@@ -141,23 +141,6 @@ components:
       - file
       title: Body_check_image_v1_check_image_post
       type: object
-    Body_utterance_v1_voice_utterance_post:
-      properties:
-        audio:
-          contentMediaType: application/octet-stream
-          description: audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB
-          title: Audio
-          type: string
-        lang_hint:
-          anyOf:
-          - type: string
-          - type: 'null'
-          description: ar or en (optional)
-          title: Lang Hint
-      required:
-      - audio
-      title: Body_utterance_v1_voice_utterance_post
-      type: object
     Brand:
       additionalProperties: false
       properties:
@@ -2510,7 +2493,20 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Body_utterance_v1_voice_utterance_post'
+              properties:
+                audio:
+                  description: audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB
+                  format: binary
+                  type: string
+                lang_hint:
+                  description: optional
+                  enum:
+                  - ar
+                  - en
+                  type: string
+              required:
+              - audio
+              type: object
         required: true
       responses:
         '200':

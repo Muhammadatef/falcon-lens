@@ -71,7 +71,7 @@ BODY_LIMITS = {
     "/v1/check/image": MAX_IMAGE_BYTES + _JSON_OVERHEAD,
     "/v1/reports": 16 * 1024,
     "/v1/feedback": 4 * 1024,
-    "/v1/voice/utterance": 1024 * 1024 + _JSON_OVERHEAD,
+    "/v1/voice/utterance": 1024 * 1024 + 16 * 1024,  # audio cap plus multipart framing
 }
 VERDICT_ID_RE = r"^vd_[0-9A-HJKMNP-TV-Z]{26}$"
 _IDEM_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")

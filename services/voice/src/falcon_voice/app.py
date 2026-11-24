@@ -19,12 +19,13 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
+import numpy as np
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from falcon_core.contracts.voice import SttResult
 from falcon_core.service import create_app
-from falcon_core.voice.guard import clean_transcript
+from falcon_core.voice.guard import clean_transcript, sniff
 
 log = logging.getLogger("falcon.voice")
 
@@ -34,6 +35,35 @@ TRANSCRIBE_TIMEOUT_S = 25.0
 SAMPLE_RATE = 16000
 # Short bias towards the product name. Per language: a mixed prompt makes Whisper echo it on noise.
 PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا فالكون. عدسة الصقر."}
+
+
+FORMATS = {"wav": "wav", "ogg": "ogg", "webm": "matroska,webm"}
+
+
+def decode(raw: bytes) -> np.ndarray:
+    """Audio bytes -> mono float32 16 kHz, in memory.
+
+    The demuxer is forced from the magic bytes (wav, ogg, webm only), so libav never probes: concat, HLS and
+    DASH playlists and anything else are refused. Decoding stops past MAX_AUDIO_S, which bounds memory.
+    """
+    import av
+
+    family = sniff(raw)
+    if family is None:
+        raise ValueError("unsupported audio container")
+    resampler = av.AudioResampler(format="s16", layout="mono", rate=SAMPLE_RATE)
+    chunks: list[np.ndarray] = []
+    total = 0
+    with av.open(io.BytesIO(raw), mode="r", format=FORMATS[family]) as container:
+        for frame in container.decode(audio=0):
+            for out in resampler.resample(frame):
+                arr = out.to_ndarray().reshape(-1)
+                chunks.append(arr)
+                total += len(arr)
+            if total > (MAX_AUDIO_S + 0.5) * SAMPLE_RATE:
+                break
+    pcm = np.concatenate(chunks) if chunks else np.zeros(0, dtype=np.int16)
+    return pcm.astype(np.float32) / 32768.0
 
 
 class Engine:
@@ -59,29 +89,38 @@ class Engine:
             if self.model is not None:
                 return
             try:
-                from faster_whisper import WhisperModel
+                self.model = self._open(local_only=True)  # present in the volume: no network, ever
+            except Exception:  # noqa: BLE001 - not downloaded yet (LocalEntryNotFoundError and friends)
+                if self.offline:
+                    self.error = "model_missing_offline"
+                    log.warning("whisper model missing and FL_VOICE_OFFLINE=true", extra={"reason": self.error})
+                    return
+                try:
+                    self.model = self._open(local_only=False)  # one-time download through the egress proxy
+                except Exception as exc:  # noqa: BLE001 - download/IO errors are open-ended; log the class only
+                    self.error = type(exc).__name__
+                    log.warning("whisper model load failed", extra={"reason": self.error})
+                    return
+            self.error = None
+            log.info("whisper model loaded", extra={"model": self.name})
 
-                self.model = WhisperModel(
-                    self.name,
-                    device="cpu",
-                    compute_type=self.compute,
-                    cpu_threads=self.threads,
-                    download_root=self.model_dir,
-                    local_files_only=self.offline,
-                )
-                self.error = None
-                log.info("whisper model loaded", extra={"model": self.name})
-            except Exception as exc:  # noqa: BLE001 - download/IO errors are open-ended; log the class only
-                self.error = type(exc).__name__
-                log.warning("whisper model load failed", extra={"reason": self.error})
+    def _open(self, *, local_only: bool) -> Any:
+        from faster_whisper import WhisperModel
+
+        return WhisperModel(
+            self.name,
+            device="cpu",
+            compute_type=self.compute,
+            cpu_threads=self.threads,
+            download_root=self.model_dir,
+            local_files_only=local_only,
+        )
 
     def load_in_background(self) -> None:
         threading.Thread(target=self.load, name="whisper-load", daemon=True).start()
 
     def transcribe(self, raw: bytes, lang: str | None) -> SttResult:
-        from faster_whisper.audio import decode_audio
-
-        audio = decode_audio(io.BytesIO(raw), sampling_rate=SAMPLE_RATE)
+        audio = decode(raw)
         seconds = len(audio) / SAMPLE_RATE
         if seconds > MAX_AUDIO_S:
             raise AudioTooLongError(seconds)
@@ -135,6 +174,8 @@ def build_app(engine: Engine | None = None) -> FastAPI:
         yield
 
     token = os.environ.get("FL_VOICE_TOKEN", "")
+    if not token:  # fail closed: create_app answers 503 on every path except the health checks
+        log.error("voice token not configured", extra={"reason": "no_token"})
     app = create_app("voice", deps={"model_loaded": model_loaded}, lifespan=lifespan, protect=True, token=token)
 
     @app.post("/stt")
