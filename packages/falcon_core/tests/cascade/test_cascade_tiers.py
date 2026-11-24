@@ -150,6 +150,24 @@ async def test_t0_host_listing_hits_whole_host() -> None:
     assert final["verdict"] == "dangerous" and "H2" in rules(final)
 
 
+async def test_t0_feed_hit_without_t1_model_is_not_degraded() -> None:
+    """T1 was not needed on a T0 exit, so the missing model must not mark the verdict degraded."""
+    url = "https://synthetic-feed-entry.test/a"
+    cascade, _ = make_cascade(
+        StubSandboxClient(error="must_not_render"), mirror=loaded_mirror([url], age_s=600), t1_model=None
+    )
+    final = (await run(cascade, url)).docs[-1]
+    assert final["verdict"] == "dangerous" and final["tier_reached"] == "T0"
+    assert final["degraded"] is False
+    assert "t1_model_unavailable" not in (final.get("degraded_reasons") or [])
+
+
+async def test_t1_required_and_model_missing_is_degraded() -> None:
+    cascade, _ = make_cascade(StubSandboxClient(default=benign_features()), t1_model=None)
+    final = (await run(cascade, DEMO_ZERO_DAY_URL)).docs[-1]
+    assert final["degraded"] and "t1_model_unavailable" in final["degraded_reasons"]
+
+
 async def test_t0_stale_feed_hit_is_not_h2() -> None:
     url = "https://synthetic-feed-entry.test/b"
     cascade, _ = make_cascade(
