@@ -98,7 +98,7 @@ test.describe("check trace is verdict first", () => {
       degraded: true,
       degraded_reasons: ["not_rendered:metadata", "not_rendered:metadata"],
       reasons: ["a", "b", "c", "d"].map((x) => ({ ar: `سبب ${x}`, en: `Reason ${x}`, evidence_ids: [] })),
-      evidence: [...DEMO_DANGEROUS.evidence, bare(1), bare(2), bare(3)],
+      evidence: [...DEMO_DANGEROUS.evidence, bare(1), bare(2), bare(3), { ...bare(4), signal: "url.weighted", weight: 1.5 }],
     };
     await useBoards(context, request, baseURL!, { verdicts: [], verdictDocs: { [id]: doc } });
     await setPrefs(context, baseURL!, { lang: "en" });
@@ -107,7 +107,11 @@ test.describe("check trace is verdict first", () => {
     await expect(hero).toBeVisible();
     await expect(page.getByTestId("check-verdict")).toHaveText("Dangerous");
     await expect(page.getByTestId("check-risk")).toContainText("/ 100");
+    // The contract allows at most 3 reasons, so all of them are in the hero; the "More reasons" fold only appears if a verdict ever carries more.
     await expect(page.getByTestId("check-reason")).toHaveCount(3);
+    await expect(page.getByTestId("check-more-reasons")).toHaveCount(0);
+    // Weighted evidence stays visible; only inert (weight 0, no rule, no text) evidence is folded.
+    await expect(page.getByTestId("check-more").first()).not.toContainText("ev_");
     const order = await page.evaluate(() => {
       const hero = document.querySelector('[data-testid="check-final"]')!;
       const tiers = document.querySelector('[data-testid="check-tiers"]')!;
@@ -116,6 +120,8 @@ test.describe("check trace is verdict first", () => {
     expect(order).toBe(true);
     await expect(page.locator("main")).not.toContainText("not_rendered");
     await expect(page.locator("main")).not.toContainText("Evidence without a description");
+    await expect(page.getByText("A technical check that counted toward the score")).toHaveCount(1);
+    await expect(page.getByTestId("check-more").first()).not.toContainText("url.weighted");
     await expect(page.getByTestId("check-more").first()).toContainText("More technical detail");
     expect(await page.getByTestId("check-more").first().locator("li").count()).toBeGreaterThanOrEqual(3);
     await setPrefs(context, baseURL!, { lang: "ar" });

@@ -6,7 +6,7 @@
 export const AR_NOTES: Record<string, string> = {
   // results-extra: realSynthetic, messageText, redteam, extractor
   "real (manifest items) and synthetic (Falcon Demo Bank fixtures), reported side by side":
-    "عناصر حقيقية (من قائمة المجموعة المجمدة) وعناصر اصطناعية (نماذج «بنك الصقر التجريبي»)، تُعرض جنباً إلى جنب.",
+    "عناصر حقيقية (من قائمة المجموعة) وعناصر اصطناعية (نماذج «بنك الصقر التجريبي»)، تُعرض جنباً إلى جنب.",
   "real and synthetic numbers are never pooled; no model or threshold was fitted or tuned on any of these items":
     "لا تُجمع الأرقام الحقيقية مع الاصطناعية، ولم يُدرَّب أي نموذج ولم تُضبط أي عتبة على أي من هذه العناصر.",
   "The .test top-level domain itself raises the URL-only prior, so benign .test fixtures are flagged more often than benign real sites; read this FPR as an upper-bound artifact of reserved hosts, not as a field FPR.":
@@ -27,7 +27,7 @@ export const AR_NOTES: Record<string, string> = {
   "synthetic fixtures; cost depends on prompt sizes of this corpus (short pages and messages)":
     "نماذج اختبار اصطناعية؛ تعتمد الكلفة على أحجام المطالبات في هذه المجموعة (صفحات ورسائل قصيرة).",
   "real (held-out legit domains, recorded fp_regress runs) and synthetic (fixtures), kept apart":
-    "عناصر حقيقية (نطاقات مشروعة محجوزة وتشغيلات fp_regress المسجّلة) وعناصر اصطناعية (نماذج اختبار)، تُعرض منفصلة.",
+    "عناصر حقيقية (نطاقات مشروعة مستبعَدة من الضبط (held-out) وتشغيلات fp_regress المسجّلة) وعناصر اصطناعية (نماذج اختبار)، تُعرض منفصلة.",
   "synthetic (invented Falcon Demo Bank lookalikes on .test hosts generated 2026-11-23); fixture-backed renderer":
     "اصطناعية (صفحات «بنك الصقر التجريبي» المخترَعة على نطاقات .test، وُلّدت بتاريخ 2026-11-23)، مع عارض مستند إلى نماذج اختبار.",
   ".test hosts raise the URL-only prior (every .test page, including benign ones, is warned at T1); read warning rates together with the benign-control row, and treat 'dangerous' (H1) as the discriminating figure":
@@ -38,6 +38,6 @@ export const AR_NOTES: Record<string, string> = {
     "رسائل اصطناعية خالية من الروابط («بنك الصقر التجريبي» وأدوار عامة). الاستدعاء ونسبة الإنذار الخاطئ بنطاقات ثقة 95% بطريقة ويلسون؛ قلة الأمثلة تعني نطاقات واسعة. يُقيَّم الاختبار مرة واحدة لكل إصدار، وهو للإبلاغ فقط (ليس في evals/baseline.json).",
   "0/113 harmful at extended local-model deadlines (model answered 91/113; 0 failed calls). At production deadlines the model answered 89/113 (27 failed calls) with 0 harmful. Never quote the harmful count without the answered count.":
     "0 من 113 ضارّة عند المهل الممتدة للنموذج المحلي (أجاب النموذج عن 91 من 113؛ 0 نداءات فاشلة). وعند المهل الإنتاجية أجاب عن 89 من 113 (27 نداءً فاشلاً) مع 0 ضارّة. لا يُذكر عدد الضارّة دون عدد الحالات المُجاب عنها.",
-  "shipped Arabic catalog templates (not model output)": "قوالب الكتالوج العربي المُشحونة (وليست مخرجات نموذج).",
+  "shipped Arabic catalog templates (not model output)": "قوالب الكتالوج العربي المضمّنة في الإصدار (وليست مخرجات نموذج).",
   "fitted on validation only": "ضُبط على مجموعة التحقق وحدها.",
 };

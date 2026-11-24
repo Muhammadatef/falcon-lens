@@ -98,6 +98,7 @@ function Body({ verdict: v }: { verdict: Verdict }) {
   const route = v.model_route;
   const why = plainDegradedReasons(v.degraded_reasons, lang);
   const top = v.reasons.slice(0, 3);
+  const rest = v.reasons.slice(3);
   return (
     <>
       <article className="card ck-hero" data-testid="check-final" data-verdict={v.verdict}>
@@ -117,6 +118,19 @@ function Body({ verdict: v }: { verdict: Verdict }) {
               ))}
             </ol>
           )}
+          {rest.length > 0 ? (
+            <details className="ck-more" data-testid="check-more-reasons">
+              <summary>{h("ck.reasons.more")} ({rest.length})</summary>
+              <ol className="ck-reasons" start={4}>
+                {rest.map((r, i) => (
+                  <li key={i} data-testid="check-reason">
+                    <UntrustedText value={pick(lang, r)} />
+                    {r.evidence_ids.length > 0 ? <span className="kv">{r.evidence_ids.map((id) => <span key={id}>{id}</span>)}</span> : null}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          ) : null}
           {v.degraded ? <p className="small" data-testid="check-degraded">{h("ck.degraded")}{why.length > 0 ? `. ${h("ck.degraded.why", { reasons: why.join(lang === "ar" ? "، " : "; ") })}` : ""}</p> : null}
           {!v.final ? <p className="small" role="status">{h("ck.partial")}</p> : null}
         </div>
@@ -149,6 +163,8 @@ function Body({ verdict: v }: { verdict: Verdict }) {
 
 /** Evidence the reader can understand: it has a text of its own. Everything else goes in the fold. */
 const hasText = (e: Evidence, lang: "ar" | "en") => pick(lang, e.display).trim().length > 0;
+/** Only evidence with no effect on the score (weight 0, no hard rule) and no text of its own goes in the fold. */
+const isInert = (e: Evidence, lang: "ar" | "en") => !hasText(e, lang) && e.weight === 0 && !e.hard_rule;
 
 function TierCard({ tier, v }: { tier: Tier; v: Verdict }) {
   const { lang } = usePrefs();
@@ -156,8 +172,8 @@ function TierCard({ tier, v }: { tier: Tier; v: Verdict }) {
   const reachedIdx = TIERS.indexOf(v.tier_reached);
   const ran = TIERS.indexOf(tier) <= reachedIdx;
   const items = v.evidence.filter((e) => e.tier === tier);
-  const shown = items.filter((e) => hasText(e, lang));
-  const folded = items.filter((e) => !hasText(e, lang));
+  const shown = items.filter((e) => !isInert(e, lang));
+  const folded = items.filter((e) => isInert(e, lang));
   const reasons = plainDegradedReasons(v.degraded_reasons, lang);
   const why = ran ? null : !v.final ? h("ck.skip.pending") : v.degraded && reasons.length > 0 ? h("ck.skip.degraded", { reasons: reasons.join(lang === "ar" ? "، " : "; ") }) : h("ck.skip.settled");
   return (
@@ -195,7 +211,7 @@ function EvidenceRow({ e, lang }: { e: Evidence; lang: "ar" | "en" }) {
     <li className="ck-ev-row" data-testid="check-evidence" data-polarity={e.polarity ?? "neutral"}>
       <PolarityMark polarity={e.polarity ?? "neutral"} />
       <span className="ck-ev-text" dir="auto">
-        <UntrustedText value={e.error ? `${text} · ${h("ck.evidence.failed")}` : text} />
+        <UntrustedText value={e.error ? (text ? `${text} · ${h("ck.evidence.failed")}` : h("ck.evidence.failed")) : text || (e.hard_rule ? h("ck.evidence.rule") : h("ck.evidence.weighted"))} />
       </span>
       {e.weight !== 0 || e.hard_rule ? (
         <span className="kv">
@@ -213,7 +229,7 @@ function AiCalls({ v }: { v: Verdict }) {
   const h = useH();
   const { lang } = usePrefs();
   const steps = (v.trace ?? []).filter((s) => KINDS.includes(s.kind));
-  const aiEvidence = v.evidence.filter((e) => e.source.startsWith("llm:") && hasText(e, lang));
+  const aiEvidence = v.evidence.filter((e) => e.source.startsWith("llm:") && !isInert(e, lang));
   if (steps.length === 0 && aiEvidence.length === 0) return <div className="card state" data-testid="check-ai-none"><p>{h("ck.ai.none")}</p></div>;
   return (
     <div className="card ck-ai" data-testid="check-ai">
