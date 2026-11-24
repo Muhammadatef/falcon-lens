@@ -255,9 +255,9 @@ Lines: 343. Digits are written out in words (`num.0` to `num.100`).
 | بصير شيّك، بس ما قدرت أوصل لدرع. | Baseer checked, but I couldn't reach Dir. |  |
 | بصير شيّك، ودرع يظل يراقب. | Baseer checked, and Dir keeps watching. |  |
 | مسج واحد منها خطر. | One message is dangerous. |  |
-| مسج واحد منها مشكوك فيها. | One message looks suspicious. |  |
-| مسج واحد ما فيها علامات تحذير. | One message showed no warning signs. |  |
-| مسج واحد ما قدرت أشيّكها. | One message could not be checked. |  |
+| مسج واحد منها مشكوك فيه. | One message looks suspicious. |  |
+| مسج واحد ما فيه علامات تحذير. | One message showed no warning signs. |  |
+| مسج واحد ما قدرت أشيّكه. | One message could not be checked. |  |
 | مسجين منها خطر. | Two messages are dangerous. |  |
 | مسجين منها مشكوك فيها. | Two messages look suspicious. |  |
 | مسجين ما فيها علامات تحذير. | Two messages showed no warning signs. |  |

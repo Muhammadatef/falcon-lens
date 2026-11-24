@@ -260,7 +260,11 @@ function build(): Record<VoiceLang, Record<string, string>> {
 
   N.forEach((n, i) => {
     const en_ = SUM_EN(n);
-    for (const k of SUMMARY_KINDS) put(`sum.${k}.${n}`, `${COUNT_AR[i]} ${SUM_AR[k]}`, `${COUNT_EN[i]} ${en_[k]}`);
+    for (const k of SUMMARY_KINDS) {
+      // One message is masculine singular ("مسج واحد ... فيه / أشيّكه"); two or more take the plural "منها / فيها".
+      const ar1 = { dangerous: "منها خطر.", suspicious: "منها مشكوك فيه.", clear: "ما فيه علامات تحذير.", failed: "ما قدرت أشيّكه." };
+      put(`sum.${k}.${n}`, `${COUNT_AR[i]} ${n === 1 ? ar1[k] : SUM_AR[k]}`, `${COUNT_EN[i]} ${en_[k]}`);
+    }
   });
   put("result.dangerous", "هذا المسج خطر!", "This message is dangerous.");
   put("result.suspicious", "هذا المسج مشكوك فيه.", "This message looks suspicious.");

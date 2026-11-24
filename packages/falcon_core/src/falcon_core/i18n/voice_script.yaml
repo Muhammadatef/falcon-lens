@@ -249,9 +249,9 @@ ar_ae:
   "final.sentinel_unavailable": "بصير شيّك، بس ما قدرت أوصل لدرع."
   "final.sentinel_watching": "بصير شيّك، ودرع يظل يراقب."
   "sum.dangerous.1": "مسج واحد منها خطر."
-  "sum.suspicious.1": "مسج واحد منها مشكوك فيها."
-  "sum.clear.1": "مسج واحد ما فيها علامات تحذير."
-  "sum.failed.1": "مسج واحد ما قدرت أشيّكها."
+  "sum.suspicious.1": "مسج واحد منها مشكوك فيه."
+  "sum.clear.1": "مسج واحد ما فيه علامات تحذير."
+  "sum.failed.1": "مسج واحد ما قدرت أشيّكه."
   "sum.dangerous.2": "مسجين منها خطر."
   "sum.suspicious.2": "مسجين منها مشكوك فيها."
   "sum.clear.2": "مسجين ما فيها علامات تحذير."
@@ -885,9 +885,9 @@ clips:
   - {id: "ar_ae.final.sentinel_unavailable", lang: ar_ae, text: "بصير شيّك، بس ما قدرت أوصل لدرع."}
   - {id: "ar_ae.final.sentinel_watching", lang: ar_ae, text: "بصير شيّك، ودرع يظل يراقب."}
   - {id: "ar_ae.sum.dangerous.1", lang: ar_ae, text: "مسج واحد منها خطر."}
-  - {id: "ar_ae.sum.suspicious.1", lang: ar_ae, text: "مسج واحد منها مشكوك فيها."}
-  - {id: "ar_ae.sum.clear.1", lang: ar_ae, text: "مسج واحد ما فيها علامات تحذير."}
-  - {id: "ar_ae.sum.failed.1", lang: ar_ae, text: "مسج واحد ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.suspicious.1", lang: ar_ae, text: "مسج واحد منها مشكوك فيه."}
+  - {id: "ar_ae.sum.clear.1", lang: ar_ae, text: "مسج واحد ما فيه علامات تحذير."}
+  - {id: "ar_ae.sum.failed.1", lang: ar_ae, text: "مسج واحد ما قدرت أشيّكه."}
   - {id: "ar_ae.sum.dangerous.2", lang: ar_ae, text: "مسجين منها خطر."}
   - {id: "ar_ae.sum.suspicious.2", lang: ar_ae, text: "مسجين منها مشكوك فيها."}
   - {id: "ar_ae.sum.clear.2", lang: ar_ae, text: "مسجين ما فيها علامات تحذير."}
