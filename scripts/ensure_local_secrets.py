@@ -15,15 +15,23 @@ from pathlib import Path
 LOCAL_ONLY = ("PHOENIX_SECRET", "PHOENIX_ADMIN_SECRET", "PHOENIX_ADMIN_INITIAL_PASSWORD")
 
 
+def new_secret() -> str:
+    """Random secret that meets Phoenix's rule (>= 32 chars, at least one digit and one lowercase letter)."""
+    while True:
+        value = secrets.token_urlsafe(36)
+        if any(c.isdigit() for c in value) and any(c.islower() for c in value):
+            return value
+
+
 def fill(text: str) -> tuple[str, list[str]]:
     filled: list[str] = []
     for name in LOCAL_ONLY:
         pattern = re.compile(rf"^{name}=[ \t]*$", re.MULTILINE)
         if pattern.search(text):
-            text = pattern.sub(f"{name}={secrets.token_urlsafe(36)}", text, count=1)
+            text = pattern.sub(f"{name}={new_secret()}", text, count=1)
             filled.append(name)
         elif not re.search(rf"^{name}=", text, re.MULTILINE):
-            text = text.rstrip("\n") + f"\n{name}={secrets.token_urlsafe(36)}\n"
+            text = text.rstrip("\n") + f"\n{name}={new_secret()}\n"
             filled.append(name)
     return text, filled
 

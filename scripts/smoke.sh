@@ -38,6 +38,7 @@ api_healthy() {
 
 if ! api_healthy; then
   echo "smoke: stack not up, starting it (make up)"
+  python3 scripts/ensure_local_secrets.py .env
   "${DC[@]}" up -d --build
   FL_PROFILES="core obs tools" scripts/wait_healthy.sh 300
 fi

@@ -100,6 +100,7 @@ replay: ## Steady labelled traffic + planted Sentinel campaign: make replay RATE
 
 demo: ## up (core+obs+tools) -> healthy -> pre-warm -> seed -> URLs -> run the six scenarios + Sentinel scene (exit 1 on any FAIL)
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' first." >&2; exit 1; }
+	@python3 scripts/ensure_local_secrets.py .env
 	docker compose --profile core --profile obs --profile tools up -d --build
 	@FL_PROFILES="core obs tools" scripts/wait_healthy.sh 600
 	@$(DEMO) prewarm

@@ -36,3 +36,24 @@ def test_example_env_has_these_keys_empty() -> None:
     example = (Path(__file__).parents[2] / ".env.example").read_text(encoding="utf-8")
     for name in els.LOCAL_ONLY:
         assert f"\n{name}=\n" in example
+
+
+def test_secret_always_meets_phoenix_rule(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    values = iter(["A" * 48, "abcdefghijklmnopqrstuvwxyzabcdefghij", "abc1" * 12])
+    monkeypatch.setattr(els.secrets, "token_urlsafe", lambda n: next(values))
+    assert els.new_secret() == "abc1" * 12
+    monkeypatch.undo()
+    for _ in range(2000):
+        v = els.new_secret()
+        assert len(v) >= 32 and any(c.isdigit() for c in v) and any(c.islower() for c in v)
+
+
+def test_every_stack_start_path_fills_secrets() -> None:
+    root = Path(__file__).parents[2]
+    make = (root / "Makefile").read_text(encoding="utf-8")
+    for target in ("up:", "demo:"):
+        body = make.split("\n" + target, 1)[1].split("\n\n", 1)[0]
+        assert "ensure_local_secrets.py" in body.split("up -d")[0], target
+    smoke = (root / "scripts" / "smoke.sh").read_text(encoding="utf-8")
+    start = smoke.split("stack not up, starting it", 1)[1]
+    assert start.index("ensure_local_secrets.py") < start.index("up -d")
