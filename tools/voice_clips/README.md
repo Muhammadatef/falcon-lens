@@ -5,7 +5,7 @@ browser plays them instantly. There is no runtime TTS. Offline tool: not part of
 (the tests need only numpy/scipy/ffmpeg).
 
     cd tools/voice_clips && uv sync --extra mlx
-    # built-in voices (committed): macOS Majed for Arabic, Kokoro bm_fable for English
+    # built-in voices (committed): macOS Majed for Arabic (PRIVATE only: data/private/voice/clips, Apple terms unverified), Kokoro bm_fable for English (committed)
     uv run python generate.py --engine macos --lang ar_ae --script draft_script.yaml --out ../../web/public/voice/ar_ae
     uv run python generate.py --engine kokoro --lang en  --script draft_script.yaml --out ../../web/public/voice/en
     # final script (once feat/voice-emirati-script lands) is the default:

@@ -20,14 +20,26 @@ class Clip:
 
 
 def load_script(path: Path) -> list[Clip]:
+    """Two formats: `clips: [{id, lang, text}]` (draft) or `<lang>: {key: text}` with id `<lang>.<key>` (final)."""
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    raw = data["clips"] if isinstance(data, dict) else None
-    if not isinstance(raw, list) or not raw:
-        raise ValueError(f"{path}: expected a non-empty `clips:` list")
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: expected a mapping")
+    items: list[tuple[str, str, str]] = []
+    if "clips" in data:
+        raw = data["clips"]
+        if not isinstance(raw, list) or not raw:
+            raise ValueError(f"{path}: expected a non-empty `clips:` list")
+        items = [(str(i["id"]), str(i["lang"]), str(i["text"])) for i in raw]
+    else:
+        for lang in LANGS:
+            block = data.get(lang)
+            if not isinstance(block, dict) or not block:
+                raise ValueError(f"{path}: missing or empty `{lang}:` block")
+            items += [(f"{lang}.{k}", lang, str(v)) for k, v in block.items()]
     out: list[Clip] = []
     seen: set[str] = set()
-    for item in raw:
-        cid, lang, text = str(item["id"]), str(item["lang"]), str(item["text"]).strip()
+    for cid, lang, raw_text in items:
+        text = raw_text.strip()
         if lang not in LANGS:
             raise ValueError(f"clip {cid}: lang must be one of {LANGS}, got {lang!r}")
         if cid in seen:

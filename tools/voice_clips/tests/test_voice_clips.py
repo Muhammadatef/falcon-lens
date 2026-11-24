@@ -114,3 +114,14 @@ def test_engine_registry_and_default_ref(monkeypatch: pytest.MonkeyPatch, tmp_pa
     assert engines.default_ref() == f
     assert engines.make("macos").label("ar_ae") == "Majed"
     assert engines.make("macos").label("en") == "Daniel"
+
+
+def test_final_format_ids(tmp_path: Path) -> None:
+    f = tmp_path / "s.yaml"
+    f.write_text(
+        'version: 1\nar_ae:\n  "found.3": "لقيت ثلاث مسجات."\nen:\n  "investigator.arbiter_result.dangerous": "Danger."\n',
+        encoding="utf-8",
+    )
+    clips = load_script(f)
+    assert [c.id for c in clips] == ["ar_ae.found.3", "en.investigator.arbiter_result.dangerous"]
+    assert [c.lang for c in clips] == ["ar_ae", "en"]
