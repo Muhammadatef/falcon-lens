@@ -312,3 +312,12 @@ export function sentinelSteps(trace: unknown, incident: Pick<SentinelIncident, "
   if (incident.drafted && incident.awaiting) out.push("awaiting_approval");
   return out;
 }
+
+/** Retry delay after repeated voice-service failures: 1 s, 2 s, 4 s, 8 s, then at most 15 s. */
+export const voiceBackoffMs = (failures: number): number => Math.min(15_000, 1000 * 2 ** Math.max(0, failures - 1));
+
+/**
+ * ONE decision for the AI second look, used by the screen AND the speech: a model answered (route local/cloud)
+ * or the fixed rules decided (route none). The screen and the spoken line can never disagree.
+ */
+export const usedModel = (v: Verdict): boolean => v.model_route !== "none";

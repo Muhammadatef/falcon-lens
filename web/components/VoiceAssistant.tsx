@@ -27,6 +27,8 @@ import {
   speechLang,
   splitMessages,
   stepKey,
+  usedModel,
+  voiceBackoffMs,
   topAction,
   topReason,
   totalWords,
@@ -37,13 +39,13 @@ import {
   type SentinelStep,
   type VoiceReply,
 } from "@/lib/voice";
-import { spoken, speakArbiter, speakChecking, speakFinal, speakFinding, speakFound, speakHandover, speakStep, speakWatching } from "@/lib/voice-speech";
+import { spoken, speakArbiter, speakChecking, speakFinal, speakFinding, speakFound, speakHandover, speakMicDenied, speakNothingChecked, speakStep, speakUnavailable, speakVoiceUnavailable, speakWatching } from "@/lib/voice-speech";
 import type { SentinelFinding } from "@/lib/voice-script";
 import { UntrustedText } from "./Chrome";
 import { Icon } from "./Icon";
 
 type Phase = "off" | "starting" | "listening" | "heard" | "checking";
-type Problem = "denied" | "unsupported" | "server" | null;
+type Problem = "denied" | "unsupported" | "server" | "unavailable" | null;
 interface Row {
   key: number;
   item: ClipItem;
@@ -74,8 +76,9 @@ const traceHref = (id: string): string => `/checks/${id}`;
 const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
 
 /** Follows one verdict: SSE (each snapshot is reported), then the status URL if the stream drops. Resolves with the final verdict or null. */
-function follow(verdictId: string, eventsUrl: string, onSnap: (v: Verdict) => void, alive: () => boolean): Promise<Verdict | null> {
+function follow(verdictId: string, eventsUrl: string, onSnap: (v: Verdict) => void, alive: () => boolean, signal: AbortSignal): Promise<Verdict | null> {
   return new Promise((resolve) => {
+    if (signal.aborted) return resolve(null);
     let settled = false;
     let source: EventSource | null = null;
     const finish = (v: Verdict | null) => {
@@ -86,8 +89,10 @@ function follow(verdictId: string, eventsUrl: string, onSnap: (v: Verdict) => vo
       resolve(v);
     };
     const cap = window.setTimeout(() => finish(null), 60_000);
+    // Stop closes the event stream at once.
+    signal.addEventListener("abort", () => finish(null), { once: true });
     const got = (v: Verdict | null) => {
-      if (!v) return;
+      if (!v || settled) return;
       onSnap(v);
       if (v.final) finish(v);
     };
@@ -124,11 +129,11 @@ function follow(verdictId: string, eventsUrl: string, onSnap: (v: Verdict) => vo
 }
 
 /** One item through the EXISTING check flow (lib/api.ts): links as links, text as messages; follows its progress. */
-async function checkOne(item: ClipItem, onSnap: (v: Verdict) => void, alive: () => boolean): Promise<Outcome> {
+async function checkOne(item: ClipItem, onSnap: (v: Verdict) => void, alive: () => boolean, signal: AbortSignal): Promise<Outcome> {
   try {
     const accepted = await submitCheck(item.kind === "url" ? { kind: "url", url: item.text } : { kind: "message", text: item.text });
     if (accepted.verdict) onSnap(accepted.verdict);
-    const v = accepted.verdict?.final ? accepted.verdict : await follow(accepted.verdictId, accepted.eventsUrl, onSnap, alive);
+    const v = accepted.verdict?.final ? accepted.verdict : await follow(accepted.verdictId, accepted.eventsUrl, onSnap, alive, signal);
     return { id: accepted.verdictId, verdict: v && v.final ? v : null };
   } catch {
     return { id: null, verdict: null };
@@ -154,30 +159,34 @@ async function readClipboard(): Promise<string | null> {
 const incidentHref = (id: string): string => `/incidents/${id}`;
 const SENTINEL_WAIT_MS = 20_000;
 
+type SentinelResult = { kind: "found"; incident: SentinelIncident; steps: SentinelStep[] } | { kind: "timeout" } | { kind: "unavailable" };
+
 /**
  * Polls the public incident list (up to ~20 s) for an incident that links any of our verdict ids, then reads its
- * real LangGraph trace. Two failed calls in a row mean the Sentinel is not connected: stop waiting. Never invents one.
+ * real LangGraph trace. "timeout" = the route answered but no incident links these checks. "unavailable" = two failed
+ * calls in a row, so the Sentinel is not reachable. Never invents an incident.
  */
-async function findSentinelIncident(ids: string[], alive: () => boolean): Promise<{ incident: SentinelIncident; steps: SentinelStep[] } | null> {
+async function findSentinelIncident(ids: string[], alive: () => boolean, signal: AbortSignal): Promise<SentinelResult> {
   const deadline = Date.now() + SENTINEL_WAIT_MS;
   let misses = 0;
   while (alive() && Date.now() < deadline) {
     try {
-      const res = await fetch("/api/public/incidents?limit=50", { cache: "no-store", credentials: "same-origin" });
+      const res = await fetch("/api/public/incidents?limit=50", { cache: "no-store", credentials: "same-origin", signal });
       if (res.ok) {
         const incident = findIncident(await res.json(), ids);
         if (incident) {
-          const detail = await fetch(`/api/public/incidents/${incident.id}`, { cache: "no-store", credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-          return { incident, steps: sentinelSteps((detail as { trace?: unknown } | null)?.trace, incident) };
+          const detail = await fetch(`/api/public/incidents/${incident.id}`, { cache: "no-store", credentials: "same-origin", signal }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+          return { kind: "found", incident, steps: sentinelSteps((detail as { trace?: unknown } | null)?.trace, incident) };
         }
         misses = 0;
-      } else if (++misses >= 2) return null;
+      } else if (++misses >= 2) return { kind: "unavailable" };
     } catch {
-      if (++misses >= 2) return null;
+      if (signal.aborted) return { kind: "timeout" };
+      if (++misses >= 2) return { kind: "unavailable" };
     }
     await sleep(2000);
   }
-  return null;
+  return { kind: "timeout" };
 }
 
 function Tick() {
@@ -218,6 +227,9 @@ export function VoiceAssistant() {
   const queue = useRef<Spoken[]>([]);
   const draining = useRef<Promise<void> | null>(null);
   const drainId = useRef(0);
+  const abort = useRef<AbortController | null>(null);
+  const failures = useRef(0);
+  const lastLang = useRef<"ar" | "en" | null>(null);
 
   const vt = useCallback((key: VoiceKey, vars?: Record<string, string>) => voiceText(pageLang, key, vars), [pageLang]);
 
@@ -276,6 +288,9 @@ export function VoiceAssistant() {
         return;
       }
       const alive = () => run.current === token;
+      abort.current?.abort();
+      const ctl = new AbortController();
+      abort.current = ctl;
       setResultLang(lang);
       setRows(split.items.map((item, key) => ({ key, item, outcome: null })));
       setPhase("checking");
@@ -295,6 +310,7 @@ export function VoiceAssistant() {
         const outcome = await checkOne(
           item,
           (v) =>
+            alive() &&
             newProgressSteps(v, item.kind, seen).forEach((st) => {
               if (st === "ai") {
                 const ai = aiStepText(lang, v);
@@ -306,13 +322,20 @@ export function VoiceAssistant() {
               if (line) enqueue({ text: voiceText(lang, stepKey(st)), say: line, lang, kind: "msg" }, token);
             }),
           alive,
+          ctl.signal,
         );
         if (!alive()) return;
         outcomes.push(outcome);
         setRows((prev) => prev.map((r) => (r.key === at ? { ...r, outcome } : r)));
         const v = outcome.verdict;
-        // The AI second look is named only when that tier ran and a model answered; otherwise the rules decided.
-        if (v && !aiShown) addStep(voiceText(lang, "investigator.rules_only"), lang);
+        // One decision (usedModel) drives screen and speech: a model answered, or the fixed rules decided.
+        if (v && !aiShown) {
+          if (usedModel(v)) {
+            addStep(aiStepText(lang, v) ?? "", lang);
+            const line = speakStep(lang, "ai", v);
+            if (line) enqueue({ text: aiStepText(lang, v) ?? line, say: line, lang, kind: "msg" }, token);
+          } else addStep(voiceText(lang, "investigator.rules_only"), lang);
+        }
         addStep(
           v
             ? voiceText(lang, "investigator.arbiter_result", { i: String(n), verdict: MESSAGES[lang][`v.${v.verdict}`], score: String(Math.round(v.risk_score)) })
@@ -322,30 +345,44 @@ export function VoiceAssistant() {
         enqueue({ text: narResult(lang, n, v), say: speakArbiter(lang, v), lang, kind: "msg" }, token);
       }
 
-      // Hand over to the Sentinel and look for the REAL incident that links these checks.
+      // Hand over to the Sentinel only if at least one check completed, and look for the REAL incident linking them.
       setIncident(null);
-      const handover = voiceText(lang, "sentinel.handover");
-      addStep(handover, lang);
-      enqueue({ text: handover, say: speakHandover(lang), lang, kind: "final" }, token);
-      const ids = outcomes.flatMap((o) => (o.id ? [o.id] : []));
-      const found = ids.length ? await findSentinelIncident(ids, alive) : null;
-      if (!alive()) return;
-      if (found) {
-        const inc = found.incident;
-        setIncident(inc);
-        // Screen and speech say exactly what the incident shows: nothing more.
-        for (const st of found.steps) addStep(voiceText(lang, `sentinel.${st}` as VoiceKey, { n: String(inc.linked) }), lang);
-        const facts: SentinelFinding = { linked: inc.linked, linkStep: found.steps.includes("linked"), summary: found.steps.includes("summary"), drafted: found.steps.includes("draft"), awaiting: found.steps.includes("awaiting_approval") };
-        for (const line of speakFinding(lang, facts)) enqueue({ text: line, say: line, lang, kind: "final" }, token);
+      const done = outcomes.filter((o) => o.verdict && o.id);
+      let sentinel: "found" | "watching" | "unavailable" | "none" = "none";
+      if (!done.length) {
+        const none = voiceText(lang, "voice.nothing_checked");
+        addStep(none, lang);
+        enqueue({ text: none, say: speakNothingChecked(lang), lang, kind: "final" }, token);
       } else {
-        const watching = voiceText(lang, "sentinel.watching");
-        addStep(watching, lang);
-        enqueue({ text: watching, say: speakWatching(lang), lang, kind: "final" }, token);
+        const handover = voiceText(lang, "sentinel.handover");
+        addStep(handover, lang);
+        enqueue({ text: handover, say: speakHandover(lang), lang, kind: "final" }, token);
+        const result = await findSentinelIncident(done.map((o) => o.id as string), alive, ctl.signal);
+        if (!alive()) return;
+        if (result.kind === "found") {
+          sentinel = "found";
+          const inc = result.incident;
+          setIncident(inc);
+          // Screen and speech say exactly what the incident shows: nothing more.
+          for (const st of result.steps) addStep(voiceText(lang, `sentinel.${st}` as VoiceKey, { n: String(inc.linked) }), lang);
+          const facts: SentinelFinding = { linked: inc.linked, linkStep: result.steps.includes("linked"), summary: result.steps.includes("summary"), drafted: result.steps.includes("draft"), awaiting: result.steps.includes("awaiting_approval") };
+          for (const line of speakFinding(lang, facts)) enqueue({ text: line, say: line, lang, kind: "final" }, token);
+        } else if (result.kind === "timeout") {
+          sentinel = "watching";
+          const watching = voiceText(lang, "sentinel.watching");
+          addStep(watching, lang);
+          enqueue({ text: watching, say: speakWatching(lang), lang, kind: "final" }, token);
+        } else {
+          sentinel = "unavailable";
+          const gone = voiceText(lang, "sentinel.unavailable");
+          addStep(gone, lang);
+          enqueue({ text: gone, say: speakUnavailable(lang), lang, kind: "final" }, token);
+        }
       }
       addStep(buildSummary(lang, countOutcomes(outcomes)), lang);
       // The check may have finished before the narration caught up: the summary replaces any per-message lines still waiting.
       queue.current = queue.current.filter((q) => q.kind === "final"); // keeps the Sentinel lines
-      enqueue({ text: buildSpeech(lang, outcomes, { sentinelFound: !!found }), say: speakFinal(lang, outcomes, found ? "found" : "watching"), lang, kind: "final" }, token);
+      enqueue({ text: buildSpeech(lang, outcomes, { sentinelFound: sentinel === "found" }), say: speakFinal(lang, outcomes, sentinel), lang, kind: "final" }, token);
       await drain();
       if (alive()) finishSteps();
     },
@@ -354,6 +391,8 @@ export function VoiceAssistant() {
 
   const stopAll = useCallback(() => {
     run.current += 1;
+    abort.current?.abort();
+    abort.current = null;
     busy.current = false;
     queue.current = [];
     drainId.current += 1;
@@ -374,6 +413,7 @@ export function VoiceAssistant() {
   const onWake = useCallback(
     async (reply: VoiceReply, token: number) => {
       const lang = speechLang(reply.lang, langRef.current);
+      if (reply.lang === "ar" || reply.lang === "en") lastLang.current = reply.lang;
       setHeard(reply.transcript);
       setPhase("heard");
       await sleep(450);
@@ -402,6 +442,21 @@ export function VoiceAssistant() {
     [backToListening, enqueue, runChecks, say, stopAll],
   );
 
+  /** A voice-service failure: spoken once per streak, shown always, with exponential back-off (1 s, 2 s, 4 s ... 15 s). */
+  const voiceFailed = useCallback(
+    async (token: number, status: number) => {
+      failures.current += 1;
+      const first = failures.current === 1;
+      setProblem(failures.current >= 2 ? "unavailable" : "server");
+      if (failures.current >= 2) setShowPaste(true);
+      const l = langRef.current;
+      if (first || failures.current === 2) void speak(speakVoiceUnavailable(l), l, () => run.current === token);
+      await sleep(status === 429 ? 4000 : voiceBackoffMs(failures.current));
+      backToListening(token);
+    },
+    [backToListening],
+  );
+
   const sendUtterance = useCallback(
     async (audio: Blob, token: number) => {
       if (busy.current) return;
@@ -410,35 +465,28 @@ export function VoiceAssistant() {
       try {
         const form = new FormData();
         form.append("audio", audio, "utterance");
+        if (lastLang.current) form.append("lang_hint", lastLang.current);
         const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin", cache: "no-store" });
         if (run.current !== token) return;
-        if (!res.ok) {
-          setProblem("server");
-          if (res.status === 429) await sleep(4000);
-          return backToListening(token);
-        }
+        if (!res.ok) return await voiceFailed(token, res.status);
         const reply = parseVoiceReply(await res.json().catch(() => null));
-        if (!reply) {
-          setProblem("server");
-          return backToListening(token);
-        }
+        if (!reply) return await voiceFailed(token, 502);
+        failures.current = 0;
         setProblem(null);
         if (reply.transcript) setHeard(reply.transcript);
         if (!reply.wake) return backToListening(token); // not for us: stay quietly in "listening"
         await onWake(reply, token);
       } catch {
-        if (run.current === token) {
-          setProblem("server");
-          backToListening(token);
-        }
+        if (run.current === token) await voiceFailed(token, 0);
       }
     },
-    [backToListening, onWake],
+    [backToListening, onWake, voiceFailed],
   );
 
   const start = useCallback(async () => {
     setStopped(false);
     setProblem(null);
+    failures.current = 0;
     setCaption("");
     setRows([]);
     setSteps([]);
@@ -464,6 +512,7 @@ export function VoiceAssistant() {
         setPhase("off");
         setProblem("denied");
         setShowPaste(true);
+        void speak(speakMicDenied(langRef.current), langRef.current, () => true);
       }
       return;
     }
@@ -478,6 +527,7 @@ export function VoiceAssistant() {
   useEffect(
     () => () => {
       run.current += 1;
+      abort.current?.abort();
       cancelSpeech();
       listener.current?.stop();
       listener.current = null;
@@ -502,6 +552,7 @@ export function VoiceAssistant() {
   const submitPaste = () => {
     if (!pasteText.trim()) return;
     const token = ++run.current;
+    abort.current?.abort();
     cancelSpeech();
     queue.current = [];
     drainId.current += 1;
@@ -563,7 +614,7 @@ export function VoiceAssistant() {
       {problem ? (
         <p className="paste-error" role="alert" data-testid="voice-problem" data-problem={problem}>
           <Icon name="suspicious" size={24} />
-          <span>{vt(problem === "denied" ? "voice.mic.denied" : problem === "unsupported" ? "voice.mic.unsupported" : "voice.server.err")}</span>
+          <span>{vt(problem === "denied" ? "voice.mic.denied" : problem === "unsupported" ? "voice.mic.unsupported" : problem === "unavailable" ? "voice.unavailable.msg" : "voice.server.err")}</span>
         </p>
       ) : null}
 
@@ -581,7 +632,7 @@ export function VoiceAssistant() {
         </section>
       ) : null}
 
-      {showPaste || problem === "denied" || problem === "unsupported" ? (
+      {showPaste || problem === "denied" || problem === "unsupported" || problem === "unavailable" ? (
         <section className="card voice-paste" aria-labelledby="voice-paste-h" data-testid="voice-paste">
           <h2 id="voice-paste-h" className="h3">{vt("voice.paste.h")}</h2>
           <p className="muted">{vt("voice.paste.hint")}</p>

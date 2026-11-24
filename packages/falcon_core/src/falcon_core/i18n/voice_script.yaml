@@ -2,7 +2,7 @@
 # Every SPOKEN line of the Hey Falcon assistant. ar_ae = Emirati spoken Arabic (screen text stays formal MSA).
 # Every spoken output is a concatenation of the clips below; ids are stable: <lang>.<key>.
 version: 1
-clip_count: 456
+clip_count: 466
 languages: [ar_ae, en]
 ar_ae:
   "wake.ack": "هلا، سامعك."
@@ -174,6 +174,11 @@ ar_ae:
   "sentinel.awaiting_approval": "ننتظر موافقة ضابط. ما يُرسل شي بدونها."
   "sentinel.watching": "الحارس يظل يراقب أي بلاغات مشابهة."
   "final.both_agents": "المحقق شيّك، والحارس ربطها وصار يتابع."
+  "sentinel.unavailable": "ما وصلت للحارس الحين، فما أعرف إذا فيه حملة."
+  "nothing_checked": "ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس."
+  "mic.denied": "ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات."
+  "voice.unavailable": "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."
+  "final.sentinel_unavailable": "المحقق شيّك، بس ما قدرت أوصل للحارس."
   "final.sentinel_watching": "المحقق شيّك، والحارس يظل يراقب."
   "sum.dangerous.1": "مسج وحدة منها خطر."
   "sum.suspicious.1": "مسج وحدة منها مشكوك فيها."
@@ -403,6 +408,11 @@ en:
   "sentinel.awaiting_approval": "Waiting for an officer's approval. Nothing is sent without it."
   "sentinel.watching": "The Sentinel keeps watching for similar reports."
   "final.both_agents": "The Investigator checked, and the Sentinel linked them and follows up."
+  "sentinel.unavailable": "I couldn't reach the Sentinel right now, so I can't say whether there is a campaign."
+  "nothing_checked": "No check could be completed, so I handed nothing to the Sentinel."
+  "mic.denied": "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box."
+  "voice.unavailable": "The voice service isn't available right now. Please use the paste box."
+  "final.sentinel_unavailable": "The Investigator checked, but I couldn't reach the Sentinel."
   "final.sentinel_watching": "The Investigator checked, and the Sentinel keeps watching."
   "sum.dangerous.1": "One message is dangerous."
   "sum.suspicious.1": "One message looks suspicious."
@@ -632,6 +642,11 @@ clips:
   - {id: "ar_ae.sentinel.awaiting_approval", lang: ar_ae, text: "ننتظر موافقة ضابط. ما يُرسل شي بدونها."}
   - {id: "ar_ae.sentinel.watching", lang: ar_ae, text: "الحارس يظل يراقب أي بلاغات مشابهة."}
   - {id: "ar_ae.final.both_agents", lang: ar_ae, text: "المحقق شيّك، والحارس ربطها وصار يتابع."}
+  - {id: "ar_ae.sentinel.unavailable", lang: ar_ae, text: "ما وصلت للحارس الحين، فما أعرف إذا فيه حملة."}
+  - {id: "ar_ae.nothing_checked", lang: ar_ae, text: "ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس."}
+  - {id: "ar_ae.mic.denied", lang: ar_ae, text: "ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات."}
+  - {id: "ar_ae.voice.unavailable", lang: ar_ae, text: "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."}
+  - {id: "ar_ae.final.sentinel_unavailable", lang: ar_ae, text: "المحقق شيّك، بس ما قدرت أوصل للحارس."}
   - {id: "ar_ae.final.sentinel_watching", lang: ar_ae, text: "المحقق شيّك، والحارس يظل يراقب."}
   - {id: "ar_ae.sum.dangerous.1", lang: ar_ae, text: "مسج وحدة منها خطر."}
   - {id: "ar_ae.sum.suspicious.1", lang: ar_ae, text: "مسج وحدة منها مشكوك فيها."}
@@ -860,6 +875,11 @@ clips:
   - {id: "en.sentinel.awaiting_approval", lang: en, text: "Waiting for an officer's approval. Nothing is sent without it."}
   - {id: "en.sentinel.watching", lang: en, text: "The Sentinel keeps watching for similar reports."}
   - {id: "en.final.both_agents", lang: en, text: "The Investigator checked, and the Sentinel linked them and follows up."}
+  - {id: "en.sentinel.unavailable", lang: en, text: "I couldn't reach the Sentinel right now, so I can't say whether there is a campaign."}
+  - {id: "en.nothing_checked", lang: en, text: "No check could be completed, so I handed nothing to the Sentinel."}
+  - {id: "en.mic.denied", lang: en, text: "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box."}
+  - {id: "en.voice.unavailable", lang: en, text: "The voice service isn't available right now. Please use the paste box."}
+  - {id: "en.final.sentinel_unavailable", lang: en, text: "The Investigator checked, but I couldn't reach the Sentinel."}
   - {id: "en.final.sentinel_watching", lang: en, text: "The Investigator checked, and the Sentinel keeps watching."}
   - {id: "en.sum.dangerous.1", lang: en, text: "One message is dangerous."}
   - {id: "en.sum.suspicious.1", lang: en, text: "One message looks suspicious."}

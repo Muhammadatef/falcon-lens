@@ -118,6 +118,11 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("sentinel.awaiting_approval", "ننتظر موافقة ضابط. ما يُرسل شي بدونها.", "Waiting for an officer's approval. Nothing is sent without it.");
   put("sentinel.watching", "الحارس يظل يراقب أي بلاغات مشابهة.", "The Sentinel keeps watching for similar reports.");
   put("final.both_agents", "المحقق شيّك، والحارس ربطها وصار يتابع.", "The Investigator checked, and the Sentinel linked them and follows up.");
+  put("sentinel.unavailable", "ما وصلت للحارس الحين، فما أعرف إذا فيه حملة.", "I couldn't reach the Sentinel right now, so I can't say whether there is a campaign.");
+  put("nothing_checked", "ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس.", "No check could be completed, so I handed nothing to the Sentinel.");
+  put("mic.denied", "ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات.", "I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box.");
+  put("voice.unavailable", "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق.", "The voice service isn't available right now. Please use the paste box.");
+  put("final.sentinel_unavailable", "المحقق شيّك، بس ما قدرت أوصل للحارس.", "The Investigator checked, but I couldn't reach the Sentinel.");
   put("final.sentinel_watching", "المحقق شيّك، والحارس يظل يراقب.", "The Investigator checked, and the Sentinel keeps watching.");
 
   N.forEach((n, i) => {
@@ -261,7 +266,8 @@ export function sentinelFindingClips(f: SentinelFinding): string[] {
  * The closing utterance: summary, what to do, then the one-line wrap-up that names what actually happened:
  * "found" when a real Sentinel incident links these checks, "watching" when none did within the wait.
  */
-export function finalClips(c: SpeechCounts, sentinel: "found" | "watching"): string[] {
+export function finalClips(c: SpeechCounts, sentinel: "found" | "watching" | "unavailable" | "none"): string[] {
   if (c.total === 0) return [];
-  return [...summaryClips(c), ...todoClips(c), sentinel === "found" ? "final.both_agents" : "final.sentinel_watching"];
+  const wrap = sentinel === "found" ? ["final.both_agents"] : sentinel === "watching" ? ["final.sentinel_watching"] : sentinel === "unavailable" ? ["final.sentinel_unavailable"] : [];
+  return [...summaryClips(c), ...todoClips(c), ...wrap];
 }

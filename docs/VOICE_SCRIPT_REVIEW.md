@@ -7,7 +7,7 @@ For a native Emirati reviewer. Left: the line the assistant SPEAKS. Right: its E
 Rules for the lines: short, natural Emirati speech, respectful to an elderly listener, never the word for "safe",
 never asking for personal, bank or ID details, no phone numbers.
 
-Lines: 228. Digits are written out in words (`num.0` to `num.100`).
+Lines: 233. Digits are written out in words (`num.0` to `num.100`).
 
 | Emirati line | English meaning | Reviewer / OK |
 |---|---|---|
@@ -180,6 +180,11 @@ Lines: 228. Digits are written out in words (`num.0` to `num.100`).
 | ننتظر موافقة ضابط. ما يُرسل شي بدونها. | Waiting for an officer's approval. Nothing is sent without it. |  |
 | الحارس يظل يراقب أي بلاغات مشابهة. | The Sentinel keeps watching for similar reports. |  |
 | المحقق شيّك، والحارس ربطها وصار يتابع. | The Investigator checked, and the Sentinel linked them and follows up. |  |
+| ما وصلت للحارس الحين، فما أعرف إذا فيه حملة. | I couldn't reach the Sentinel right now, so I can't say whether there is a campaign. |  |
+| ما قدرنا نكمّل أي فحص، فما سلّمت شي للحارس. | No check could be completed, so I handed nothing to the Sentinel. |  |
+| ما قدرت أستخدم المايك. اسمح له من المتصفح، أو الصق المسجات. | I couldn't use the microphone. Allow it in your browser settings, or paste your messages in the box. |  |
+| خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق. | The voice service isn't available right now. Please use the paste box. |  |
+| المحقق شيّك، بس ما قدرت أوصل للحارس. | The Investigator checked, but I couldn't reach the Sentinel. |  |
 | المحقق شيّك، والحارس يظل يراقب. | The Investigator checked, and the Sentinel keeps watching. |  |
 | مسج وحدة منها خطر. | One message is dangerous. |  |
 | مسج وحدة منها مشكوك فيها. | One message looks suspicious. |  |

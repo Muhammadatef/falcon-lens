@@ -165,7 +165,7 @@ async function voice(req, res) {
   if (req.headers["x-api-key"] !== "test-read-key") return problem(req, res, 401, "unauthorized", "Unauthorized");
   const raw = await readBody(req);
   const text = raw.toString("latin1");
-  voiceCalls.push({ bytes: raw.length, hasAudioPart: /name="audio"/.test(text), langHint: /name="lang_hint"\r\n\r\n(\w+)/.exec(text)?.[1] ?? null });
+  voiceCalls.push({ bytes: raw.length, hasAudioPart: /name="audio"/.test(text), langHint: /name="lang_hint"\r\n\r\n(\w+)/.exec(text)?.[1] ?? null, marker: /;T:([a-z0-9]+)/.exec(text)?.[1] ?? null });
   if (text.includes("VOICE:fail")) return problem(req, res, 503, "unavailable", "Unavailable");
   const reply = VOICE_REPLIES[/VOICE:([a-z-]+)/.exec(text)?.[1] ?? ""];
   if (!reply) return problem(req, res, 422, "invalid-request", "Invalid request");
