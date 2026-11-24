@@ -123,7 +123,8 @@ async function say(page: Page, voice: string) {
 /** The clips played so far, as their script text (and the BCP-47 tag of their language). Device speech is NOT included: it must stay empty. */
 const spoken = async (page: Page): Promise<{ text: string; lang: string }[]> => {
   const ids: string[] = await page.evaluate(() => (window as any).__played);
-  return ids.map((id) => {
+  // Verdict earcons (sfx.*) are sounds, not speech: they carry no script text or language.
+  return ids.filter((id) => !id.startsWith("sfx.")).map((id) => {
     const ar = id.startsWith("ar_ae.");
     return { text: (ar ? SCRIPT.ar_ae : SCRIPT.en)[id.slice(ar ? 6 : 3)]!, lang: ar ? "ar-SA" : "en-GB" };
   });
