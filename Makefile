@@ -4,7 +4,7 @@ COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 NYI = @echo "make $@: not yet implemented" >&2; exit 1
 
-.PHONY: redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
+.PHONY: demo-mode-check demo-mode-on demo-mode-off voice-rehearsal redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
 
 help: ## List every make target with a one-line description (this list)
 	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
@@ -108,6 +108,18 @@ demo: ## up (core+obs+tools) -> healthy -> pre-warm -> seed -> URLs -> run the s
 	@$(DEMO) urls
 	@$(DEMO) next
 	@$(DEMO) scenarios
+
+demo-mode-check: ## Read-only READY / NOT READY board for the live demo (exit 0 only when READY)
+	@uv run python scripts/demo_mode.py check
+
+demo-mode-on: ## Lists what would be paused; acts only with CONFIRM=yes; then pre-warms and checks
+	@uv run python scripts/demo_mode.py on $(if $(filter yes,$(CONFIRM)),--yes,)
+
+demo-mode-off: ## Restore exactly what demo-mode-on paused (idempotent)
+	@uv run python scripts/demo_mode.py off
+
+voice-rehearsal: ## Speak the demo lines with `say`, POST to /v1/voice/utterance, put 3 messages on the clipboard
+	@uv run python scripts/demo_mode.py rehearsal
 
 urls: ## Print the local URLs of the running stack
 	@$(DEMO) urls

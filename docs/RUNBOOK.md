@@ -34,3 +34,11 @@ Compare the latest `evals/results/` artifact with the baseline. Block merges unt
 See [eval-regression](#eval-regression): same procedure; use this alert's own dashboard panel for the specifics.
 ## canary-leak
 `fl_canary_leak_total` grew: a canary token planted in a prompt came back in model output, so the reply was discarded and the template used. This must stay at 0. Find the `verdict_id` in the worker logs (the `canary leak` line), open its LLM span in Phoenix, and check which untrusted text (page, message) carried the extraction attempt. Under `make redteam` the canary cases trip this on purpose (check `source`). On live traffic treat it as an incident: keep the verdict as degraded, review the spotlighting of that input type, and do not widen any allowlist to silence the alert.
+
+## Demo day
+Run on the presenting Mac. Nothing acts without confirmation, and the `falcon` compose project is only ever read.
+1. `make up`, then `make demo-mode-check`: a READY / NOT READY board with the reason for every failing threshold (free memory >= 25%, swap <= 2 GB, CPU idle >= 50%, no thermal limit, disk >= 15 GB, no other compose project running, link and message probe <= 8 s). Exit code 0 only when READY.
+2. `make demo-mode-on` lists exactly what it would pause. Add `CONFIRM=yes` to act: other compose projects get `docker compose -p <proj> stop`, and processes named in `infra/demo_mode.yaml` get SIGSTOP. Nothing is killed, removed or pruned. What was paused goes to `work/demo_mode/state.json`. It then pre-warms Whisper, three fixture checks and the voice web route, and re-runs the check.
+3. `make voice-rehearsal` speaks the English and Arabic (Majed voice) demo lines, posts them to `/v1/voice/utterance` (skipped with a message if the endpoint is not merged) and copies three demo messages to the clipboard (`~/Eaglelens/demo-kit/messages/*.txt`, else the built-in Falcon Demo Bank fixtures).
+4. After the demo, `make demo-mode-off` restores exactly what `state.json` lists (`docker compose -p <proj> start`, SIGCONT). Safe to run twice, also after an interrupted pause.
+To protect another project or process, leave it out of `infra/demo_mode.yaml`; to pause one, add it there.
