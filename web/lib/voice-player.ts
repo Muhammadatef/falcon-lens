@@ -42,6 +42,9 @@ export interface VoicePlayerOptions {
   audioContext?: () => AudioContext;
   synth?: SpeechSynthesis | null;
   baseUrl?: string;
+  /** Language-neutral sound effects (ids `sfx.<name>`, files `<sfxBase>/<name>.mp3`), preloaded with the clips. */
+  sfx?: readonly string[];
+  sfxBase?: string;
 }
 
 export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
@@ -67,7 +70,22 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
   const synth = (): SpeechSynthesis | null =>
     opts.synth !== undefined ? opts.synth : typeof speechSynthesis === "undefined" ? null : speechSynthesis;
 
-  const ready = (async () => {
+  const loadSfx = async () => {
+    const c = getCtx();
+    if (!c || !opts.sfx?.length) return;
+    await Promise.all(
+      opts.sfx.map(async (id) => {
+        try {
+          const r = await doFetch(`${opts.sfxBase ?? "/voice/sfx"}/${id.slice(4)}.mp3`);
+          if (r.ok) buffers.set(id, await c.decodeAudioData(await r.arrayBuffer()));
+        } catch {
+          /* no earcon: the spoken result still plays */
+        }
+      }),
+    );
+  };
+
+  const clips = (async () => {
     try {
       const res = await doFetch(`${base}/manifest.json`);
       if (!res.ok) return;
@@ -93,6 +111,8 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
       }),
     );
   })();
+
+  const ready = Promise.all([clips, loadSfx()]).then(() => undefined);
 
   const cancelWait = () => {
     const w = wake;

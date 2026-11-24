@@ -93,7 +93,9 @@ def test_manifest_schema_and_coverage(tmp_path: Path) -> None:
 def test_committed_manifests_cover_draft_or_final_script() -> None:
     """Every committed manifest entry points at a file that exists and has the full key set."""
     root = HERE.parents[1] / "web/public/voice"
-    for lang_dir in root.glob("*/"):
+    for lang_dir in (
+        d for d in root.glob("*/") if d.name != "sfx"
+    ):  # sfx: language-neutral earcons, tested in test_sfx.py
         m = json.loads((lang_dir / "manifest.json").read_text())
         for e in m:
             assert tuple(e) == MANIFEST_KEYS

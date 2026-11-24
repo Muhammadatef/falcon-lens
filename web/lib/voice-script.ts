@@ -177,6 +177,12 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("result.suspicious", "هذا المسج مشكوك فيه.", "This message looks suspicious.");
   put("result.no_warning_signs", "ما لقيت فيه علامات تحذير.", "I found no warning signs in it.");
   put("result.could_not_check", "ما قدرت أشيّك هذا المسج.", "I could not check this message.");
+  // Per-message spoken result: "Message one:" + verdict + the one thing to do now (an earcon plays right before).
+  N.forEach((n, i) => put(`msg.ord.${n}`, `المسج ${ORD_AR[i]}:`, `Message ${NUM_EN[n]}:`));
+  put("msg.verdict.dangerous", "خطِر. لا تضغط الرابط ولا تعطي أي بيانات.", "dangerous. Don't tap the link or share any details.");
+  put("msg.verdict.suspicious", "مشكوك فيه. تأكد من الجهة الرسمية قبل لا ترد.", "suspicious. Check with the official source before you reply.");
+  put("msg.verdict.no_warning_signs", "ما لقينا علامات تحذير، بس خلّك منتبه.", "no warning signs found, but stay careful.");
+  put("msg.verdict.could_not_check", "ما قدرنا نشيّكه كامل. لا تفتح الرابط لين تتأكد.", "could not be fully checked. Don't open the link until you are sure.");
   put("todo.lead", "نصيحتي لك:", "What to do now:");
   put("todo.link", "لا تضغط على الرابط، ولا تدوس عليه.", "Don't tap the link.");
   put("todo.otp", "ولا تعطي حد الرمز أبداً.", "Never share a code with anyone.");
@@ -206,13 +212,26 @@ export interface Clip {
   key: string;
   text: string;
 }
-export const clipId = (lang: VoiceLang, key: string): string => `${lang}.${key}`;
+/** Verdict sound effects (web/public/voice/sfx, generated in-repo by tools/voice_clips/sfx.py): language-neutral, no text. */
+export const SFX_KEYS = ["sfx.clear", "sfx.suspicious", "sfx.dangerous"] as const;
+export const isSfx = (key: string): boolean => key.startsWith("sfx.");
+export const clipId = (lang: VoiceLang, key: string): string => (isSfx(key) ? key : `${lang}.${key}`);
+
+export type ResultTone = "dangerous" | "suspicious" | "no_warning_signs" | "could_not_check";
+const TONE_SFX: Record<ResultTone, string | null> = { dangerous: "sfx.dangerous", suspicious: "sfx.suspicious", no_warning_signs: "sfx.clear", could_not_check: null };
+/** One checked message, spoken: earcon, "Message N:", the verdict and the one thing to do now. */
+export const messageResultKeys = (i: number, verdict: ResultTone | null): string[] => {
+  const tone: ResultTone = verdict ?? "could_not_check";
+  const sfx = TONE_SFX[tone];
+  return [...(sfx ? [sfx] : []), `msg.ord.${clampN(i)}`, `msg.verdict.${tone}`];
+};
 /** Every pre-recordable clip, both languages. */
 export const CLIPS: readonly Clip[] = VOICE_LANGS.flatMap((lang) => SCRIPT_KEYS.map((key) => ({ id: clipId(lang, key), lang, key, text: SCRIPT[lang][key]! })));
 
 /** Turns clip keys into the spoken text (pieces joined with a space; each piece is one pre-recorded clip). */
 export function render(lang: VoiceLang, keys: readonly string[]): string {
   return keys
+    .filter((k) => !isSfx(k))
     .map((k) => {
       const t = SCRIPT[lang][k];
       if (t === undefined) throw new Error(`unknown voice clip: ${k}`);

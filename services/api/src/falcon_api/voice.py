@@ -12,6 +12,7 @@ import logging
 import os
 import time
 from collections.abc import AsyncGenerator, Awaitable, Callable
+from dataclasses import replace
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -172,7 +173,7 @@ def register(
         name = await semantic.match(result.command)
         if name is None:
             return result
-        return VoiceResult(result.wake, "faq", result.command, name)
+        return replace(result, intent="faq", answer_id=name)
 
     def stt_router() -> SttRouter:
         if "r" not in holder:
@@ -314,7 +315,9 @@ def register(
             raise fail(503, "stt-unavailable", "Speech recognition unavailable", "stt_unavailable") from exc
         transcript = res.text.strip()[:300]
         result = await with_faq(analyse(transcript, follow_up=follow_up))
-        lang = res.lang if res.lang in ("ar", "en") else "other"
+        # The language of the reply follows the speaker's own words (script of the wake phrase and command), not
+        # Whisper's guess, which is unreliable on a one-second "Hey Falcon". The model's guess is the last resort.
+        lang = result.lang or (res.lang if res.lang in ("ar", "en") else "other")
         elapsed = time.perf_counter() - t0
         utterances.labels(str(result.wake).lower(), result.intent, lang, engine).inc()
         latency.labels(engine).observe(elapsed)

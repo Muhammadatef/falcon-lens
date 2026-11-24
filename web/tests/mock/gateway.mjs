@@ -159,6 +159,7 @@ const VOICE_REPLIES = {
   "help-ar": { transcript: "يا صقر ساعدني", lang: "ar", wake: true, intent: "help", command: "ساعدني" },
   "none-ar": { transcript: "يا صقر", lang: "ar", wake: true, intent: "none", command: "" },
   stop: { transcript: "Falcon stop", lang: "en", wake: true, intent: "stop", command: "stop" },
+  "none-en": { transcript: "Hey Falcon", lang: "en", wake: true, intent: "none", command: "" },
   "faq-otp-ar": { transcript: "يا صقر، هل البنك يطلب مني الرمز", lang: "ar", wake: true, intent: "faq", command: "هل البنك يطلب مني الرمز", answer_id: "faq.otp" },
   "faq-clicked-en": { transcript: "Hey Falcon, I already clicked the link, what now?", lang: "en", wake: true, intent: "faq", command: "I already clicked the link, what now?", answer_id: "faq.clicked_link" },
   "faq-follow-ar": { transcript: "وش أسوي إذا ضغطت على الرابط", lang: "ar", wake: true, intent: "faq", command: "وش أسوي إذا ضغطت على الرابط", answer_id: "faq.clicked_link" },

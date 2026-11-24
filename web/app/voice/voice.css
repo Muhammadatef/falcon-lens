@@ -95,3 +95,27 @@ html[dir="rtl"] .voice-meter-bar { transform-origin: right center; }
 }
 @keyframes voice-step-in { from { opacity: 0; transform: translateX(calc(var(--sign, 1) * 1.25rem)); } to { opacity: 1; transform: none; } }
 @keyframes voice-blink { from { opacity: 1; } to { opacity: 0.3; } }
+.voice-tone { display: inline-flex; align-items: center; justify-content: center; color: var(--v-fg); }
+
+.voice-progress { --prog-anim: 0; }
+.voice-stages { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--fl-space-2); }
+.voice-stage { display: grid; grid-template-columns: 1.5rem 1fr auto; gap: var(--fl-space-2); align-items: start; padding: var(--fl-space-2); border-radius: var(--fl-radius-md); }
+.voice-stage[data-status="active"] { background: var(--fl-surface-2); border: 1px solid var(--fl-border-strong); }
+.voice-stage-body { display: grid; gap: 0.15rem; min-inline-size: 0; }
+.voice-stage-label { font-weight: 700; }
+.voice-stage-detail, .voice-tier-note { color: var(--fl-text-muted, inherit); font-size: var(--fl-text-sm); overflow-wrap: anywhere; }
+.voice-stage-slow { font-weight: 600; }
+.voice-stage-time { font-variant-numeric: tabular-nums; font-size: var(--fl-text-sm); }
+.voice-tiers { list-style: none; margin: 0.35rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
+.voice-tiers li { display: grid; gap: 0.1rem; border-inline-start: 3px solid var(--fl-border-strong); padding-inline-start: var(--fl-space-2); }
+.voice-tiers li[data-status="skipped"] { opacity: 0.75; }
+.voice-tier-name { font-weight: 600; font-size: var(--fl-text-sm); }
+.voice-spin { display: inline-block; inline-size: 1rem; block-size: 1rem; border-radius: 50%; border: 2px solid currentColor; border-block-start-color: transparent; }
+.voice-elapsed { margin: var(--fl-space-2) 0 0; font-weight: 700; }
+@media (prefers-reduced-motion: no-preference) {
+  .voice-progress { --prog-anim: 1; }
+  .voice-spin { animation: voice-spin 0.9s linear infinite; }
+  .voice-stage[data-status="active"] { background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, currentColor 8%, transparent) 50%, transparent 70%); background-size: 200% 100%; animation: voice-shimmer 1.6s ease-in-out infinite; }
+  @keyframes voice-spin { to { transform: rotate(360deg); } }
+  @keyframes voice-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+}
