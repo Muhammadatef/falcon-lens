@@ -7,7 +7,7 @@ For a native Emirati reviewer. Left: the line the assistant SPEAKS. Right: its E
 Rules for the lines: short, natural Emirati speech, respectful to an elderly listener, never the word for "safe",
 never asking for personal, bank or ID details, no phone numbers.
 
-Lines: 337. Digits are written out in words (`num.0` to `num.100`).
+Lines: 341. Digits are written out in words (`num.0` to `num.100`).
 
 | Emirati line | English meaning | Reviewer / OK |
 |---|---|---|
@@ -95,6 +95,10 @@ Lines: 337. Digits are written out in words (`num.0` to `num.100`).
 | الرد يروح لعنوان غير عنوان المرسل. | Replies go to a different address than the sender's. |  |
 | الرابط المكتوب غير الرابط الحقيقي. | The link shown is not the real link. |  |
 | في الصورة رمز كيو آر يودّي لرابط. | The image has a QR code that leads to a link. |  |
+| في الرسالة رابط. | The message contains a link. |  |
+| في الرسالة رقم تتصل عليه. | The message has a number to call. |  |
+| مسار الإرجاع غير عنوان المرسل. | The return path differs from the sender's address. |  |
+| المرفق ممكن يحمل رابط أو شي مشبوه. | The attachment may carry a link or something suspicious. |  |
 | ما قدرنا نفتح الصفحة كامل. | We couldn't open the page fully. |  |
 | النطاق مسجّل اليوم. | The domain was registered today. |  |
 | النطاق مسجّل قبل يوم واحد. | The domain was registered one day ago. |  |
@@ -319,7 +323,7 @@ Lines: 337. Digits are written out in words (`num.0` to `num.100`).
 | تمام، وقّفت. | Okay, I've stopped. |  |
 | ما فهمت عليك. عيد، لو سمحت. | Sorry, I didn't catch that. Please say it again. |  |
 | ما لقيت مسجات في اللي نسخته. انسخها وعيد علي. | I found no messages in what you copied. Copy them and try again. |  |
-| ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة. | I couldn't read what you copied. Paste it in the box on the screen. |  |
+| هلا! شلون أقدر أساعدك اليوم؟ | Hi, how can I help you today? |  |
 | صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط. | Something went wrong. Try again, and don't open any link. |  |
 | يزاك الله خير. الله يحفظك. | Thank you. Take care. |  |
 | البنك ما يطلب منك الرمز أبداً. لا تعطيه لأي أحد، حتى لو قال إنه من البنك. | Your bank never asks for your one-time code. Never share it with anyone, even if they say they are the bank. |  |

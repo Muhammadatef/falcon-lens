@@ -66,6 +66,7 @@ export const FINDING_LINES: Readonly<Record<string, Line>> = {
   "email.link_text_mismatch": L("الرابط المكتوب يختلف عن الرابط الحقيقي", "The link shown differs from the real link"),
   "email.attachment": L("المرفق قد يحمل رابطاً أو محتوى مشبوهاً", "The attachment may carry a link or suspicious content"),
   "image.qr_decoded": L((c) => (c.host ? `في الصورة رمز QR يقود إلى: ${c.host}` : "في الصورة رمز QR يقود إلى رابط"), (c) => (c.host ? `The image has a QR code leading to: ${c.host}` : "The image has a QR code leading to a link")),
+  "qr.ae": L("في الصورة رمز QR يقود إلى رابط", "The image has a QR code leading to a link"),
   "sandbox.not_rendered": L("تعذّر فتح الصفحة كاملة", "The page could not be fully opened"),
   "sandbox.unreachable": L("تعذّر فتح الصفحة كاملة", "The page could not be fully opened"),
   "sandbox.partial_render": L("تعذّر فتح الصفحة كاملة", "The page could not be fully opened"),
@@ -87,7 +88,7 @@ const brandName = (id: unknown, lang: Lang): string | null => (typeof id === "st
 export function safeHost(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const host = defang(value.trim()).replace(/^[a-z][a-z0-9+.-]*:\/\//i, "").split(/[/?#\s]/)[0] ?? "";
-  const clean = host.replace(/[^A-Za-z0-9.\-\[\]]/g, "").slice(0, 64);
+  const clean = host.replace(/[^A-Za-z0-9.[\]-]/g, "").slice(0, 64);
   return clean.length >= 3 ? clean : null;
 }
 

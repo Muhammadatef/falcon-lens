@@ -2,7 +2,7 @@
 # Every SPOKEN line of the Hey Falcon assistant. ar_ae = Emirati spoken Arabic (screen text stays formal MSA).
 # Every spoken output is a concatenation of the clips below; ids are stable: <lang>.<key>.
 version: 1
-clip_count: 622
+clip_count: 630
 languages: [ar_ae, en]
 ar_ae:
   "wake.ack": "هلا، سامعك."
@@ -89,6 +89,10 @@ ar_ae:
   "find.reply_to": "الرد يروح لعنوان غير عنوان المرسل."
   "find.link_text": "الرابط المكتوب غير الرابط الحقيقي."
   "find.qr_link": "في الصورة رمز كيو آر يودّي لرابط."
+  "find.contains_url": "في الرسالة رابط."
+  "find.contains_phone": "في الرسالة رقم تتصل عليه."
+  "find.return_path": "مسار الإرجاع غير عنوان المرسل."
+  "find.attachment": "المرفق ممكن يحمل رابط أو شي مشبوه."
   "find.incomplete": "ما قدرنا نفتح الصفحة كامل."
   "find.age.0": "النطاق مسجّل اليوم."
   "find.age.1": "النطاق مسجّل قبل يوم واحد."
@@ -313,7 +317,7 @@ ar_ae:
   "stop": "تمام، وقّفت."
   "didnt": "ما فهمت عليك. عيد، لو سمحت."
   "clip.empty": "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي."
-  "clip.denied": "ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة."
+  "greet.hello": "هلا! شلون أقدر أساعدك اليوم؟"
   "error": "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط."
   "goodbye": "يزاك الله خير. الله يحفظك."
 en:
@@ -401,6 +405,10 @@ en:
   "find.reply_to": "Replies go to a different address than the sender's."
   "find.link_text": "The link shown is not the real link."
   "find.qr_link": "The image has a QR code that leads to a link."
+  "find.contains_url": "The message contains a link."
+  "find.contains_phone": "The message has a number to call."
+  "find.return_path": "The return path differs from the sender's address."
+  "find.attachment": "The attachment may carry a link or something suspicious."
   "find.incomplete": "We couldn't open the page fully."
   "find.age.0": "The domain was registered today."
   "find.age.1": "The domain was registered one day ago."
@@ -625,7 +633,7 @@ en:
   "stop": "Okay, I've stopped."
   "didnt": "Sorry, I didn't catch that. Please say it again."
   "clip.empty": "I found no messages in what you copied. Copy them and try again."
-  "clip.denied": "I couldn't read what you copied. Paste it in the box on the screen."
+  "greet.hello": "Hi, how can I help you today?"
   "error": "Something went wrong. Try again, and don't open any link."
   "goodbye": "Thank you. Take care."
 clips:
@@ -713,6 +721,10 @@ clips:
   - {id: "ar_ae.find.reply_to", lang: ar_ae, text: "الرد يروح لعنوان غير عنوان المرسل."}
   - {id: "ar_ae.find.link_text", lang: ar_ae, text: "الرابط المكتوب غير الرابط الحقيقي."}
   - {id: "ar_ae.find.qr_link", lang: ar_ae, text: "في الصورة رمز كيو آر يودّي لرابط."}
+  - {id: "ar_ae.find.contains_url", lang: ar_ae, text: "في الرسالة رابط."}
+  - {id: "ar_ae.find.contains_phone", lang: ar_ae, text: "في الرسالة رقم تتصل عليه."}
+  - {id: "ar_ae.find.return_path", lang: ar_ae, text: "مسار الإرجاع غير عنوان المرسل."}
+  - {id: "ar_ae.find.attachment", lang: ar_ae, text: "المرفق ممكن يحمل رابط أو شي مشبوه."}
   - {id: "ar_ae.find.incomplete", lang: ar_ae, text: "ما قدرنا نفتح الصفحة كامل."}
   - {id: "ar_ae.find.age.0", lang: ar_ae, text: "النطاق مسجّل اليوم."}
   - {id: "ar_ae.find.age.1", lang: ar_ae, text: "النطاق مسجّل قبل يوم واحد."}
@@ -937,7 +949,7 @@ clips:
   - {id: "ar_ae.stop", lang: ar_ae, text: "تمام، وقّفت."}
   - {id: "ar_ae.didnt", lang: ar_ae, text: "ما فهمت عليك. عيد، لو سمحت."}
   - {id: "ar_ae.clip.empty", lang: ar_ae, text: "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي."}
-  - {id: "ar_ae.clip.denied", lang: ar_ae, text: "ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة."}
+  - {id: "ar_ae.greet.hello", lang: ar_ae, text: "هلا! شلون أقدر أساعدك اليوم؟"}
   - {id: "ar_ae.error", lang: ar_ae, text: "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط."}
   - {id: "ar_ae.goodbye", lang: ar_ae, text: "يزاك الله خير. الله يحفظك."}
   - {id: "en.wake.ack", lang: en, text: "Yes, I'm listening."}
@@ -1024,6 +1036,10 @@ clips:
   - {id: "en.find.reply_to", lang: en, text: "Replies go to a different address than the sender's."}
   - {id: "en.find.link_text", lang: en, text: "The link shown is not the real link."}
   - {id: "en.find.qr_link", lang: en, text: "The image has a QR code that leads to a link."}
+  - {id: "en.find.contains_url", lang: en, text: "The message contains a link."}
+  - {id: "en.find.contains_phone", lang: en, text: "The message has a number to call."}
+  - {id: "en.find.return_path", lang: en, text: "The return path differs from the sender's address."}
+  - {id: "en.find.attachment", lang: en, text: "The attachment may carry a link or something suspicious."}
   - {id: "en.find.incomplete", lang: en, text: "We couldn't open the page fully."}
   - {id: "en.find.age.0", lang: en, text: "The domain was registered today."}
   - {id: "en.find.age.1", lang: en, text: "The domain was registered one day ago."}
@@ -1248,6 +1264,6 @@ clips:
   - {id: "en.stop", lang: en, text: "Okay, I've stopped."}
   - {id: "en.didnt", lang: en, text: "Sorry, I didn't catch that. Please say it again."}
   - {id: "en.clip.empty", lang: en, text: "I found no messages in what you copied. Copy them and try again."}
-  - {id: "en.clip.denied", lang: en, text: "I couldn't read what you copied. Paste it in the box on the screen."}
+  - {id: "en.greet.hello", lang: en, text: "Hi, how can I help you today?"}
   - {id: "en.error", lang: en, text: "Something went wrong. Try again, and don't open any link."}
   - {id: "en.goodbye", lang: en, text: "Thank you. Take care."}

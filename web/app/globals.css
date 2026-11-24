@@ -1110,3 +1110,9 @@ a.btn:hover { text-decoration: none; }
 .rs-src summary { cursor: pointer; min-height: 2.5rem; display: flex; align-items: center; }
 .rs-tbl th[scope="row"], .kpi-tbl th[scope="row"] { width: 42%; }
 .kpi-sec { margin-block: var(--fl-space-5); }
+
+/* What this check found: per-layer finding lines (Check page and trace). */
+.ck-steps{margin-block:1.5rem}
+.ck-steps ol{list-style:none;padding:0;margin:0;display:grid;gap:.75rem}
+.ck-steps li{padding-inline-start:.75rem;border-inline-start:3px solid currentColor}
+.ck-found{list-style:disc;margin:.25rem 0 0;padding-inline-start:1.25rem;font-size:1.05rem;line-height:1.7}

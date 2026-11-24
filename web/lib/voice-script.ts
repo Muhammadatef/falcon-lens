@@ -283,7 +283,7 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("stop", "تمام، وقّفت.", "Okay, I've stopped.");
   put("didnt", "ما فهمت عليك. عيد، لو سمحت.", "Sorry, I didn't catch that. Please say it again.");
   put("clip.empty", "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي.", "I found no messages in what you copied. Copy them and try again.");
-  put("clip.denied", "ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة.", "I couldn't read what you copied. Paste it in the box on the screen.");
+  put("greet.hello", "هلا! شلون أقدر أساعدك اليوم؟", "Hi, how can I help you today?");
   put("error", "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط.", "Something went wrong. Try again, and don't open any link.");
   put("goodbye", "يزاك الله خير. الله يحفظك.", "Thank you. Take care.");
   for (const [name, a, e] of FAQ) put(faqKey(name), a, e);

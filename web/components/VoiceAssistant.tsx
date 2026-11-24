@@ -148,6 +148,16 @@ function snippet(text: string): string {
   return out.length > 110 ? `${out.slice(0, 109)}…` : out;
 }
 
+/** Reads the permission state where the browser exposes it (Chrome); Safari/Firefox do not know "clipboard-read". */
+async function clipboardPermission(): Promise<"granted" | "denied" | "prompt" | "unknown"> {
+  try {
+    const st = await navigator.permissions.query({ name: "clipboard-read" as PermissionName });
+    return st.state;
+  } catch {
+    return "unknown";
+  }
+}
+
 async function readClipboard(): Promise<string | null> {
   if (!navigator.clipboard?.readText) return null;
   try {
@@ -213,7 +223,9 @@ export function VoiceAssistant() {
   const [truncated, setTruncated] = useState(false);
   const [incident, setIncident] = useState<SentinelIncident | null>(null);
   const [resultLang, setResultLang] = useState<Lang>(pageLang);
-  const [showPaste, setShowPaste] = useState(false);
+  const [, setShowPaste] = useState(false); // the input panel is always open now; kept as a no-op marker for older call sites
+  /** Clipboard read permission, from the browser (a tap on hands-free is the gesture that may ask for it). */
+  const [clipPerm, setClipPerm] = useState<"unknown" | "granted" | "denied" | "unsupported">("unknown");
   const [pasteText, setPasteText] = useState("");
   const pasteRef = useRef<HTMLTextAreaElement>(null);
 
@@ -533,7 +545,8 @@ export function VoiceAssistant() {
           setShowPaste(true);
           setRows([]);
           setSteps([]);
-          await say(voiceText(lang, "voice.say.paste"), lang, token, ["clip.denied"]);
+          setClipPerm((p) => (p === "unsupported" ? p : "denied"));
+          await say(voiceText(lang, "voice.say.greet"), lang, token, ["greet.hello"]);
           pasteRef.current?.focus();
         } else await runChecks(text, lang, token, true);
       } else await say(voiceText(lang, "voice.say.none"), lang, token, ["didnt"]);
@@ -613,6 +626,20 @@ export function VoiceAssistant() {
     setStopped(false);
     setProblem(null);
     failures.current = 0;
+    // The tap on "hands-free" is a user gesture: ask for the clipboard now, once, so a spoken command can read it later.
+    if (!navigator.clipboard?.readText) {
+      setClipPerm("unsupported");
+      setShowPaste(true);
+    } else {
+      void navigator.clipboard.readText().then(
+        () => setClipPerm("granted"),
+        () => setClipPerm("denied"),
+      );
+      void clipboardPermission().then((st) => {
+        if (st === "granted") setClipPerm("granted");
+        else if (st === "denied") setClipPerm("denied");
+      });
+    }
     setCaption("");
     setRows([]);
     setSteps([]);
@@ -649,7 +676,15 @@ export function VoiceAssistant() {
     }
     listener.current = startListener(stream, { onUtterance: (audio) => void sendUtterance(audio, token), onVoice: setVoiceActive, onLevel: setLevel });
     setPhase("listening");
-  }, [playerFor, playKeys, sendUtterance]);
+    // Greet once the mic is live (the same clip is the caption).
+    enqueue({ text: spoken(langRef.current, ["greet.hello"]), keys: ["greet.hello"], lang: langRef.current, kind: "msg" }, token);
+    void drain();
+  }, [playerFor, playKeys, sendUtterance, enqueue, drain]);
+
+  // A browser that cannot read the clipboard at all (Safari): paste mode with a hint from the very start, nothing fails.
+  useEffect(() => {
+    if (!navigator.clipboard?.readText) setClipPerm("unsupported");
+  }, []);
 
   // Both languages' clips are fetched and decoded as soon as the page opens, so no line waits (or falls back) mid-narration.
   useEffect(() => {
@@ -683,8 +718,10 @@ export function VoiceAssistant() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const submitPaste = () => {
-    if (!pasteText.trim()) return;
+  const submitPaste = (given?: string) => {
+    const text = (typeof given === "string" ? given : pasteText).trim();
+    if (!text) return;
+    setPasteText(text);
     const token = ++run.current;
     abort.current?.abort();
     cancelSpeech();
@@ -693,7 +730,7 @@ export function VoiceAssistant() {
     drainId.current += 1;
     draining.current = null;
     busy.current = true;
-    void runChecks(pasteText, langRef.current, token).then(() => {
+    void runChecks(text, langRef.current, token).then(() => {
       if (run.current !== token) return;
       busy.current = false;
       if (listener.current) {
@@ -702,6 +739,39 @@ export function VoiceAssistant() {
       } else setPhase("off");
     });
   };
+
+  // Text pasted or dropped anywhere on the page is checked at once (a paste into our own box is handled by the box).
+  const submitRef = useRef(submitPaste);
+  submitRef.current = submitPaste;
+  useEffect(() => {
+    const textOf = (dt: DataTransfer | null) => (dt?.getData("text/plain") ?? "").slice(0, 20000);
+    const onPaste = (e: ClipboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && el.closest("input, textarea, select, [contenteditable]")) return;
+      const t = textOf(e.clipboardData);
+      if (t.trim()) {
+        e.preventDefault();
+        submitRef.current(t);
+      }
+    };
+    const onOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes("text/plain")) e.preventDefault();
+    };
+    const onDrop = (e: DragEvent) => {
+      const t = textOf(e.dataTransfer);
+      if (!t.trim()) return;
+      e.preventDefault();
+      submitRef.current(t);
+    };
+    window.addEventListener("paste", onPaste);
+    window.addEventListener("dragover", onOver);
+    window.addEventListener("drop", onDrop);
+    return () => {
+      window.removeEventListener("paste", onPaste);
+      window.removeEventListener("dragover", onOver);
+      window.removeEventListener("drop", onDrop);
+    };
+  }, []);
 
   const done = rows.length > 0 && rows.every((r) => r.outcome);
   const outcomes = rows.flatMap((r) => (r.outcome ? [r.outcome] : []));
@@ -777,14 +847,23 @@ export function VoiceAssistant() {
         </section>
       ) : null}
 
-      {showPaste || problem === "denied" || problem === "unsupported" || problem === "unavailable" ? (
+      {clipPerm !== "unknown" ? (
+        <p className="voice-clip-chip small" data-testid="voice-clip-chip" data-state={clipPerm} role="status">
+          <span>{vt(clipPerm === "granted" ? "voice.clip.allowed" : clipPerm === "denied" ? "voice.clip.denied" : "voice.clip.unsupported")}</span>
+          {clipPerm === "denied" ? (
+            <button type="button" className="btn btn--sm" data-testid="voice-clip-allow" onClick={() => void navigator.clipboard?.readText().then(() => setClipPerm("granted"), () => { setClipPerm("denied"); setShowPaste(true); pasteRef.current?.focus(); })}>{vt("voice.clip.allow")}</button>
+          ) : null}
+        </p>
+      ) : null}
+
+      <>
         <section className="card voice-paste" aria-labelledby="voice-paste-h" data-testid="voice-paste">
           <h2 id="voice-paste-h" className="h3">{vt("voice.paste.h")}</h2>
-          <p className="muted">{vt("voice.paste.hint")}</p>
-          <textarea ref={pasteRef} className="voice-paste-box" rows={7} value={pasteText} onChange={(e) => setPasteText(e.target.value)} aria-label={vt("voice.paste.label")} data-testid="voice-paste-input" dir="auto" maxLength={20000} />
-          <button type="button" className="btn btn--primary" data-testid="voice-paste-submit" disabled={!pasteText.trim()} onClick={submitPaste}>{vt("voice.paste.btn")}</button>
+          <p className="muted" data-testid="voice-paste-hint">{vt(clipPerm === "unsupported" ? "voice.paste.nosupport" : "voice.paste.hint")}</p>
+          <textarea ref={pasteRef} className="voice-paste-box" rows={7} value={pasteText} onChange={(e) => setPasteText(e.target.value)} onPaste={(e) => { const t = e.clipboardData.getData("text/plain"); if (t.trim()) { e.preventDefault(); submitPaste(t.slice(0, 20000)); } }} placeholder={vt("voice.paste.placeholder")} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && pasteText.trim()) { e.preventDefault(); submitPaste(); } }} aria-label={vt("voice.paste.label")} data-testid="voice-paste-input" dir="auto" maxLength={20000} />
+          <button type="button" className="btn btn--primary" data-testid="voice-paste-submit" disabled={!pasteText.trim()} onClick={() => submitPaste()}>{vt("voice.paste.btn")}</button>
         </section>
-      ) : null}
+      </>
 
       {rows.length ? (
         <section className="voice-results" aria-labelledby="voice-res-h" data-testid="voice-results" lang={resultLang} dir={resultLang === "ar" ? "rtl" : "ltr"}>

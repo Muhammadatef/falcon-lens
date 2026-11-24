@@ -122,7 +122,7 @@ async function say(page: Page, voice: string) {
 
 /** The clips played so far, as their script text (and the BCP-47 tag of their language). Device speech is NOT included: it must stay empty. */
 const spoken = async (page: Page): Promise<{ text: string; lang: string }[]> => {
-  const ids: string[] = await page.evaluate(() => (window as any).__played);
+  const ids: string[] = (await page.evaluate(() => (window as any).__played)).filter((id: string) => !id.endsWith(".greet.hello"));
   return ids.map((id) => {
     const ar = id.startsWith("ar_ae.");
     return { text: (ar ? SCRIPT.ar_ae : SCRIPT.en)[id.slice(ar ? 6 : 3)]!, lang: ar ? "ar-SA" : "en-GB" };
@@ -758,19 +758,64 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect(await clips(page)).toHaveLength(3);
   });
 
-  test("clipboard denied: a big paste box appears, Falcon says so aloud, and pasted text is checked", async ({ page, request }) => {
+  const playedIds = (page: Page): Promise<string[]> => page.evaluate(() => (window as any).__played);
+
+  test("the input panel is open by default; going live greets; Enter in the box starts the check (no error line anywhere)", async ({ page, request }) => {
+    const { ids, text } = await setup(page, request);
+    await page.goto("/voice");
+    await expect(page.getByTestId("voice-paste")).toBeVisible();
+    await expect(page.getByTestId("voice-paste-input")).toHaveAttribute("placeholder", "اكتب أو الصق الرسالة هنا…");
+    await page.getByTestId("voice-on").click();
+    await expect.poll(() => playedIds(page)).toContain("ar_ae.greet.hello");
+    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["greet.hello"]!);
+    await page.getByTestId("voice-paste-input").fill(text.split("\n\n")[0]!);
+    await page.getByTestId("voice-paste-input").press("Enter");
+    await expect(page.getByTestId("voice-card")).toHaveCount(1);
+    await expect(page.getByTestId("voice-trace").first()).toHaveAttribute("href", `/checks/${ids[0]}`, { timeout: 25_000 });
+    expect(await page.locator("main").innerText()).not.toMatch(/ما قدرت أقرا|لم أتمكن من قراءة|couldn't read|could not read/i);
+  });
+
+  test("clipboard denied: no error line, the greeting is spoken, the box is focused, and pasted text is checked at once", async ({ page, request }) => {
     const { ids, text: msgs } = await setup(page, request);
     await page.goto("/voice");
     await page.evaluate(() => { (window as any).__clipDenied = true; });
     await page.getByTestId("voice-on").click();
+    await expect(page.getByTestId("voice-clip-chip")).toHaveAttribute("data-state", "denied");
     await say(page, "check-ar");
-    await expect(page.getByTestId("voice-paste")).toBeVisible();
-    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["clip.denied"]!);
-    expect((await spoken(page)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["clip.denied"]!);
-    await page.getByTestId("voice-paste-input").fill(msgs);
-    await page.getByTestId("voice-paste-submit").click();
+    await expect(page.getByTestId("voice-paste-input")).toBeFocused();
+    await expect.poll(async () => (await playedIds(page)).filter((id) => id === "ar_ae.greet.hello").length).toBeGreaterThanOrEqual(2);
+    expect(await page.locator("main").innerText()).not.toMatch(/ما قدرت أقرا|لم أتمكن من قراءة|couldn't read|could not read/i);
+    // Pasting into the box starts the check with no extra click.
+    await page.evaluate((m) => {
+      const box = document.querySelector('[data-testid="voice-paste-input"]') as HTMLTextAreaElement;
+      const dt = new DataTransfer();
+      dt.setData("text/plain", m);
+      box.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+    }, msgs);
     await expect(page.getByTestId("voice-card")).toHaveCount(3);
     await expect(page.getByTestId("voice-trace").first()).toHaveAttribute("href", `/checks/${ids[0]}`, { timeout: 25_000 });
+  });
+
+  test("text pasted anywhere on the page is checked at once", async ({ page, request }) => {
+    const { text: msgs } = await setup(page, request);
+    await page.goto("/voice");
+    await page.evaluate((m) => {
+      const dt = new DataTransfer();
+      dt.setData("text/plain", m);
+      document.body.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+    }, msgs);
+    await expect(page.getByTestId("voice-card")).toHaveCount(3);
+  });
+
+  test("a browser with no clipboard read (Safari-like): paste mode with a hint from the start, no failure", async ({ page, request }) => {
+    await setup(page, request);
+    await page.addInitScript(() => { Object.defineProperty(navigator, "clipboard", { configurable: true, value: {} }); });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await expect(page.getByTestId("voice-clip-chip")).toHaveAttribute("data-state", "unsupported");
+    await expect(page.getByTestId("voice-paste-hint")).toContainText("الصق الرسالة هنا");
+    await expect(page.getByTestId("voice-paste-input")).toBeVisible();
+    expect(await page.locator("main").innerText()).not.toMatch(/ما قدرت أقرا|لم أتمكن من قراءة|couldn't read|could not read/i);
   });
 
   test("microphone denied shows the paste box; a failing voice service shows a clear message", async ({ page, request }) => {

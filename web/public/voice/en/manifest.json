@@ -672,6 +672,38 @@
     "voice": "am_fenrir"
   },
   {
+    "id": "en.find.contains_url",
+    "file": "en.find.contains_url.mp3",
+    "text": "The message contains a link.",
+    "ms": 1322,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.contains_phone",
+    "file": "en.find.contains_phone.mp3",
+    "text": "The message has a number to call.",
+    "ms": 1509,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.return_path",
+    "file": "en.find.return_path.mp3",
+    "text": "The return path differs from the sender's address.",
+    "ms": 2459,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
+    "id": "en.find.attachment",
+    "file": "en.find.attachment.mp3",
+    "text": "The attachment may carry a link or something suspicious.",
+    "ms": 2788,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
     "id": "en.find.incomplete",
     "file": "en.find.incomplete.mp3",
     "text": "We couldn't open the page fully.",
@@ -2464,10 +2496,10 @@
     "voice": "am_fenrir"
   },
   {
-    "id": "en.clip.denied",
-    "file": "en.clip.denied.mp3",
-    "text": "I couldn't read what you copied. Paste it in the box on the screen.",
-    "ms": 3264,
+    "id": "en.greet.hello",
+    "file": "en.greet.hello.mp3",
+    "text": "Hi, how can I help you today?",
+    "ms": 1287,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },
