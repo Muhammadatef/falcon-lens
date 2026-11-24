@@ -140,10 +140,14 @@ export function CampaignBoard({ demo }: { demo: boolean }) {
             <CampaignExplainer />
 
             {load.state === "loading" ? (
-              <div className="card state" role="status" data-testid="board-loading">
-                <p>{t("board.loading")}</p>
-                <div className="sk" />
-                <div className="sk" />
+              <div className="board-grid board-grid--loading" role="status" aria-busy="true" data-testid="board-loading">
+                <div className="card radar">
+                  <div className="radar-box radar-skel sk" aria-hidden="true" />
+                  <p className="small radar-cap">{t("board.loading")}</p>
+                </div>
+                <div className="camps" aria-hidden="true">
+                  {[0, 1, 2].map((n) => <div key={n} className="card camp camp-skel sk" />)}
+                </div>
               </div>
             ) : load.state === "not_connected" ? (
               <div className="card state" role="status" data-testid="board-not-connected">
