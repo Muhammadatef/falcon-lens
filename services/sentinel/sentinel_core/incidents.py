@@ -13,6 +13,8 @@ from typing import Any, Protocol
 
 from jsonschema import Draft202012Validator
 
+from falcon_core.provenance import effective_source
+
 from .correlate import Features, correlation_keys, defang, extract
 from .events import INCIDENT_SCHEMA_PATH, Event, parse_time
 from .ids import make_ulid
@@ -167,6 +169,8 @@ def build_incident(
     brands = sorted({f.brand_id for f in fs if f.brand_id})
     sources = {f.event.source for f in fs}
     source = next(s for s in SOURCE_PRIORITY if s in sources)
+    # Label at source: checks of internal fixture hosts (config allow-list) are fixtures, not live.
+    source = effective_source(source, (f.domain for f in fs if f.domain))
     keys = correlation_keys(fs)
     if group:
         keys["group"] = group

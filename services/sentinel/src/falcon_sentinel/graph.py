@@ -234,7 +234,10 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
     ctx = deps.tools
     cache = ctx.incidents
     tracer = deps.tracer or TraceRecorder(ctx.repo, deps.clock)
-    llm_model = str(getattr(deps.llm, "model", "stub"))
+
+    def llm_model() -> str:
+        """Model id the client reports (the router's actual answering model); "stub" only for the stub provider."""
+        return str(getattr(deps.llm, "model", None) or "unknown")
 
     async def write(incident_id: str, patch: dict[str, Any], evidence_ids: list[str]) -> None:
         aid = action_id_for(incident_id, "upsert_incident", patch)
@@ -265,7 +268,7 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
         used = 0
         t_ask = time.monotonic()
         outcome = "invalid"
-        llm_rec = rec.use_llm(str(getattr(deps.llm, "route", "local")), llm_model) if rec is not None else None
+        llm_rec = rec.use_llm(str(getattr(deps.llm, "route", "local")), llm_model()) if rec is not None else None
 
         def on_usage(t_in: int, t_out: int, repaired: bool) -> None:
             if llm_rec is not None:
@@ -292,12 +295,14 @@ def build_graph(deps: Deps) -> StateGraph[TriageState, Any, TriageState, TriageS
             )
             if llm_rec is not None:
                 llm_rec["route"] = str(getattr(deps.llm, "route", llm_rec["route"]))
+                llm_rec["model"] = llm_model()[:80]
             outcome = "ok"
             return res
         except LLMUnavailable:
             outcome = "unavailable"
             if llm_rec is not None:
                 llm_rec["route"] = "none"
+                llm_rec["model"] = "none"
             raise
         except TimeoutError:
             outcome = "timeout"

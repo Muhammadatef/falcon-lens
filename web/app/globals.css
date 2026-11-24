@@ -351,6 +351,9 @@ html[dir="ltr"] .ev-meta { justify-content: flex-start; }
 .radar g[data-dim="true"] { opacity: 0.25; transition: opacity var(--fl-dur-fast); }
 .radar-cap { text-align: center; margin-block-start: var(--fl-space-3); }
 .camps { display: grid; gap: var(--fl-space-3); }
+/* Loading placeholders are sized like the real radar and cards, so the list does not push content down when it arrives. */
+.radar-skel { width: 100%; max-width: 26rem; height: auto; border-radius: 50%; }
+.camp-skel { min-height: 11rem; height: auto; border-radius: var(--fl-radius-lg, 12px); }
 .camp { padding: var(--fl-space-4); display: grid; grid-template-columns: 2.25rem 1fr; gap: var(--fl-space-3); transition: border-color var(--fl-dur-fast), transform var(--fl-dur-fast) var(--fl-ease-out); }
 .camp:hover { border-color: var(--s-fg); }
 .camp.bump { animation: bump var(--fl-dur-slow) var(--fl-ease-out); }

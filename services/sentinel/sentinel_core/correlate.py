@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, TypeVar
 
+from falcon_core.signals.url.canonical import psl_split
+
 from .events import Event
 
 SIMHASH_MAX_HAMMING = 6
@@ -42,9 +44,15 @@ def defang(domain: str) -> str:
 
 def registrable_domain(host: str) -> str:
     """Small heuristic (no PSL dependency): last two labels, three for co.xx style. "" if not a hostname."""
-    labels = [p for p in refang(host).split(".") if p]
+    h = refang(host)
+    labels = [p for p in h.split(".") if p]
     if len(labels) < 2:
         return ""
+    # Shared hosting / platform suffixes (PSL private section: pages.dev, github.io, vercel.app ...): the
+    # registrable name is the label under the suffix; the suffix itself is never an indicator.
+    _sub, dom, suffix, private = psl_split(h)
+    if private:
+        return f"{dom}.{suffix}" if dom else ""
     if len(labels) >= 3 and labels[-2] in _SLD_PREFIXES and len(labels[-1]) == 2:
         return ".".join(labels[-3:])
     return ".".join(labels[-2:])
