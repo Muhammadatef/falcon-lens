@@ -111,7 +111,7 @@ async function installClipMocks(page: Page) {
     };
   });
 }
-const clips = (page: Page): Promise<string[]> => page.evaluate(() => (window as any).__clips);
+const clips = async (page: Page): Promise<string[]> => ((await page.evaluate(() => (window as any).__clips)) as string[]).filter((c) => !c.includes(".greet.hello."));
 
 /** Speaks one utterance: loud for ~1 s, then silent until the detector ends it. */
 async function say(page: Page, voice: string) {
@@ -121,8 +121,8 @@ async function say(page: Page, voice: string) {
 }
 
 /** The clips played so far, as their script text (and the BCP-47 tag of their language). Device speech is NOT included: it must stay empty. */
-const spoken = async (page: Page): Promise<{ text: string; lang: string }[]> => {
-  const ids: string[] = (await page.evaluate(() => (window as any).__played)).filter((id: string) => !id.endsWith(".greet.hello"));
+const spoken = async (page: Page, withGreeting = false): Promise<{ text: string; lang: string }[]> => {
+  const ids: string[] = (await page.evaluate(() => (window as any).__played)).filter((id: string) => withGreeting || !id.endsWith(".greet.hello"));
   return ids.map((id) => {
     const ar = id.startsWith("ar_ae.");
     return { text: (ar ? SCRIPT.ar_ae : SCRIPT.en)[id.slice(ar ? 6 : 3)]!, lang: ar ? "ar-SA" : "en-GB" };
@@ -257,7 +257,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
       await narrationDone(page);
     }
     const caps: string[] = await page.evaluate(() => (window as any).__caps);
-    const pieces = (await spoken(page)).map((p) => p.text);
+    const pieces = (await spoken(page, true)).map((p) => p.text);
     expect(caps.length).toBeGreaterThan(8);
     let i = 0;
     for (const c of caps) {
@@ -392,8 +392,8 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
         evidence: [
           e("rep0sms01", "rep.openphish", "reputation", "T0", 0, false),
           e("sms0fee01", "message.rule.delivery_fee", "message", "T1", 1.4, { rule: "delivery_fee" }),
-          e("sms0urg01", "message.rule.urgency", "message", "T1", 0.9, { rule: "urgency" }),
-          e("sms0age01", "domain.age_days", "domain", "T1", 0.5, 12),
+          e("sms0urg01", "message.rule.urgency", "message", "T1", 0.4, { rule: "urgency" }),
+          e("sms0age01", "domain.age_days", "domain", "T1", 1.0, 12),
           e("sms0unk01", "evil.unknown_code", "message", "T1", 9, "<img src=x onerror=alert(1)>"),
         ],
       });
@@ -417,7 +417,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
       }
       // The parcel SMS: its own findings, the age spoken through the exact number clips, and nothing from the bank page.
       const smsAge = line(["find.age.lead", "num.12", "find.age.days"]);
-      for (const text of [line(["find.delivery_fee"]), line(["find.urgency"]), smsAge]) {
+      for (const text of [line(["find.delivery_fee"]), smsAge]) {
         expect(steps.some((s) => s.includes(text)), `step: ${text}`).toBe(true);
         expect(said.join(" "), `spoken: ${text}`).toContain(text);
       }
@@ -441,9 +441,69 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
       // The progress panel (showing the last message, the SMS) lists the same finding lines under its tier.
       const t1 = page.locator('[data-testid="voice-tier"][data-tier="T1"]');
       await expect(t1).toContainText(line(["find.delivery_fee"]));
-      await expect(t1).toContainText(line(["find.urgency"]));
+      await expect(t1).toContainText(smsAge);
+      await expect(t1).not.toContainText(line(["find.urgency"])); // only the two strongest are shown
     });
   }
+
+  test("a burst of out-of-order events is revealed strictly in order, and the result is written only after the last step", async ({ page, request }) => {
+    const t = token();
+    const id = newVerdictId();
+    const base = buildStream(withId(DEMO_DANGEROUS, id, { model_route: "none" }), [
+      { tier: "T0", delayMs: 0, verdict: "no_warning_signs", risk: 22, ms: 40 },
+      { tier: "T1", delayMs: 0, verdict: "suspicious", risk: 68, ms: 610 },
+      { tier: "T2", delayMs: 0, verdict: "dangerous", risk: 97, ms: 2840 },
+    ]);
+    // Burst and reversed: the T2 snapshot first, then T0 and T1, then the final verdict.
+    const steps = [base[1]!, base[0]!, base[2]!].map((x) => ({ ...x, delayMs: 0 }));
+    await registerScenario(request, { match: t, verdictId: id, steps });
+    await installMocks(page);
+    await page.addInitScript((c) => {
+      (window as any).__clip = c;
+      // Records every visible change of: how many steps are shown, whether a verdict is written, whether "what to do now" is shown.
+      (window as any).__seq = [];
+      const snap = () => {
+        const steps = [...document.querySelectorAll('[data-testid="voice-step"]')].map((e) => ({ t: e.textContent ?? "", done: e.getAttribute("data-done") === "true" }));
+        const verdict = [...document.querySelectorAll('[data-testid="voice-card-verdict"]')].some((e) => !/…$/.test((e.textContent ?? "").trim()));
+        const todo = !!document.querySelector('[data-testid="voice-todo"]');
+        const last = (window as any).__seq.at(-1);
+        const key = JSON.stringify([steps.length, verdict, todo]);
+        if (!last || last.key !== key) (window as any).__seq.push({ key, steps, verdict, todo, at: performance.now() });
+      };
+      new MutationObserver(snap).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
+    }, `Verify your account now ${t} https://falcon-demo-bank-secure.test/login`);
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "check-ar");
+    await expect(page.getByTestId("voice-todo")).toBeVisible({ timeout: 40_000 });
+    await narrationDone(page);
+    const seq: any[] = await page.evaluate(() => (window as any).__seq);
+    const ar = SCRIPT.ar_ae;
+    // Steps only ever grow, by one at a time, in the order: lists, address, page.
+    let prev = 0;
+    for (const f of seq) {
+      expect(f.steps.length - prev, "steps never appear several at once").toBeLessThanOrEqual(1);
+      prev = Math.max(prev, f.steps.length);
+    }
+    const final = seq.at(-1);
+    const idx = (needle: string) => final.steps.findIndex((x: any) => x.t.includes(needle));
+    expect(idx(ar["investigator.lists"]!)).toBeGreaterThan(-1);
+    expect(idx(ar["investigator.lists"]!)).toBeLessThan(idx(ar["investigator.wording"]!));
+    expect(idx(ar["investigator.wording"]!)).toBeLessThan(idx(ar["investigator.page"]!));
+    // The verdict is written only after the page step was shown; "what to do now" only after every step is done.
+    for (const f of seq) {
+      if (f.verdict) expect(f.steps.some((x: any) => x.t.includes(ar["investigator.page"]!)), "verdict written before the last tier step").toBe(true);
+      if (f.todo) expect(f.steps.every((x: any) => x.done), "result written before the last step finished").toBe(true);
+    }
+    // Spoken clip order matches the shown order.
+    const played = (await playedIds(page)).filter((x) => x.startsWith("ar_ae."));
+    const at = (k: string) => played.indexOf(`ar_ae.${k}`);
+    expect(at("investigator.lists")).toBeGreaterThan(-1);
+    expect(at("investigator.lists")).toBeLessThan(at("investigator.wording"));
+    expect(at("investigator.wording")).toBeLessThan(at("investigator.page"));
+    expect(at("investigator.page")).toBeLessThan(at("msg.ord.1"));
+    expect(at("msg.ord.1")).toBeLessThan(at("sentinel.handover"));
+  });
 
   test("nothing checked: no hand-over to the Sentinel, an honest line instead", async ({ page, request }) => {
     await installMocks(page);

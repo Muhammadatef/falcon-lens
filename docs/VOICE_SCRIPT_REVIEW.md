@@ -13,7 +13,7 @@ Lines: 341. Digits are written out in words (`num.0` to `num.100`).
 |---|---|---|
 | هلا، سامعك. | Yes, I'm listening. |  |
 | لحظة، أقرا اللي نسخته. | One moment, reading what you copied. |  |
-| لقيت مسج وحدة. | I found one message. |  |
+| لقيت مسج واحد. | I found one message. |  |
 | لقيت مسجين. | I found two messages. |  |
 | لقيت ثلاث مسجات. | I found three messages. |  |
 | لقيت أربع مسجات. | I found four messages. |  |
@@ -254,10 +254,10 @@ Lines: 341. Digits are written out in words (`num.0` to `num.100`).
 | خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق. | The voice service isn't available right now. Please use the paste box. |  |
 | بصير شيّك، بس ما قدرت أوصل لدرع. | Baseer checked, but I couldn't reach Dir. |  |
 | بصير شيّك، ودرع يظل يراقب. | Baseer checked, and Dir keeps watching. |  |
-| مسج وحدة منها خطر. | One message is dangerous. |  |
-| مسج وحدة منها مشكوك فيها. | One message looks suspicious. |  |
-| مسج وحدة ما فيها علامات تحذير. | One message showed no warning signs. |  |
-| مسج وحدة ما قدرت أشيّكها. | One message could not be checked. |  |
+| مسج واحد منها خطر. | One message is dangerous. |  |
+| مسج واحد منها مشكوك فيها. | One message looks suspicious. |  |
+| مسج واحد ما فيها علامات تحذير. | One message showed no warning signs. |  |
+| مسج واحد ما قدرت أشيّكها. | One message could not be checked. |  |
 | مسجين منها خطر. | Two messages are dangerous. |  |
 | مسجين منها مشكوك فيها. | Two messages look suspicious. |  |
 | مسجين ما فيها علامات تحذير. | Two messages showed no warning signs. |  |

@@ -54,7 +54,7 @@ export function tierRows(v: Verdict, kind: "url" | "message", lang: Lang, final:
   const byTier = new Map<TierId, ProgressStep>(ran.map((s) => [STEP_TIER[s], s]));
   const rows: TierRow[] = [];
   for (const tier of ORDER) {
-    if (tier === "T2" && kind !== "url") continue;
+    if (tier === "T2" && kind !== "url" && !v.evidence.some((e) => e.tier === "T2")) continue;
     const step = byTier.get(tier);
     if (step) rows.push({ tier, step, status: "done", found: tierFoundText(lang, step, v) });
     else if (final) rows.push({ tier, step: tier === "T0" ? "lists" : tier === "T1" ? (kind === "url" ? "lookalike" : "wording") : tier === "T2" ? "browser" : "ai", status: "skipped" });

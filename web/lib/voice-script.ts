@@ -25,7 +25,7 @@ type Pair = readonly [ar_ae: string, en: string];
 const N = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 const FOUND: readonly Pair[] = [
-  ["لقيت مسج وحدة.", "I found one message."],
+  ["لقيت مسج واحد.", "I found one message."],
   ["لقيت مسجين.", "I found two messages."],
   ["لقيت ثلاث مسجات.", "I found three messages."],
   ["لقيت أربع مسجات.", "I found four messages."],
@@ -51,7 +51,7 @@ const OF: readonly Pair[] = [
   ["من عشر.", "of ten."],
 ];
 /** Counts per verdict, for N = 1..10, phrased as the subject of a short sentence. */
-const COUNT_AR = ["مسج وحدة", "مسجين", "ثلاث مسجات", "أربع مسجات", "خمس مسجات", "ست مسجات", "سبع مسجات", "ثمان مسجات", "تسع مسجات", "عشر مسجات"];
+const COUNT_AR = ["مسج واحد", "مسجين", "ثلاث مسجات", "أربع مسجات", "خمس مسجات", "ست مسجات", "سبع مسجات", "ثمان مسجات", "تسع مسجات", "عشر مسجات"];
 const COUNT_EN = ["One message", "Two messages", "Three messages", "Four messages", "Five messages", "Six messages", "Seven messages", "Eight messages", "Nine messages", "Ten messages"];
 const SUM_AR = { dangerous: "منها خطر.", suspicious: "منها مشكوك فيها.", clear: "ما فيها علامات تحذير.", failed: "ما قدرت أشيّكها." };
 const SUM_EN = (n: number) => ({

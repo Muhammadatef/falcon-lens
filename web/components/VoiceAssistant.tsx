@@ -158,6 +158,9 @@ async function clipboardPermission(): Promise<"granted" | "denied" | "prompt" | 
   }
 }
 
+/** Pause between two steps (a short, natural pace). */
+const STEP_GAP_MS = 320;
+
 async function readClipboard(): Promise<string | null> {
   if (!navigator.clipboard?.readText) return null;
   try {
@@ -220,6 +223,8 @@ export function VoiceAssistant() {
   const [stopped, setStopped] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
+  /** The closing result ("what to do now") is written only after the last step has been shown. */
+  const [finalReady, setFinalReady] = useState(false);
   const [truncated, setTruncated] = useState(false);
   const [incident, setIncident] = useState<SentinelIncident | null>(null);
   const [resultLang, setResultLang] = useState<Lang>(pageLang);
@@ -314,10 +319,32 @@ export function VoiceAssistant() {
     for (const p of Object.values(players.current)) p?.stop();
   }, []);
 
+  /**
+   * Steps are revealed strictly in the order they were added, one every STEP_GAP_MS (a short natural pace, nothing
+   * longer): a burst of events never shows several at once and never out of order. `stepsIdle()` resolves when every
+   * queued step has been shown; results are written only after it.
+   */
+  const stepChain = useRef<Promise<void>>(Promise.resolve());
+  const stepGen = useRef(0);
   const addStep = useCallback((text: string, lang: Lang) => {
-    setSteps((prev) => [...prev.map((s) => ({ ...s, done: true })), { id: ++stepId.current, text, done: false, lang }]);
+    const gen = stepGen.current;
+    stepChain.current = stepChain.current.then(async () => {
+      if (gen !== stepGen.current) return;
+      setSteps((prev) => [...prev.map((s) => ({ ...s, done: true })), { id: ++stepId.current, text, done: false, lang }]);
+      await new Promise<void>((r) => window.setTimeout(r, STEP_GAP_MS));
+    });
   }, []);
-  const finishSteps = useCallback(() => setSteps((prev) => prev.map((s) => ({ ...s, done: true }))), []);
+  const stepsIdle = useCallback(() => stepChain.current, []);
+  const resetSteps = useCallback(() => {
+    stepGen.current += 1;
+    stepChain.current = Promise.resolve();
+    setSteps([]);
+    setFinalReady(false);
+  }, []);
+  const finishSteps = useCallback(() => {
+    stepGen.current += 1; // anything still queued is dropped (Stop, or the run is over)
+    setSteps((prev) => prev.map((s) => ({ ...s, done: true })));
+  }, []);
 
   /** Speech queue: one utterance at a time, never overlapping; the caption always shows the line being spoken. */
   const enqueue = useCallback((item: Spoken, token: number) => {
@@ -364,7 +391,7 @@ export function VoiceAssistant() {
     async (text: string, lang: Lang, token: number, voiceStarted = false) => {
       const split = splitMessages(text);
       setTruncated(split.truncated);
-      setSteps([]);
+      resetSteps();
       if (!split.items.length) {
         setRows([]);
         await say(voiceText(lang, "voice.say.empty"), lang, token, ["clip.empty"]);
@@ -417,8 +444,6 @@ export function VoiceAssistant() {
         );
         if (!alive()) return;
         outcomes.push(outcome);
-        if (outcome.verdict) setTiers(tierRows(outcome.verdict, item.kind, lang, true));
-        setRows((prev) => prev.map((r) => (r.key === at ? { ...r, outcome } : r)));
         const v = outcome.verdict;
         // One decision (usedModel) drives screen and speech: a model answered, or the fixed rules decided.
         if (v && !aiShown) {
@@ -428,6 +453,11 @@ export function VoiceAssistant() {
             if (line.length) enqueue({ text: spoken(lang, line), keys: line, lang, kind: "msg" }, token);
           }
         }
+        // The result of this message is written only after every earlier step has been shown (never in parallel).
+        await stepsIdle();
+        if (!alive()) return;
+        if (outcome.verdict) setTiers(tierRows(outcome.verdict, item.kind, lang, true));
+        setRows((prev) => prev.map((r) => (r.key === at ? { ...r, outcome } : r)));
         const rules = v?.model_route === "none" ? ["investigator.rules_only"] : [];
         const resKeys = [...rules, ...messageResultKeys(n, v ? v.verdict : null)];
         addStep(spoken(lang, resKeys), lang);
@@ -477,10 +507,13 @@ export function VoiceAssistant() {
       addStep(spoken(lang, closing), lang);
       // Nothing is dropped when the check finishes before the narration catches up: every written step is also spoken, in order.
       enqueue({ text: spoken(lang, closing), keys: closing, lang, kind: "final" }, token);
-      await drain();
-      if (alive()) finishSteps();
+      await Promise.all([drain(), stepsIdle()]);
+      if (alive()) {
+        finishSteps();
+        setFinalReady(true); // "what to do now" is written only after the last step
+      }
     },
-    [addStep, drain, enqueue, finishSteps, say],
+    [addStep, drain, enqueue, finishSteps, resetSteps, say, stepsIdle],
   );
 
   const stopAll = useCallback(() => {
@@ -544,7 +577,7 @@ export function VoiceAssistant() {
         if (text === null) {
           setShowPaste(true);
           setRows([]);
-          setSteps([]);
+          resetSteps();
           setClipPerm((p) => (p === "unsupported" ? p : "denied"));
           await say(voiceText(lang, "voice.say.greet"), lang, token, ["greet.hello"]);
           pasteRef.current?.focus();
@@ -642,7 +675,7 @@ export function VoiceAssistant() {
     }
     setCaption("");
     setRows([]);
-    setSteps([]);
+    resetSteps();
     setIncident(null);
     setHeard("");
     if (!voiceSupported()) {
@@ -775,7 +808,7 @@ export function VoiceAssistant() {
 
   const done = rows.length > 0 && rows.every((r) => r.outcome);
   const outcomes = rows.flatMap((r) => (r.outcome ? [r.outcome] : []));
-  const now = done ? topAction(resultLang, outcomes) : "";
+  const now = done && finalReady ? topAction(resultLang, outcomes) : "";
   const shown = speaking ? "speaking" : phase;
   const stateKey: VoiceKey = stopped && phase === "off" ? "voice.state.stopped" : (`voice.state.${shown === "starting" ? "off" : shown}` as VoiceKey);
   const label = phase === "starting" ? vt("voice.mic.starting") : vt(stateKey);

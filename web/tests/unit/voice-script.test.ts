@@ -45,7 +45,7 @@ describe("voice script", () => {
   it("every Arabic line is a short sentence (12 words at most) and not formal-only for key lines", () => {
     for (const c of CLIPS.filter((x) => x.lang === "ar_ae")) expect(wordCount(c.text), c.id).toBeLessThanOrEqual(isFaqKey(c.key) ? 28 : 12);
     expect(SCRIPT.ar_ae["wake.ack"]).toBe("هلا، سامعك.");
-    expect(SCRIPT.ar_ae["found.1"]).toContain("مسج وحدة");
+    expect(SCRIPT.ar_ae["found.1"]).toContain("مسج واحد");
     expect(SCRIPT.ar_ae["found.2"]).toContain("مسجين");
     expect(SCRIPT.ar_ae["found.3"]).toContain("ثلاث مسجات");
   });

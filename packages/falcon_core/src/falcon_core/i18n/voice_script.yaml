@@ -7,7 +7,7 @@ languages: [ar_ae, en]
 ar_ae:
   "wake.ack": "هلا، سامعك."
   "clip.reading": "لحظة، أقرا اللي نسخته."
-  "found.1": "لقيت مسج وحدة."
+  "found.1": "لقيت مسج واحد."
   "found.2": "لقيت مسجين."
   "found.3": "لقيت ثلاث مسجات."
   "found.4": "لقيت أربع مسجات."
@@ -248,10 +248,10 @@ ar_ae:
   "voice.unavailable": "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."
   "final.sentinel_unavailable": "بصير شيّك، بس ما قدرت أوصل لدرع."
   "final.sentinel_watching": "بصير شيّك، ودرع يظل يراقب."
-  "sum.dangerous.1": "مسج وحدة منها خطر."
-  "sum.suspicious.1": "مسج وحدة منها مشكوك فيها."
-  "sum.clear.1": "مسج وحدة ما فيها علامات تحذير."
-  "sum.failed.1": "مسج وحدة ما قدرت أشيّكها."
+  "sum.dangerous.1": "مسج واحد منها خطر."
+  "sum.suspicious.1": "مسج واحد منها مشكوك فيها."
+  "sum.clear.1": "مسج واحد ما فيها علامات تحذير."
+  "sum.failed.1": "مسج واحد ما قدرت أشيّكها."
   "sum.dangerous.2": "مسجين منها خطر."
   "sum.suspicious.2": "مسجين منها مشكوك فيها."
   "sum.clear.2": "مسجين ما فيها علامات تحذير."
@@ -639,7 +639,7 @@ en:
 clips:
   - {id: "ar_ae.wake.ack", lang: ar_ae, text: "هلا، سامعك."}
   - {id: "ar_ae.clip.reading", lang: ar_ae, text: "لحظة، أقرا اللي نسخته."}
-  - {id: "ar_ae.found.1", lang: ar_ae, text: "لقيت مسج وحدة."}
+  - {id: "ar_ae.found.1", lang: ar_ae, text: "لقيت مسج واحد."}
   - {id: "ar_ae.found.2", lang: ar_ae, text: "لقيت مسجين."}
   - {id: "ar_ae.found.3", lang: ar_ae, text: "لقيت ثلاث مسجات."}
   - {id: "ar_ae.found.4", lang: ar_ae, text: "لقيت أربع مسجات."}
@@ -880,10 +880,10 @@ clips:
   - {id: "ar_ae.voice.unavailable", lang: ar_ae, text: "خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق."}
   - {id: "ar_ae.final.sentinel_unavailable", lang: ar_ae, text: "بصير شيّك، بس ما قدرت أوصل لدرع."}
   - {id: "ar_ae.final.sentinel_watching", lang: ar_ae, text: "بصير شيّك، ودرع يظل يراقب."}
-  - {id: "ar_ae.sum.dangerous.1", lang: ar_ae, text: "مسج وحدة منها خطر."}
-  - {id: "ar_ae.sum.suspicious.1", lang: ar_ae, text: "مسج وحدة منها مشكوك فيها."}
-  - {id: "ar_ae.sum.clear.1", lang: ar_ae, text: "مسج وحدة ما فيها علامات تحذير."}
-  - {id: "ar_ae.sum.failed.1", lang: ar_ae, text: "مسج وحدة ما قدرت أشيّكها."}
+  - {id: "ar_ae.sum.dangerous.1", lang: ar_ae, text: "مسج واحد منها خطر."}
+  - {id: "ar_ae.sum.suspicious.1", lang: ar_ae, text: "مسج واحد منها مشكوك فيها."}
+  - {id: "ar_ae.sum.clear.1", lang: ar_ae, text: "مسج واحد ما فيها علامات تحذير."}
+  - {id: "ar_ae.sum.failed.1", lang: ar_ae, text: "مسج واحد ما قدرت أشيّكها."}
   - {id: "ar_ae.sum.dangerous.2", lang: ar_ae, text: "مسجين منها خطر."}
   - {id: "ar_ae.sum.suspicious.2", lang: ar_ae, text: "مسجين منها مشكوك فيها."}
   - {id: "ar_ae.sum.clear.2", lang: ar_ae, text: "مسجين ما فيها علامات تحذير."}

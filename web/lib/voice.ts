@@ -249,7 +249,7 @@ export function newProgressSteps(v: Verdict, kind: "url" | "message", seen: Set<
   const wanted: ProgressStep[] = [];
   if (ran("T0")) wanted.push("lists");
   if (ran("T1")) wanted.push(kind === "url" ? "lookalike" : "wording");
-  if (kind === "url" && ran("T2")) wanted.push("browser");
+  if (ran("T2") && (kind === "url" || tiers.has("T2"))) wanted.push("browser"); // a message that carries a link has its page visit too
   if (ran("T3")) wanted.push("ai");
   const fresh = wanted.filter((s) => !seen.has(s));
   fresh.forEach((s) => seen.add(s));
