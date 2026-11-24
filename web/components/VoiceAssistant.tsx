@@ -43,6 +43,7 @@ import { spoken, speakArbiter, speakChecking, speakFinal, speakFinding, speakFou
 import type { SentinelFinding } from "@/lib/voice-script";
 import { UntrustedText } from "./Chrome";
 import { Icon } from "./Icon";
+import { StageFollow } from "./VoiceStage";
 
 type Phase = "off" | "starting" | "listening" | "heard" | "checking";
 type Problem = "denied" | "unsupported" | "server" | "unavailable" | null;
@@ -57,6 +58,8 @@ interface Step {
   text: string;
   done: boolean;
   lang: Lang;
+  /** 1-based message this step belongs to (0 = session-level: heard, hand-over, Sentinel). Used only to group steps on screen. */
+  msg: number;
 }
 interface Spoken {
   /** Shown on screen (formal Arabic). */
@@ -215,6 +218,7 @@ export function VoiceAssistant() {
   const [showPaste, setShowPaste] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const pasteRef = useRef<HTMLTextAreaElement>(null);
+  const orbRef = useRef<HTMLDivElement>(null);
 
   const listener = useRef<Listener | null>(null);
   const run = useRef(0);
@@ -224,6 +228,7 @@ export function VoiceAssistant() {
   const phaseRef = useRef<Phase>("off");
   phaseRef.current = phase;
   const stepId = useRef(0);
+  const msgRef = useRef(0);
   const queue = useRef<Spoken[]>([]);
   const draining = useRef<Promise<void> | null>(null);
   const drainId = useRef(0);
@@ -234,7 +239,8 @@ export function VoiceAssistant() {
   const vt = useCallback((key: VoiceKey, vars?: Record<string, string>) => voiceText(pageLang, key, vars), [pageLang]);
 
   const addStep = useCallback((text: string, lang: Lang) => {
-    setSteps((prev) => [...prev.map((s) => ({ ...s, done: true })), { id: ++stepId.current, text, done: false, lang }]);
+    const msg = msgRef.current; // read now: the updater below runs later, after the loop has moved on
+    setSteps((prev) => [...prev.map((s) => ({ ...s, done: true })), { id: ++stepId.current, text, done: false, lang, msg }]);
   }, []);
   const finishSteps = useCallback(() => setSteps((prev) => prev.map((s) => ({ ...s, done: true }))), []);
 
@@ -282,6 +288,7 @@ export function VoiceAssistant() {
       const split = splitMessages(text);
       setTruncated(split.truncated);
       setSteps([]);
+      msgRef.current = 0;
       if (!split.items.length) {
         setRows([]);
         await say(voiceText(lang, "voice.say.empty"), lang, token, ["clip.empty"]);
@@ -302,6 +309,7 @@ export function VoiceAssistant() {
       // One message at a time, so the steps on screen and the narration tell one story in order.
       for (const [at, item] of split.items.entries()) {
         const n = at + 1;
+        msgRef.current = n;
         const start = narMessage(lang, n);
         addStep(start, lang);
         enqueue({ text: start, say: speakChecking(lang, n, split.items.length), lang, kind: "msg" }, token);
@@ -345,6 +353,7 @@ export function VoiceAssistant() {
         enqueue({ text: narResult(lang, n, v), say: speakArbiter(lang, v), lang, kind: "msg" }, token);
       }
 
+      msgRef.current = 0;
       // Hand over to the Sentinel only if at least one check completed, and look for the REAL incident linking them.
       setIncident(null);
       const done = outcomes.filter((o) => o.verdict && o.id);
@@ -568,6 +577,9 @@ export function VoiceAssistant() {
     });
   };
 
+  // Mic level for the ring (CSSOM, not a style attribute: the CSP forbids inline styles in the server HTML).
+  useEffect(() => orbRef.current?.style.setProperty("--lvl", level.toFixed(2)), [level]);
+
   const done = rows.length > 0 && rows.every((r) => r.outcome);
   const outcomes = rows.flatMap((r) => (r.outcome ? [r.outcome] : []));
   const now = done ? topAction(resultLang, outcomes) : "";
@@ -579,7 +591,7 @@ export function VoiceAssistant() {
   return (
     <div className="voice" data-testid="voice" data-phase={shown}>
       <section className="card voice-stage" aria-label={vt("voice.region")} data-state={shown} data-voice={voiceActive ? "on" : undefined}>
-        <div className="voice-orb" aria-hidden="true">
+        <div className="voice-orb" aria-hidden="true" ref={orbRef}>
           <span className="voice-ring" />
           <span className="voice-ring voice-ring--2" />
           <Icon name="mic" size={64} />
@@ -611,6 +623,7 @@ export function VoiceAssistant() {
         {active ? <p className="muted voice-hint">{vt("voice.hint.space")}</p> : null}
       </section>
 
+      <div className="voice-right">
       {problem ? (
         <p className="paste-error" role="alert" data-testid="voice-problem" data-problem={problem}>
           <Icon name="suspicious" size={24} />
@@ -621,14 +634,32 @@ export function VoiceAssistant() {
       {steps.length ? (
         <section className="card voice-steps" aria-labelledby="voice-steps-h" data-testid="voice-steps">
           <h2 id="voice-steps-h" className="h3">{voiceText(resultLang, "voice.steps.h")}</h2>
-          <ol>
-            {steps.map((s) => (
-              <li key={s.id} data-testid="voice-step" data-done={s.done ? "true" : "false"} lang={s.lang} dir={s.lang === "ar" ? "rtl" : "ltr"}>
-                <span className="voice-step-mark">{s.done ? <Tick /> : <span className="voice-dot" />}</span>
-                <span>{s.text}</span>
-              </li>
-            ))}
-          </ol>
+          <div className="voice-steps-scroll">
+            <ol>
+              {steps.map((s, i) => {
+                const first = s.msg > 0 && steps[i - 1]?.msg !== s.msg;
+                const closed = s.msg > 0 && !!rows[s.msg - 1]?.outcome && steps.map((x) => x.msg).lastIndexOf(s.msg) < steps.length - 1;
+                const row = s.msg > 0 ? rows[s.msg - 1] : undefined;
+                const v = row?.outcome?.verdict ?? null;
+                return (
+                  <li key={s.id} data-testid="voice-step" data-done={s.done ? "true" : "false"} data-msg={s.msg || undefined} data-head={first ? "true" : undefined} data-sub={s.msg > 0 && !first ? "true" : undefined} data-collapsed={closed ? "true" : undefined} data-current={i === steps.length - 1 ? "true" : undefined} lang={s.lang} dir={s.lang === "ar" ? "rtl" : "ltr"}>
+                    <span className="voice-step-mark">{s.done ? <Tick /> : <span className="voice-dot" />}</span>
+                    <span className="voice-step-text">{s.text}</span>
+                    {first && row?.outcome ? (
+                      <span className="voice-step-end">
+                        <span className="voice-chip" data-testid="voice-group-chip" data-verdict={v?.verdict ?? "pending"}>
+                          {v ? <Icon name={v.verdict} size={22} /> : null}
+                          {v ? MESSAGES[s.lang][`v.${v.verdict}`] : voiceText(s.lang, "voice.res.failed")}
+                        </span>
+                        {closed && v && row.outcome.id && VERDICT_ID_RE.test(row.outcome.id) ? <Link className="voice-trace voice-group-trace" href={traceHref(row.outcome.id)} data-testid="voice-group-trace">{voiceText(s.lang, "voice.res.open")}</Link> : null}
+                      </span>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+          <StageFollow trigger={steps.length} />
         </section>
       ) : null}
 
@@ -687,6 +718,8 @@ export function VoiceAssistant() {
           </ol>
         </section>
       ) : null}
+
+      </div>
 
       <section className="voice-how" aria-labelledby="voice-how-h">
         <h2 id="voice-how-h" className="h3">{vt("voice.how.h")}</h2>
