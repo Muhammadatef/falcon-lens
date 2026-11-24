@@ -2,7 +2,7 @@
 # Every SPOKEN line of the Hey Falcon assistant. ar_ae = Emirati spoken Arabic (screen text stays formal MSA).
 # Every spoken output is a concatenation of the clips below; ids are stable: <lang>.<key>.
 version: 1
-clip_count: 634
+clip_count: 636
 languages: [ar_ae, en]
 ar_ae:
   "wake.ack": "هلا، سامعك."
@@ -321,6 +321,7 @@ ar_ae:
   "error": "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط."
   "voice.too_long": "الكلام طويل شوي، قوله باختصار."
   "voice.catching_up": "لحظة، خلني ألحق عليك."
+  "voice.still_checking": "لحظة، لسا أشيّك."
   "goodbye": "يزاك الله خير. الله يحفظك."
 en:
   "wake.ack": "Yes, I'm listening."
@@ -639,6 +640,7 @@ en:
   "error": "Something went wrong. Try again, and don't open any link."
   "voice.too_long": "That was a bit long. Please say it more briefly."
   "voice.catching_up": "One moment, catching up."
+  "voice.still_checking": "Still checking, one moment."
   "goodbye": "Thank you. Take care."
 clips:
   - {id: "ar_ae.wake.ack", lang: ar_ae, text: "هلا، سامعك."}
@@ -957,6 +959,7 @@ clips:
   - {id: "ar_ae.error", lang: ar_ae, text: "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط."}
   - {id: "ar_ae.voice.too_long", lang: ar_ae, text: "الكلام طويل شوي، قوله باختصار."}
   - {id: "ar_ae.voice.catching_up", lang: ar_ae, text: "لحظة، خلني ألحق عليك."}
+  - {id: "ar_ae.voice.still_checking", lang: ar_ae, text: "لحظة، لسا أشيّك."}
   - {id: "ar_ae.goodbye", lang: ar_ae, text: "يزاك الله خير. الله يحفظك."}
   - {id: "en.wake.ack", lang: en, text: "Yes, I'm listening."}
   - {id: "en.clip.reading", lang: en, text: "One moment, reading what you copied."}
@@ -1274,4 +1277,5 @@ clips:
   - {id: "en.error", lang: en, text: "Something went wrong. Try again, and don't open any link."}
   - {id: "en.voice.too_long", lang: en, text: "That was a bit long. Please say it more briefly."}
   - {id: "en.voice.catching_up", lang: en, text: "One moment, catching up."}
+  - {id: "en.voice.still_checking", lang: en, text: "Still checking, one moment."}
   - {id: "en.goodbye", lang: en, text: "Thank you. Take care."}

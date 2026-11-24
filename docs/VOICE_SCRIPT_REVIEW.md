@@ -7,7 +7,7 @@ For a native Emirati reviewer. Left: the line the assistant SPEAKS. Right: its E
 Rules for the lines: short, natural Emirati speech, respectful to an elderly listener, never the word for "safe",
 never asking for personal, bank or ID details, no phone numbers.
 
-Lines: 343. Digits are written out in words (`num.0` to `num.100`).
+Lines: 344. Digits are written out in words (`num.0` to `num.100`).
 
 | Emirati line | English meaning | Reviewer / OK |
 |---|---|---|
@@ -327,6 +327,7 @@ Lines: 343. Digits are written out in words (`num.0` to `num.100`).
 | صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط. | Something went wrong. Try again, and don't open any link. |  |
 | الكلام طويل شوي، قوله باختصار. | That was a bit long. Please say it more briefly. |  |
 | لحظة، خلني ألحق عليك. | One moment, catching up. |  |
+| لحظة، لسا أشيّك. | Still checking, one moment. |  |
 | يزاك الله خير. الله يحفظك. | Thank you. Take care. |  |
 | البنك ما يطلب منك الرمز أبداً. لا تعطيه لأي أحد، حتى لو قال إنه من البنك. | Your bank never asks for your one-time code. Never share it with anyone, even if they say they are the bank. |  |
 | لا تخاف، بس تصرّف بسرعة. لا تدخل أي بيانات، وكلّم بنكك، وغيّر أرقامك السرية. | Don't panic, but act fast. Don't enter any details, call your bank, and change your passcodes. |  |

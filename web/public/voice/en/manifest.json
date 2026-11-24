@@ -2528,6 +2528,14 @@
     "voice": "am_fenrir"
   },
   {
+    "id": "en.voice.still_checking",
+    "file": "en.voice.still_checking.mp3",
+    "text": "Still checking, one moment.",
+    "ms": 1251,
+    "engine": "kokoro",
+    "voice": "am_fenrir"
+  },
+  {
     "id": "en.goodbye",
     "file": "en.goodbye.mp3",
     "text": "Thank you. Take care.",

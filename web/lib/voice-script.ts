@@ -291,6 +291,7 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("error", "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط.", "Something went wrong. Try again, and don't open any link.");
   put("voice.too_long", "الكلام طويل شوي، قوله باختصار.", "That was a bit long. Please say it more briefly.");
   put("voice.catching_up", "لحظة، خلني ألحق عليك.", "One moment, catching up.");
+  put("voice.still_checking", "لحظة، لسا أشيّك.", "Still checking, one moment.");
   put("goodbye", "يزاك الله خير. الله يحفظك.", "Thank you. Take care.");
   for (const [name, a, e] of FAQ) put(faqKey(name), a, e);
   OFF_TOPIC.forEach(([a, e], i) => put(`offtopic.${i + 1}`, a, e));

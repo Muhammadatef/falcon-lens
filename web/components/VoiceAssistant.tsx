@@ -17,7 +17,6 @@ import {
   findIncident,
   narStart,
   newProgressSteps,
-  parseVoiceReply,
   sentinelSteps,
   speechLang,
   splitMessages,
@@ -38,6 +37,7 @@ import { createVoicePlayer, type VoiceLang, type VoicePlayer } from "@/lib/voice
 import type { SentinelFinding } from "@/lib/voice-script";
 import { UntrustedText } from "./Chrome";
 import { VoiceProgress } from "./VoiceProgress";
+import { postUtterance } from "@/lib/voice-request";
 import { closeStages, enterStage, tierRows, type Stage, type TierRow } from "@/lib/voice-progress";
 import { Icon } from "./Icon";
 
@@ -635,12 +635,22 @@ export function VoiceAssistant() {
           setCaption(SCRIPT[toVoiceLang(l)][ACK_KEY] ?? "");
           void playKeys(l, [ACK_KEY]);
         }
-        const res = await fetch("/api/voice", { method: "POST", body: form, credentials: "same-origin", cache: "no-store" });
+        // 10 s limit and one automatic retry; the retry says its own "still checking" line (spoken and captioned).
+        const result = await postUtterance(form, {
+          onRetry: () => {
+            const l: Lang = lastLang.current ?? langRef.current;
+            setCaption(spoken(l, ["voice.still_checking"]));
+            void playKeys(l, ["voice.still_checking"]);
+          },
+        });
         if (run.current !== token) return;
-        if (!res.ok) return await voiceFailed(token, res.status);
-        traceparent.current = res.headers.get("traceparent");
-        const reply = parseVoiceReply(await res.json().catch(() => null));
-        if (!reply) return await voiceFailed(token, 502);
+        if (!result.ok) {
+          // A refused or too-long clip and a rate limit have their own short lines; they are not "voice unavailable".
+          const status = result.reason === "audio_too_long" || result.reason === "audio_refused" ? 422 : result.reason === "rate_limited" ? 429 : result.status;
+          return await voiceFailed(token, status);
+        }
+        traceparent.current = result.traceparent;
+        const reply = result.reply;
         failures.current = 0;
         followUntil.current = 0;
         setOffline(false);
