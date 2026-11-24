@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/voice.schema.json",
+  "title": "VoiceUtterance",
+  "description": "Response of POST /v1/voice/utterance (multipart: `audio` = audio/webm;codecs=opus | audio/wav | audio/ogg, max 15 s and 1 MB; optional `lang_hint` = ar|en). The audio is transcribed on our own machine and discarded; neither audio nor transcript is stored or logged. Wake phrase and intent are deterministic (no LLM). Scope: read.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["transcript", "lang", "wake", "intent", "command", "duration_ms", "model"],
+  "properties": {
+    "transcript": { "type": "string", "maxLength": 300 },
+    "lang": { "enum": ["ar", "en", "other"] },
+    "wake": { "type": "boolean", "description": "true when the utterance opens with a wake phrase (hey/hi/ok falcon, falcon lens, يا فالكون, يا صقر, عدسة الصقر, ...), tolerant of ASR spelling errors." },
+    "intent": { "enum": ["check_clipboard", "check_text", "help", "stop", "none"], "description": "Read from `command`. Without the wake phrase only a short bare stop word yields `stop`; every other utterance is `none`." },
+    "command": { "type": "string", "maxLength": 300, "description": "The part after the wake phrase, empty when there is no wake phrase." },
+    "duration_ms": { "type": "integer", "minimum": 0, "description": "Length of the audio." },
+    "model": { "type": "string", "description": "Engine and model that answered, e.g. `native:whisper-large-v3-turbo` or `container:faster-whisper-small`." }
+  }
+}

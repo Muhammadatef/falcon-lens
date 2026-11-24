@@ -12,6 +12,7 @@ The machine-readable sources of truth are in `contracts/`. Pydantic models in `p
 | `campaign.schema.json` | `GET /v1/campaigns`, SSE `/v1/campaigns/stream` (projection of an incident; computed by the API; `brand_name {ar,en}` resolved from `data/brands.yaml`, never the raw brand_id) |
 | `agent_trace.schema.json` | `GET /v1/incidents/{id}/trace`, MCP `get_incident_trace`, web `/incidents/[id]`: the Sentinel agent's run trace per incident (nodes, tools, model route, tokens, human-approval wait). Template fields only: no prompts, no model output, no raw text, defanged hosts. Approver and decision are operator-scope only |
 | `tools.schema.json` | investigator, Sentinel and MCP tool registry plus the JSON `Action` |
+| `voice.schema.json` | `POST /v1/voice/utterance` response: transcript, wake flag, intent, command (see "Voice" below) |
 | `openapi.yaml` | REST v1. FastAPI generates it; CI checks it hasn't drifted from the committed file |
 
 Key invariants:
@@ -57,3 +58,6 @@ The JSON is a full `verdict.schema.json` document with `final` set. Exactly one 
 - `feed:openphish:updated_at` is the last poll time as epoch seconds (JSON number). Age = now minus this value; H2 needs age < 6 h.
 - Writer: `falcon_core.signals.reputation.mirror.refresh_openphish` (periodic job, reads `data/private/feeds/openphish/2*.jsonl`, emits `feed.updated {feed, entries, age_s}` on `fl:events` as field `event` = JSON).
 - Reader: signal `rep.openphish` via `FeedMirror.lookup`. The set is private and is never exported (OpenPhish terms).
+
+## Voice
+`voice.schema.json` is the response of `POST /v1/voice/utterance` (scope `read`; multipart `audio` plus optional `lang_hint`). Pydantic mirror: `falcon_core.contracts.voice.VoiceUtterance`. The API-to-engine call (`POST /stt`, raw audio in, `{text, lang, ms, duration_ms, model}` out) is internal, like the worker messages. The `model` field is `<engine>:<model>` where engine is `native` or `container`. `intent` is `check_clipboard` for anything about messages, links, emails, the clipboard, scams or "run Falcon Lens"; `check_text` when the user names the text itself to check ("check this text"); `help`; `stop`; else `none`. Without the wake phrase `command` is empty and only a short bare stop word gives `stop`.
