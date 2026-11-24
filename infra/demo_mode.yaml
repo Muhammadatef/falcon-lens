@@ -12,6 +12,8 @@ pause_processes:
 protect_processes:
   - Docker
   - com.docker
+  - OrbStack
+  - orbstack
   - ollama
   - Falcon
   - cloudflared

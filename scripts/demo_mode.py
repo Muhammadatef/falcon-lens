@@ -74,6 +74,16 @@ def sh(cmd: list[str], timeout: float = 20.0) -> str:
     return r.stdout
 
 
+def run_rc(cmd: list[str], timeout: float = 120.0) -> int:
+    """Run a state-changing command (stop/start only); returns its exit code, 127 if missing, 124 on timeout."""
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False).returncode  # noqa: S603
+    except OSError:
+        return 127
+    except subprocess.TimeoutExpired:
+        return 124
+
+
 @dataclass
 class Row:
     """One line of the board: status is OK, WARN, FAIL or INFO. Only FAIL blocks READY."""
@@ -231,17 +241,21 @@ def apply_plan(
 
 def restore(
     state_path: Path = STATE,
-    run: Runner = sh,
+    run: Callable[[list[str]], int] = run_rc,
     kill: Callable[[int, int], None] = os.kill,
     ps: Callable[[], str] | None = None,
-) -> list[str]:
-    """Undo exactly what state.json lists. Idempotent: restored entries are removed; empty state is a no-op."""
+) -> tuple[list[str], list[str]]:
+    """Undo what state.json lists; returns (done, failed). Failed entries stay in state.json for a retry."""
     state = load_state(state_path)
     done: list[str] = []
+    failed: list[str] = []
     alive = {p["pid"]: p["command"] for p in parse_ps((ps or (lambda: sh(PS_CMD)))())}
     for proj in list(state["projects"]):
         if proj.lower() != FALCON:
-            run(["docker", "compose", "-p", proj, "start"])
+            rc = run(["docker", "compose", "-p", proj, "start"])
+            if rc != 0:
+                failed.append(f"docker compose -p {proj} start (exit {rc})")
+                continue
             done.append(f"docker compose -p {proj} start")
         state["projects"].remove(proj)
         save_state(state, state_path)
@@ -250,11 +264,14 @@ def restore(
             try:
                 kill(p["pid"], signal.SIGCONT)
                 done.append(f"SIGCONT pid {p['pid']} ({p['match']})")
+            except ProcessLookupError:
+                pass  # already gone
             except OSError:
-                pass
+                failed.append(f"SIGCONT pid {p['pid']} ({p['match']})")
+                continue
         state["processes"].remove(p)
         save_state(state, state_path)
-    return done
+    return done, failed
 
 
 # ---------------------------------------------------------------- thresholds (pure)
@@ -551,9 +568,11 @@ def cmd_on(yes: bool) -> int:
 
 
 def cmd_off() -> int:
-    done = restore()
-    print("\n".join(done) if done else "nothing to restore")
-    return 0
+    done, failed = restore()
+    print("\n".join(done) if done else ("nothing to restore" if not failed else ""))
+    for f in failed:
+        print(f"FAILED: {f} (kept in state.json; run `make demo-mode-off` again)")
+    return 1 if failed else 0
 
 
 # ---------------------------------------------------------------- rehearsal

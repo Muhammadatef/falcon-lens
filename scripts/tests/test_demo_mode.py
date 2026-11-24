@@ -82,11 +82,13 @@ def test_apply_then_restore_is_exact_and_idempotent(tmp_path: Path) -> None:
 
     calls.clear()
     kills.clear()
-    done = dm.restore(p, run=lambda c: calls.append(c) or "", kill=lambda pid, s: kills.append((pid, s)), ps=lambda: PS)
+    done, failed = dm.restore(
+        p, run=lambda c: calls.append(c) or 0, kill=lambda pid, s: kills.append((pid, s)), ps=lambda: PS
+    )
     assert calls == [["docker", "compose", "-p", "neo", "start"], ["docker", "compose", "-p", "siyaq", "start"]]
     assert kills == [(100, signal.SIGCONT), (101, signal.SIGCONT)]
-    assert len(done) == 4
-    assert dm.restore(p, run=lambda c: calls.append(c) or "", kill=lambda *_: None, ps=lambda: PS) == []
+    assert len(done) == 4 and failed == []
+    assert dm.restore(p, run=lambda c: 0, kill=lambda *_: None, ps=lambda: PS) == ([], [])
 
 
 def test_restore_skips_reused_pid(tmp_path: Path) -> None:
@@ -152,3 +154,18 @@ def test_rehearsal_messages_fallback(tmp_path: Path) -> None:
 
 def test_silent_wav_is_one_second() -> None:
     assert len(dm.silent_wav()) == 44 + 16000 * 2
+
+
+def test_restore_keeps_failed_project_in_state(tmp_path: Path) -> None:
+    p = tmp_path / "state.json"
+    dm.save_state({"projects": ["neo", "siyaq"], "processes": []}, p)
+    done, failed = dm.restore(p, run=lambda c: 1 if "neo" in c else 0, kill=lambda *_: None, ps=lambda: "")
+    assert done == ["docker compose -p siyaq start"]
+    assert failed == ["docker compose -p neo start (exit 1)"]
+    assert dm.load_state(p)["projects"] == ["neo"]
+
+
+def test_orbstack_is_protected() -> None:
+    cfg = dm.load_config()
+    plan = dm.build_plan("[]", "  7  100 /Applications/OrbStack.app/flowplan helper", cfg)
+    assert plan.processes == []
