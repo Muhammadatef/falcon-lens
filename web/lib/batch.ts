@@ -22,6 +22,16 @@ export interface BatchResult {
   error: string;
 }
 
+/** Only http(s) URLs with a host are ever submitted. */
+export function isHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value.trim());
+    return (u.protocol === "http:" || u.protocol === "https:") && u.host !== "";
+  } catch {
+    return false;
+  }
+}
+
 export function binaryLabel(verdict: BatchVerdict, mode: BatchMode): "fraud" | "legit" {
   if (verdict === "dangerous") return "fraud";
   if (verdict === "suspicious" || verdict === "could_not_check") return mode === "strict" ? "fraud" : "legit";

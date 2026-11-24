@@ -49,6 +49,7 @@ import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -333,6 +334,8 @@ async def check_one(
             await sleep(wait)
         raise AssertionError("unreachable")  # pragma: no cover
 
+    if not is_http_url(url):
+        return row_unchecked(url, "not_http_url", mode)
     try:
         r = await call("POST", "/v1/check/url", json={"url": url}, params={"wait": 8})
         if r.status_code in (401, 403):
@@ -361,13 +364,36 @@ async def check_one(
 # ---------------------------------------------------------------- resume + run
 
 
+_FORMULA = ("=", "+", "-", "@", "\t", "\r")
+
+
+def csv_safe(value: str) -> str:
+    """Neutralise a cell a spreadsheet would run as a formula (leading = + - @ tab CR) with a leading quote."""
+    return "'" + value if value.startswith(_FORMULA) else value
+
+
+def csv_unsafe(value: str) -> str:
+    """Inverse of csv_safe, so a resumed row matches the URL as given."""
+    return value[1:] if value.startswith("'") and value[1:].startswith(_FORMULA) else value
+
+
+def safe_row(row: dict[str, str]) -> dict[str, str]:
+    return {k: csv_safe(v) for k, v in row.items()}
+
+
+def is_http_url(url: str) -> bool:
+    """Only http(s) URLs with a host are submitted."""
+    u = urlsplit(url.strip())
+    return u.scheme.lower() in ("http", "https") and bool(u.netloc)
+
+
 def load_done(path: Path) -> dict[str, dict[str, str]]:
     """Rows already answered in a partial OUT file (could_not_check rows are retried, so excluded)."""
     if not path.is_file():
         return {}
     with path.open(newline="", encoding="utf-8") as f:
         rows = [r for r in csv.DictReader(f) if r.get("url") and r.get("verdict") in VERDICTS]
-    return {r["url"]: {k: r.get(k, "") for k in FIELDS} for r in rows}
+    return {csv_unsafe(r["url"]): {k: csv_unsafe(r.get(k, "")) for k in FIELDS} for r in rows}
 
 
 def rebind(row: dict[str, str], mode: str) -> dict[str, str]:
@@ -410,7 +436,7 @@ async def run_batch(
         w.writeheader()
         for u in ordered:
             if u in done:
-                w.writerow(done[u])
+                w.writerow(safe_row(done[u]))
         f.flush()
         sem = asyncio.Semaphore(max(1, concurrency))
         count = len(done)
@@ -427,7 +453,7 @@ async def run_batch(
                     fatal = fatal or exc
                     return
             results[u] = row
-            w.writerow(row)
+            w.writerow(safe_row(row))
             f.flush()
             count += 1
             if progress:
@@ -443,7 +469,7 @@ async def run_batch(
     with out.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
-        w.writerows(rows)
+        w.writerows(safe_row(r) for r in rows)
     return rows, labels
 
 

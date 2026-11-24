@@ -207,3 +207,40 @@ def test_403_stops_the_run_without_marking_rows(tmp_path: Path) -> None:
         asyncio.run(go())
     assert len(seen) <= 2
     assert "could_not_check" not in (tmp_path / "r.csv").read_text()
+
+
+def test_non_http_urls_are_not_submitted() -> None:
+    seen: list[int] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(1)
+        return httpx.Response(200, json=doc("dangerous"))
+
+    async def go() -> list[dict[str, str]]:
+        async with client(handler) as c:
+            return [
+                await bc.check_one(c, u, "strict", sleep=nosleep)
+                for u in ("javascript:alert(1)", "file:///etc/passwd", "ftp://a.test/", "a.test")
+            ]
+
+    rows = asyncio.run(go())
+    assert not seen and all(r["verdict"] == "could_not_check" and r["error"] == "not_http_url" for r in rows)
+
+
+def test_formula_cells_are_escaped_on_write_and_resume_matches(tmp_path: Path) -> None:
+    out = tmp_path / "r.csv"
+    evil = "=cmd|' /C calc'!A0"
+    with out.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=bc.FIELDS)
+        w.writeheader()
+        w.writerow(bc.safe_row(bc.row_from_verdict(evil, doc("dangerous"), "strict", 1)))
+    assert "'=cmd" in out.read_text()
+    assert list(bc.load_done(out)) == [evil]  # resume sees the URL as given
+
+    async def go() -> list[dict[str, str]]:
+        async with client(lambda r: httpx.Response(500)) as c:
+            return (await bc.run_batch(c, [(evil, None)], out, "strict", 1, sleep=nosleep))[0]
+
+    rows = asyncio.run(go())  # resumed: not re-submitted, still escaped on disk
+    assert rows[0]["verdict"] == "dangerous"
+    assert out.read_text().count("'=cmd") == 1 and ",=cmd" not in out.read_text()

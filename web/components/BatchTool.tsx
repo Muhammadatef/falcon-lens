@@ -35,6 +35,7 @@ async function checkOne(url: string, key: string): Promise<BatchResult | "unauth
       await new Promise((r) => setTimeout(r, (Number.isFinite(wait) ? Math.min(wait, 60) : 2 ** attempt) * 1000));
       continue;
     }
+    if (res.status === 400) return couldNotCheck("not_http_url");
     if (!res.ok) return couldNotCheck(`HTTP ${res.status}`);
     try {
       return (await res.json()) as BatchResult;

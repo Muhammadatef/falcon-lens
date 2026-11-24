@@ -1,4 +1,4 @@
-import { couldNotCheck, resultFromVerdict, type BatchResult } from "@/lib/batch";
+import { couldNotCheck, isHttpUrl, resultFromVerdict, type BatchResult } from "@/lib/batch";
 import { WindowLimiter, visitorKey } from "@/lib/public-campaigns";
 import { apiBase } from "../../public/campaigns/shared";
 
@@ -31,6 +31,7 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (typeof url !== "string" || !url.trim() || url.length > MAX_URL) return Response.json({ error: "invalid_request" }, { status: 400, headers: noStore });
 
+  if (!isHttpUrl(url)) return Response.json({ error: "not_http_url" }, { status: 400, headers: noStore });
   const headers = new Headers({ accept: "application/json", "content-type": "application/json", "x-api-key": key, "x-falcon-client-ip": visitorKey(request) });
   const t0 = Date.now();
   const respond = (r: BatchResult) => Response.json(r, { headers: noStore });

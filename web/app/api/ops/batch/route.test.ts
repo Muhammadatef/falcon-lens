@@ -46,6 +46,11 @@ describe("POST /api/ops/batch", () => {
     expect(h.get("x-api-key")).toBe("ops-key-not-a-secret");
     expect(JSON.stringify(Object.fromEntries(h))).not.toContain("server-key");
   });
+  it("rejects non-http(s) URLs with 400 before calling the API", async () => {
+    const f = upstream();
+    for (const url of ["javascript:alert(1)", "file:///etc/passwd", "ftp://a.test/", "a.test"]) expect((await POST(req({ url }))).status).toBe(400);
+    expect(f).not.toHaveBeenCalled();
+  });
   it("polls until final", async () => {
     upstream(json(202, { verdict_id: "vd_2" }), json(200, verdict({ verdict_id: "vd_2", final: false })), json(200, verdict({ verdict_id: "vd_2", verdict: "suspicious" })));
     const body = await (await POST(req({ url: "http://a.test/" }))).json();

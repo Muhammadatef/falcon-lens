@@ -415,6 +415,22 @@ make demo                # the six scenarios and the Sentinel scene
 
 Make targets: `up` `down` `test` `test-web` `lint` `typecheck` `smoke` `demo` `demo-reset` `seed` `replay` `eval` `eval-gate` `redteam` `redteam-shipped` `scan` `openapi` `regress-legit` `batch` `tunnel` `submission` `ci-local`. Run `make help` for the full list. Scenarios and video shot list: [`docs/DEMO.md`](docs/DEMO.md).
 
+### Run your own test set
+
+Have a list of URLs, with or without labels? Run it through the real cascade against the running stack:
+
+```bash
+make batch FILE=urls.txt OUT=results.csv CONCURRENCY=4 MODE=strict
+```
+
+- `FILE` is one URL per line (blank lines and `#` comments skipped) or a CSV with a `url` column. An optional `label` column (`fraud` or `legit`) adds precision, recall, F1 and FPR with 95% Wilson intervals, for both modes.
+- Output CSV columns: `url, verdict, risk_score, binary_label, degraded, degraded_reasons, tier_reached, top_reasons, latency_ms, verdict_id, error`. Re-running with the same `OUT` resumes: answered URLs are kept, `could_not_check` rows are retried. Cells starting with `=`, `+`, `-` or `@` are written with a leading `'` so spreadsheets do not run them.
+- `MODE=strict` (default): fraud = `dangerous` or `suspicious`, because "suspicious" means "warn the user". `MODE=lenient`: fraud = `dangerous` only. A URL we could not check (not an http(s) URL, rejected, unreachable, no verdict in time) is fraud in strict, legit in lenient, and always counted separately in the summary.
+- Key and target: `FL_BATCH_API_KEY` in `.env` (a key with the `check` scope; read in-process, never printed), else `FL_OPERATOR_KEY`. The read key cannot submit. A 401 or 403 stops the run with "key lacks check scope" instead of writing failed rows. `FL_BATCH_BASE_URL` defaults to `https://localhost:8443`; `FL_BATCH_CA_BUNDLE` points at the local CA. 429 answers are retried with backoff.
+- In the browser, `/ops/batch` takes a `.txt` or `.csv` of up to 500 URLs, shows progress and offers the CSV. Type a key with the `check` scope (the same session-only key box as `/ops`); the page forwards it to the API, which enforces the scope. The server holds no key for this page. Per-IP limit: 240 checks a minute.
+
+Every URL is checked like any other: pages load only in the sandbox, passively. Use your own list; the repo ships no live phishing URLs. Numbers printed come from your file and your run, not from the project's eval artifacts.
+
 ## Engineering process
 
 - **Hierarchy L0 to L4**: owner, lead session, supervisor, builders, local models ([`docs/HIERARCHY.md`](docs/HIERARCHY.md)). Builders work on feature branches and open a pull request. A supervisor reviews it and writes a report in [`reviews/`](reviews). Only approved PRs are merged, and the author never approves their own work.
