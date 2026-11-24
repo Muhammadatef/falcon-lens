@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { LazyMotion, MotionConfig, domAnimation } from "motion/react";
+import { useRouter } from "next/navigation";
 import type { Lang } from "./contracts";
 import { dirOf, translate, type MessageKey } from "./i18n";
 
@@ -35,6 +36,7 @@ function withViewTransition(update: () => void) {
 export function PrefsProvider({ initialLang, initialTheme, nonce, children }: { initialLang: Lang; initialTheme: Theme; nonce?: string; children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(initialLang);
   const [theme, setThemeState] = useState<Theme>(initialTheme);
+  const router = useRouter();
 
   // <html> is rendered by the server from the same cookies; keep it in step after a toggle.
   useEffect(() => {
@@ -44,10 +46,15 @@ export function PrefsProvider({ initialLang, initialTheme, nonce, children }: { 
     root.dataset.theme = theme;
   }, [lang, theme]);
 
-  const setLang = useCallback((next: Lang) => {
-    remember("fl_lang", next);
-    withViewTransition(() => setLangState(next));
-  }, []);
+  const setLang = useCallback(
+    (next: Lang) => {
+      remember("fl_lang", next);
+      withViewTransition(() => setLangState(next));
+      // Server-rendered pages read the language from the cookie: re-render them now (no full reload).
+      router.refresh();
+    },
+    [router],
+  );
   const setTheme = useCallback((next: Theme) => {
     remember("fl_theme", next);
     withViewTransition(() => setThemeState(next));
