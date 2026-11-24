@@ -132,4 +132,43 @@ test.describe("public history is read only and leaks nothing", () => {
     }
     expect(violations).toEqual([]);
   });
+  for (const lang of ["ar", "en"] as const) {
+    test(`incident titles are structured, ids sit behind technical detail, queued state is honest (${lang})`, async ({ page, context, request, baseURL }) => {
+      const id = newIncidentId();
+      const queued = newIncidentId();
+      const hostile = { ar: "اتصل 0501234567 evil.test/x?t=1", en: "Call 0501234567 https://evil.test/x?t=1" };
+      await useBoards(context, request, baseURL!, {
+        incidents: [
+          { ...DEMO_INCIDENT, incident_id: id, source: "live", summary: hostile, severity_reason: hostile },
+          { ...DEMO_INCIDENT, incident_id: queued, source: "live", status: "open", summary: hostile, severity_reason: hostile, updated_at: "2026-11-24T09:00:00Z" },
+        ],
+        traces: { [id]: [{ incident_id: id, thread_id: id, runs: [DEMO_TRACE.runs[0]] }], [queued]: [{ incident_id: queued, thread_id: queued, runs: [] }] },
+      });
+      await setPrefs(context, baseURL!, { lang });
+      const title = lang === "ar" ? "حملة احتيال تنتحل بنك الصقر التجريبي" : "Suspected scam campaign impersonating Falcon Demo Bank";
+      await page.goto("/history?tab=incidents");
+      const rows = page.getByTestId("incident-row");
+      await expect(rows).toHaveCount(2);
+      for (const row of await rows.all()) await expect(row).toContainText(title);
+      let body = await page.locator("main").innerText();
+      expect(body).not.toMatch(/text removed|أُزيل النص|number removed|evil|0501234567|x\?t=1/);
+      expect(body).not.toContain(id);
+
+      await page.goto(`/incidents/${id}`);
+      await expect(page.getByTestId("trace-incident-title")).toHaveText(title);
+      body = await page.locator("main").innerText();
+      expect(body).not.toMatch(/text removed|أُزيل النص|number removed|evil|0501234567|x\?t=1/);
+      expect(body).not.toContain(id);
+      expect(body).not.toContain("vd_");
+      const details = page.getByTestId("trace-technical");
+      await expect(details).not.toHaveAttribute("open", "");
+      await details.locator("summary").click();
+      await expect(page.getByTestId("trace-verdicts")).toBeVisible();
+
+      await page.goto(`/incidents/${queued}`);
+      await expect(page.getByTestId("trace-empty")).toHaveAttribute("data-state", "tr.queued");
+      expect(await page.locator("main").innerText()).not.toMatch(/has not started|لم يبدأ/);
+    });
+  }
+
 });
