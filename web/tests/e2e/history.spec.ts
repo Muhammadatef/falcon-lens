@@ -20,10 +20,9 @@ const summary = (id: string, patch: Record<string, unknown> = {}) => ({
   ...patch,
 });
 const incident = (id: string, patch: Record<string, unknown> = {}) => ({ ...DEMO_INCIDENT, incident_id: id, source: "live", ...patch });
-const KEY = "op-test-key";
 
-test.describe("operator history", () => {
-  test("needs the operator key; both tabs list rows, live rows appear, links navigate", async ({ page, context, request, baseURL }) => {
+test.describe("public history", () => {
+  test("loads without any key; both tabs list rows, live rows appear, links navigate", async ({ page, context, request, baseURL }) => {
     const a = newVerdictId();
     const b = newVerdictId();
     const live = newVerdictId();
@@ -31,7 +30,6 @@ test.describe("operator history", () => {
     const liveInc = newIncidentId();
     const doc = { ...DEMO_DANGEROUS, verdict_id: a, source: "live" };
     await useBoards(context, request, baseURL!, {
-      requireKey: KEY,
       verdicts: [summary(a), summary(b, { verdict: "no_warning_signs", risk_score: 3, tier_reached: "T1", created_at: "2026-11-24T09:00:00Z", input_type: "message", display: null })],
       verdictEvents: [summary(live, { created_at: "2026-11-24T11:00:00Z", source: "replay" })],
       verdictDocs: { [a]: doc },
@@ -40,9 +38,8 @@ test.describe("operator history", () => {
       traces: { [inc]: [{ incident_id: inc, thread_id: inc, runs: [DEMO_TRACE.runs[0]] }] },
     });
     await page.goto("/history");
-    await expect(page.getByTestId("history-unauthorized")).toBeVisible();
-    await page.getByTestId("key-input").fill(KEY);
-    await page.getByTestId("key-input").press("Enter");
+    await expect(page.getByTestId("key-input")).toHaveCount(0);
+    await expect(page.getByTestId("key-form")).toHaveCount(0);
 
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.getByTestId("tab-checks")).toContainText("المحقّق — الفحوص");
@@ -108,8 +105,7 @@ test.describe("check trace page", () => {
       ],
       evidence: DEMO_DANGEROUS.evidence.map((e, i) => (i === 1 ? { ...e, display: { ar: XSS.img, en: XSS.img } } : e)),
     };
-    await useBoards(context, request, baseURL!, { requireKey: KEY, verdicts: [], verdictDocs: { [id]: doc } });
-    await page.addInitScript((k) => window.sessionStorage.setItem("fl_operator_key", k), KEY);
+    await useBoards(context, request, baseURL!, { verdicts: [], verdictDocs: { [id]: doc } });
     await page.goto(`/checks/${id}`);
     await expect(page.getByTestId("check-tier")).toHaveCount(4);
     const states = await page.getByTestId("check-tier").evaluateAll((els) => els.map((e) => e.getAttribute("data-state")));
@@ -137,11 +133,16 @@ test.describe("check trace page", () => {
     expect((await page.goto("/checks/not-an-id"))?.status()).toBe(404);
   });
 
-  test("missing key shows the key prompt", async ({ page, context, request, baseURL }) => {
+  test("no key prompt anywhere; the page never asks for one, /ops still does", async ({ page, context, request, baseURL }) => {
     const id = newVerdictId();
-    await useBoards(context, request, baseURL!, { requireKey: KEY, verdicts: [], verdictDocs: { [id]: DEMO_DANGEROUS } });
+    await useBoards(context, request, baseURL!, { incidents: [], verdicts: [], verdictDocs: { [id]: { ...DEMO_DANGEROUS, verdict_id: id } } });
     await page.goto(`/checks/${id}`);
-    await expect(page.getByTestId("check-unauthorized")).toBeVisible();
+    await expect(page.getByTestId("check-tier")).toHaveCount(4);
+    await expect(page.getByTestId("key-input")).toHaveCount(0);
+    await page.goto("/history");
+    await expect(page.getByTestId("key-input")).toHaveCount(0);
+    await page.goto("/ops");
+    await expect(page.getByTestId("key-input")).toBeVisible();
   });
 });
 
@@ -150,13 +151,11 @@ for (const lang of ["ar", "en"] as const) {
     const id = newVerdictId();
     const inc = newIncidentId();
     await useBoards(context, request, baseURL!, {
-      requireKey: KEY,
       verdicts: [summary(id), summary(newVerdictId(), { verdict: "suspicious", degraded: true, degraded_reasons: ["sandbox_timeout"], source: "synthetic" })],
       verdictDocs: { [id]: { ...DEMO_DANGEROUS, verdict_id: id, source: "live", trace: [{ step: 1, kind: "llm", name: "investigator.plan", summary: "x", ms: 5 }] } },
       incidents: [incident(inc)],
     });
     await setPrefs(context, baseURL!, { lang });
-    await page.addInitScript((k) => window.sessionStorage.setItem("fl_operator_key", k), KEY);
     await page.emulateMedia({ reducedMotion: "reduce" });
     const scan = async () => {
       await page.evaluate(() => document.fonts.ready);

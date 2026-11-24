@@ -1,4 +1,4 @@
-"""Operator history of Investigator checks: `GET /v1/verdicts` and `GET /v1/verdicts/stream`.
+"""Read-only history of Investigator checks (`read` scope): `GET /v1/verdicts` and `GET /v1/verdicts/stream`.
 
 Source of truth is the platform event bus `fl:events` (verdict.created / verdict.upgraded); each event names a
 verdict whose final document is then loaded and reduced to a *summary*. A summary never carries raw input, URL
@@ -158,7 +158,7 @@ def register(
     client_ip: Callable[[Request], str],
     per_ip_per_min: int = 60,
 ) -> None:
-    Operator = Depends(require("operator"))
+    ReadScope = Depends(require("read"))
 
     async def ip_gate(request: Request) -> None:
         """Per-address limit on top of the per-key one (the gateway forwards X-Falcon-Client-IP)."""
@@ -192,13 +192,13 @@ def register(
         dependencies=[Depends(ip_gate)],
     )
     async def list_verdicts(
-        _p: Annotated[Principal, Operator],
+        _p: Annotated[Principal, ReadScope],
         cursor: Annotated[str | None, Query(max_length=64, description="Opaque cursor from `next_cursor`.")] = None,
         limit: Annotated[int, Query(ge=1, le=100, description="Page size.")] = 25,
         verdict: VerdictLit | None = None,
         input_type: InputTypeLit | None = None,
     ) -> dict[str, Any]:
-        """Operator history of Investigator checks, newest first. Summaries only: no raw input, no personal data."""
+        """History of Investigator checks (read scope), newest first. Summaries only: no raw input, no personal data."""
         if cursor is not None and not STREAM_ID_RE.match(cursor):
             raise Problem(422, "invalid-cursor", "Invalid cursor")
         r = redis_or_503()
@@ -244,7 +244,7 @@ def register(
     )
     async def verdicts_stream(
         request: Request,
-        _p: Annotated[Principal, Operator],
+        _p: Annotated[Principal, ReadScope],
         _gate: Annotated[None, Depends(stream_acquire)],
         last_event_id: Annotated[str | None, Header()] = None,
     ) -> AsyncIterator[ServerSentEvent]:

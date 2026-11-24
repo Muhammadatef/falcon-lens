@@ -6,7 +6,8 @@ import type { Lang } from "./contracts";
 
 const ar = {
   "hs.title": "سجل عمل الوكيلين",
-  "hs.sub": "ما فحصه المحقّق وما تتبّعه الحارس، يتجدّد لحظة بلحظة. لا نعرض نصوص الرسائل ولا بيانات شخصية.",
+  "hs.inc.counts": "فحوص مرتبطة: {v} · مؤشرات: {i} · إجراءات: {a}",
+  "hs.sub": "سجل عام للقراءة فقط: ما فحصه المحقّق وما تتبّعه الحارس، يتجدّد لحظة بلحظة. لا نعرض نصوص الرسائل ولا الروابط الكاملة ولا بيانات شخصية.",
   "hs.tabs": "الوكيلان",
   "hs.tab.checks": "المحقّق — الفحوص",
   "hs.tab.incidents": "الحارس — الحوادث",
@@ -37,7 +38,7 @@ const ar = {
 
   "ck.title": "مسار الفحص",
   "ck.sub": "كل طبقة نفّذها المحقّق لهذا الفحص، وما وجدته، ونداءات الذكاء الاصطناعي، والحكم النهائي. لا نعرض أوامر النموذج ولا نصوص المدخلات.",
-  "ck.back": "العودة إلى سجل الوكيلين",
+  "ck.back": "العودة إلى السجل",
   "ck.loading": "نحمّل مسار الفحص…",
   "ck.nf.title": "الفحص غير موجود",
   "ck.nf.body": "تأكد من الرابط أو عد إلى السجل.",
@@ -87,7 +88,8 @@ const ar = {
 
 const en: Record<keyof typeof ar, string> = {
   "hs.title": "Agent run history",
-  "hs.sub": "What the Investigator checked and what the Sentinel tracked, updating as it happens. Message text and personal data are never shown.",
+  "hs.inc.counts": "Linked checks: {v} · Indicators: {i} · Actions: {a}",
+  "hs.sub": "A public, read-only log of what the Investigator checked and what the Sentinel tracked, updating as it happens. Message text, full links and personal data are never shown.",
   "hs.tabs": "The two agents",
   "hs.tab.checks": "Investigator — checks",
   "hs.tab.incidents": "Sentinel — incidents",
@@ -118,7 +120,7 @@ const en: Record<keyof typeof ar, string> = {
 
   "ck.title": "Check trace",
   "ck.sub": "Every layer the Investigator ran for this check, what each found, the AI calls and the final verdict. Model prompts and input text are never shown.",
-  "ck.back": "Back to the agent history",
+  "ck.back": "Back to history",
   "ck.loading": "Loading the check trace…",
   "ck.nf.title": "Check not found",
   "ck.nf.body": "Check the link, or go back to the history.",
