@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Lang } from "@/lib/contracts";
 import { formatRate, loadLiveFp, type LiveFp } from "@/lib/fp-regress";
-import { translate, type MessageKey } from "@/lib/i18n";
+import { stableDate, translate, type MessageKey } from "@/lib/i18n";
 import { formatCi, formatMetric, headline, loadResults, type Headline, type ResultsView } from "@/lib/results";
 import { Icon } from "./Icon";
 
@@ -73,7 +73,7 @@ function LiveFalseAlarm({ live, lang, t }: { live: LiveFp | null; lang: Lang; t:
   if (!live) return <p className="card callout" role="status" data-testid="live-fp-pending"><Icon name="clock" size={24} /><span>{t("proof.live.pending")}</span></p>;
   const fmt = (row: LiveFp["web"]) => ({ n: row.n.toLocaleString(lang === "ar" ? "ar-AE-u-nu-latn" : "en-GB"), rate: formatRate(row.rate, lang), lo: formatRate(row.lo, lang), hi: formatRate(row.hi, lang) });
   const date = new Date(live.createdAt);
-  const day = Number.isNaN(date.getTime()) ? live.createdAt : new Intl.DateTimeFormat(lang === "ar" ? "ar-AE-u-nu-latn" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
+  const day = Number.isNaN(date.getTime()) ? live.createdAt : stableDate(new Intl.DateTimeFormat(lang === "ar" ? "ar-AE-u-nu-latn" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }), date);
   const web = fmt(live.web);
   return (
     <div className="card live-fp" data-testid="live-fp">

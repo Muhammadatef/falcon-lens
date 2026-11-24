@@ -30,11 +30,29 @@ export interface ListenerEvents {
   onLevel?: (level: number) => void;
 }
 
-/** The first container the browser can record that the API accepts (webm/opus or ogg; wav is not recordable natively). */
-export function pickMimeType(): string | null {
-  if (typeof MediaRecorder === "undefined") return null;
-  for (const type of ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"]) {
-    if (MediaRecorder.isTypeSupported(type)) return type;
+/**
+ * Containers the API accepts, best first: webm/opus (Chrome, Firefox, Android), ogg/opus, then MP4/AAC, which is the
+ * only thing iOS Safari's MediaRecorder produces (wav is not recordable natively).
+ */
+export const RECORDER_TYPES: readonly string[] = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/ogg;codecs=opus",
+  "audio/mp4;codecs=mp4a.40.2",
+  "audio/mp4",
+  "audio/aac",
+];
+
+/** The first of RECORDER_TYPES the browser can record (`supported` is a test seam for MediaRecorder.isTypeSupported). */
+export function pickMimeType(supported?: (type: string) => boolean): string | null {
+  const test = supported ?? (typeof MediaRecorder === "undefined" ? null : (t: string) => MediaRecorder.isTypeSupported(t));
+  if (!test) return null;
+  for (const type of RECORDER_TYPES) {
+    try {
+      if (test(type)) return type;
+    } catch {
+      /* some engines throw on unknown types: try the next */
+    }
   }
   return null;
 }

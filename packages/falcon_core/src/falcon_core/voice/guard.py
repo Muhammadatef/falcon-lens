@@ -92,7 +92,9 @@ def clean_transcript(text: str, audio_s: float, segments: Iterable[Mapping[str, 
 
 
 def sniff(data: bytes) -> str | None:
-    """Container family from magic bytes: wav (RIFF/WAVE), ogg (OggS), webm (EBML header). Anything else is None.
+    """Container family from magic bytes: wav (RIFF/WAVE), ogg (OggS), webm (EBML header),
+    mp4 (ISO-BMFF 'ftyp', what iOS Safari records: AAC in fragmented MP4) and aac (ADTS sync word).
+    Anything else is None.
 
     Text payloads such as an ffconcat playlist or an HLS/DASH manifest never match, so they are refused before a
     decoder sees them.
@@ -103,4 +105,8 @@ def sniff(data: bytes) -> str | None:
         return "ogg"
     if data[:4] == b"\x1a\x45\xdf\xa3":
         return "webm"
+    if data[4:8] == b"ftyp":
+        return "mp4"
+    if len(data) > 7 and data[0] == 0xFF and (data[1] & 0xF6) == 0xF0:  # 12-bit sync, layer 00: ADTS (not MP3)
+        return "aac"
     return None

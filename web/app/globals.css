@@ -218,7 +218,7 @@ section { padding-block: var(--fl-space-7); }
 .how-foot .icon { color: var(--fl-brand); margin-block-start: 0.35rem; }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    .how-card { animation: rise-in linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+    .how-card { animation: rise-in linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
   }
 }
 

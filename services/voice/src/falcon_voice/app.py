@@ -48,7 +48,7 @@ def choose_lang(detected: str | None, prob: float, hint: str | None) -> str:
     return hint if hint in ("ar", "en") else "ar"
 
 
-FORMATS = {"wav": "wav", "ogg": "ogg", "webm": "matroska,webm"}
+FORMATS = {"wav": "wav", "ogg": "ogg", "webm": "matroska,webm", "mp4": "mov,mp4,m4a,3gp,3g2,mj2", "aac": "aac"}
 
 
 def decode(raw: bytes) -> np.ndarray:
@@ -65,7 +65,9 @@ def decode(raw: bytes) -> np.ndarray:
     resampler = av.AudioResampler(format="s16", layout="mono", rate=SAMPLE_RATE)
     chunks: list[np.ndarray] = []
     total = 0
-    with av.open(io.BytesIO(raw), mode="r", format=FORMATS[family]) as container:
+    with av.open(
+        io.BytesIO(raw), mode="r", format=FORMATS[family], options={"protocol_whitelist": "pipe"}
+    ) as container:
         for frame in container.decode(audio=0):
             for out in resampler.resample(frame):
                 arr = out.to_ndarray().reshape(-1)

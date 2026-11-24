@@ -1,5 +1,5 @@
 import { WindowLimiter, visitorKey } from "@/lib/public-campaigns";
-import { VOICE_LIMITS, parseVoiceReply } from "@/lib/voice";
+import { AUDIO_TYPES, VOICE_LIMITS, parseVoiceReply } from "@/lib/voice";
 import { apiBase, notConnected, upstreamHeaders } from "../public/campaigns/shared";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 const limiter = new WindowLimiter(20, 60_000);
 /** Multipart overhead on top of the 1 MB audio cap. */
 const MAX_BODY = VOICE_LIMITS.maxBytes + 16 * 1024;
-const AUDIO_TYPES = /^(audio\/(webm|ogg|wav|x-wav|wave)|video\/webm)(;|$)/i;
 
 /** Pre-warm ping on enabling hands-free mode: wakes this route, touches nothing upstream, returns nothing sensitive. */
 export async function GET(): Promise<Response> {

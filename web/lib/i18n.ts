@@ -819,8 +819,17 @@ export function timeFormat(lang: Lang, withDate = false): Intl.DateTimeFormat {
   });
 }
 
+/**
+ * Server (Node) and Safari (WebKit) disagree on the separators of the Arabic date patterns (WebKit adds an Arabic
+ * comma, and some engines add bidi marks or narrow spaces), which made React throw a hydration mismatch (#418) on
+ * iPhone. Normalising the text makes the string identical everywhere.
+ */
+export function stableDate(fmt: Intl.DateTimeFormat, d: Date): string {
+  return fmt.format(d).replace(/[\u200e\u200f\u061c]/g, "").replace(/[،,]\s*/g, " ").replace(/[\u202f\u00a0]/g, " ").replace(/ +/g, " ").trim();
+}
+
 export function formatTime(lang: Lang, iso: string | null | undefined, withDate = false): string {
   if (!iso) return "";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : timeFormat(lang, withDate).format(d);
+  return Number.isNaN(d.getTime()) ? "" : stableDate(timeFormat(lang, withDate), d);
 }

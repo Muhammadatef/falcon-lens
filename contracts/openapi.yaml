@@ -2757,7 +2757,7 @@ paths:
             schema:
               properties:
                 audio:
-                  description: audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB
+                  description: audio/webm;codecs=opus, audio/mp4 (AAC, iOS Safari), audio/aac, audio/wav or audio/ogg; max 15 s and 1 MB
                   format: binary
                   type: string
                 follow_up:

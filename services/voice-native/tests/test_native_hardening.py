@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -66,3 +68,34 @@ def test_missing_token_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
     c = TestClient(mod.app)
     assert c.get("/healthz").status_code == 200
     assert c.post("/stt", content=b"x").status_code == 503
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not installed")
+@pytest.mark.parametrize(
+    ("ctype", "args", "ext"),
+    [("audio/mp4", ["-movflags", "frag_keyframe+empty_moov"], "mp4"), ("audio/aac", [], "aac")],
+)
+def test_ios_formats_decode_through_forced_demuxer(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, ctype: str, args: list[str], ext: str
+) -> None:
+    mod = load(monkeypatch, "t0ken")
+    out = tmp_path / f"t.{ext}"
+    cmd = [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-y",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=440:duration=1.5",
+        "-c:a",
+        "aac",
+        *args,
+        str(out),
+    ]
+    subprocess.run(cmd, check=True, capture_output=True)  # noqa: S603
+    audio = mod.decode(out.read_bytes(), ctype)
+    assert 1.3 < len(audio) / 16000 < 1.7
+    with pytest.raises(ValueError):  # declared mp4 but the bytes are aac (and vice versa)
+        mod.decode(out.read_bytes(), "audio/aac" if ext == "mp4" else "audio/mp4")

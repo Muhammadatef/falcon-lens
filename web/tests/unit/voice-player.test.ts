@@ -236,3 +236,31 @@ describe("voice player", () => {
     expect(a.log).toEqual(["start", "stop"]);
   });
 });
+
+describe("unlock (iOS: audio may only start from a tap)", () => {
+  it("resumes the context and starts a silent sample synchronously", () => {
+    const calls: string[] = [];
+    const ctx = {
+      state: "suspended",
+      destination: {},
+      resume: () => (calls.push("resume"), Promise.resolve()),
+      decodeAudioData: async () => ({}) as AudioBuffer,
+      createBuffer: () => ({}) as AudioBuffer,
+      createBufferSource: () => ({ buffer: null, connect: () => calls.push("connect"), start: () => calls.push("start") }),
+    } as unknown as AudioContext;
+    const p = createVoicePlayer({ lang: "ar_ae", fetchImpl: mockFetch({ manifestOk: false }), audioContext: () => ctx, synth: null });
+    p.unlock();
+    expect(calls).toEqual(["resume", "connect", "start"]);
+  });
+  it("never throws without audio support", () => {
+    const p = createVoicePlayer({
+      lang: "ar_ae",
+      fetchImpl: mockFetch({ manifestOk: false }),
+      audioContext: () => {
+        throw new Error("no audio");
+      },
+      synth: null,
+    });
+    expect(() => p.unlock()).not.toThrow();
+  });
+});

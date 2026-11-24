@@ -613,6 +613,9 @@ export function VoiceAssistant() {
   );
 
   const start = useCallback(async () => {
+    // iOS Safari: audio and speech may only start from this tap, so unlock both players synchronously, before any await.
+    playerFor("ar").unlock();
+    playerFor("en").unlock();
     setStopped(false);
     setProblem(null);
     failures.current = 0;
@@ -653,6 +656,12 @@ export function VoiceAssistant() {
     listener.current = startListener(stream, { onUtterance: (audio) => void sendUtterance(audio, token), onVoice: setVoiceActive, onLevel: setLevel });
     setPhase("listening");
   }, [playerFor, playKeys, sendUtterance]);
+
+  // Safari (iOS above all) has no clipboard read for a page: show the paste box from the start instead of after a failed read.
+  useEffect(() => {
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (ios || !navigator.clipboard?.readText) setShowPaste(true);
+  }, []);
 
   // Both languages' clips are fetched and decoded as soon as the page opens, so no line waits (or falls back) mid-narration.
   useEffect(() => {

@@ -125,7 +125,7 @@ export function DocBody({ page, lang, caps }: { page: DocPage; lang: Lang; caps:
         </p>
       ) : null}
       {page.figure ? (
-        <div className="figure docs-figure">
+        <div className="figure docs-figure" dir="ltr" tabIndex={0} role="group" aria-label={page.figure.alt}>
           <img src={page.figure.src} alt={page.figure.alt} width={page.figure.width} height={page.figure.height} loading="lazy" decoding="async" />
         </div>
       ) : null}
