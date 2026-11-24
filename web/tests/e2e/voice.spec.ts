@@ -106,7 +106,7 @@ async function installClipMocks(page: Page) {
       destination = {};
       decodeAudioData(buf: ArrayBuffer) { return Promise.resolve({ file: new TextDecoder().decode(buf) }); }
       createBufferSource() {
-        return { buffer: null as any, onended: null as null | (() => void), connect() {}, stop() {}, start() { w.__clips.push(this.buffer.file); setTimeout(() => this.onended?.(), 20); } };
+        return { buffer: null as any, onended: null as null | (() => void), connect() {}, stop() {}, start() { if (this.buffer?.file) w.__clips.push(this.buffer.file); /* the silent iOS unlock sample has no file */ setTimeout(() => this.onended?.(), 20); } };
       }
     };
   });
