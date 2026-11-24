@@ -69,7 +69,7 @@ describe("scrub", () => {
     expectNoLeak(out);
     expect(out).toContain("hxxps://login[.]evil-example[.]com");
     expect(out).toContain("[email]");
-    expect(out).toContain("[number]");
+    expect(out).toContain("[number removed]");
   });
 
   it("handles Arabic-Indic digits and bare domains with paths", () => {

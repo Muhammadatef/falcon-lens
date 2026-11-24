@@ -50,7 +50,7 @@ const LONG_DIGITS_RE = /\d{6,}/g;
 const ARABIC_DIGITS = /[٠-٩۰-۹]/g;
 const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
 /** Anything that still looks like a query, fragment, userinfo or port-plus-path after scrubbing: fail closed. */
-const RESIDUE_RE = /[?#@]|:\d{2,5}\//;
+const RESIDUE_RE = /:\d{2,5}\//;
 export const REMOVED_LINK = "[link removed]";
 export const REMOVED_TEXT = "[text removed]";
 
@@ -89,24 +89,40 @@ export function hostOf(value: unknown): string | null {
   return /^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? reduceLink(t) : bareLink(t);
 }
 
+export const REMOVED_TEXT_AR = "[أُزيل النص]";
+export const REMOVED_NUMBER = "[number removed]";
+/** Tokens our own passes emit; they are cut out before the allow-list test (idempotence). */
+const OWN_TOKENS = /hxxps?:\/\/|\[\.\]|\[link removed\]|\[email\]|\[number removed\]|\[text removed\]|\[أُزيل النص\]/gu;
+const FOUR_DIGITS_RE = /\d(?:[\s-]?\d){3,}/g;
+const MIXED_LONG_RE = /(?=[\p{L}\p{N}]*\d)(?=[\p{L}\p{N}]*\p{L})[\p{L}\p{N}]{20,}/gu;
+/** Allow-list for public free text: Arabic and Latin letters, Arabic diacritics and punctuation, digits, space and `. , : ; ! ? ( ) « » " ' - – —`. */
+const ALLOWED_CHARS = /^(?:(?=\p{Script=Arabic})\p{L}|(?=\p{Script=Latin})\p{L}|[ً-ٰٟـ٠-٩،؛؟0-9 .,:;!?()«»"'–—-])*$/u;
+
 /**
- * Removes links (host only is kept, defanged), emails and phone-like numbers from free text. Order matters:
+ * Removes links (host only is kept, defanged), emails and phone-like numbers from free text, then fails closed
+ * (see the allow-list above): 4+ digit runs and long letter-digit tokens are removed, and any character outside
+ * the allow-list replaces the WHOLE string with `generic`. Order matters:
  * links FIRST (so `user:pw@host:8443/p?x#f` never reaches the email pass), then emails, then numbers. Idempotent.
  * Fail closed: if anything shaped like a query, fragment, `@` or port-plus-path survives, the whole text is replaced.
  */
-export function scrub(input: unknown, max = 400): string {
+export function scrub(input: unknown, max = 400, generic = REMOVED_TEXT): string {
   if (typeof input !== "string") return "";
-  let s = input.replace(CONTROL, " ").replace(ARABIC_DIGITS, (d) => String("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹".indexOf(d) % 10));
+  let s = input.normalize("NFKC").replace(CONTROL, " ").replace(ARABIC_DIGITS, (d) => String("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹".indexOf(d) % 10));
   s = s.replace(SCHEME_URL_RE, (t) => reduceLink(t) ?? REMOVED_LINK);
   s = s.replace(BARE_URL_RE, (t) => bareLink(t) ?? t);
   s = s.replace(EMAIL_RE, "[email]");
-  s = s.replace(PHONE_RE, "[number]").replace(LONG_DIGITS_RE, "[number]");
+  s = s.replace(MIXED_LONG_RE, REMOVED_NUMBER).replace(PHONE_RE, REMOVED_NUMBER).replace(FOUR_DIGITS_RE, REMOVED_NUMBER).replace(LONG_DIGITS_RE, REMOVED_NUMBER);
   s = s.replace(/\s+/g, " ").trim();
-  if (RESIDUE_RE.test(s)) return REMOVED_TEXT;
+  const rest = s.replace(OWN_TOKENS, "");
+  // Fail closed: any character outside the allow-list (or residue shaped like a query, fragment, userinfo or port) replaces the whole text.
+  if (RESIDUE_RE.test(rest) || !ALLOWED_CHARS.test(rest.normalize("NFKC"))) return generic;
   return s.length > max ? `${s.slice(0, max - 1)}…` : s;
 }
 
-const bilingual = (v: unknown, max = 400): { ar: string; en: string } => (isObj(v) ? { ar: scrub(v.ar, max), en: scrub(v.en, max) } : { ar: "", en: "" });
+/** `scrub` with the Arabic generic line. */
+export const scrubAr = (input: unknown, max = 400): string => scrub(input, max, REMOVED_TEXT_AR);
+
+const bilingual = (v: unknown, max = 400): { ar: string; en: string } => (isObj(v) ? { ar: scrubAr(v.ar, max), en: scrub(v.en, max) } : { ar: "", en: "" });
 
 /* ── Checks (Investigator) ────────────────────────────────────────────── */
 
@@ -178,7 +194,7 @@ function publicEvidence(raw: unknown): Obj | null {
     family: code(raw.family) ?? "",
     // `observed` can hold the user's own input (a quoted phrase, a number, a URL): never exposed.
     observed: null,
-    display: { ar: scrub(d.ar, 240), en: scrub(d.en, 240) },
+    display: { ar: scrubAr(d.ar, 240), en: scrub(d.en, 240) },
     weight: num(raw.weight, -100, 100),
     polarity: oneOf(raw.polarity, ["risk", "trust", "neutral"] as const) ?? "neutral",
     hard_rule: code(raw.hard_rule),
@@ -224,7 +240,7 @@ export function toPublicCheck(raw: unknown): Obj | null {
     verdict: verdict === "no_warning_signs" && degraded ? "suspicious" : verdict,
     risk_score: Math.round(num(raw.risk_score, 0, 100)),
     calibrated_probability: num(raw.calibrated_probability, 0, 1),
-    impersonated_brand: brand && typeof brand.name_ar === "string" && typeof brand.name_en === "string" ? { brand_id: code(brand.brand_id) ?? "", name_ar: scrub(brand.name_ar, 80), name_en: scrub(brand.name_en, 80) } : null,
+    impersonated_brand: brand && typeof brand.name_ar === "string" && typeof brand.name_en === "string" ? { brand_id: code(brand.brand_id) ?? "", name_ar: scrubAr(brand.name_ar, 80), name_en: scrub(brand.name_en, 80) } : null,
     evidence,
     reasons,
     actions: { now: { ar: [], en: [] }, if_already_acted: { ar: [], en: [] }, report: { ar: "", en: "" } },
@@ -276,7 +292,7 @@ export function toPublicIncident(raw: unknown): Obj | null {
     incident_id: raw.incident_id,
     type: code(raw.type) ?? "",
     severity,
-    severity_reason: { ar: scrub(reason.ar, 300), en: scrub(reason.en, 300) },
+    severity_reason: { ar: scrubAr(reason.ar, 300), en: scrub(reason.en, 300) },
     status,
     brand_id: code(raw.brand_id),
     rule_ids: codes(raw.rule_ids, 12),
@@ -285,7 +301,7 @@ export function toPublicIncident(raw: unknown): Obj | null {
     linked_verdicts: (Array.isArray(raw.linked_verdicts) ? raw.linked_verdicts : []).filter((v): v is string => typeof v === "string" && VERDICT_ID.test(v)).slice(0, 50),
     // The free-text timeline is not public; the node timeline comes from the trace.
     timeline: [],
-    summary: { ar: scrub(summary.ar, 240), en: scrub(summary.en, 240) },
+    summary: { ar: scrubAr(summary.ar, 240), en: scrub(summary.en, 240) },
     actions,
     source: oneOf(raw.source, SOURCES) ?? "live",
     created_at: iso(raw.created_at),

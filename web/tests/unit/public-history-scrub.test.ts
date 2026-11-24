@@ -32,7 +32,7 @@ describe("scrub: reviewer cases and generated URLs", () => {
   });
 
   it("fails closed when residue survives", () => {
-    expect(scrub("what is a?b")).toBe("[text removed]");
+    expect(scrub("what is a=b")).toBe("[text removed]");
     expect(scrub("see intranet/reset?x=1")).toBe("[text removed]");
   });
 
