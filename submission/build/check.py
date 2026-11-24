@@ -62,10 +62,8 @@ def traceable() -> cn.Traceable:
             if isinstance(leaf, int | float) and not isinstance(leaf, bool):
                 tr.values.append(Decimal(str(leaf)))
         tr.strings.add(str(a.fp.get("set", "")).lower())
-    for src in common_evidence().sources():  # red-team, message-text, brand-new pages, cost, stability, ... and the fp history
-        for _k, leaf in artifact_mod.flatten({k: v for k, v in src.items() if k not in ("items", "_file", "git_sha", "created_at")}):
-            if isinstance(leaf, int | float) and not isinstance(leaf, bool):
-                tr.values.append(Decimal(str(leaf)))
+    for leaf in common_evidence().claimed_values():  # only the figures the documents quote from the other families
+        tr.values.append(Decimal(str(leaf)))
     return tr
 
 

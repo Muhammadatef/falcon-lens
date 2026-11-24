@@ -87,6 +87,71 @@ class Evidence:
     sandbox: dict[str, Any] | None = None
     dspy: list[dict[str, Any]] = field(default_factory=list)
 
+    def claimed_values(self) -> list[float]:
+        """The exact numbers the lines and slide rows above read, and nothing else (the tracer accepts only these)."""
+        out: list[float] = []
+
+        def take(node: Any, *path: str) -> None:
+            for key in path:
+                if not isinstance(node, dict) or key not in node:
+                    return
+                node = node[key]
+            for leaf in node if isinstance(node, list) else [node]:
+                if isinstance(leaf, int | float) and not isinstance(leaf, bool):
+                    out.append(leaf)
+
+        for run in self.redteam.values():
+            for key in ("cases", "harmful", "ci95", "llm_ran"):
+                take(run, "summary", "overall", key)
+        if self.message:
+            for part in ("shipped", "rules_only_before"):
+                for key in ("n_scam", "n_legit"):
+                    take(self.message, "results", "test", part, key)
+                for metric in ("recall", "fpr"):
+                    for key in ("value", "ci_low", "ci_high", "k", "n"):
+                        take(self.message, "results", "test", part, metric, key)
+        if self.brand_new:
+            for grp, keys in (
+                ("new_lookalike_brand_pages", ("dangerous_final",)),
+                ("benign_controls_novel_hosts", ("warning_final",)),
+            ):
+                take(self.brand_new, "groups", grp, "n")
+                for key in keys:
+                    take(self.brand_new, "groups", grp, key, "k")
+        if self.cost:
+            for key in ("mean", "ci95", "n"):
+                take(self.cost, "cloud_route", "usd_per_check", key)
+            take(self.cost, "local_route", "checks")
+        if self.stability:
+            for key in ("k", "n"):
+                take(self.stability, "deterministic_control_ai_off", "label_agreement_all_three_identical", key)
+                take(self.stability, "ai_layers_on", "pairwise_label_agreement", key)
+            take(self.stability, "ai_layers_on", "items_with_all_three_runs_completed")
+            take(self.stability, "ai_layers_on", "items")
+        if self.route:
+            for key in ("k", "n"):
+                take(self.route, "verdict_agreement", "exact_label", key)
+        if self.faith:
+            for key in ("k", "n"):
+                take(
+                    self.faith,
+                    "user_facing_reasons_template_only",
+                    "cascade_fixture_verdicts_synthetic",
+                    "all_cascade_verdicts",
+                    "reasons_faithful",
+                    key,
+                )
+        if self.t3:
+            for key in ("k", "n"):
+                take(self.t3, "by_route", "cloud", "reached_T3", key)
+                take(self.t3, "by_route", "cloud", "forbidden_tool_call_rate", key)
+        for run in self.fp:
+            for key in ("value", "ci95"):
+                take(run, "false_positive_rate", key)
+            take(run, "n")
+            take(run, "target")
+        return out
+
     # ── sources for the number tracer ────────────────────────────────────────────
     def sources(self) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = [*self.redteam.values(), *self.fp, *self.dspy]

@@ -259,7 +259,7 @@ class Traceable:
         data: dict[str, Any] | None,
         names: tuple[str, ...] = (),
         extra: dict[str, Any] | None = None,
-        more: tuple[dict[str, Any], ...] = (),
+        claimed: tuple[float, ...] = (),
     ) -> None:
         """`names`: the artifact's own file name and stem, which a "Source:" line may quote.
 
@@ -268,7 +268,11 @@ class Traceable:
         """
         self.values: list[Decimal] = []
         self.strings: set[str] = {name.lower() for name in names if name}
-        for source in ([extra] if extra is not None else []) + list(more):
+        for leaf in claimed:  # only the values evidence.py reads (evidence.Evidence.claimed_values), not whole artifacts
+            value = _decimal(json.dumps(leaf))
+            if value is not None and value.is_finite():
+                self.values.append(value)
+        for source in [extra] if extra is not None else []:
             for _key, leaf in artifact_mod.flatten({k: v for k, v in source.items() if k not in ("items", "_file")}):
                 if isinstance(leaf, int | float) and not isinstance(leaf, bool):
                     value = _decimal(json.dumps(leaf))
@@ -325,10 +329,10 @@ class Traceable:
 def traceable_for(loaded: artifact_mod.Artifact | None, published: Path | None = None) -> Traceable:
     root = published or artifact_mod.PUBLISHED
     extra = artifact_mod.load_fp_regress(root)
-    more = tuple(evidence_mod.load(root).sources())  # red-team, message-text, brand-new pages, cost, ... (REAL and SYNTHETIC)
+    more = tuple(evidence_mod.load(root).claimed_values())  # only the figures the documents quote from the other families
     if loaded is None:
-        return Traceable(None, extra=extra, more=more)
-    return Traceable(loaded.data, names=(loaded.path.name, loaded.path.stem), extra=extra, more=more)
+        return Traceable(None, extra=extra, claimed=more)
+    return Traceable(loaded.data, names=(loaded.path.name, loaded.path.stem), extra=extra, claimed=more)
 
 
 def find_untraceable(text: str, traceable: Traceable, source: str) -> list[Finding]:

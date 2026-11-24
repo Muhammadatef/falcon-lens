@@ -810,9 +810,9 @@ def build(a: Artifacts) -> list[Block]:
         (
             "ul",
             [
-                "Publish evaluations for each unmeasured layer and route, and a new live false-alarm run after the sandbox fixes.",
-                "A per-incident view of the Sentinel's agent run (open pull request).",
-                "Offline optimisation of the AI prompts with DSPy, frozen before use (open pull request).",
+                "A native reader's rating of the Arabic text, sandbox recall on labelled phishing pages, and bringing the live false-alarm rate down to its target.",
+                "Sign-in (SSO) for the operator pages, so that the history view can be restricted (open pull request).",
+                "Adopting DSPy-optimised prompts: the optimiser ran for every model role and none was adopted, because the gains are within noise.",
                 "A business-oriented redesign of the web app (open pull requests).",
                 "Active discovery of new look-alike domains.",
                 "A licensed scam-list feed, and additional warning lists once keys exist.",

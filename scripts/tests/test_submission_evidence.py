@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from submission import check_numbers, evidence  # noqa: E402
+from submission import artifact, check_numbers, evidence  # noqa: E402
 
 
 def _write(root: Path, rel: str, data: dict) -> None:
@@ -67,7 +67,37 @@ def test_still_not_measured_drops_superseded_keys_only_when_the_family_exists(tm
 
 def test_numbers_of_other_families_are_traceable(tmp_path: Path) -> None:
     _write(tmp_path, "redteam/redteam_a_20261124T010000Z.json", _redteam("production", 7, "2026-11-24T01:00:00Z"))
-    traceable = check_numbers.Traceable(None, more=tuple(evidence.load(tmp_path).sources()))
+    traceable = check_numbers.Traceable(None, claimed=tuple(evidence.load(tmp_path).claimed_values()))
     assert traceable.has_number("7")
     assert traceable.has_number("25.0%")
     assert not traceable.has_number("8")
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_fake_claims_fail_and_real_evidence_lines_pass() -> None:
+    ev = evidence.load(ROOT / "evals" / "results" / "published")
+    published = ROOT / "evals" / "results" / "published"
+    traceable = check_numbers.traceable_for(artifact.load(published), published)
+    for fake in ("7", "3.7%", "77%", "64"):
+        assert not traceable.has_number(fake), fake
+    findings = check_numbers.find_untraceable(
+        "Red-team: harmful 7 of 113, FPR 3.7%, we stopped 77% of scams, answered 64 of 113.", traceable, "t"
+    )
+    assert findings
+    for line in (
+        ev.redteam_both(),
+        ev.message_line(),
+        ev.brand_new_line(),
+        ev.cost_line(),
+        ev.stability_line(),
+        ev.route_line(),
+        ev.faith_line(),
+        ev.t3_line(),
+        ev.fp_history_line(),
+    ):
+        assert line
+        assert not check_numbers.find_untraceable(line, traceable, "t"), line
+    for _label, text in ev.slide_rows():
+        assert not check_numbers.find_untraceable(text, traceable, "t"), text
