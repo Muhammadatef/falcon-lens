@@ -61,8 +61,7 @@ describe("public text policy: allow-list, fail closed", () => {
       const list = templates(lang).filter((x) => x !== lang);
       expect(list.length).toBeGreaterThanOrEqual(40);
       const changed = list.filter((t) => scrub(t, 1000) !== t);
-      // Known, reported (not silently widened): en `email.auth_fail` writes "SPF/DKIM/DMARC" and "/" is not allowed.
-      const known = lang === "en" ? ["The email failed sender checks (SPF/DKIM/DMARC)."] : [];
+      const known: string[] = [];
       expect(changed, `templates altered by the policy: ${JSON.stringify(changed)}`).toEqual(known);
       console.info(`${lang}: ${list.length - changed.length}/${list.length} real template strings survive unchanged`);
     });

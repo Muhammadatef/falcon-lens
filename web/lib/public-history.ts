@@ -115,7 +115,7 @@ export function scrub(input: unknown, max = 400, generic = REMOVED_TEXT): string
   s = s.replace(/\s+/g, " ").trim();
   const rest = s.replace(OWN_TOKENS, "");
   // Fail closed: any character outside the allow-list (or residue shaped like a query, fragment, userinfo or port) replaces the whole text.
-  if (RESIDUE_RE.test(rest) || !ALLOWED_CHARS.test(rest.normalize("NFKC"))) return generic;
+  if (/(?:java|vb)script\s*:/i.test(rest) || RESIDUE_RE.test(rest) || !ALLOWED_CHARS.test(rest.normalize("NFKC"))) return generic;
   return s.length > max ? `${s.slice(0, max - 1)}…` : s;
 }
 
