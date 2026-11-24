@@ -6,6 +6,7 @@ import { ARCH, type AgentBlock, type ArchContent } from "@/lib/arch-content";
 import { dt } from "@/lib/i18n-docs";
 import { flag } from "@/lib/cap-flag";
 import { ArchDiagram } from "@/components/arch/ArchDiagram";
+import { ArchLayers } from "@/components/arch/ArchLayers";
 import { VoiceAgentsSection } from "@/components/VoiceAgentsSection";
 import { WhyDspyLanggraph } from "@/components/arch/WhyDspyLanggraph";
 import { at } from "@/lib/i18n-arch";
@@ -64,7 +65,6 @@ function Agent({ id, block, c, caps, lang, badge, children }: { id: string; bloc
     <section className="agent-arch" aria-labelledby={`${id}-h`} data-testid={id}>
       <div className="sec-head">
         <h2 id={`${id}-h`}>{block.name}</h2>
-        <span className="chip mono">{block.adr}</span>
         {badge !== undefined ? <CapBadge live={badge} lang={lang} /> : null}
       </div>
       <p className="card pattern">
@@ -107,6 +107,8 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
   const c = ARCH[lang];
   return (
     <>
+      <ArchLayers lang={lang} />
+
       <section aria-labelledby="arch-h" className="arch-section">
         <div className="sec-head"><h2 id="arch-h">{at(lang, "arch.diagram.title")}</h2></div>
         <p className="page-lead">{at(lang, "arch.diagram.lead")}</p>

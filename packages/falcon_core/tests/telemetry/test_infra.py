@@ -41,7 +41,7 @@ def _documented_metrics() -> set[str]:
     return names | {
         f"fl_{n}"
         for n in re.findall(r"`([a-z_]+)(?:\{[^}]*\})?`", outside)
-        if n.startswith(("api_", "egress_", "eval_", "voice_utterances", "voice_latency", "voice_errors"))
+        if n.startswith(("api_", "egress_", "eval_", "voice_"))
     }
 
 

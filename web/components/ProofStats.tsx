@@ -27,7 +27,7 @@ export function ProofStats({ lang, variant, results = loadResults(), live = load
 
       {h ? <Offline h={h} lang={lang} variant={variant} t={t} /> : <p className="card callout" role="status" data-testid="proof-pending"><Icon name="clock" size={24} /><span>{t("proof.pending")}</span></p>}
 
-      <LiveFalseAlarm live={live} lang={lang} t={t} />
+      <LiveFalseAlarm live={live} lang={lang} variant={variant} t={t} />
 
       {variant === "home" ? (
         <p className="how-more">
@@ -69,18 +69,20 @@ function Offline({ h, lang, variant, t }: { h: Headline; lang: Lang; variant: "h
   );
 }
 
-function LiveFalseAlarm({ live, lang, t }: { live: LiveFp | null; lang: Lang; t: T }) {
+function LiveFalseAlarm({ live, lang, variant, t }: { live: LiveFp | null; lang: Lang; variant: "home" | "results"; t: T }) {
   if (!live) return <p className="card callout" role="status" data-testid="live-fp-pending"><Icon name="clock" size={24} /><span>{t("proof.live.pending")}</span></p>;
   const fmt = (row: LiveFp["web"]) => ({ n: row.n.toLocaleString(lang === "ar" ? "ar-AE-u-nu-latn" : "en-GB"), rate: formatRate(row.rate, lang), lo: formatRate(row.lo, lang), hi: formatRate(row.hi, lang) });
   const date = new Date(live.createdAt);
   const day = Number.isNaN(date.getTime()) ? live.createdAt : stableDate(new Intl.DateTimeFormat(lang === "ar" ? "ar-AE-u-nu-latn" : "en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }), date);
   const web = fmt(live.web);
+  const Heading = variant === "results" ? "h2" : "h3";
   return (
     <div className="card live-fp" data-testid="live-fp">
-      <h3 className="h3">
+      {/* Results has no section heading above this card, so the card title is the h2 there (no skipped level). */}
+      <Heading className="h3">
         <Icon name="eye" size={24} />
         {t("proof.live.title")}
-      </h3>
+      </Heading>
       <p className="live-fp-rate">
         <b className="stat-n mono" dir="ltr" data-testid="live-fp-web-rate">{web.rate}</b>
       </p>

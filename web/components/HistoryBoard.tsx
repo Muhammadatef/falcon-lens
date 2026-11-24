@@ -124,7 +124,14 @@ function Panel<T>(p: PanelProps<T>) {
   const h = useH();
   const demoLoad = useDemo<T>(p.demo, p.label === "hs.checks.list" ? "checks" : "incidents");
   const load: ListLoad<T> = p.demo ? (demoLoad ?? { state: "loading" }) : p.load;
-  if (load.state === "loading") return <div className="card state" role="status" data-testid="history-loading"><p>{h("hs.loading")}</p><div className="sk" /><div className="sk" /></div>;
+  if (load.state === "loading") return (
+      <div role="status" aria-busy="true" data-testid="history-loading">
+        <p className="small hs-note">{h("hs.loading")}</p>
+        <ul className="hs-list" aria-hidden="true">
+          {[0, 1, 2, 3, 4, 5].map((n) => <li key={n} className="card hs-row hs-skel sk" />)}
+        </ul>
+      </div>
+    );
   if (load.state === "not_connected") {
     return (
       <div className="card state" role="status" data-testid="history-not-connected">

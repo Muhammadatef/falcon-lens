@@ -24,7 +24,12 @@ def _g(*stems: str) -> Group:
 
 
 # Short English stems that would otherwise match inside other words (dir/direct, pin/pink, cid/cider).
-_WHOLE_WORD = frozenset({"dir", "pin", "cid", "qr", "otp", "cvv", "tap", "job"})
+_WHOLE_WORD = frozenset(
+    {"dir", "pin", "cid", "qr", "otp", "cvv", "tap", "job"}
+    # Arabic stems that sit inside unrelated words: «بلغ» (report) inside «مبلغ» (amount), «كره» (how «كرت» is
+    # heard) inside «فكره» (idea), «بني» (how «ابني» is heard) inside «يبني».
+    | {"بلغ", "كره", "الكره", "بني"}
+)
 
 
 def _hit(norm: str, toks: list[str], group: Group) -> bool:
@@ -33,11 +38,11 @@ def _hit(norm: str, toks: list[str], group: Group) -> bool:
         if " " in s:
             if s in norm:
                 return True
+        elif s in _WHOLE_WORD:
+            if s in toks:
+                return True
         elif s.isascii():
-            if s in _WHOLE_WORD:
-                if s in toks:
-                    return True
-            elif any(t.startswith(s) for t in toks):
+            if any(t.startswith(s) for t in toks):
                 return True
         elif any(s in t for t in toks):
             return True
@@ -54,10 +59,13 @@ _DID_SHARE = _g(
 _CARD = _g(
     "card", "cvv", "otp", "one time", "pin", "bank detail", "account number", "iban",
     "بطاق", "كرت", "كارد", "رمز", "كود", "حسابي", "رقم الحساب", "ايبان", "سي في في", "بيانات البنك",
+    "كره", "الكره", "الكارت", "كارت", "معلومات الكر", "فيزا", "ماستر",
 )  # fmt: skip
 _LOGIN = _g(
     "password", "passcode", "login", "log in", "username", "credentials", "كلمه السر", "كلمه المرور", "الرقم السري",
     "باسورد", "يوزر", "بيانات الدخول", "رقمي السري", "سر الحساب",
+    "باسوورد", "باسو رد", "باس وورد", "باس ورد", "باسوارد", "باسوور", "كلمه سر", "كلمه مرور", "رقم سري", "الباس",
+    "كلمت السر", "كلمت المرور",
 )  # fmt: skip
 _LINK = _g("link", "url", "رابط", "لينك", "الرابط", "روابط")
 _CLICKED = _g(
@@ -72,6 +80,17 @@ _PAID = _g(
 _CALL = _g(
     "call", "calls", "called", "calling", "phone", "rang", "contacted", "اتصل", "يتصل", "كلمني", "مكالم", "اتصال",
     "تلفون", "رن", "يكلمني", "كلمت",
+)  # fmt: skip
+
+_CALLER = _g(
+    "called", "calls", "calling", "call from", "phone call", "a call", "rang", "on the phone", "phoned",
+    "اتصل", "يتصل", "اتصال", "مكالم", "كلمني", "يكلمني", "دق علي", "دقوا علي",
+)  # fmt: skip
+_BANK_CLAIM = _g(
+    "from the bank", "from my bank", "from a bank", "from his bank", "bank employee", "bank officer", "bank staff",
+    "bank manager", "works at the bank", "works for the bank", "is the bank", "was the bank", "are the bank",
+    "من البنك", "من بنك", "من بنكي", "موظف البنك", "موظف بنك", "موظف في البنك", "موظف بالبنك", "باسم البنك",
+    "مدير البنك", "من المصرف",
 )  # fmt: skip
 
 RULES: dict[str, tuple[Alt, ...]] = {
@@ -150,7 +169,10 @@ RULES: dict[str, tuple[Alt, ...]] = {
                 "يخزن",
                 "يسجل",
                 "يحفظ",
-                "تسجيل",
+                "تسجيل صوت",
+                "تسجيل الصوت",
+                "تسجيلات",
+                "تسجيلي",
                 "يحذف",
                 "مخزن",
                 "تخزين",
@@ -256,6 +278,13 @@ RULES: dict[str, tuple[Alt, ...]] = {
             _CALL
             + _g(
                 "support",
+                "takesupport",
+                "techsupport",
+                "technician",
+                "helpdesk",
+                "wants me",
+                "want me",
+                "see my screen",
                 "someone",
                 "asks",
                 "asking",
@@ -277,6 +306,23 @@ RULES: dict[str, tuple[Alt, ...]] = {
             _g(
                 "relative",
                 "my son",
+                "my brother",
+                "my sister",
+                "my husband",
+                "my wife",
+                "my child",
+                "my kid",
+                "my dad",
+                "my mom",
+                "my mum",
+                "my cousin",
+                "my nephew",
+                "my uncle",
+                "بني",
+                "بنتنا",
+                "زوجي",
+                "زوجتي",
+                "ولد عمي",
                 "my daughter",
                 "my father",
                 "my mother",
@@ -315,8 +361,37 @@ RULES: dict[str, tuple[Alt, ...]] = {
                 "محتاج فلوس",
                 "يحتاج فلوس",
                 "need money",
+                "need cash",
+                "needs cash",
+                "in jail",
+                "arrested",
+                "kidnap",
+                "فلوس بسرعه",
+                "مبلغ بسرعه",
+                "يبون مبلغ",
+                "يبون فلوس",
+                "ورطه",
                 "needs money",
             ),
+        ),
+        # The relative's name is often lost in noise; a caller + someone in trouble + "quickly" is the same story.
+        (
+            _CALLER,
+            _g("trouble", "accident", "hospital", "in jail", "arrested", "مشكله", "حادث", "ورطه", "مستشفي", "موقوف"),
+            _g(
+                "urgent",
+                "right now",
+                "immediately",
+                "quickly",
+                "right away",
+                "asap",
+                "بسرعه",
+                "فورا",
+                "الحين",
+                "ضروري",
+                "عاجل",
+                "حالا",
+            ),  # fmt: skip
         ),
     ),
     "friend_money": (
@@ -545,7 +620,28 @@ RULES: dict[str, tuple[Alt, ...]] = {
         ),
     ),
     "report": (
-        (_g("report", "complain", "complaint", "بلغ", "ابلغ", "اشتكي", "اشتكى", "شكوى", "بلاغ", "شكوي", "ابلاغ"),),
+        (
+            _g(
+                "report",
+                "complain",
+                "complaint",
+                "بلغ",
+                "ابلغ",
+                "اشتكي",
+                "اشتكى",
+                "شكوى",
+                "بلاغ",
+                "شكوي",
+                "ابلاغ",
+                "وبلغ",
+                "بلغهم",
+                "بلغوا",
+                "بلغت",
+                "تبليغ",
+                "نبلغ",
+                "يبلغ",
+            ),  # fmt: skip
+        ),
     ),
     "spot_scam": (
         (
@@ -556,6 +652,15 @@ RULES: dict[str, tuple[Alt, ...]] = {
                 "how to tell",
                 "how do i know",
                 "how to recognize",
+                "how do i recognize",
+                "how do i recognise",
+                "how can i recognize",
+                "how can i recognise",
+                "how do i identify",
+                "how do i detect",
+                "how to detect",
+                "how do you spot",
+                "how do i tell",
                 "how to recognise",
                 "how to identify",
                 "signs of",
@@ -600,6 +705,10 @@ RULES: dict[str, tuple[Alt, ...]] = {
                 "يرسل",
             ),
         ),
+        # "Someone called and said he is from the bank" with no code mentioned yet: the same advice applies
+        # (the caller claims to be the bank; the next thing he asks for is the code). Claim phrases only, so
+        # "should I call my bank" does not land here.
+        (_CALLER, _BANK_CLAIM),
     ),
 }
 FAQ_ORDER: tuple[str, ...] = tuple(RULES)

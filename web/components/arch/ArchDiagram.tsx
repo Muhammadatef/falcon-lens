@@ -10,6 +10,7 @@ import { at, NODE_TEXT, TOOL_IO, type ArchKey } from "@/lib/i18n-arch";
 type Caps = Record<string, boolean>;
 type View = "full" | "biz";
 
+const REPO_BLOB = "https://github.com/Muhammadatef/falcon-lens/blob/main/";
 const isTool = (group: GroupId) => group === "tools_inv" || group === "tools_sen";
 
 /**
@@ -192,11 +193,8 @@ export function ArchDiagram({ lang, caps, view }: { lang: Lang; caps: Caps; view
               </section>
               <section>
                 <h3>{t("arch.panel.code")}</h3>
-                <ul className="ap-code">
-                  {[panelDef.repo, ...(panelDef.repoMore ?? [])].map((p) => (
-                    <li key={p}><code className="mono">{p}</code></li>
-                  ))}
-                </ul>
+                {/* One plain link for engineers; raw repository paths are not shown on the page. */}
+                <p>{[panelDef.repo].map((src) => <a key={src} className="ap-link" href={REPO_BLOB + src} rel="noopener noreferrer" target="_blank" data-testid="arch-code-link">{t("arch.code.link")}</a>)}</p>
               </section>
             </>
           ) : null}
@@ -204,7 +202,6 @@ export function ArchDiagram({ lang, caps, view }: { lang: Lang; caps: Caps; view
             <h3>{t("arch.panel.docs")}</h3>
             <p>
               <Link href={`/docs/${slug}`} className="ap-link">{t("arch.docs.link")}</Link>
-              {view === "full" ? <> · <code className="mono">{panelDef.docFile}</code></> : null}
             </p>
           </section>
           <section>

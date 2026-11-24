@@ -16,6 +16,7 @@ import yaml
 
 from falcon_api.problem import Problem
 from falcon_core.config import Settings
+from falcon_core.provenance import effective_source, is_shared_platform
 from falcon_core.tools.stix import build_bundle as core_build_bundle
 
 CAMPAIGN_TYPES = ("campaign", "kit_reuse")
@@ -80,8 +81,16 @@ class SentinelClient:
 _ACTION_PRIVATE = ("draft", "args", "approved_by")
 
 
+def relabel_incident(inc: dict[str, Any]) -> dict[str, Any]:
+    """Read-time provenance: an incident whose domains are all internal fixture hosts is a fixture, not live."""
+    doms = [str(i.get("value_defanged", "")) for i in inc.get("indicators", []) if i.get("kind") in ("domain", "url")]
+    src = effective_source(str(inc.get("source", "live")), doms)
+    return inc if src == inc.get("source", "live") else {**inc, "source": src}
+
+
 def view_incident(inc: dict[str, Any], *, operator: bool) -> dict[str, Any]:
     """Operators see everything; other scopes never see takedown drafts, action args or approver names."""
+    inc = relabel_incident(inc)
     if operator:
         return inc
     out = dict(inc)
@@ -191,7 +200,10 @@ def campaign_of(inc: dict[str, Any]) -> dict[str, Any]:
     """Project an incident onto the small campaign card the UI draws (contracts/campaign.schema.json)."""
     brand_id = inc.get("brand_id")
     names = brand_display(brand_id)
-    inds = [i for i in inc.get("indicators", []) if i.get("kind") in ("domain", "url")]
+    all_inds = [i for i in inc.get("indicators", []) if i.get("kind") in ("domain", "url")]
+    inds = [i for i in all_inds if not is_shared_platform(str(i.get("value_defanged", "")))]
+    # Read-time label (covers rows stored before the label existed): all-fixture domains are fixtures.
+    source = effective_source(str(inc.get("source", "live")), (str(i.get("value_defanged", "")) for i in all_inds))
     first, last = inc["created_at"], inc["updated_at"]
     times = [_dt(i["first_seen"]) for i in inds if i.get("first_seen")]
     lo, hi = (min(times), max(times)) if times else (_dt(first), _dt(last))
@@ -211,7 +223,7 @@ def campaign_of(inc: dict[str, Any]) -> dict[str, Any]:
         "advice_ar": ar,
         "advice_en": en,
         "incident_id": inc["incident_id"],
-        "source": inc.get("source", "live"),
+        "source": source,
     }
 
 

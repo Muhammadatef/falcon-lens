@@ -52,6 +52,7 @@
 - [What Falcon Lens offers Abu Dhabi Police](#what-falcon-lens-offers-abu-dhabi-police--ما-تقدمه-عدسة-الصقر-لشرطة-أبوظبي)
 - [How it works in four steps](#how-it-works-in-four-steps)
 - [The two AI agents](#the-two-ai-agents)
+- [Architecture in three layers](#architecture-in-three-layers--البنية-في-ثلاث-طبقات)
 - [Hey Falcon: the voice assistant](#hey-falcon-the-voice-assistant)
 - [Website tour](#website-tour)
 - [Results](#results)
@@ -144,6 +145,20 @@ The colour of each step says who acts: **fixed code** (teal), **AI** (blue) or a
 
 **DSPy.** DSPy defines the typed contract of each AI role. The offline optimiser **ran** on five roles, on **synthetic** data, and **no optimised prompt was adopted** (every artifact says `adopted: false`, decision "not adopted (within noise)"). The shipped prompts are the hand-written ones. See [`evals/results/published/dspy/`](evals/results/published/dspy). **LangGraph.** The Sentinel is a graph because its steps must be visible, resumable and stopped by a human before anything leaves the system. The Investigator is deliberately a short bounded loop, not a graph.
 
+## Architecture in three layers | <span dir="rtl">البنية في ثلاث طبقات</span>
+
+<p align="center">
+  <img src="docs/assets/architecture.svg" width="100%" alt="Falcon Lens architecture in three stacked layers. Top: the voice assistant layer, from the browser microphone through local speech to text, the wake phrase, the intent step and pre-generated narration clips. Middle: the two AI agents, Baseer the Investigator with tiers T0 to T3 and a deterministic arbiter, and Dir' the Sentinel with rules, a LangGraph triage and human approval. Bottom: the platform layer with the API, the event bus, the database, the isolated sandbox, the integrations that are ready to connect and not connected, observability and the public pages. Arrows show a request flowing down.">
+</p>
+
+A request flows from the top to the bottom. Every box is shipped code on `main`.
+
+1. **Voice assistant layer | <span dir="rtl">طبقة المساعد الصوتي</span>.** Browser microphone with end-of-speech detection, the web route `/api/voice` (the service key stays on the server, rate limited), the API `/v1/voice/utterance`, speech to text on our own machine (`mlx-whisper`, with a `faster-whisper` container fallback; audio is not stored), the wake phrase "Hey Falcon" or <span dir="rtl">«يا صقر»</span> and the language, the intent step (fixed rules, then a local embedding match to a prepared question, else a redirect; instruction-override attempts are refused), the action (check what you copied, answer a scam-safety question, help, stop) and narration from pre-generated clips (Arabic: Amazon Polly `Zayd`; English: Kokoro `am_fenrir`). A voice check carries a Voice badge in History and has a Grafana row.
+2. **The two AI agents layer | <span dir="rtl">طبقة الوكيلين الذكيين</span>.** The voice layer calls the same public check API as the Check page. **Baseer, the Investigator** (<span dir="rtl">بصير، المحقّق</span>) runs the tiers T0 to T3 and a deterministic arbiter sets the verdict; a model is called only for the uncertain band, on the route an operator selects on `/ops` (Claude with local Inkling fallback, or local Inkling or Qwen (`qwen3.8:27b`)). **Dir', the Sentinel** (<span dir="rtl">درع، الحارس</span>) listens to every finished check, correlates, lets rules decide incidents and campaigns, runs a LangGraph triage, and holds every outside draft until a person approves it.
+3. **Platform layer | <span dir="rtl">طبقة المنصة</span>.** REST v1 and SSE, the event bus (Redis Streams), Postgres with pgvector, the sandbox on an isolated network behind the egress proxy, MCP, STIX 2.1 and webhooks (ready to connect, not connected), observability (Prometheus, Grafana, Alertmanager, Phoenix) and the public pages.
+
+The same three layers are interactive on the site: [`/agents`](https://falconlens.app/agents) and [`/docs`](https://falconlens.app/docs). The network-level diagram (services, Docker networks, the request path) is in [`docs/TECHNICAL.md`](docs/TECHNICAL.md#system-architecture).
+
 ## Hey Falcon: the voice assistant
 
 Open [`/voice`](https://falconlens.app/voice), say **"Hey Falcon"** in English or <span dir="rtl">**«يا صقر»**</span> in Arabic and then what you want, for example "check what I copied". Listening is hands-free in the browser. The assistant then runs the **same public check API as the Check page** and narrates the live steps of the two agents: the Investigator's tiers, what it found, the verdict and what to do now, then the Sentinel hand-over (linking to an incident or campaign, and that a person must approve any outside action). Narration uses pre-generated clips in English and Emirati-style Arabic, so no typed text is ever sent to a speech engine.
@@ -166,7 +181,7 @@ sequenceDiagram
 ```
 
 - **Speech-to-text runs on our own machine.** Natively on the Mac (`mlx-whisper`) with a container fallback (`faster-whisper`). Audio is held in memory and dropped; audio and transcripts are never stored or logged and nothing goes to a cloud speech service ([`docs/PRIVACY.md`](docs/PRIVACY.md)).
-- **The wake phrase and the intent are decided by fixed rules, not by a model.** Intents: check what you copied, check the text you say, help, stop.
+- **The wake phrase and the intent are decided by fixed rules first.** Intents: check what you copied, check the text you say, help, stop, and a set of scam-safety questions, each answered by a pre-recorded clip. Only when no rule matches, a local embedding model (`qwen3-embedding:4b`) matches the question to the nearest FAQ question; anything else gets a spoken redirect back to scam checking. No generative model writes an answer.
 - **Clips.** English clips are made with `Kokoro-82M` (voice `am_fenrir`) and are committed. Arabic clips are spoken by **Amazon Polly neural `Zayd` (ar-AE, Emirati)**, generated **once, offline** from our own script text (no user data is sent) and kept private; at runtime every clip plays from the Mac and nothing calls AWS.
 - **History and monitoring.** A check started by voice appears in `/history` with a **Voice** channel badge, and its trace page shows the channel. Grafana's Command overview has a row "Voice assistant | المساعد الصوتي", and two alerts exist, `VoiceErrorRate` and `VoiceNativeEngineDown`, each with a [runbook](docs/RUNBOOK.md#voice-errors) entry.
 - **Live end-to-end run.** [`reviews/VOICE-E2E-2026-11-24.md`](reviews/VOICE-E2E-2026-11-24.md): English and Arabic passed on an isolated scratch stack, using synthetic `say` speech. In the Arabic run the narration used browser speech, because the private Arabic clips were not mounted there.
@@ -316,7 +331,7 @@ Only what the repository records. Roles are set in [`.env.example`](.env.example
 | `gemma3:27b` | Local vision model | Local Mac (Ollama) | Configured fallback | `FL_LOCAL_VISION_MODEL` in `.env.example`; DECISIONS 2026-11-22 |
 | `qwen3-embedding:4b` | Embeddings for scam-script matching (pgvector) | Local Mac (Ollama) | In use | `FL_EMBED_MODEL`; DECISIONS 2026-11-22 (signals) |
 | `qwen3:4b` | Bulk helper jobs through `scripts/qwen_task.py`. Batch `qwen-msg-001` was **rejected** by the supervisor, nearly every item wrong and re-run on `inkling-2-mini-chat` | Local Mac (Ollama) | Helper, not part of the product path | DECISIONS 2026-11-22 (rejection); `reviews/QWEN-qwen-msg-001.md` |
-| `qwen3.8:27b` | Candidate local model for sovereign mode | Local Mac (served by the local gateway, Mirai) | Available locally; sovereign-mode proof run pending, no result claimed | DECISIONS 2026-11-22 (it was unreachable then) |
+| `qwen3.8:27b` | Candidate local model for sovereign mode | Local Mac (served by the local gateway, Mirai) | Available locally; selectable on `/ops`. Sovereign-mode proof: 2 runs published, both recorded as `failed` (all demo scenarios passed on the local route, but the Sentinel summary fell back to the template) | [`evals/results/published/sovereign/`](evals/results/published/sovereign); `docs/EVALS.md` |
 | Whisper large-v3-turbo (`mlx-whisper`) | Speech-to-text for "Hey Falcon", primary | Local Mac, Metal GPU | In use | DECISIONS 2026-11-24 voice-service; `evals/results/published/voice/` |
 | `faster-whisper` `small` | Speech-to-text fallback in the `voice` container | Local, CPU | Fallback | `FL_WHISPER_MODEL` in `.env.example`; same artifacts |
 | `Kokoro-82M` | English narration clips (pre-generated, committed) | Local Mac | In use | `web/public/voice/en/manifest.json`; DECISIONS 2026-11-24 voice-clips |
@@ -328,7 +343,9 @@ Licences are in [`docs/research/VERIFIED_VERSIONS.md`](docs/research/VERIFIED_VE
 
 ### Data sovereignty | <span dir="rtl">السيادة على البيانات</span>
 
-With `FL_SOVEREIGN_MODE=1` every LLM role is routed to a local model (Inkling-2-Mini by default, or any OpenAI-compatible local model; see `packages/falcon_core/src/falcon_core/llm/config.py` and `.env.example`). Speech-to-text is local Whisper and the voice clips are pre-generated locally, so a user's messages, links and voice are not sent to a cloud model. Checking a link still makes internet lookups about that link (registration data, public feeds and one passive sandbox visit). A sovereign-mode proof run is pending; no result is claimed here.
+With `FL_SOVEREIGN_MODE=1` every LLM role is routed to a local model (Inkling-2-Mini by default, or any OpenAI-compatible local model; see `packages/falcon_core/src/falcon_core/llm/config.py` and `.env.example`). Speech-to-text is local Whisper and the voice clips are pre-generated locally, so a user's messages, links and voice are not sent to a cloud model. Checking a link still makes internet lookups about that link (registration data, public feeds and one passive sandbox visit). An operator can also switch the route at runtime on `/ops` (cloud with local fallback, or local only with Inkling or Qwen (`qwen3.8:27b`)); when `FL_SOVEREIGN_MODE=1` is set the route is locked to local and cannot be lifted from the board.
+
+**Sovereign-mode proof.** Four fresh-stack runs are published in [`evals/results/published/sovereign/`](evals/results/published/sovereign), two per local model, on one developer machine with invented fixtures and synthetic speech. In all four, the seven demo scenarios passed and every logged LLM call used the local route. **One of the four runs is recorded as `passed`; the other three are recorded as `failed`** because the Sentinel summary was not written by the local LLM (the template text was used instead). This shows that no LLM traffic was configured or observed to leave the machine in those runs; it is not a claim that nothing left it. How to read the files: [`docs/EVALS.md`](docs/EVALS.md).
 
 <div dir="rtl" align="right">
 
@@ -342,7 +359,7 @@ The code was written with Claude Code: Opus as lead and supervisor, Sonnet as bu
 
 ## On-premise deployment | <span dir="rtl">التشغيل داخل الجهة</span>
 
-If an authority adopts Falcon Lens, the whole stack can run inside its own network. The same Docker Compose stack (`make up`) is used. With `FL_SOVEREIGN_MODE=1` every LLM role goes to a local model on the authority's own GPU servers, through any OpenAI-compatible server (Ollama or vLLM). The model tested here is Inkling-2-Mini; `qwen3.8:27b` is available locally and its sovereign-mode proof is pending. Speech-to-text is local Whisper and the voice clips are generated locally. Integration is through REST v1 (OpenAPI), SSE, MCP, the STIX export and signed webhooks: **ready to connect, not connected**, and nothing here implies endorsement by any authority.
+If an authority adopts Falcon Lens, the whole stack can run inside its own network. The same Docker Compose stack (`make up`) is used. With `FL_SOVEREIGN_MODE=1` every LLM role goes to a local model on the authority's own GPU servers, through any OpenAI-compatible server (Ollama or vLLM). The models tested here are Inkling-2-Mini and `qwen3.8:27b`; the sovereign-mode proof runs, including the ones recorded as failed, are in `evals/results/published/sovereign/` (read with `docs/EVALS.md`). Speech-to-text is local Whisper and the voice clips are generated locally. Integration is through REST v1 (OpenAPI), SSE, MCP, the STIX export and signed webhooks: **ready to connect, not connected**, and nothing here implies endorsement by any authority.
 
 **What a production deployment would still need**
 - The authority's own sign-on (SSO) and roles. Today there are scoped API keys and an operator key.
@@ -429,7 +446,7 @@ All technical detail lives in **[`docs/TECHNICAL.md`](docs/TECHNICAL.md)**.
 
 | You want | Go to |
 |---|---|
-| Services, networks and the request path | [System architecture](docs/TECHNICAL.md#system-architecture), with the [architecture diagram](docs/assets/architecture.svg) |
+| Services, networks and the request path | [System architecture](docs/TECHNICAL.md#system-architecture), with the [network diagram](docs/assets/architecture-networks.svg) and the [three-layer diagram](docs/assets/architecture.svg) |
 | The Investigator's guardrails | [The Investigator](docs/TECHNICAL.md#the-investigator-the-agent-inside-one-check), with the [diagram](docs/assets/investigator.svg) |
 | The Sentinel pipeline | [The Sentinel](docs/TECHNICAL.md#the-sentinel-the-always-on-backend-agent), with the [diagram](docs/assets/sentinel.svg) |
 | Scoring, hard rules and bands | [`docs/SCORING.md`](docs/SCORING.md) |

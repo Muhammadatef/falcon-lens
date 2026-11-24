@@ -220,3 +220,25 @@ groups:
         annotations:
           summary: "Voice: the native engine is not answering, the container engine is (slower)"
           runbook_url: docs/RUNBOOK.md#voice-native-down
+      # The slowest 1 in 20 voice answers took more than 3 seconds over 5 minutes (at least 5 utterances).
+      # Target: under 1 second from upload to answer on the native engine.
+      - alert: VoiceSlow
+        expr: |
+          sum(increase(fl_voice_latency_seconds_count{data!="synthetic-replay"}[5m])) >= 5
+          and
+          histogram_quantile(0.95, sum by (le) (rate(fl_voice_latency_seconds_bucket{data!="synthetic-replay"}[5m]))) > 3
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "Voice assistant: answers are slow (p95 above 3 seconds for 5 minutes)"
+          runbook_url: docs/RUNBOOK.md#voice-slow
+      # The local embedding model behind the FAQ fallback timed out or failed 3 times in 10 minutes: questions
+      # that no keyword rule covers get the off-topic redirect instead of their answer.
+      - alert: VoiceFaqSemanticDegraded
+        expr: |
+          sum(increase(fl_voice_faq_semantic_total{data!="synthetic-replay",outcome=~"timeout|error"}[10m])) >= 3
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "Voice: the FAQ embedding model is timing out, unmatched questions get the redirect"
+          runbook_url: docs/RUNBOOK.md#voice-faq-semantic

@@ -61,6 +61,7 @@ x-app-env: &app-env
   # Required: empty makes the voice route and engines answer 503 (fail closed). `make up` generates it into .env.
   FL_VOICE_TOKEN: ${FL_VOICE_TOKEN:-}
   FL_VOICE_RATE_PER_MIN: ${FL_VOICE_RATE_PER_MIN:-30}
+  FL_VOICE_EMBED_KEEP_ALIVE: ${FL_VOICE_EMBED_KEEP_ALIVE:-24h}
   TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
   TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
   ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}

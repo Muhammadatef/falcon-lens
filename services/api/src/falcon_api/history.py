@@ -24,6 +24,7 @@ from falcon_api.auth import Principal
 from falcon_api.jobs import Jobs
 from falcon_api.problem import PROBLEM_RESPONSES, Problem
 from falcon_api.store import StoreUnavailableError
+from falcon_core.provenance import effective_source
 
 EVENTS_STREAM = "fl:events"
 HISTORY_EVENT_TYPES = frozenset({"verdict.created", "verdict.upgraded"})
@@ -102,6 +103,13 @@ def defanged_host(canonical_url: object) -> str | None:
     return f"{scheme}://{host.replace('.', '[.]')}"
 
 
+def _host_of(url: Any) -> str:
+    try:
+        return urlsplit(str(url)).hostname or ""
+    except ValueError:
+        return ""
+
+
 def summarize(doc: dict[str, Any]) -> dict[str, Any] | None:
     """Reduce a verdict document to a `VerdictSummary` dict; None when the document is not a usable verdict."""
     try:
@@ -125,7 +133,7 @@ def summarize(doc: dict[str, Any]) -> dict[str, Any] | None:
             "degraded_reasons": reasons[:8],
             "tier_reached": reached,
             "model_route": doc["model_route"],
-            "source": doc.get("source") or "live",
+            "source": effective_source(str(doc.get("source") or "live"), [_host_of(doc.get("canonical_url"))]),
             "channel": doc.get("channel"),
             "agent": {
                 "tiers_run": tiers,

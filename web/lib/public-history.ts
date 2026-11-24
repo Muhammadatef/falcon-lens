@@ -305,7 +305,7 @@ const RULE_LINES: Readonly<Record<string, Line>> = {
     en: d > 0 ? `${plural(d, "domain", "domains")} with the same page fingerprint within 7 days.` : "Domains with the same page fingerprint within 7 days.",
   }),
   R3: () => ({ ar: "وردت عدة بلاغات متشابهة خلال 30 دقيقة.", en: "Several similar scam reports arrived within 30 minutes." }),
-  R4: () => ({ ar: "نطاق لم تظهر عليه علامات تحذير سابقًا صار حكمه الآن «خطير».", en: "A domain that earlier showed no warning signs now has a dangerous verdict." }),
+  R4: () => ({ ar: "نطاق لم تظهر عليه علامات تحذير سابقًا صار حكمه الآن «خطِر».", en: "A domain that earlier showed no warning signs now has a dangerous verdict." }),
   R5: () => ({ ar: "وردت عدة ملاحظات بأن الإشارة نفسها أعطت إنذارًا خاطئًا خلال ساعة.", en: "Several feedback reports say the same signal raised a false alarm within an hour." }),
 };
 
