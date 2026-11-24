@@ -108,7 +108,9 @@ A check enters at the gateway, becomes a job on a Redis stream, and the worker r
 2. Paste an address and press the check button. The verdict updates as each layer finishes.
 3. For a harmless local test use the invented fixtures (only with the `tools` profile, which `make demo` starts): the lookalike `hxxp://falcon-demo-bank-secure[.]test/login` and the official site `hxxp://falcon-demo-bank[.]test/`. Un-defang them (`http://`, `.`) when you type them.
 
-The answer carries one of three verdicts, reasons that cite evidence, and what to do now. It never certifies a link as harmless.
+The answer carries one of three verdicts (in Arabic: «خطِر», «مريب», «لم نجد علامات تحذير»), reasons that cite evidence, and what to do now. It never certifies a link as harmless.
+
+The same box takes a pasted message (a message with no link is judged on its wording), an email file, and an image or QR poster. `demo-kit/` holds invented test items for each of them (not committed; ask the team), all about the invented brand Falcon Demo Bank.
 
 ### 4.2 Call the API with curl
 
@@ -189,6 +191,8 @@ curl -sk -H "X-API-Key: $K" "$B/v1/verdicts/<verdict_id>"
 ```
 
 The result page shows the same as a timeline with a "Technical details" switch. An incident (`GET /v1/incidents/<incident_id>`) lists indicators, evidence and actions; every action is also in the append-only audit log. Logs for the Sentinel are in Grafana Loki. {{INCIDENT_TRACE}}
+
+In the web app, the campaign board (`/campaigns`) explains what a campaign is, the operator history (`/history`) opens the trace of any check or incident, and the results page (`/results`) shows each measured figure with a REAL or SYNTHETIC badge. Arize Phoenix holds model-call traces (metadata only) and Grafana has a model-quality dashboard.
 
 ### 4.8 Add a brand to `data/brands.yaml`
 

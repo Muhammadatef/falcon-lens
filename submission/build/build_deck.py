@@ -47,6 +47,7 @@ from submission import artifact as artifact_mod  # noqa: E402
 from submission import capabilities as caps_mod  # noqa: E402
 from submission import check_numbers, descriptions  # noqa: E402
 from submission import content as content_mod  # noqa: E402
+from submission import evidence as evidence_mod  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import project_card  # noqa: E402
@@ -245,6 +246,7 @@ class Facts:
     repo_url: str
     tools: list[tuple[str, list[str]]]
     roadmap: list[str]
+    ev: Any = None  # scripts/submission/evidence.Evidence: the other published families
 
     def metric(self, key: str) -> Any:
         if self.artifact is None:
@@ -267,7 +269,7 @@ def gather(root: Path) -> Facts:
     sections = content_mod.build(caps, art, url)
     road = next(s for s in sections if s.key == "roadmap")
     roadmap = [line.text for line in road.lines]
-    return Facts(art, fp, caps, url, project_card.shipped_tools(root), roadmap)
+    return Facts(art, fp, caps, url, project_card.shipped_tools(root), roadmap, evidence_mod.load(published))
 
 
 # ── slides ───────────────────────────────────────────────────────────────────
@@ -641,13 +643,19 @@ def slide_results(f: Facts) -> Slide:
             fp["target"],
         )
         degraded = fp["degraded"]
+        runs = f.ev.fp if f.ev else []
+        hist = (
+            f"Across the runs so far: first {pct(runs[0]['false_positive_rate']['value'])}, lowest {pct(min(r['false_positive_rate']['value'] for r in runs))}, newest {pct(runs[-1]['false_positive_rate']['value'])} (shown here)."
+            if len(runs) > 1
+            else "We report it as it is."
+        )
         s.add(card(MARGIN, 4.95, 12.1, 1.55, "warn_tint", "warn_line"))
         s.add(tb(MARGIN + 0.3, 4.95, 2.7, 1.55, p(pct(fv), 40, "warn", True), anchor="m"))
         s.add(
             tb(
                 MARGIN + 3.0, 4.95, 8.9, 1.55,
                 Para([Run("Live end-to-end check on held-out legitimate sites: flagged Suspicious or Dangerous.", 17, "text", True)], after=3),
-                p(f"{fn} sites, bootstrap interval {pct(fci[0])} to {pct(fci[1])}. Our target is {pct(target)}. {degraded} of those runs could not complete every check, and such a run is never shown as a clean result. We report it as it is.", 14, "muted"),
+                p(f"{fn} sites, bootstrap interval {pct(fci[0])} to {pct(fci[1])}. Our target is {pct(target)}, so it is not met. {degraded} of those runs could not complete every check, and such a run is never shown as a clean result. {hist}", 13, "muted"),
                 anchor="m",
             )
         )  # fmt: skip
@@ -660,6 +668,29 @@ def slide_results(f: Facts) -> Slide:
         "The amber box is the harder number, and we show it because honesty matters more than a clean slide: when we run the full pipeline on held-out legitimate sites, "
         "too many are flagged, and many of those are checks that could not finish. A check that cannot finish is shown as Suspicious, never as a clean result. Our target is much lower, and this is our top engineering item. "
         "Anything not yet measured is listed at the bottom."
+    )
+    return s
+
+
+def slide_evidence(f: Facts) -> Slide:
+    """The other published results: red-team, link-less messages, brand-new pages, cost, faithfulness, DSPy."""
+    s = Slide("evidence", "More evidence, with its limits", "أدلة أخرى مع حدودها")
+    rows = f.ev.slide_rows() if f.ev else []
+    y, row_h, gap = 1.75, 0.72, 0.08
+    for label, text in rows:
+        s.add(card(MARGIN, y, 12.1, row_h), Box(MARGIN + 0.22, y + row_h / 2 - 0.07, 0.14, 0.14, "brand", None, "oval"))
+        s.add(
+            tb(MARGIN + 0.5, y, 3.6, row_h, p(label, 14, "text", True), anchor="m"),
+            tb(MARGIN + 4.2, y, 7.7, row_h, p(text, 13, "muted"), anchor="m"),
+        )
+        y += row_h + gap
+    s.add(tb(MARGIN, y + 0.02, 12.1, 0.5, p("Every row is copied by code from its own published file. Synthetic means invented fixtures and templates, never real scam pages. Read each harmful count together with the answered count.", 12, "faint")))
+    s.notes = (
+        "Each row comes from its own published evaluation file in the repository, and the figures are copied by code. "
+        "The red-team row always states how many cases the model answered next to the harmful count, because where the model did not answer, only the deterministic layers were tested. "
+        "The link-less message set is small, synthetic and written by one author, then audited by the supervisor, so we call it a smoke test and give its wide interval. "
+        "Brand-new look-alike pages are fixtures on hosts in no feed; read the benign-control row beside it. "
+        "Cost, stability and route comparison are on fixtures. DSPy ran on every model role, and we did not adopt any optimised prompt because the gains are within noise."
     )
     return s
 
@@ -970,6 +1001,7 @@ def build_slides(f: Facts, img: dict[str, Path]) -> list[Slide]:
         slide_how(f),
         slide_sentinel(f, img),
         slide_results(f),
+        slide_evidence(f),
         slide_security(f),
         slide_authorities(f),
         slide_architecture(f, img),

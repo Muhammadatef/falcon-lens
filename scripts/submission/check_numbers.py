@@ -63,6 +63,7 @@ if __package__ in (None, ""):  # run as a script: make `submission` importable
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from submission import artifact as artifact_mod  # noqa: E402
+from submission import evidence as evidence_mod  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCHITECTURE_SVG = "docs/assets/architecture.svg"
@@ -254,7 +255,11 @@ class Traceable:
     """What the newest published artifact can vouch for: its metric values and its whole strings."""
 
     def __init__(
-        self, data: dict[str, Any] | None, names: tuple[str, ...] = (), extra: dict[str, Any] | None = None
+        self,
+        data: dict[str, Any] | None,
+        names: tuple[str, ...] = (),
+        extra: dict[str, Any] | None = None,
+        more: tuple[dict[str, Any], ...] = (),
     ) -> None:
         """`names`: the artifact's own file name and stem, which a "Source:" line may quote.
 
@@ -263,8 +268,8 @@ class Traceable:
         """
         self.values: list[Decimal] = []
         self.strings: set[str] = {name.lower() for name in names if name}
-        if extra is not None:
-            for _key, leaf in artifact_mod.flatten({k: v for k, v in extra.items() if k != "items"}):
+        for source in ([extra] if extra is not None else []) + list(more):
+            for _key, leaf in artifact_mod.flatten({k: v for k, v in source.items() if k not in ("items", "_file")}):
                 if isinstance(leaf, int | float) and not isinstance(leaf, bool):
                     value = _decimal(json.dumps(leaf))
                     if value is not None and value.is_finite():
@@ -318,10 +323,12 @@ class Traceable:
 
 
 def traceable_for(loaded: artifact_mod.Artifact | None, published: Path | None = None) -> Traceable:
-    extra = artifact_mod.load_fp_regress(published or artifact_mod.PUBLISHED)
+    root = published or artifact_mod.PUBLISHED
+    extra = artifact_mod.load_fp_regress(root)
+    more = tuple(evidence_mod.load(root).sources())  # red-team, message-text, brand-new pages, cost, ... (REAL and SYNTHETIC)
     if loaded is None:
-        return Traceable(None, extra=extra)
-    return Traceable(loaded.data, names=(loaded.path.name, loaded.path.stem), extra=extra)
+        return Traceable(None, extra=extra, more=more)
+    return Traceable(loaded.data, names=(loaded.path.name, loaded.path.stem), extra=extra, more=more)
 
 
 def find_untraceable(text: str, traceable: Traceable, source: str) -> list[Finding]:

@@ -70,7 +70,9 @@ class Artifacts:
 
     @property
     def not_evaluated(self) -> list[str]:
-        return list(self.main.get("not_evaluated", []))
+        from submission import evidence  # noqa: PLC0415  (scripts/ is on sys.path)
+
+        return evidence.still_not_measured(list(self.main.get("not_evaluated", [])), PUBLISHED)
 
     def fp_pct(self) -> str:
         assert self.fp is not None
@@ -109,6 +111,13 @@ def load_artifacts() -> Artifacts:
         fp=json.loads(fp_path.read_text(encoding="utf-8")) if fp_path else None,
         fp_name=fp_path.name if fp_path else "",
     )
+
+
+def evidence() -> Any:
+    """The other published artifact families (red-team, message text, brand-new pages, cost, ...)."""
+    from submission import evidence as ev  # noqa: PLC0415  (scripts/ is on sys.path)
+
+    return ev.load(PUBLISHED)
 
 
 # ── tools used (shipped code only) ───────────────────────────────────────────────────────────────

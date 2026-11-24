@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from submission import evidence as evidence_mod
+
 ROOT = Path(__file__).resolve().parents[2]
 PUBLISHED = ROOT / "evals" / "results" / "published"
 NO_ARTIFACT = "Evaluation in progress"
@@ -62,7 +64,8 @@ class Artifact:
     @property
     def not_evaluated(self) -> list[str]:
         value = self.data.get("not_evaluated")
-        return [str(item) for item in value] if isinstance(value, list) else []
+        keys = [str(item) for item in value] if isinstance(value, list) else []
+        return evidence_mod.still_not_measured(keys, self.path.parent)
 
 
 def flatten(node: Any, prefix: str = "", scalar_lists: bool = False) -> list[tuple[str, Any]]:
