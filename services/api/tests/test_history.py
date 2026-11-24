@@ -1,7 +1,8 @@
-"""Operator history: GET /v1/verdicts and /v1/verdicts/stream (scopes, redaction, pagination, SSE)."""
+"""Public read-only history (read scope): GET /v1/verdicts and /v1/verdicts/stream (scopes, redaction, pagination, SSE)."""
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
@@ -10,6 +11,7 @@ import pytest
 
 from falcon_api import history
 from falcon_api.app import build_app
+from falcon_api.auth import Authenticator, MemoryKeyStore
 from tests.conftest import OPERATOR_KEY, SANDBOX_KEY, FakeStore, make_doc, make_settings
 
 OP = {"X-API-Key": OPERATOR_KEY}
@@ -43,6 +45,33 @@ async def test_scopes(client: httpx.AsyncClient) -> None:
     for path in ("/v1/verdicts", "/v1/verdicts/stream"):
         assert (await client.get(path)).status_code == 401
         assert (await client.get(path, headers={"X-API-Key": SANDBOX_KEY})).status_code == 403
+
+
+async def test_read_scope_can_list_and_stream_but_not_operate(
+    redis: Any, store: FakeStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Owner decision 24 Nov: history is public read-only until SSO. The web tier uses a `read` key, never `operator`."""
+    monkeypatch.setattr(history, "STREAM_MAX_S", 0.5)
+    keystore = MemoryKeyStore()
+    read_key = (await Authenticator(keystore, "test-pepper").create("reader", ["read"], 100))[1]
+    await seed(redis, store, 1)
+    app = build_app(make_settings(fl_rate_limit_per_ip_per_min=100), redis=redis, store=store, keystore=keystore)
+    transport = httpx.ASGITransport(app=app, client=("203.0.113.9", 1234))
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+        r = await c.get("/v1/verdicts", headers={"X-API-Key": read_key})
+        assert r.status_code == 200 and [i["verdict_id"] for i in r.json()["items"]] == [vid(1)]
+        # httpx's ASGI transport buffers a response, so the stream is bounded by STREAM_MAX_S (patched to 0.5 s).
+        async with (
+            asyncio.timeout(4),
+            c.stream("GET", "/v1/verdicts/stream", headers={"X-API-Key": read_key, "Last-Event-ID": "0-0"}) as s,
+        ):
+            assert s.status_code == 200
+            lines = [line async for line in s.aiter_lines()]
+        assert any(line.startswith("event: verdict") for line in lines)
+        base = "/v1/incidents/inc_00000000000000000000000000/actions/act_x"
+        for verb in ("approve", "reject"):
+            assert (await c.post(f"{base}/{verb}", headers={"X-API-Key": read_key})).status_code == 403
+        assert (await c.get("/v1/intel/stix", headers={"X-API-Key": read_key})).status_code == 403
 
 
 async def test_redaction_no_userinfo_no_raw_text(client: httpx.AsyncClient, redis: Any, store: FakeStore) -> None:

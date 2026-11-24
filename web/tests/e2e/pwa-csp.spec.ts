@@ -3,7 +3,7 @@ import { expect, newIncidentId, newVerdictId, registerScenario, scenarioLog, sub
 
 test.describe("CSP and markup hygiene", () => {
   test("strict nonce CSP on every page, and no inline style or handler attributes in server HTML", async ({ request }) => {
-    for (const path of ["/", "/campaigns", "/ops", `/incidents/${newIncidentId()}`, "/?demo=1", `/?id=${newVerdictId()}`]) {
+    for (const path of ["/", "/campaigns", "/history", "/ops", `/incidents/${newIncidentId()}`, "/?demo=1", `/?id=${newVerdictId()}`]) {
       const response = await request.get(path);
       expect(response.status(), path).toBe(200);
       const csp = response.headers()["content-security-policy"] ?? "";

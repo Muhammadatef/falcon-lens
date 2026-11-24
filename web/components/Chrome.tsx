@@ -9,22 +9,20 @@ import { translate, type MessageKey } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs";
 import { BrandMark, Icon } from "./Icon";
 
-/** Header order (v2): Check · AI agents · Campaigns · Results · For authorities · Docs · Privacy. */
+/** Header order (v2): Check · AI agents · Campaigns · History · Results · For authorities · Docs · Privacy. */
 export const NAV_LINKS = [
   { href: "/", key: "nav.check" },
   { href: "/agents", key: "nav.agents" },
   { href: "/campaigns", key: "nav.campaigns" },
+  { href: "/history", key: "nav.history" },
   { href: "/results", key: "nav.results" },
   { href: "/authorities", key: "nav.authorities" },
   { href: "/docs", key: "nav.docs" },
   { href: "/privacy", key: "nav.privacy" },
 ] as const;
 
-/** Footer only: the operator board (the live board is in the header). */
-export const FOOT_LINKS = [
-  { href: "/ops", key: "nav.ops" },
-  { href: "/history", key: "nav.history" },
-] as const;
+/** Footer only: operator actions (approve or reject needs a key; history is public and in the header). */
+export const FOOT_LINKS = [{ href: "/ops", key: "nav.ops" }] as const;
 
 const isCurrent = (pathname: string, href: string): "page" | "true" | undefined =>
   pathname === href ? "page" : href !== "/" && pathname.startsWith(`${href}/`) ? "true" : undefined;

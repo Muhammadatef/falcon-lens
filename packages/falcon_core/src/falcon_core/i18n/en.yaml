@@ -58,7 +58,7 @@ reasons:
   message.rule.investment: "The message promises quick investment profits."
   message.rule.delivery_fee: "The message asks for a delivery fee for a parcel."
   message.rule.fine: "The message mentions a fine you must pay."
-  email.auth_fail: "The email failed sender checks (SPF/DKIM/DMARC)."
+  email.auth_fail: "The email failed sender checks (SPF, DKIM and DMARC)."
   email.display_name_impersonation: "The sender name copies a known organisation, but the address is not theirs."
   email.reply_to_mismatch: "Replies go to a different address than the sender."
   email.limit_exceeded: "The email is unusually large or nested, so only part of it was read."

@@ -356,7 +356,7 @@ def _auth_evidence(msg: EmailMessage) -> Evidence | None:
             "dkim_signature_present": msg["DKIM-Signature"] is not None,
         },
         display={
-            "en": "Sender authentication failed (SPF/DKIM/DMARC)",
+            "en": "Sender authentication failed (SPF, DKIM and DMARC)",
             "ar": "فشل التحقق من هوية المرسل",
         },
     )
