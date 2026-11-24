@@ -83,7 +83,13 @@ def check_one(base: str, key: str, row: dict[str, Any]) -> dict[str, Any]:
                         "model_route": d.get("model_route"),
                         "server_latency_ms": d.get("latency_ms"),
                         "latency_s": round(time.monotonic() - t0, 2),
+                        "verdict_id": vid,
                         "signals": sorted({e["signal"] for e in d.get("evidence", [])}),
+                        "risk_signals": sorted({e["signal"] for e in d.get("evidence", []) if e.get("weight", 0) > 0}),
+                        # a reputation feed (openphish / gsb / urlhaus) already listed this URL: a lookup, not a model call
+                        "rep_hit": any(
+                            e["signal"].startswith("rep.") and e.get("weight", 0) > 0 for e in d.get("evidence", [])
+                        ),
                     }
                 time.sleep(1.0)
         return {**base_row, "error": "timeout_no_final", "latency_s": round(time.monotonic() - t0, 2)}
