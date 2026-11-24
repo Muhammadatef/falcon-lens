@@ -30,7 +30,7 @@ pre-commit install              # optional but recommended (ruff, gitleaks, hygi
 | `make guard` | defensive-only guard (no live URLs, no `data/private`) |
 | `make scan` | gitleaks, pip-audit, pnpm audit, trivy, syft (missing tool = warning) |
 | `make eval-gate` | merge gate for detection quality (prints SKIPPED until `evals/baseline.json` exists) |
-| `make smoke` `eval` `redteam` `seed` `replay` `demo` `submission` | print "not yet implemented" and fail until built |
+| `make smoke` `eval` `redteam` `seed` `replay` `demo` `submission` | all implemented; `make help` lists each with its description |
 
 Web: `cd web && pnpm lint && pnpm typecheck && pnpm test`.
 
