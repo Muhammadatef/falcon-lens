@@ -112,6 +112,25 @@ def test_enabled_defaults_false_even_with_sources_on_in_yaml() -> None:
     assert offline.active_sources() == ("fixture",)
 
 
+def test_rate_and_quota_caps_clamp() -> None:
+    from falcon_sentinel.hunt import settings as hs
+
+    s = HuntSettings.from_env(
+        {
+            "FL_HUNT_DNS_QPS": "1000",
+            "FL_HUNT_DNS_MAX_PER_CYCLE": "999999",
+            "FL_HUNT_SUBMIT_MAX_PER_HOUR": "10000",
+            "FL_HUNT_SUBMIT_MAX_PER_DAY": "10000",
+        }
+    )
+    assert s.dns_qps == hs.MAX_DNS_QPS
+    assert s.dns_max_per_cycle == hs.MAX_DNS_PER_CYCLE
+    assert s.submit_max_per_hour == hs.MAX_SUBMIT_PER_HOUR
+    assert s.submit_max_per_day == hs.MAX_SUBMIT_PER_DAY
+    low = HuntSettings.from_env({"FL_HUNT_DNS_QPS": "0", "FL_HUNT_SUBMIT_MAX_PER_HOUR": "-5"})
+    assert low.dns_qps == 1 and low.submit_max_per_hour == 0
+
+
 async def test_disabled_never_starts_and_makes_no_request(redis: Any) -> None:
     rec = Recorder(lambda r: httpx.Response(200, json=_dns_answer(0, [2])))
     async with AsyncExitStack() as stack:

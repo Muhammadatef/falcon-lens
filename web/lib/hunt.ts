@@ -26,6 +26,22 @@ export type HuntItem = {
 export type HuntCounts = Partial<Record<HuntStatus, number>>;
 export type HuntStatus = "new" | "unregistered" | "queued" | "submitted" | "confirmed" | "cleared" | "already_known" | "skipped_quota" | "error";
 export type PublicHunt = { enabled: boolean | null; paused: boolean; sources: HuntSource[]; items: HuntItem[]; counts: HuntCounts };
+/** The public route's wire shape: the same allow-listed snake_case fields the API contract uses. */
+export type PublicHuntWire = Omit<PublicHunt, "items"> & { items: Record<string, unknown>[] };
+
+const toWire = (i: HuntItem): Record<string, unknown> => ({
+  candidate_id: i.id,
+  domain_defanged: i.domain,
+  brand_id: i.brandId,
+  brand_name: i.brandName,
+  reasons: i.reasons,
+  first_seen: i.firstSeen,
+  verdict: i.verdict,
+  found_before_report: i.foundBeforeReport,
+  time_to_detection_s: i.ttdSeconds,
+  time_to_detection_basis: i.ttdBasis,
+  source: i.source,
+});
 
 const REASONS: readonly string[] = ["brand_token_in_cert", "resolves_a", "has_mx", "cert_fresh", "permutation:typo", "permutation:homoglyph", "permutation:combosquat", "permutation:tld_swap"];
 const STATUSES: readonly string[] = ["new", "unregistered", "queued", "submitted", "confirmed", "cleared", "already_known", "skipped_quota", "error"];
@@ -37,7 +53,8 @@ const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 const obj = (v: unknown): Record<string, unknown> | null => (typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
 const str = (v: unknown): string | null => (typeof v === "string" ? v : null);
-const clean = (s: string, max = 80): string => s.replace(/[\u0000-\u001f\u007f‪-‮⁦-⁩<>]/g, "").slice(0, max);
+// Strip control, bidi-override and angle-bracket characters (display hardening; React escapes the rest).
+const clean = (s: string, max = 80): string => [...s].filter((ch) => { const c = ch.codePointAt(0) ?? 0; return c > 0x1f && c !== 0x7f && !(c >= 0x202a && c <= 0x202e) && !(c >= 0x2066 && c <= 0x2069) && ch !== "<" && ch !== ">"; }).join("").slice(0, max);
 
 export function parseHuntItem(raw: unknown): HuntItem | null {
   const r = obj(raw);
@@ -95,8 +112,8 @@ export function parseSources(raw: unknown): HuntSource[] {
   return out;
 }
 
-/** Server side: the two upstream bodies -> the allow-listed public shape. */
-export function toPublicHunt(feed: unknown, meta: unknown): PublicHunt {
+/** Server side: the two upstream bodies -> the allow-listed public wire shape. */
+export function toPublicHunt(feed: unknown, meta: unknown): PublicHuntWire {
   const f = obj(feed);
   const m = obj(obj(meta)?.hunt);
   const items = (Array.isArray(f?.items) ? f.items : []).map(parseHuntItem).filter((i): i is HuntItem => i !== null).slice(0, 50);
@@ -104,7 +121,7 @@ export function toPublicHunt(feed: unknown, meta: unknown): PublicHunt {
     enabled: m ? m.enabled === true : null,
     paused: m ? m.paused === true : false,
     sources: m ? parseSources(m.sources) : [],
-    items,
+    items: items.map(toWire),
     counts: parseCounts(f?.counts),
   };
 }

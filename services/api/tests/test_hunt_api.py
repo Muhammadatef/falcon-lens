@@ -28,7 +28,12 @@ def cand(i: int, status: str, domain: str, verdict: str | None = None, **kw: Any
         "discovery": "ct",
         "permutation_kind": None,
         "reasons": ["brand_token_in_cert", "cert_fresh"],
-        "provenance": {"source_id": "fixture", "terms_url": None, "retrieved_at": "2026-11-24T20:00:00Z", "source": "fixture"},
+        "provenance": {
+            "source_id": "fixture",
+            "terms_url": None,
+            "retrieved_at": "2026-11-24T20:00:00Z",
+            "source": "fixture",
+        },
         "first_seen": (T0 + timedelta(minutes=i)).isoformat().replace("+00:00", "Z"),
         "upstream_seen": None,
         "prescore": 75,
@@ -44,13 +49,22 @@ def cand(i: int, status: str, domain: str, verdict: str | None = None, **kw: Any
 
 
 ROWS = [
-    cand(0, "confirmed", "falcon-demo-bank-secure.test", "dangerous", incident_id="inc_" + ULIDS[0],
-         time_to_detection_s=60.0, time_to_detection_basis="cert_not_before", verdict_id="vd_" + ULIDS[0]),
+    cand(
+        0,
+        "confirmed",
+        "falcon-demo-bank-secure.test",
+        "dangerous",
+        incident_id="inc_" + ULIDS[0],
+        time_to_detection_s=60.0,
+        time_to_detection_basis="cert_not_before",
+        verdict_id="vd_" + ULIDS[0],
+    ),
     cand(1, "cleared", "falcon-demo-bank-login.test", "no_warning_signs"),
     cand(2, "new", "falcon-demo-bank-pay.test"),
     cand(3, "submitted", "falcon-demo-bank-cloak.test"),
-    cand(4, "confirmed", "falcon-demo-bank-fine.test", "suspicious",
-         reasons=["<img src=x onerror=alert(1)>"]),  # off-contract reason: must be dropped, never passed through
+    cand(
+        4, "confirmed", "falcon-demo-bank-fine.test", "suspicious", reasons=["<img src=x onerror=alert(1)>"]
+    ),  # off-contract reason: must be dropped, never passed through
 ]
 STATE = {
     "enabled": True,
@@ -77,12 +91,36 @@ def sentinel_handler(req: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json=STATE)
     if req.url.path == "/internal/hunt/candidates":
         if req.url.params.get("view") == "operator":
-            return httpx.Response(200, json={"items": [{**r, "found_before_report": r["status"] == "confirmed"} for r in ROWS], "counts": STATE["counts"]})
+            return httpx.Response(
+                200,
+                json={
+                    "items": [{**r, "found_before_report": r["status"] == "confirmed"} for r in ROWS],
+                    "counts": STATE["counts"],
+                },
+            )
         pub = []
         for r in ROWS:
             if r["status"] != "confirmed":
                 continue
-            pub.append({k: r[k] for k in ("candidate_id", "domain_defanged", "brand_id", "discovery", "permutation_kind", "reasons", "first_seen", "verdict", "incident_id", "time_to_detection_s", "time_to_detection_basis")} | {"found_before_report": r["incident_id"] is not None, "source": "fixture"})
+            pub.append(
+                {
+                    k: r[k]
+                    for k in (
+                        "candidate_id",
+                        "domain_defanged",
+                        "brand_id",
+                        "discovery",
+                        "permutation_kind",
+                        "reasons",
+                        "first_seen",
+                        "verdict",
+                        "incident_id",
+                        "time_to_detection_s",
+                        "time_to_detection_basis",
+                    )
+                }
+                | {"found_before_report": r["incident_id"] is not None, "source": "fixture"}
+            )
         return httpx.Response(200, json={"items": pub, "counts": STATE["counts"]})
     return httpx.Response(404)
 
@@ -93,7 +131,14 @@ async def env() -> Any:
     keystore, audit = MemoryKeyStore(), MemoryAuditLog()
     read_key = (await Authenticator(keystore, "test-pepper").create("reader", ["read"], 100))[1]
     s = SentinelClient("http://sentinel", OPERATOR_KEY, transport=httpx.MockTransport(sentinel_handler))
-    app = build_app(make_settings(fl_rate_limit_per_ip_per_min=100), redis=redis, store=FakeStore(), keystore=keystore, audit=audit, sentinel=s)
+    app = build_app(
+        make_settings(fl_rate_limit_per_ip_per_min=100),
+        redis=redis,
+        store=FakeStore(),
+        keystore=keystore,
+        audit=audit,
+        sentinel=s,
+    )
     transport = httpx.ASGITransport(app=app, client=("203.0.113.9", 1234))
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c, redis, audit, read_key
@@ -109,7 +154,13 @@ async def test_public_projection_confirmed_only_defanged(env: Any) -> None:
     items = body["items"]
     assert [i["domain_defanged"] for i in items] == ["falcon-demo-bank-secure[.]test"]  # XSS row dropped
     raw = json.dumps(body)
-    for live in ("falcon-demo-bank-secure.test", "falcon-demo-bank-pay", "falcon-demo-bank-cloak", "prescore", "onerror"):
+    for live in (
+        "falcon-demo-bank-secure.test",
+        "falcon-demo-bank-pay",
+        "falcon-demo-bank-cloak",
+        "prescore",
+        "onerror",
+    ):
         assert live not in raw
     it = items[0]
     assert it["brand_name"] == {"ar": "بنك الصقر التجريبي", "en": "Falcon Demo Bank"}

@@ -1,4 +1,5 @@
-"""Hunt runtime settings from the environment (HUNTER.md section 5). Defaults are the safe ones."""
+"""Hunt runtime settings from the environment (HUNTER.md section 5). Defaults are the conservative ones, and the
+rate and quota settings have hard upper caps that no environment value can exceed."""
 
 from __future__ import annotations
 
@@ -17,11 +18,19 @@ def _bool(v: str | None) -> bool:
     return (v or "").strip().lower() in ("1", "true", "yes", "on")
 
 
-def _int(env: Mapping[str, str], name: str, default: int, lo: int = 0) -> int:
+# Hard upper caps (an operator typo must never turn the hunt into a scanner or flood the cascade).
+MAX_DNS_QPS = 10
+MAX_DNS_PER_CYCLE = 5000
+MAX_SUBMIT_PER_HOUR = 60
+MAX_SUBMIT_PER_DAY = 500
+
+
+def _int(env: Mapping[str, str], name: str, default: int, lo: int = 0, hi: int | None = None) -> int:
     try:
-        return max(lo, int(env.get(name, default)))
+        v = max(lo, int(env.get(name, default)))
     except ValueError:
-        return default
+        v = default
+    return min(v, hi) if hi is not None else v
 
 
 @dataclass(frozen=True)
@@ -58,10 +67,10 @@ class HuntSettings:
             sources=srcs,
             interval_min=_int(e, "FL_HUNT_INTERVAL_MIN", 15, 1),
             ct_min_interval_s=_int(e, "FL_HUNT_CT_MIN_INTERVAL_S", 120, 120),  # never below 120 s
-            dns_qps=_int(e, "FL_HUNT_DNS_QPS", 5, 1),
-            dns_max_per_cycle=_int(e, "FL_HUNT_DNS_MAX_PER_CYCLE", 1500),
-            submit_max_per_hour=_int(e, "FL_HUNT_SUBMIT_MAX_PER_HOUR", 20),
-            submit_max_per_day=_int(e, "FL_HUNT_SUBMIT_MAX_PER_DAY", 200),
+            dns_qps=_int(e, "FL_HUNT_DNS_QPS", 5, 1, MAX_DNS_QPS),
+            dns_max_per_cycle=_int(e, "FL_HUNT_DNS_MAX_PER_CYCLE", 1500, 0, MAX_DNS_PER_CYCLE),
+            submit_max_per_hour=_int(e, "FL_HUNT_SUBMIT_MAX_PER_HOUR", 20, 0, MAX_SUBMIT_PER_HOUR),
+            submit_max_per_day=_int(e, "FL_HUNT_SUBMIT_MAX_PER_DAY", 200, 0, MAX_SUBMIT_PER_DAY),
             prescore_min=_int(e, "FL_HUNT_PRESCORE_MIN", 60),
             proxy=e.get("FL_HUNT_PROXY", "http://hunt-egress:3128") or None,
             api_url=e.get("FL_HUNT_API_URL") or e.get("FL_API_URL") or "http://api:8000",

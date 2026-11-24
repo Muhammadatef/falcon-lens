@@ -65,7 +65,7 @@ def sha256_hex(domain: str) -> str:
 
 
 def candidate_id(domain: str, first_seen: datetime) -> str:
-    """Deterministic: the same name first seen at the same time gets the same id (restart-safe)."""
+    """Deterministic: the same name first seen at the same time gets the same id (stable across restarts)."""
     return "hc_" + make_ulid(first_seen, "hunt:" + domain.lower())
 
 

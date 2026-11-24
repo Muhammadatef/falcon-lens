@@ -193,6 +193,13 @@ Say at step 8: "The Sentinel proposes and a human approves. Blocking inside our 
 
 Until the operator board is merged, the same scene can be shown from the terminal only: the Sentinel logs the incident, and `make unblock ID=<action id>` reverts an internal block. Say on the voice track that the board is not shown.
 
+## The hunting scene (offline, TEST FIXTURE)
+Hunt mode is off by default. For the demo it runs on the committed fixture only (`services/sentinel/fixtures/hunt_ct_fixture.json`, hand-written in crt.sh's shape, `falcon-demo-bank*.test` hosts, labelled TEST FIXTURE). Nothing is registered and nothing on the internet is contacted.
+1. Set `FL_HUNT_API_KEY` in `.env` (any long random string; the API seeds it with scope `hunt`) before `make demo`, so the API and the Sentinel both have it. Leave `FL_HUNT_ENABLED=false` so no background hunting runs.
+2. `make demo-hunt`: one cycle with `FL_HUNT_SOURCES=fixture` forced for that command only, so no DNS or crt.sh request is made. It records the fixture names, submits those above the priority threshold to the Investigator with `channel=hunt` and prints counts and defanged names. A name a person already checked comes back `already_known` and is never shown as found first.
+3. `/campaigns`, section "الرصد الاستباقي": the confirmed rows appear with «أكّده بصير» and the TEST FIXTURE badge; «رُصد قبل أي بلاغ» only where it is true. `/ops`: the Hunting panel shows status, quotas, last cycle and the pause / resume button. The `early_warning` incident's takedown draft waits for approval as usual.
+4. Say plainly: search, ads and Maps show "Ready, needs API key"; the certificate-log lookup is off by default because crt.sh publishes no terms of use.
+
 ## The command-line scene: a client calling the MCP server
 
 Shows that another agent can use Falcon Lens as a tool. This is the "ready to connect" interface. It is not connected to any police system.

@@ -43,9 +43,10 @@ async def test_hunt_key_submits_only_as_hunt(hunt_client: httpx.AsyncClient, red
     job = (await redis.xrange("fl:jobs"))[-1][1]
     assert job["channel"] == "hunt" and job["source"] == "live"
     assert (await hunt_client.post("/v1/check/url", json={"url": URL + "x"}, headers=h)).status_code == 422
-    msg = await hunt_client.post("/v1/check/message", json={"text": "hello", "channel": "hunt"}, headers=h)
-    assert msg.status_code in (403, 422)
-    assert (await hunt_client.get("/v1/verdicts", headers=h)).status_code == 403  # no read scope
+    for body in ({"text": "hello", "channel": "hunt"}, {"text": "hello"}):
+        assert (await hunt_client.post("/v1/check/message", json=body, headers=h)).status_code == 403
+    for path in ("/v1/verdicts", "/v1/incidents", "/v1/campaigns", "/v1/hunt/candidates", "/v1/admin/hunt"):
+        assert (await hunt_client.get(path, headers=h)).status_code == 403, path  # hunt-only key: no read scope
 
 
 async def test_hunt_fixture_source_label_kept(hunt_client: httpx.AsyncClient, redis: Any) -> None:

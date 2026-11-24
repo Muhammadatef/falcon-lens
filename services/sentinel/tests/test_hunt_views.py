@@ -6,11 +6,12 @@ import json
 from dataclasses import replace
 from datetime import UTC, datetime
 
+from sentinel_core.hunt.candidates import Candidate
+from sentinel_core.hunt.config import default_config
+
 from falcon_sentinel.hunt.settings import HuntSettings
 from falcon_sentinel.hunt.store import MemoryHuntStore
 from falcon_sentinel.hunt.views import candidates_view, sources_view, state_view
-from sentinel_core.hunt.candidates import Candidate
-from sentinel_core.hunt.config import default_config
 
 T0 = datetime(2026, 11, 24, 20, 0, tzinfo=UTC)
 
@@ -45,7 +46,7 @@ async def test_public_view_mixed_table() -> None:
     pub = await candidates_view(store, incidents, operator=False)
     raw = json.dumps(pub)
     assert [i["domain_defanged"] for i in pub["items"]] == ["falcon-demo-bank-secure[.]test"]
-    assert "prescore" not in raw and "falcon-demo-bank-pay" not in raw and ".test\"" not in raw
+    assert "prescore" not in raw and "falcon-demo-bank-pay" not in raw and '.test"' not in raw
     assert pub["items"][0]["found_before_report"] is True
     assert pub["counts"] == {"confirmed": 1, "cleared": 1, "new": 1, "already_known": 1}
     op = await candidates_view(store, incidents, operator=True)
@@ -58,7 +59,10 @@ def test_sources_view_truthful() -> None:
     off = {s["id"]: s["status"] for s in sources_view(HuntSettings(), cfg)}
     assert off["permutation"] == "disabled"  # FL_HUNT_ENABLED false: nothing is live
     assert off["search"] == off["ads"] == off["maps"] == "ready_needs_key"
-    on = {s["id"]: s["status"] for s in sources_view(replace(HuntSettings(), enabled=True, sources=("permutation", "fixture")), cfg)}
+    on = {
+        s["id"]: s["status"]
+        for s in sources_view(replace(HuntSettings(), enabled=True, sources=("permutation", "fixture")), cfg)
+    }
     assert on["permutation"] == "live" and on["fixture"] == "live" and on["ct_lookup"] == "disabled"
 
 
