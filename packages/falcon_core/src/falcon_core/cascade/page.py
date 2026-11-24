@@ -338,6 +338,21 @@ def page_evidence(
             )
         )
 
+    # page.screenshot (informational, weight 0): hash of the stored PNG; only the operator evidence pack reads it
+    if features.screenshot_sha256 and re.fullmatch(r"[0-9a-f]{64}", features.screenshot_sha256):
+        out.append(
+            make_evidence(
+                "page.screenshot",
+                "page",
+                {"sha256": features.screenshot_sha256, "stored": True},
+                tier="T2",
+                source="sandbox",
+                confidence=1.0,
+                en="A screenshot of the page was captured for the operator",
+                ar="التُقطت لقطة شاشة للصفحة للمشغّل",
+            )
+        )
+
     # page.truncated (informational, weight 0): judged from a cut-off or half-loaded page, never an error
     if features.static_fallback:
         out.append(

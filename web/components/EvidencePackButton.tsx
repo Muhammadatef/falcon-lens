@@ -12,7 +12,7 @@ const KEY_STORE = "fl_operator_key";
  * Without a key, public visitors see a note that the pack is available to authorities. The key stays in
  * sessionStorage (shared with /ops), never in a cookie or URL.
  */
-export function EvidencePackButton({ verdictId, final }: { verdictId: string; final: boolean }) {
+export function EvidencePackButton({ verdictId, final, compact = false }: { verdictId: string; final: boolean; compact?: boolean }) {
   const { lang } = usePrefs();
   const [key, setKey] = useState("");
   const [draft, setDraft] = useState("");
@@ -60,6 +60,19 @@ export function EvidencePackButton({ verdictId, final }: { verdictId: string; fi
       setBusy(false);
     }
   };
+
+  if (compact) {
+    // /ops incident view: one inline button per linked check; the operator key comes from the /ops session.
+    if (!key) return null;
+    return (
+      <span className="ep-inline" data-testid="evidence-pack-inline">
+        <button className="btn btn--sm" type="button" disabled={busy || !final} onClick={() => void download()} data-testid="evidence-pack-download" aria-label={`${hT(lang, "ep.button")} ${verdictId}`}>
+          {hT(lang, "ep.button")}
+        </button>
+        {msg ? <small role="status" data-testid="evidence-pack-msg"> {hT(lang, `ep.${msg}` as "ep.denied")}</small> : null}
+      </span>
+    );
+  }
 
   return (
     <section className="card keybox" aria-labelledby="ep-title" data-testid="evidence-pack">

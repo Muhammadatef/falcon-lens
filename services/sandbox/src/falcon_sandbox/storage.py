@@ -9,10 +9,11 @@ from pathlib import Path
 from typing import Any
 
 
-def _write(path: Path, data: bytes) -> None:
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+def _write(path: Path, data: bytes, mode: int = 0o600) -> None:
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
     with os.fdopen(fd, "wb") as fh:
         fh.write(data)
+    os.chmod(path, mode)
 
 
 class SnapshotStore:
@@ -27,7 +28,10 @@ class SnapshotStore:
         sha = hashlib.sha256(png).hexdigest()
         d = self.root / "screens"
         self._mkdir(d)
-        _write(d / f"{sha}.png", png)
+        # Group/other readable on purpose: the API container (another uid) mounts this volume read-only to
+        # build the operator evidence pack. Only screens/ is relaxed; DOMs and features stay 0600/0700.
+        os.chmod(d, 0o755)  # noqa: S103 - intentional, see above
+        _write(d / f"{sha}.png", png, 0o644)
         return sha
 
     def save_snapshot(

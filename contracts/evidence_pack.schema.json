@@ -4,7 +4,7 @@
   "title": "EvidencePack evidence.json",
   "description": "evidence.json inside the ZIP from GET /v1/verdicts/{id}/evidence-pack (operator scope). URLs are defanged with userinfo, query and fragment removed. Facts the pipeline did not capture are null/empty and listed in `gaps`; they are never invented.",
   "type": "object",
-  "required": ["schema_version", "generated_at", "generator", "notice", "verdict", "subject", "reasons", "evidence", "tier_trace", "registration", "tls", "hosting", "screenshot", "gaps", "privacy"],
+  "required": ["schema_version", "generated_at", "generator", "notice", "verdict", "subject", "reasons", "evidence", "tier_trace", "registration", "tls", "hosting", "whois", "screenshot", "gaps", "privacy"],
   "properties": {
     "schema_version": { "const": "1.0" },
     "generated_at": { "type": "string", "format": "date-time", "description": "UTC" },
@@ -20,8 +20,9 @@
     "tier_trace": { "type": "object", "required": ["tiers", "steps"] },
     "registration": { "type": "object", "required": ["registrar", "created", "expires", "nameservers", "abuse_contact", "source"] },
     "tls": { "type": "object", "required": ["issuer", "not_before", "not_after", "source"] },
-    "hosting": { "type": "object", "required": ["resolved_ips", "asn", "as_name", "country", "source", "retrieved_at"] },
-    "screenshot": { "type": "object", "required": ["included", "file", "sha256"] },
+    "hosting": { "type": "object", "required": ["host", "resolved_ips", "asn", "as_name", "country", "prefix", "source", "retrieved_at"] },
+    "whois": { "type": "object", "description": "Registrar-level RDAP only (registrar, dates, nameservers, status, registrar abuse contact). Registrant, admin and tech contacts are never collected.", "required": ["registrar", "created", "expires", "updated", "nameservers", "status", "registrar_abuse_email", "registrar_abuse_phone", "source", "retrieved_at"] },
+    "screenshot": { "type": "object", "required": ["included", "file", "sha256", "captured_at_utc"] },
     "gaps": { "type": "array", "items": { "type": "string" } },
     "privacy": { "type": "string" }
   }

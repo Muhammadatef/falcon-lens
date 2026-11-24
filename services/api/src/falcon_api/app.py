@@ -342,6 +342,9 @@ def build_app(
     # ---- concurrent SSE caps (in-process; one API replica) -----------------------------------
     slots: dict[str, dict[str, float]] = {}
     app.state.stream_slots = slots  # exposed for tests and diagnostics
+    # Operator evidence pack: the sandbox snapshot volume, mounted read-only, internal network only.
+    snapshot_dir = os.environ.get("FL_SNAPSHOT_DIR", "").strip()
+    app.state.screenshot_fetch = evidence_pack.snapshot_fetcher(snapshot_dir) if snapshot_dir else None
 
     def slot_bucket(request: Request) -> tuple[str, int]:
         p = principal_of(request)
@@ -806,8 +809,12 @@ def build_app(
             raise Problem(409, "verdict-not-final", "Verdict is not final yet")
         shot: bytes | None = None
         fetch = getattr(app.state, "screenshot_fetch", None)
-        if fetch is not None and doc.get("screenshot_url"):
-            shot = await fetch(str(doc["screenshot_url"]))
+        sha = evidence_pack.screenshot_sha(doc)
+        if fetch is not None and sha:
+            try:
+                shot = await fetch(sha)
+            except Exception:  # noqa: BLE001 - a missing screenshot is a gap, never a failed download
+                log.warning("screenshot fetch failed for %s", verdict_id)
         body = evidence_pack.build_pack(doc, screenshot=shot)
         return Response(
             body,

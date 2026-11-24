@@ -67,3 +67,5 @@ If an authority adopts Falcon Lens, the whole stack can run inside its own netwo
 
 ## Evidence pack (operator scope)
 `curl -H "Authorization: Bearer $OPERATOR_KEY" -o pack.zip https://<host>/v1/verdicts/vd_.../evidence-pack`, then `unzip pack.zip` and verify each file against `manifest.json` (`sha256sum`). Intended for takedown requests and case files. Public callers get 403; the web UI shows a download button only after an operator key is entered.
+
+The pack's `evidence.json` has `hosting` (resolved IPs, ASN, AS name, country, source, retrieval time), `whois` (registrar, creation, expiry and update dates, nameservers, status, registrar abuse email and phone) and `tls` sections plus `screenshot.png` when the sandbox captured one. Anything not captured is listed under `gaps`. The web `/ops` incident view has a per-linked-check download button.

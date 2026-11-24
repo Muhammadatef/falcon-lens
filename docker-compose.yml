@@ -141,7 +141,13 @@ services:
     build: { context: ., dockerfile: services/api/Dockerfile }
     image: falcon-lens/api:0.1.0
     <<: [*hardened, *host-gateway]
-    environment: *app-env
+    environment:
+      <<: *app-env
+      # Operator evidence pack reads sandbox screenshots (screens/<sha256>.png) from this volume.
+      FL_SNAPSHOT_DIR: /data/snapshots
+    volumes:
+      # Read-only: the API can never write or alter captured evidence, and nothing here is served publicly.
+      - ${FL_SNAPSHOT_HOST_DIR:-./data/private/snapshots}:/data/snapshots:ro
     networks: [app, data, observability, voice]
     depends_on:
       postgres: { condition: service_healthy }

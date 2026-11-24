@@ -16,6 +16,7 @@ import re
 import zipfile
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -30,6 +31,7 @@ LABELS = {
 NOTICE_EN = "Prepared by Falcon Lens, an independent tool. Automated analysis; not an official finding."
 NOTICE_AR = "أعدّته أداة عدسة الصقر المستقلة. تحليل آلي وليس نتيجة رسمية."
 _URL_RE = re.compile(r"^(?:https?|hxxps?)(?:://|\[://\])", re.I)
+_PERSONAL_KEY = re.compile(r"registrant|(^|_)(admin|tech|technical|billing)(_|$)", re.I)
 _FIXED_ZIP_TIME = (1980, 1, 1, 0, 0, 0)
 
 
@@ -83,7 +85,8 @@ def _clean_observed(ev: dict[str, Any], url_input: bool) -> Any:
         if isinstance(v, str):
             return safe_url(v) or v[:200]
         if isinstance(v, dict):
-            return {k: clean(x) for k, x in v.items()}
+            # defence in depth: personal registrant/admin/tech contact fields are never exported
+            return {k: clean(x) for k, x in v.items() if not _PERSONAL_KEY.search(str(k))}
         if isinstance(v, list):
             return [clean(x) for x in v[:50]]
         return v
@@ -107,6 +110,10 @@ def _utc(s: str | None) -> datetime:
 
 def _iso(d: datetime) -> str:
     return d.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def evidence_has(evs: list[dict[str, Any]], signal: str) -> bool:
+    return any(e.get("signal") == signal and not e.get("error") and e.get("observed") for e in evs)
 
 
 def build_evidence(
@@ -170,33 +177,69 @@ def build_evidence(
     def pick(*keys: str) -> Any:
         return _first(evs, *keys) if url_input else None
 
+    def sig(*names: str) -> dict[str, Any]:
+        """observed dict of the first evidence with one of these signal names (url checks only)."""
+        if not url_input:
+            return {}
+        for ev in evs:
+            if ev.get("signal") in names and isinstance(ev.get("observed"), dict) and not ev.get("error"):
+                return dict(ev["observed"])
+        return {}
+
+    rd = sig("infra.rdap_registrar")
+    age = sig("domain.age_days")
     registration = {
-        "registrar": pick("registrar"),
-        "created": pick("registered_at", "creation_date"),
-        "expires": pick("expires_at", "expiry_date"),
-        "nameservers": pick("nameservers") or [],
-        "abuse_contact": pick("abuse_contact", "abuse_email"),
-        "source": "rdap" if pick("registered_at", "registrar") else None,
+        "registrar": rd.get("registrar") or pick("registrar"),
+        "registrar_iana_id": rd.get("registrar_iana_id"),
+        "created": rd.get("created") or pick("registered_at", "creation_date"),
+        "expires": rd.get("expires") or pick("expires_at", "expiry_date"),
+        "updated": rd.get("updated") or age.get("last_changed_at"),
+        "nameservers": rd.get("nameservers") or pick("nameservers") or [],
+        "status": rd.get("status") or [],
+        "abuse_contact": rd.get("abuse_email") or pick("abuse_contact", "abuse_email"),
+        "abuse_phone": rd.get("abuse_phone"),
+        "source": "rdap" if (rd or pick("registered_at", "registrar")) else None,
+        "rdap_url": defang(rd["rdap_source"]) if rd.get("rdap_source") else None,
+        "retrieved_at": rd.get("retrieved_at"),
     }
+    ci = sig("domain.cert_issuer")
     tls = {
-        "issuer": pick("issuer", "cert_issuer"),
-        "not_before": pick("not_before"),
-        "not_after": pick("not_after"),
-        "source": "crt" if pick("issuer", "cert_issuer", "not_before") else None,
+        "issuer": ci.get("issuer") or pick("issuer", "cert_issuer"),
+        "not_before": ci.get("not_before") or pick("not_before"),
+        "not_after": ci.get("not_after") or pick("not_after"),
+        "source": "crt.sh (CT logs)" if (ci or pick("issuer", "cert_issuer", "not_before")) else None,
     }
+    ipo, asno = sig("infra.ip"), sig("infra.hosting_asn")
     hosting = {
-        "resolved_ips": pick("resolved_ips", "ips") or [],
-        "asn": pick("asn"),
-        "as_name": pick("as_name"),
-        "country": pick("country", "asn_country"),
-        "source": pick("hosting_source"),
-        "retrieved_at": pick("retrieved_at"),
+        "host": ipo.get("host"),
+        "resolved_ips": ipo.get("resolved_ips") or pick("resolved_ips", "ips") or [],
+        "asn": asno.get("asn") or pick("asn"),
+        "as_name": asno.get("as_name") or pick("as_name"),
+        "country": asno.get("country") or pick("asn_country"),
+        "prefix": asno.get("prefix"),
+        "source": asno.get("hosting_source") or ipo.get("hosting_source") or pick("hosting_source"),
+        "retrieved_at": asno.get("retrieved_at") or ipo.get("retrieved_at") or pick("retrieved_at"),
+    }
+    whois = {
+        "registrar": registration["registrar"],
+        "registrar_iana_id": registration["registrar_iana_id"],
+        "created": registration["created"],
+        "expires": registration["expires"],
+        "updated": registration["updated"],
+        "nameservers": registration["nameservers"],
+        "status": registration["status"],
+        "registrar_abuse_email": registration["abuse_contact"],
+        "registrar_abuse_phone": registration["abuse_phone"],
+        "source": registration["source"],
+        "retrieved_at": registration["retrieved_at"],
+        "note": "Registrar-level RDAP data only; registrant, admin and tech contacts are never collected.",
     }
     page = {"title": pick("title"), "form_targets": _urls(pick("post_targets", "form_targets"))}
     gaps = [
         f"{name}: not captured for this check"
         for name, d, keys in (
             ("registration", registration, ("registrar", "created", "expires", "nameservers", "abuse_contact")),
+            ("whois", whois, ("registrar", "created", "expires", "nameservers")),
             ("tls", tls, ("issuer", "not_before", "not_after")),
             ("hosting", hosting, ("resolved_ips", "asn", "as_name", "country")),
         )
@@ -204,6 +247,8 @@ def build_evidence(
     ]
     if screenshot_sha256 is None:
         gaps.append("screenshot: not captured for this check")
+    if url_input and not evidence_has(evs, "infra.rdap_registrar") and not any(g.startswith("whois") for g in gaps):
+        gaps.append("whois: registrar abuse contact not captured")
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": _iso(now),
@@ -236,10 +281,13 @@ def build_evidence(
         "registration": registration,
         "tls": tls,
         "hosting": hosting,
+        "whois": whois,
         "screenshot": {
             "included": screenshot_sha256 is not None,
             "file": "screenshot.png" if screenshot_sha256 else None,
             "sha256": screenshot_sha256,
+            "captured_at_utc": _iso(created) if screenshot_sha256 else None,
+            "note": "Captured by the isolated sandbox browser during this check; operator-only.",
         },
         "gaps": gaps,
         "privacy": "URLs are defanged with userinfo, query and fragment removed. No raw message or email text.",
@@ -260,6 +308,8 @@ def build_takedown(ev: dict[str, Any]) -> str:
             row("Domain (defanged)", s["registrable_domain"]),
             row("Registrar", reg["registrar"]),
             row("Registered", reg["created"]),
+            row("Registrar abuse contact", reg.get("abuse_contact")),
+            row("Nameservers", ", ".join(reg.get("nameservers") or [])),
             row("Resolved IPs", ", ".join(host["resolved_ips"])),
             row(
                 "ASN / AS name / country",
@@ -344,3 +394,37 @@ def build_pack(
 
 
 ScreenshotFetch = Callable[[str], Awaitable[bytes | None]]
+_SHA_RE = re.compile(r"^[0-9a-f]{64}$")
+MAX_SHOT_BYTES = 8 * 1024 * 1024
+
+
+def screenshot_sha(doc: dict[str, Any]) -> str | None:
+    """sha256 of the sandbox PNG recorded in ``page.screenshot`` evidence (hash only; never a path or URL)."""
+    for ev in doc.get("evidence", []):
+        if isinstance(ev, dict) and ev.get("signal") == "page.screenshot" and isinstance(ev.get("observed"), dict):
+            sha = str(ev["observed"].get("sha256", ""))
+            if _SHA_RE.match(sha):
+                return sha
+    return None
+
+
+def snapshot_fetcher(root: str | os.PathLike[str]) -> ScreenshotFetch:
+    """Read-only access to the sandbox snapshot volume (mounted `:ro` into the API, internal only).
+
+    Only ``screens/<sha256>.png`` is ever read; the name is validated as a sha256, the content is re-hashed and
+    must equal it, and the size is capped. Anything else returns None (the pack then lists the gap)."""
+    base = Path(root) / "screens"
+
+    async def fetch(sha: str) -> bytes | None:
+        if not _SHA_RE.match(sha):
+            return None
+        path = base / f"{sha}.png"
+        try:
+            if path.is_symlink() or path.stat().st_size > MAX_SHOT_BYTES:
+                return None
+            data = path.read_bytes()
+        except OSError:
+            return None
+        return data if hashlib.sha256(data).hexdigest() == sha else None
+
+    return fetch
