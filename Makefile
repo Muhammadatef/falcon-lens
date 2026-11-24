@@ -3,7 +3,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 
-.PHONY: demo-hunt hunt-once voice-e2e demo-mode-check demo-mode-on demo-mode-off voice-rehearsal redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
+.PHONY: batch demo-hunt hunt-once voice-e2e demo-mode-check demo-mode-on demo-mode-off voice-rehearsal redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
 
 help: ## List every make target with a one-line description (this list)
 	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
@@ -80,6 +80,9 @@ openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on 
 eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/results/
 	uv run python -m evals.harness.run
 	uv run python -m evals.message_text.run  # message-text eval, val only, report-only (--publish adds the frozen test split)
+batch: ## check a URL list against the running API: make batch FILE=urls.txt [OUT=results.csv] [CONCURRENCY=4] [MODE=strict|lenient]
+	@test -n "$(FILE)" || { echo "usage: make batch FILE=urls.txt [OUT=results.csv] [CONCURRENCY=4] [MODE=strict|lenient]"; exit 2; }
+	uv run python scripts/batch_check.py "$(FILE)" --out "$(or $(OUT),results.csv)" --concurrency "$(or $(CONCURRENCY),4)" --mode "$(or $(MODE),strict)"
 redteam: ## prompt-injection / obfuscation red-team suite; exits non-zero if attack success > 0 (FL_LIVE_LLM=1: live model)
 	uv run python -m evals.redteam
 
