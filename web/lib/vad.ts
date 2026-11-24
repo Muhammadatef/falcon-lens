@@ -1,6 +1,6 @@
 /**
  * In-browser voice-activity detector for hands-free mode: Web Audio (AnalyserNode RMS energy) plus MediaRecorder.
- * No libraries. One utterance = from the first voiced frame until ~650 ms of silence (VOICE_LIMITS.silenceMs; measured in evals/results/published/voice/vad_silence_*.json) (min 0.4 s of voice, max 12 s).
+ * No libraries. One utterance = from the first voiced frame until ~800 ms of silence by default (VOICE_LIMITS.silenceMs, NEXT_PUBLIC_FL_VAD_SILENCE_MS 400-1500; measured in evals/results/published/voice/vad_silence_*.json) (min 0.4 s of voice, max 12 s).
  * Audio stays in memory as one small Blob that is handed to the caller and dropped; nothing is stored or logged.
  *
  * The threshold adapts to the room: it sits a fixed factor above a slowly tracked noise floor, so a fan or a TV

@@ -19,6 +19,7 @@ from falcon_core.agent import Extractor, Investigator
 from falcon_core.cascade.ai import AgentExtractorAdapter, load_injection_detector, signal_backend
 from falcon_core.cascade.engine import SignalCtx
 from falcon_core.cascade.ports import SandboxClient
+from falcon_core.llm.route import route_source_from_env
 from falcon_core.llm.router import LLMRouter
 from falcon_core.signals import REGISTRY
 from falcon_core.signals.brands.registry import BrandRegistry
@@ -70,7 +71,7 @@ def build_ai(
         log.warning("FL_AI_ENABLED=false: extractor, investigator and responder are off")
         return out
     try:
-        router = LLMRouter()
+        router = LLMRouter(route_source=route_source_from_env())  # operator route switch (Redis), no restart
         # Brand ids and owned domains come from the same registry the cascade uses (one source of truth).
         brand_ids = frozenset(b.brand_id for b in registry.brands)
         owned = {b.brand_id: frozenset(b.verified_domains) for b in registry.brands}

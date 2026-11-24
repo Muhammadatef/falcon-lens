@@ -16,8 +16,8 @@ ar_ae:
   "faq.fake_job": "الوظيفة الحقيقية ما تطلب منك فلوس قبل لا تبدأ. تأكد من الشركة من موقعها الرسمي."
   "faq.report": "بلّغ من القنوات الرسمية للجهات المختصة في الدولة. واحتفظ بالرسالة، ولا تحذفها."
   "faq.about": "أنا عدسة الصقر. أفحص الرسائل والروابط، وأقول لك إذا فيها علامات نصب، وأعطيك الأدلة."
-  "faq.agents": "بصير يفحص الرسالة، ودرع يراقب ويربط البلاغات المتشابهة. وما يُرسل شي للخارج من غير موافقة شخص."
-  "faq.data_stored": "كلامك ينعالج على جهازنا وينحذف. وما نحفظ نص رسالتك، بس بصمتها ونتيجة الفحص."
+  "faq.agents": "بصير يفحص الرسالة، ودرع يربط البلاغات المتشابهة. وما يطلع أي بلاغ أو تنبيه للجهات من غير موافقة شخص."
+  "faq.data_stored": "صوتك ينعالج على هالجهاز وما ينحفظ. من الفحص نحفظ بس نسخة معطّلة من الرابط والأدلة ونتيجة الفحص، وما نحفظ نص رسالتك."
   "faq.bank_link": "البنك ما يرسل لك رابط عشان تحدّث بياناتك. افتح تطبيق البنك بنفسك، أو كلّمه."
   "faq.friend_money": "إذا واحد من ربعك يطلب فلوس برسالة، كلّمه بالتلفون أول. يمكن حسابه انسرق."
   "faq.relative_urgent": "اتصال عن قريب محتاج فلوس بسرعة؟ سكّر، وكلّم قريبك على رقمه اللي تعرفه."
@@ -28,7 +28,7 @@ ar_ae:
   "faq.shared_login": "غيّر رقمك السري الحين، وكلّم بنكك. وفعّل التحقق بخطوتين."
   "faq.spot_scam": "علامات النصب: استعجال، وتهديد، ورابط غريب، وطلب رمز أو فلوس. إذا شفت وحدة منها، وقّف."
   "faq.limits": "ما فيه نظام يكشف كل شي. أنا أعطيك علامات وأدلة، وإذا شكيت، كلّم بنكك."
-  "offtopic.1": "هذا خارج شغلي. أنا هنا أحميك من رسائل النصب. قل: يا صقر، افحص رسائلي."
+  "offtopic.1": "هذا خارج شغلي. أنا أساعدك تكشف رسائل النصب. قل: يا صقر، افحص رسائلي."
   "offtopic.2": "ما أقدر أساعدك في هذا. أنا متخصص بالنصب والاحتيال. انسخ رسالتك، وقل: يا صقر، افحصها."
   "offtopic.3": "سؤالك حلو، بس مو من اختصاصي. اسألني عن رسائل النصب، أو قل: يا صقر، ساعدني."
   "ack.moment": "لحظة…"
@@ -43,8 +43,8 @@ en:
   "faq.fake_job": "A real job never asks you to pay before you start. Check the company on its official website."
   "faq.report": "Report it through the official channels of the authorities. Keep the message, and don't delete it."
   "faq.about": "I'm Falcon Lens. I check messages and links for scam signs, and show you the evidence."
-  "faq.agents": "Baseer checks the message. Dir watches and links similar reports. Nothing is sent outside without a person's approval."
-  "faq.data_stored": "What you say is processed on our own machine and deleted. We don't store your message text, only its fingerprint and the result."
+  "faq.agents": "Baseer checks the message, Dir links similar reports. No alert or report goes out without a person's approval."
+  "faq.data_stored": "Your voice is processed on this machine and not kept. From a check we keep only a defanged copy of the link, the evidence and the result, never your message text."
   "faq.bank_link": "Your bank doesn't send links to update your details. Open your bank app yourself, or call it."
   "faq.friend_money": "If a friend asks for money by message, call them first. Their account may have been hacked."
   "faq.relative_urgent": "A call saying a relative urgently needs money? Hang up and call your relative on the number you know."
@@ -55,7 +55,7 @@ en:
   "faq.shared_login": "Change your passcode right now and call your bank. Then turn on two-step verification."
   "faq.spot_scam": "Scam signs: urgency, threats, a strange link, or a request for a code or money. If you see one, stop."
   "faq.limits": "No system catches everything. I show you signs and evidence, and if in doubt, call your bank."
-  "offtopic.1": "That's outside my job. I'm here to protect you from scam messages. Say: Hey Falcon, check my messages."
+  "offtopic.1": "That's outside what I do. I help you spot scam messages. Say: Hey Falcon, check my messages."
   "offtopic.2": "I can't help with that. I only handle scams and fraud. Copy your message and say: Hey Falcon, check it."
   "offtopic.3": "Good question, but not my area. Ask me about scam messages, or say: Hey Falcon, help me."
   "ack.moment": "One moment…"
@@ -70,8 +70,8 @@ clips:
   - {id: "ar_ae.faq.fake_job", lang: ar_ae, text: "الوظيفة الحقيقية ما تطلب منك فلوس قبل لا تبدأ. تأكد من الشركة من موقعها الرسمي."}
   - {id: "ar_ae.faq.report", lang: ar_ae, text: "بلّغ من القنوات الرسمية للجهات المختصة في الدولة. واحتفظ بالرسالة، ولا تحذفها."}
   - {id: "ar_ae.faq.about", lang: ar_ae, text: "أنا عدسة الصقر. أفحص الرسائل والروابط، وأقول لك إذا فيها علامات نصب، وأعطيك الأدلة."}
-  - {id: "ar_ae.faq.agents", lang: ar_ae, text: "بصير يفحص الرسالة، ودرع يراقب ويربط البلاغات المتشابهة. وما يُرسل شي للخارج من غير موافقة شخص."}
-  - {id: "ar_ae.faq.data_stored", lang: ar_ae, text: "كلامك ينعالج على جهازنا وينحذف. وما نحفظ نص رسالتك، بس بصمتها ونتيجة الفحص."}
+  - {id: "ar_ae.faq.agents", lang: ar_ae, text: "بصير يفحص الرسالة، ودرع يربط البلاغات المتشابهة. وما يطلع أي بلاغ أو تنبيه للجهات من غير موافقة شخص."}
+  - {id: "ar_ae.faq.data_stored", lang: ar_ae, text: "صوتك ينعالج على هالجهاز وما ينحفظ. من الفحص نحفظ بس نسخة معطّلة من الرابط والأدلة ونتيجة الفحص، وما نحفظ نص رسالتك."}
   - {id: "ar_ae.faq.bank_link", lang: ar_ae, text: "البنك ما يرسل لك رابط عشان تحدّث بياناتك. افتح تطبيق البنك بنفسك، أو كلّمه."}
   - {id: "ar_ae.faq.friend_money", lang: ar_ae, text: "إذا واحد من ربعك يطلب فلوس برسالة، كلّمه بالتلفون أول. يمكن حسابه انسرق."}
   - {id: "ar_ae.faq.relative_urgent", lang: ar_ae, text: "اتصال عن قريب محتاج فلوس بسرعة؟ سكّر، وكلّم قريبك على رقمه اللي تعرفه."}
@@ -82,7 +82,7 @@ clips:
   - {id: "ar_ae.faq.shared_login", lang: ar_ae, text: "غيّر رقمك السري الحين، وكلّم بنكك. وفعّل التحقق بخطوتين."}
   - {id: "ar_ae.faq.spot_scam", lang: ar_ae, text: "علامات النصب: استعجال، وتهديد، ورابط غريب، وطلب رمز أو فلوس. إذا شفت وحدة منها، وقّف."}
   - {id: "ar_ae.faq.limits", lang: ar_ae, text: "ما فيه نظام يكشف كل شي. أنا أعطيك علامات وأدلة، وإذا شكيت، كلّم بنكك."}
-  - {id: "ar_ae.offtopic.1", lang: ar_ae, text: "هذا خارج شغلي. أنا هنا أحميك من رسائل النصب. قل: يا صقر، افحص رسائلي."}
+  - {id: "ar_ae.offtopic.1", lang: ar_ae, text: "هذا خارج شغلي. أنا أساعدك تكشف رسائل النصب. قل: يا صقر، افحص رسائلي."}
   - {id: "ar_ae.offtopic.2", lang: ar_ae, text: "ما أقدر أساعدك في هذا. أنا متخصص بالنصب والاحتيال. انسخ رسالتك، وقل: يا صقر، افحصها."}
   - {id: "ar_ae.offtopic.3", lang: ar_ae, text: "سؤالك حلو، بس مو من اختصاصي. اسألني عن رسائل النصب، أو قل: يا صقر، ساعدني."}
   - {id: "ar_ae.ack.moment", lang: ar_ae, text: "لحظة…"}
@@ -96,8 +96,8 @@ clips:
   - {id: "en.faq.fake_job", lang: en, text: "A real job never asks you to pay before you start. Check the company on its official website."}
   - {id: "en.faq.report", lang: en, text: "Report it through the official channels of the authorities. Keep the message, and don't delete it."}
   - {id: "en.faq.about", lang: en, text: "I'm Falcon Lens. I check messages and links for scam signs, and show you the evidence."}
-  - {id: "en.faq.agents", lang: en, text: "Baseer checks the message. Dir watches and links similar reports. Nothing is sent outside without a person's approval."}
-  - {id: "en.faq.data_stored", lang: en, text: "What you say is processed on our own machine and deleted. We don't store your message text, only its fingerprint and the result."}
+  - {id: "en.faq.agents", lang: en, text: "Baseer checks the message, Dir links similar reports. No alert or report goes out without a person's approval."}
+  - {id: "en.faq.data_stored", lang: en, text: "Your voice is processed on this machine and not kept. From a check we keep only a defanged copy of the link, the evidence and the result, never your message text."}
   - {id: "en.faq.bank_link", lang: en, text: "Your bank doesn't send links to update your details. Open your bank app yourself, or call it."}
   - {id: "en.faq.friend_money", lang: en, text: "If a friend asks for money by message, call them first. Their account may have been hacked."}
   - {id: "en.faq.relative_urgent", lang: en, text: "A call saying a relative urgently needs money? Hang up and call your relative on the number you know."}
@@ -108,7 +108,7 @@ clips:
   - {id: "en.faq.shared_login", lang: en, text: "Change your passcode right now and call your bank. Then turn on two-step verification."}
   - {id: "en.faq.spot_scam", lang: en, text: "Scam signs: urgency, threats, a strange link, or a request for a code or money. If you see one, stop."}
   - {id: "en.faq.limits", lang: en, text: "No system catches everything. I show you signs and evidence, and if in doubt, call your bank."}
-  - {id: "en.offtopic.1", lang: en, text: "That's outside my job. I'm here to protect you from scam messages. Say: Hey Falcon, check my messages."}
+  - {id: "en.offtopic.1", lang: en, text: "That's outside what I do. I help you spot scam messages. Say: Hey Falcon, check my messages."}
   - {id: "en.offtopic.2", lang: en, text: "I can't help with that. I only handle scams and fraud. Copy your message and say: Hey Falcon, check it."}
   - {id: "en.offtopic.3", lang: en, text: "Good question, but not my area. Ask me about scam messages, or say: Hey Falcon, help me."}
   - {id: "en.ack.moment", lang: en, text: "One moment…"}

@@ -13,7 +13,13 @@ import { FAQ_KEYS } from "./voice-script";
 /** Set to true only once the backend PR confirms: audio recognised by a local model on our own server and deleted. */
 export const PRIVACY_LINE_CONFIRMED = false;
 
-export const VOICE_LIMITS = { maxBytes: 1_000_000, maxMs: 12_000, minMs: 400, silenceMs: 650, maxItems: 10, maxItemChars: 3500 } as const;
+/** End-of-speech silence in ms: 800 by default; set NEXT_PUBLIC_FL_VAD_SILENCE_MS (400-1500) to try 650 (see vad_silence_*.json). */
+export function vadSilenceMs(raw: string | undefined): number {
+  const n = Number.parseInt(raw ?? "", 10);
+  return Number.isFinite(n) && n >= 400 && n <= 1500 ? n : 800;
+}
+
+export const VOICE_LIMITS = { maxBytes: 1_000_000, maxMs: 12_000, minMs: 400, silenceMs: vadSilenceMs(process.env.NEXT_PUBLIC_FL_VAD_SILENCE_MS), maxItems: 10, maxItemChars: 3500 } as const;
 
 export type VoiceIntent = "check_clipboard" | "check_text" | "help" | "stop" | "faq" | "off_topic" | "none";
 export interface VoiceReply {

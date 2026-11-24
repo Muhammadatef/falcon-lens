@@ -92,8 +92,8 @@ export const FAQ: readonly (readonly [name: string, ar_ae: string, en: string])[
   ["fake_job", "الوظيفة الحقيقية ما تطلب منك فلوس قبل لا تبدأ. تأكد من الشركة من موقعها الرسمي.", "A real job never asks you to pay before you start. Check the company on its official website."],
   ["report", "بلّغ من القنوات الرسمية للجهات المختصة في الدولة. واحتفظ بالرسالة، ولا تحذفها.", "Report it through the official channels of the authorities. Keep the message, and don't delete it."],
   ["about", "أنا عدسة الصقر. أفحص الرسائل والروابط، وأقول لك إذا فيها علامات نصب، وأعطيك الأدلة.", "I'm Falcon Lens. I check messages and links for scam signs, and show you the evidence."],
-  ["agents", "بصير يفحص الرسالة، ودرع يراقب ويربط البلاغات المتشابهة. وما يُرسل شي للخارج من غير موافقة شخص.", "Baseer checks the message. Dir watches and links similar reports. Nothing is sent outside without a person's approval."],
-  ["data_stored", "كلامك ينعالج على جهازنا وينحذف. وما نحفظ نص رسالتك، بس بصمتها ونتيجة الفحص.", "What you say is processed on our own machine and deleted. We don't store your message text, only its fingerprint and the result."],
+  ["agents", "بصير يفحص الرسالة، ودرع يربط البلاغات المتشابهة. وما يطلع أي بلاغ أو تنبيه للجهات من غير موافقة شخص.", "Baseer checks the message, Dir links similar reports. No alert or report goes out without a person's approval."],
+  ["data_stored", "صوتك ينعالج على هالجهاز وما ينحفظ. من الفحص نحفظ بس نسخة معطّلة من الرابط والأدلة ونتيجة الفحص، وما نحفظ نص رسالتك.", "Your voice is processed on this machine and not kept. From a check we keep only a defanged copy of the link, the evidence and the result, never your message text."],
   ["bank_link", "البنك ما يرسل لك رابط عشان تحدّث بياناتك. افتح تطبيق البنك بنفسك، أو كلّمه.", "Your bank doesn't send links to update your details. Open your bank app yourself, or call it."],
   ["friend_money", "إذا واحد من ربعك يطلب فلوس برسالة، كلّمه بالتلفون أول. يمكن حسابه انسرق.", "If a friend asks for money by message, call them first. Their account may have been hacked."],
   ["relative_urgent", "اتصال عن قريب محتاج فلوس بسرعة؟ سكّر، وكلّم قريبك على رقمه اللي تعرفه.", "A call saying a relative urgently needs money? Hang up and call your relative on the number you know."],
@@ -107,7 +107,7 @@ export const FAQ: readonly (readonly [name: string, ar_ae: string, en: string])[
 ];
 /** Polite redirects for anything outside scams; the web rotates through them. */
 export const OFF_TOPIC: readonly Pair[] = [
-  ["هذا خارج شغلي. أنا هنا أحميك من رسائل النصب. قل: يا صقر، افحص رسائلي.", "That's outside my job. I'm here to protect you from scam messages. Say: Hey Falcon, check my messages."],
+  ["هذا خارج شغلي. أنا أساعدك تكشف رسائل النصب. قل: يا صقر، افحص رسائلي.", "That's outside what I do. I help you spot scam messages. Say: Hey Falcon, check my messages."],
   ["ما أقدر أساعدك في هذا. أنا متخصص بالنصب والاحتيال. انسخ رسالتك، وقل: يا صقر، افحصها.", "I can't help with that. I only handle scams and fraud. Copy your message and say: Hey Falcon, check it."],
   ["سؤالك حلو، بس مو من اختصاصي. اسألني عن رسائل النصب، أو قل: يا صقر، ساعدني.", "Good question, but not my area. Ask me about scam messages, or say: Hey Falcon, help me."],
 ];

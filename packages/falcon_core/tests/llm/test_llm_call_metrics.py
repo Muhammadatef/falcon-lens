@@ -77,12 +77,19 @@ async def test_all_routes_down_counts_template_fallback_result() -> None:
 
 def test_telemetry_adapter_maps_new_names_onto_the_shared_registry() -> None:
     sink = TelemetryMetrics(tm)
-    before = tm.REGISTRY.get_sample_value("fl_llm_calls_total", {"role": "r", "route": "local", "outcome": "ok"}) or 0
-    sink.inc(m.LLM_CALLS, role="r", route="local", outcome="ok")
+    before = (
+        tm.REGISTRY.get_sample_value(
+            "fl_llm_calls_total", {"role": "r", "route": "local", "outcome": "ok", "fallback": "false"}
+        )
+        or 0
+    )
+    sink.inc(m.LLM_CALLS, role="r", route="local", outcome="ok", fallback="false")
     sink.observe(m.LLM_CALL_SECONDS, 0.3, role="r", route="local")
     sink.inc(m.LLM_RESULTS, role="r", status="ok")
     sink.inc(m.AGENT_TOOL_CALLS, tool="x", status="ok")
-    got = tm.REGISTRY.get_sample_value("fl_llm_calls_total", {"role": "r", "route": "local", "outcome": "ok"})
+    got = tm.REGISTRY.get_sample_value(
+        "fl_llm_calls_total", {"role": "r", "route": "local", "outcome": "ok", "fallback": "false"}
+    )
     assert got == before + 1
     assert tm.REGISTRY.get_sample_value("fl_llm_call_seconds_count", {"role": "r", "route": "local"}) >= 1
     assert tm.REGISTRY.get_sample_value("fl_llm_results_total", {"role": "r", "status": "ok"}) >= 1

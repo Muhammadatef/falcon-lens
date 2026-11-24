@@ -23,6 +23,8 @@ class _Router:
 
     metrics = _Metrics()
 
+    def __init__(self, *_a: Any, **_k: Any) -> None: ...  # build_ai passes route_source=
+
 
 def _build(monkeypatch: pytest.MonkeyPatch, enabled: str) -> Any:
     monkeypatch.setenv("FL_AI_ENABLED", enabled)

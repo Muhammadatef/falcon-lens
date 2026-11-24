@@ -2,7 +2,8 @@
 
 Audio is validated, sent to a local STT engine (native Mac engine first, container fallback) and dropped.
 It is never written to disk, never logged. Transcripts are returned to the caller and nowhere else: not
-in logs, not in metric labels, not in the audit log. Wake phrase and intent are deterministic (no LLM).
+in logs, not in metric labels, not in the audit log.
+Wake phrase and intent are rule-based; the transcript may also go to the LOCAL embedding model for FAQ matching.
 """
 
 from __future__ import annotations

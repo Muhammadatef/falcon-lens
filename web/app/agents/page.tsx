@@ -8,6 +8,7 @@ import { ArchDiagram } from "@/components/arch/ArchDiagram";
 import { VoiceAgentsSection } from "@/components/VoiceAgentsSection";
 import { at } from "@/lib/i18n-arch";
 import { loadCapabilities } from "@/lib/capabilities";
+import { loadPublicRoute } from "@/lib/llm-route-public";
 import { translate, type MessageKey } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/meta";
 import { serverLang } from "@/lib/server-lang";
@@ -24,12 +25,19 @@ const PROMISES = [1, 2, 3] as const;
 export default async function AgentsPage() {
   const lang = await serverLang();
   const caps = await loadCapabilities();
+  const route = await loadPublicRoute();
   const t = (key: MessageKey) => translate(lang, key);
   return (
     <main id="main" className="page" data-testid="agents-page">
       <div className="wrap">
         <h1 className="page-title">{t("agents.title")}</h1>
         <p className="page-lead">{t("agents.lead")}</p>
+        {route ? (
+          <p className="small" data-testid="agents-route">
+            {t("agents.route.label")}: <strong>{t(`agents.route.${route.mode}` as MessageKey)}</strong>
+            {route.mode !== "cloud_only" ? <> · <span className="mono" dir="ltr">{route.local_model}</span></> : null}
+          </p>
+        ) : null}
 
         <div className="lanes">
           <section className="card lane" data-agent="inv" aria-labelledby="lane-inv-h" data-testid="lane-inv">

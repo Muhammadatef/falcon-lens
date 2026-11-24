@@ -2,7 +2,8 @@
 
 Variables (.env.example): ``FL_SOVEREIGN_MODE``, ``ANTHROPIC_API_KEY``, ``FL_CLOUD_MODEL_<ROLE>``,
 ``FL_LLM_TIMEOUT_S``, ``OLLAMA_BASE_URL``, ``FL_LOCAL_MODEL``, ``FL_LOCAL_VISION_MODEL``,
-``FL_LOCAL_LLM_TIMEOUT_S``, ``FL_LOCAL_NO_THINK``, ``FL_SHADOW_RATE``.
+``FL_LOCAL_LLM_TIMEOUT_S``, ``FL_LOCAL_NO_THINK``, ``FL_SHADOW_RATE``, ``FL_LLM_ROUTE``,
+``FL_LOCAL_BASE_URL``, ``FL_LOCAL_QWEN_BASE_URL``.
 """
 
 from __future__ import annotations
@@ -47,6 +48,9 @@ class RouterConfig:
     local_model: str = DEFAULT_LOCAL_MODEL
     local_vision_model: str = DEFAULT_LOCAL_VISION_MODEL
     ollama_base_url: str = "http://host.docker.internal:11434"
+    llm_route: str = "auto"  # FL_LLM_ROUTE; the runtime (Redis) override wins unless sovereign
+    local_base_url: str | None = None  # FL_LOCAL_BASE_URL: OpenAI-compatible base for the local model
+    local_qwen_base_url: str | None = None  # FL_LOCAL_QWEN_BASE_URL: base for qwen3.8:27b (the llm-gate)
     cloud_timeout_s: float = 12.0
     local_timeout_s: float = 60.0
     # Reasoning models served OpenAI-style (e.g. Qwen 3.x behind a gate) spend max_tokens on hidden thinking and
@@ -58,6 +62,13 @@ class RouterConfig:
     def cloud_enabled(self) -> bool:
         """Cloud only with a key and outside sovereign mode."""
         return bool(self.anthropic_api_key) and not self.sovereign_mode
+
+    def local_base_for(self, model: str) -> str:
+        """Base URL serving a local model: Qwen has its own gate, everything else uses the default."""
+        default = self.local_base_url or self.ollama_base_url
+        if model.startswith("qwen") and self.local_qwen_base_url:
+            return self.local_qwen_base_url
+        return default
 
     def local_model_for(self, role: Role) -> str:
         return self.local_vision_model if role == "vision" else self.local_model
@@ -78,6 +89,9 @@ class RouterConfig:
             local_model=e.get("FL_LOCAL_MODEL") or DEFAULT_LOCAL_MODEL,
             local_vision_model=e.get("FL_LOCAL_VISION_MODEL") or DEFAULT_LOCAL_VISION_MODEL,
             ollama_base_url=e.get("OLLAMA_BASE_URL") or "http://host.docker.internal:11434",
+            llm_route=e.get("FL_LLM_ROUTE") or "auto",
+            local_base_url=e.get("FL_LOCAL_BASE_URL") or None,
+            local_qwen_base_url=e.get("FL_LOCAL_QWEN_BASE_URL") or None,
             cloud_timeout_s=_float(e.get("FL_LLM_TIMEOUT_S"), 12.0),
             local_timeout_s=_float(e.get("FL_LOCAL_LLM_TIMEOUT_S"), 60.0),
             local_no_think=_truthy(e.get("FL_LOCAL_NO_THINK")),

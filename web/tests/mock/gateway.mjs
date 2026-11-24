@@ -106,7 +106,7 @@ async function control(req, res, path) {
   if (path === "/__mock/voice" && req.method === "GET") return json(res, 200, { calls: voiceCalls });
   if (path === "/__mock/boards" && req.method === "GET") {
     const b = boards.get(new URL(req.url, "http://x").searchParams.get("key") ?? "");
-    return b ? json(res, 200, { decisions: b.decisions }) : problem(req, res, 404, "not-found", "no board");
+    return b ? json(res, 200, { decisions: b.decisions, routePuts: b.routePuts ?? [] }) : problem(req, res, 404, "not-found", "no board");
   }
   return problem(req, res, 404, "not-found", "unknown control route");
 }
@@ -288,6 +288,25 @@ async function api(req, res, path) {
     if (!snaps?.length) return json(res, 200, { incident_id: one[1], thread_id: one[1], runs: [] });
     board.traceCalls = (board.traceCalls ?? 0) + 1;
     return json(res, 200, snaps[Math.min(board.traceCalls - 1, snaps.length - 1)]);
+  }
+  // Operator-only model route (mirrors services/api/src/falcon_api/admin.py).
+  if (path === "/v1/admin/llm-route" && (req.method === "GET" || req.method === "PUT")) {
+    if (!board || !key || !authed(board)) return problem(req, res, 401, "unauthorized", "Unauthorized");
+    board.route ??= { mode: "cloud_with_local_fallback", local_model: "inkling-2-mini-chat", updated_at: null, updated_by: null };
+    if (req.method === "PUT") {
+      const body = JSON.parse((await readBody(req)).toString("utf8") || "{}");
+      const modes = ["cloud_with_local_fallback", "local", "cloud_only", "auto"];
+      const models = ["inkling-2-mini-chat", "qwen3.8:27b"];
+      if (!modes.includes(body.mode) || (body.local_model != null && !models.includes(body.local_model))) return problem(req, res, 422, "invalid", "Invalid");
+      board.route = { mode: body.mode, local_model: body.local_model ?? board.route.local_model, updated_at: "2026-11-24T12:00:00+00:00", updated_by: "operator" };
+      board.routePuts = [...(board.routePuts ?? []), { mode: body.mode, local_model: body.local_model ?? null }];
+    }
+    const r = board.route;
+    return json(res, 200, {
+      mode: r.mode, effective_mode: r.mode === "auto" ? "cloud_with_local_fallback" : r.mode, local_model: r.local_model,
+      local_models: ["inkling-2-mini-chat", "qwen3.8:27b"], modes: ["cloud_with_local_fallback", "local", "cloud_only", "auto"],
+      cloud_available: true, sovereign_locked: false, source: "runtime", updated_at: r.updated_at, updated_by: r.updated_by,
+    });
   }
   const decide = /^\/v1\/incidents\/([^/]+)\/actions\/([^/]+)\/(approve|reject)$/.exec(path);
   if (decide && req.method === "POST") {

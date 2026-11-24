@@ -1946,16 +1946,16 @@
   {
     "id": "en.faq.agents",
     "file": "en.faq.agents.mp3",
-    "text": "Baseer checks the message. Dir watches and links similar reports. Nothing is sent outside without a person's approval.",
-    "ms": 7250,
+    "text": "Baseer checks the message, Dir links similar reports. No alert or report goes out without a person's approval.",
+    "ms": 6873,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },
   {
     "id": "en.faq.data_stored",
     "file": "en.faq.data_stored.mp3",
-    "text": "What you say is processed on our own machine and deleted. We don't store your message text, only its fingerprint and the result.",
-    "ms": 7575,
+    "text": "Your voice is processed on this machine and not kept. From a check we keep only a defanged copy of the link, the evidence and the result, never your message text.",
+    "ms": 9441,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },
@@ -2042,8 +2042,8 @@
   {
     "id": "en.offtopic.1",
     "file": "en.offtopic.1.mp3",
-    "text": "That's outside my job. I'm here to protect you from scam messages. Say: Hey Falcon, check my messages.",
-    "ms": 6378,
+    "text": "That's outside what I do. I help you spot scam messages. Say: Hey Falcon, check my messages.",
+    "ms": 5792,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },

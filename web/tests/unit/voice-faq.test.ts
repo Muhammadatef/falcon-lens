@@ -44,8 +44,10 @@ describe("voice FAQ script", () => {
   });
 
   it("the data answer matches docs/PRIVACY.md: processed locally and deleted, only a fingerprint and the result are kept", () => {
-    expect(SCRIPT.en["faq.data_stored"]).toMatch(/own machine and deleted/);
-    expect(SCRIPT.en["faq.data_stored"]).toMatch(/fingerprint/);
+    expect(SCRIPT.en["faq.data_stored"]).toMatch(/voice is processed on this machine and not kept/);
+    expect(SCRIPT.en["faq.data_stored"]).toMatch(/defanged copy of the link, the evidence and the result/);
+    expect(SCRIPT.en["faq.agents"]).not.toMatch(/nothing is sent/i);
+    for (const l of ["ar_ae", "en"] as const) expect(SCRIPT[l]["offtopic.1"]).not.toMatch(/protect|أحميك/i);
   });
 });
 
@@ -62,5 +64,15 @@ describe("voice reply parsing for the FAQ", () => {
   it("answer ids are ignored for every other intent", () => {
     expect(parseVoiceReply({ ...base, intent: "off_topic", answer_id: "faq.otp" })?.answerId).toBeNull();
     expect(parseVoiceReply({ ...base, intent: "none", answer_id: null })?.intent).toBe("none");
+  });
+});
+
+describe("end-of-speech silence", () => {
+  it("defaults to 800 ms; 650 is available through the setting; junk and out-of-range values fall back", async () => {
+    const { vadSilenceMs, VOICE_LIMITS } = await import("@/lib/voice");
+    expect(VOICE_LIMITS.silenceMs).toBe(800);
+    expect(vadSilenceMs(undefined)).toBe(800);
+    expect(vadSilenceMs("650")).toBe(650);
+    for (const bad of ["", "abc", "100", "5000", "-1"]) expect(vadSilenceMs(bad)).toBe(800);
   });
 });

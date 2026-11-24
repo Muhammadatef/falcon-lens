@@ -77,7 +77,7 @@ def test_labels_match_doc() -> None:
     m.INCIDENT_OPEN.labels("high").set(1)
     m.RULE_FIRED.labels("R1").inc()
     m.SENTINEL_ACTIONS.labels("draft", "dry_run").inc()
-    m.LLM_CALLS.labels("extractor", "local", "ok").inc()
+    m.LLM_CALLS.labels("extractor", "local", "ok", "false").inc()
     m.LLM_CALL_SECONDS.labels("extractor", "local").observe(0.1)
     m.LLM_RESULTS.labels("extractor", "ok").inc()
     m.HARD_RULE_FIRED.labels("H1", "floor_dangerous").inc()

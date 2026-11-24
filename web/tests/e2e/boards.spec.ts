@@ -116,6 +116,27 @@ test.describe("operator incident board", () => {
     expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
   });
 
+  test("AI model route panel: shows the route, switches it with the operator key, and states the local-privacy note", async ({ page, context, request, baseURL }) => {
+    const key = await useBoards(context, request, baseURL!, { incidents: [], requireKey: "op-test-key" });
+    await page.goto("/ops");
+    await expect(page.getByTestId("llm-route-panel")).toHaveCount(0); // no key, no panel
+    await page.getByTestId("key-input").fill("op-test-key");
+    await page.getByTestId("key-input").press("Enter");
+    await expect(page.getByTestId("llm-route-panel")).toBeVisible();
+    await expect(page.getByTestId("route-effective")).toContainText("Claude");
+    await expect(page.getByTestId("route-model")).toHaveText("inkling-2-mini-chat");
+    await expect(page.getByTestId("route-note")).toContainText("لا تغادر هذا الجهاز");
+    await page.getByTestId("route-select").selectOption("local");
+    await page.getByTestId("route-model-select").selectOption("qwen3.8:27b");
+    await page.getByTestId("route-save").click();
+    await expect(page.getByTestId("route-msg")).toBeVisible();
+    await expect(page.getByTestId("route-effective")).toContainText("محلي");
+    await expect(page.getByTestId("route-model")).toHaveText("qwen3.8:27b");
+    const log = await (await request.get(`/__mock/boards?key=${key}`)).json();
+    expect(log.routePuts).toEqual([{ mode: "local", local_model: "qwen3.8:27b" }]);
+    expect(page.url()).not.toContain("op-test-key");
+  });
+
   test("?demo=1: synthetic incident, approve changes nothing outside the page", async ({ page }) => {
     await page.goto("/ops?demo=1");
     await expect(page.getByTestId("demo-ribbon")).toBeVisible();
