@@ -38,7 +38,7 @@ def _registered() -> dict[str, tuple[str, ...]]:
 
 
 def test_doc_parses_all_sections() -> None:
-    assert len(_doc_metrics()) == 50
+    assert len(_doc_metrics()) == 51
 
 
 def test_every_documented_metric_exists_exactly() -> None:
@@ -61,6 +61,7 @@ def test_labels_match_doc() -> None:
     m.record_verdict(input_type="url", verdict="dangerous", tier="T0", route="none", source="replay")
     m.ESCALATIONS.labels("T0", "T1").inc()
     m.CACHE_HITS.labels("redis").inc()
+    m.VOICE_CHECKS.labels("dangerous").inc()
     m.TOOL_ERRORS.labels("whois", "timeout").inc()
     m.FEED_AGE.labels("openphish").set(1)
     m.FEED_ENABLED.labels("openphish").set(1)

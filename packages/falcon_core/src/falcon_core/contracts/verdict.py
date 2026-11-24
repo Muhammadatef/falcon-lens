@@ -11,6 +11,7 @@ from falcon_core.contracts.evidence import Evidence, Tier
 
 Source = Literal["live", "replay", "synthetic", "fixture"]
 ModelRoute = Literal["cloud", "local", "none"]
+Channel = Literal["web", "extension", "api", "mcp", "voice"]
 
 
 class Brand(BaseModel):
@@ -97,5 +98,6 @@ class Verdict(BaseModel):
     trace: list[TraceStep] | None = None
     screenshot_url: str | None = None
     source: Source = "live"
+    channel: Channel | None = None
     latency_ms: int = Field(ge=0)
     created_at: datetime

@@ -49,6 +49,16 @@ For campaign incidents the API POSTs `{"event":"campaign.alert","id":...,"data":
 ## Sovereign mode
 `FL_SOVEREIGN_MODE=true` forces every model call to the local model; no content leaves the machine. The API and MCP behave identically, and `GET /v1/meta` reports `sovereign_mode` so a client can show it. Feeds that need external keys stay off unless configured.
 
+## On-premise deployment | <span dir="rtl">التشغيل داخل الجهة</span>
+
+If an authority adopts Falcon Lens, the whole stack can run inside its own network. The same Docker Compose stack (`make up`) is used. With `FL_SOVEREIGN_MODE=1` every LLM role goes to a local model on the authority's own GPU servers, through any OpenAI-compatible server (Ollama or vLLM). The model tested here is Inkling-2-Mini; `qwen3.8:27b` is available locally and its sovereign-mode proof is pending. Speech-to-text is local Whisper and the voice clips are generated locally. Integration is through REST v1 (OpenAPI), SSE, MCP, the STIX export and signed webhooks: **ready to connect, not connected**, and nothing here implies endorsement by any authority.
+
+**What a production deployment would still need**
+- The authority's own sign-on (SSO) and roles. Today there are scoped API keys and an operator key.
+- Scaling and high availability. The stack is proven on one machine only.
+- Closed-network feeds or mirrors for link lookups (registration data, scam lists) and for the sandbox visit.
+- The authority's own security review and penetration test.
+
 ## Parallel stack
 `COMPOSE_PROJECT_NAME=falcon-mcp FL_GATEWAY_PORT=18443 FL_PROMETHEUS_PORT=19090 FL_GRAFANA_PORT=13001 make up` runs a second isolated stack (own volumes, networks, host ports).
 

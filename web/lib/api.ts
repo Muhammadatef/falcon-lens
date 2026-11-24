@@ -9,7 +9,7 @@
  * Errors are RFC 9457 problem+json; they are mapped to a small `Problem` the UI can
  * translate. Nothing here ever fabricates a result: a failed call is a failed call.
  */
-import { VERDICT_ID_RE, parseVerdict, type Verdict } from "./contracts";
+import { VERDICT_ID_RE, parseVerdict, type Channel, type Verdict } from "./contracts";
 import type { Problem } from "./verdict-stream";
 
 export const LIMITS = { urlBytes: 4096, messageBytes: 8 * 1024, emailBytes: 2 * 1024 * 1024, imageBytes: 5 * 1024 * 1024 } as const;
@@ -74,11 +74,21 @@ async function request(path: string, init: RequestInit): Promise<Response> {
   return response;
 }
 
-const json = (body: unknown): RequestInit => ({
+const json = (body: unknown, extra?: Record<string, string>): RequestInit => ({
   method: "POST",
-  headers: { "content-type": "application/json", accept: "application/json" },
+  headers: { "content-type": "application/json", accept: "application/json", ...extra },
   body: JSON.stringify(body),
 });
+
+/** A W3C trace-context header value; anything else is never forwarded. */
+export const TRACEPARENT_RE = /^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/;
+
+export interface SubmitOptions {
+  /** Which client asks (contracts `channel`). Defaults to "web". Only links and messages carry it. */
+  channel?: Channel;
+  /** `traceparent` of the voice.utterance span that started this check, so the traces are linked. */
+  traceparent?: string | null;
+}
 
 const multipart = (file: File): RequestInit => {
   const form = new FormData();
@@ -86,10 +96,12 @@ const multipart = (file: File): RequestInit => {
   return { method: "POST", headers: { accept: "application/json" }, body: form };
 };
 
-export async function submitCheck(input: CheckInput): Promise<Accepted> {
+export async function submitCheck(input: CheckInput, opts: SubmitOptions = {}): Promise<Accepted> {
   let response: Response;
-  if (input.kind === "url") response = await request("/v1/check/url", json({ url: input.url }));
-  else if (input.kind === "message") response = await request("/v1/check/message", json({ text: input.text }));
+  const channel = opts.channel ?? "web";
+  const extra = opts.traceparent && TRACEPARENT_RE.test(opts.traceparent) ? { traceparent: opts.traceparent } : undefined;
+  if (input.kind === "url") response = await request("/v1/check/url", json({ url: input.url, channel }, extra));
+  else if (input.kind === "message") response = await request("/v1/check/message", json({ text: input.text, channel }, extra));
   else if (input.kind === "image") response = await request("/v1/check/image", multipart(input.file));
   else response = await request("/v1/check/email", multipart(input.file));
 

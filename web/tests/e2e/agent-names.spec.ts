@@ -16,7 +16,7 @@ for (const lang of ["ar", "en"] as const) {
   test.describe(`agent names ${lang}`, () => {
     test.beforeEach(async ({ context, baseURL }) => setPrefs(context, baseURL!, { lang }));
 
-    test("/agents names both agents, shows the Talk to Falcon card, axe clean", async ({ page }) => {
+    test("/agents names both agents, shows the voice section, axe clean", async ({ page }) => {
       await page.goto("/agents");
       await expect(page.getByTestId("lane-inv")).toContainText("بصير");
       await expect(page.getByTestId("lane-sen")).toContainText("درع");
@@ -24,15 +24,15 @@ for (const lang of ["ar", "en"] as const) {
         await expect(page.getByTestId("lane-inv")).toContainText("Investigator");
         await expect(page.getByTestId("lane-sen")).toContainText("Sentinel");
       }
-      const card = page.getByTestId("agents-voice-card");
+      const card = page.getByTestId("agents-voice-biz");
       await expect(card).toContainText("يا فالكون");
-      await expect(card).toContainText(lang === "ar" ? "تكلّم مع الصقر" : "Talk to Falcon");
+      await expect(card).toContainText(lang === "ar" ? "«بصير»" : "Baseer");
       expect(await axe(page)).toEqual([]);
     });
 
     test("/docs/agents has the voice path with seven ordered steps and the architecture voice nodes, axe clean", async ({ page }) => {
       await page.goto("/docs/agents");
-      const voice = page.getByTestId("voice-doc");
+      const voice = page.getByTestId("agents-voice-tech");
       await expect(voice).toContainText("يا فالكون");
       await expect(page.getByTestId("voice-flow").locator("li")).toHaveCount(7);
       await expect(voice).toContainText("/api/voice");

@@ -145,6 +145,7 @@ function Header({ incident }: { incident: Incident }) {
               <span>{tt("tr.id")}: <span className="mono" translate="no">{incident.incident_id}</span></span>
               {incident.brand_id ? <span>{tt("tr.brand")}: <span className="mono" translate="no">{incident.brand_id}</span></span> : null}
               {incident.rule_ids.length ? <span>{tt("tr.rules")}: <span className="mono" translate="no">{incident.rule_ids.join(", ")}</span></span> : null}
+              {(incident.channels ?? []).map((c) => <span key={c} data-testid="incident-channel" translate="no">channel: <span className="mono">{c}</span></span>)}
             </div>
             <h3>{tt("tr.verdicts")}</h3>
             {incident.linked_verdicts.length === 0 ? <p className="muted">{t("i.none")}</p> : (

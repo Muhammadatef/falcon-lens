@@ -129,3 +129,43 @@ def test_real_decoder_reads_wav_in_memory_and_enforces_duration() -> None:
     from faster_whisper.audio import decode_audio
 
     assert len(decode_audio(io.BytesIO(_wav(1)), sampling_rate=16000)) == 16000
+
+
+class DetectModel:
+    """Fake faster-whisper model: fixed language ID, records the language it transcribes with."""
+
+    def __init__(self, code: str, prob: float) -> None:
+        self.code, self.prob = code, prob
+        self.used: list[tuple[str | None, str | None]] = []
+
+    def detect_language(self, audio: Any) -> tuple[str, float, list[Any]]:
+        return self.code, self.prob, []
+
+    def transcribe(self, audio: Any, **kw: Any) -> tuple[list[Any], Any]:
+        self.used.append((kw["language"], kw["initial_prompt"]))
+        seg = type("S", (), {"text": "hey falcon", "compression_ratio": 1.0})()
+        return [seg], type("I", (), {"language": kw["language"]})()
+
+
+def _run(code: str, prob: float, hint: str | None) -> tuple[str | None, DetectModel]:
+    eng = Engine()
+    model = DetectModel(code, prob)
+    eng.model = model
+    res = eng.transcribe(_wav(1), hint)
+    return res.lang, model
+
+
+def test_hint_never_forces_language() -> None:
+    lang, m = _run("ar", 0.9, "en")
+    assert lang == "ar"
+    assert m.used == [("ar", voice_app.PROMPTS["ar"])]
+    assert _run("en", 0.9, "ar")[0] == "en"
+
+
+def test_unknown_language_falls_back_to_hint() -> None:
+    assert _run("fr", 0.3, "en")[0] == "en"
+    assert _run("fr", 0.95, "en")[0] == "en"
+
+
+def test_low_confidence_without_hint_is_arabic() -> None:
+    assert _run("en", 0.3, None)[0] == "ar"

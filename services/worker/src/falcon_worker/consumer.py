@@ -87,13 +87,16 @@ class RedisVerdictCache:
 class RedisSink:
     """``VerdictSink`` for one job. Every Redis error propagates to the worker (job stays pending)."""
 
-    def __init__(self, worker: Worker, cache_key: str | None = None) -> None:
+    def __init__(self, worker: Worker, cache_key: str | None = None, channel: str | None = None) -> None:
         self.w = worker
         self.cache_key = cache_key
+        self.channel = channel
         self.final_doc: dict[str, Any] | None = None
 
     async def emit(self, doc: dict[str, Any], meta: Mapping[str, Any]) -> None:
         vid = doc["verdict_id"]
+        if self.channel:  # which client asked (contracts/verdict.schema.json `channel`); metadata only
+            doc = {**doc, "channel": self.channel}
         if doc["final"]:
             meta = await self._meta(meta)
             try:
@@ -125,6 +128,8 @@ class RedisSink:
         if self.cache_key and ttl and doc.get("degraded") is False:
             await self.w.r.set(keys.verdict_cache(self.cache_key), vid, ex=ttl)
         event = verdict_created(doc, meta)
+        if doc.get("channel") == "voice":
+            tm.VOICE_CHECKS.labels(doc["verdict"]).inc()
         await self.w.r.xadd(keys.EVENTS_STREAM, {"event": _dumps(event)}, maxlen=keys.EVENTS_MAXLEN, approximate=True)
         await self.w.r.set(keys.done_key(vid), "1", ex=keys.LAST_TTL_S)
         self.final_doc = doc
@@ -305,7 +310,7 @@ class Worker:
             await self._ack(entry_id)  # the original entry owns this verdict_id
             return None
 
-        sink = RedisSink(self, cache_key=self._cache_key(job))
+        sink = RedisSink(self, cache_key=self._cache_key(job), channel=job.channel)
         last = _parse_doc(await self.r.get(keys.last_key(vid)))
         last_final = last if last is not None and last.get("final") else None
         if deliveries > self.max_deliveries:

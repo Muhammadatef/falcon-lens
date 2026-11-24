@@ -17,7 +17,7 @@ export default async function PrivacyPage() {
       <div className="wrap">
         <h1 className="page-title">{c.title}</h1>
         <p className="page-lead">{c.lead}</p>
-        <div className="prose">
+        <div className="prose prose--grid">
           {c.sections.map((s, i) => (
             <section key={s.title} aria-labelledby={`p-${i}`}>
               <h2 id={`p-${i}`}>{s.title}</h2>

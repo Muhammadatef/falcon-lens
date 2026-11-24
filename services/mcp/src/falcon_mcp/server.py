@@ -77,14 +77,18 @@ def build_mcp(api: ApiClient, *, name: str = "falcon-lens") -> MCPServer:
     ) -> dict[str, Any]:
         """Check a URL for phishing/scam signs. The URL is analysed, never opened for you; waits up to 8 s.
         Returns the best verdict so far; `final=false` means call get_verdict again shortly."""
-        return _verdict_result(await api.request("POST", "/v1/check/url", params={"wait": WAIT_S}, json={"url": url}))
+        return _verdict_result(
+            await api.request("POST", "/v1/check/url", params={"wait": WAIT_S}, json={"url": url, "channel": "mcp"})
+        )
 
     @mcp.tool(annotations=CHECK)
     async def check_message(
         text: Annotated[str, Field(min_length=1, max_length=8000, description="SMS/WhatsApp/chat message text.")],
     ) -> dict[str, Any]:
         """Check a scam-suspect message (any language, Arabic included). Waits up to 8 s for the verdict."""
-        r = await api.request("POST", "/v1/check/message", params={"wait": WAIT_S}, json={"text": text})
+        r = await api.request(
+            "POST", "/v1/check/message", params={"wait": WAIT_S}, json={"text": text, "channel": "mcp"}
+        )
         return _verdict_result(r)
 
     @mcp.tool(annotations=CHECK)

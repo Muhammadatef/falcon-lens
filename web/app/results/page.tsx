@@ -7,15 +7,26 @@ import type { Lang } from "@/lib/contracts";
 import { translate, translateMaybe, type MessageKey } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/meta";
 import { loadResults } from "@/lib/results";
-import { AttacksSection, Badge, FpHistorySection, KpiGridSection, OpsSection, RealSyntheticSection } from "@/components/ResultsKpi";
+import { ArtifactNote, AttacksSection, Badge, FpHistorySection, KpiGridSection, OpsSection, RealSyntheticSection } from "@/components/ResultsKpi";
 import { Fold } from "@/components/Fold";
-import { areaRowBadge } from "@/lib/results-kpi";
+import { areaRowBadge, buildRealSynthetic } from "@/lib/results-kpi";
 import { areaLabels, areaNote, areaScope, areaTitle, loadAreas, pendingKeys, pendingLabel, rowLabel, rowText, type Area } from "@/lib/results-areas";
 import { serverLang } from "@/lib/server-lang";
 
 /** Page-local copy for the states v2's shared copy does not cover. Plain text, no numbers. */
-const LOCAL: Record<Lang, { pending: string; pendingBody: string; draft: string; scopeRaw: string; commit: string; dirty: string }> = {
+type Local = {
+  pending: string; pendingBody: string; draft: string; scopeRaw: string; commit: string; dirty: string;
+  navLabel: string; nav: [string, string][];
+  ciTitle: string; ciA: string; ciB: string; ciC: string;
+};
+const LOCAL: Record<Lang, Local> = {
   ar: {
+    navLabel: "أقسام الصفحة",
+    nav: [["sec-kpi", "المؤشرات"], ["sec-rs", "حقيقي واصطناعي"], ["fp-h-sec", "مواقع حقيقية"], ["atk-h-sec", "الهجمات"], ["ops-h-sec", "الكلفة"], ["prov-h-sec", "المصدر"]],
+    ciTitle: "كيف حُسبت نطاقات الثقة؟",
+    ciA: "نطاقات الثقة 95% في البطاقات أعلاه وفي جدول المؤشرات محسوبة بإعادة المعاينة (bootstrap) من الملف",
+    ciB: "أما نطاقات جدول «حقيقي واصطناعي» فبطريقة ويلسون (Wilson) من الملف",
+    ciC: "لذلك قد يختلف النطاق للرقم نفسه: حين لا تحوي العيّنة أي خطأ يضيق نطاق إعادة المعاينة إلى صفر، بينما يبقى نطاق ويلسون أوسع.",
     pending: "التقييم قيد الإنجاز",
     pendingBody: "لم يُنشر بعد ملف تقييم يمكن عرضه. ستظهر النتائج هنا فور نشره، ولن نعرض أي رقم قبل ذلك.",
     draft: "الخدمة الحية تستخدم حالياً المصنّف المبدئي؛ النموذج المقيس لتحليل العنوان لم يُربط بها بعد. الأرقام أعلاه تخص النموذج المقيس.",
@@ -24,6 +35,12 @@ const LOCAL: Record<Lang, { pending: string; pendingBody: string; draft: string;
     dirty: "بُني من نسخة عمل غير مثبَّتة بالكامل (غير نظيفة).",
   },
   en: {
+    navLabel: "Page sections",
+    nav: [["sec-kpi", "Headline KPIs"], ["sec-rs", "Real vs synthetic"], ["fp-h-sec", "Real websites"], ["atk-h-sec", "Attacks"], ["ops-h-sec", "Cost"], ["prov-h-sec", "Source"]],
+    ciTitle: "How the 95% ranges were computed",
+    ciA: "The 95% ranges in the cards above and in the headline table are bootstrap intervals from the file",
+    ciB: "The ranges in the real-vs-synthetic table use the Wilson method, from the file",
+    ciC: "So the range for the same figure can differ: when a sample holds no error the bootstrap range shrinks to zero width, while the Wilson range stays wider.",
     pending: "Evaluation in progress",
     pendingBody: "No evaluation artifact has been published yet. Results will appear here as soon as one is, and no figure is shown before then.",
     draft: "The live service currently uses the draft classifier; the measured address-analysis model is not wired into it yet. The figures above describe the measured model.",
@@ -63,9 +80,9 @@ function AreaBlock({ area, lang }: { area: Area; lang: Lang }) {
       {note ? <p className="card callout" role="note" data-testid={`note-${area.id}`}><Icon name="scale" size={24} /><span>{note}</span></p> : null}
       <ul className="area-prov">
         <li>{L.artifact}: <code dir="ltr">{area.artifact}</code>{area.date ? <> · {L.date}: <code dir="ltr">{area.date}</code></> : null}</li>
-        {area.provenance ? <li>{L.provenance}: <code dir="ltr" lang="en">{area.provenance}</code></li> : null}
+        {area.provenance ? <li>{L.provenance}: <ArtifactNote text={area.provenance} lang={lang} /></li> : null}
         {area.route || area.model ? <li>{L.route}: <code dir="ltr" lang="en">{area.route || "-"}</code>{area.model ? <> · {L.model}: <code dir="ltr" lang="en">{area.model}</code></> : null}</li> : null}
-        {area.caveat ? <li>{L.asPublished}: <span dir="ltr" lang="en">{area.caveat}</span></li> : null}
+        {area.caveat ? <li>{L.asPublished}: <ArtifactNote text={area.caveat} lang={lang} /></li> : null}
         {area.runs ? area.runs.map((r) => <li key={r.artifact}><code dir="ltr">{r.artifact}</code></li>) : null}
       </ul>
     </section>
@@ -81,13 +98,26 @@ export default async function ResultsPage() {
   const L = areaLabels(lang);
   const pend = r ? pendingKeys(r.notEvaluated, areas) : { main: [], extra: [] };
   const caps = await loadCapabilities();
+  const rsArtifact = buildRealSynthetic(lang)?.artifact ?? "";
   return (
     <main id="main" className="page" data-testid="results-page">
       <div className="wrap">
         <h1 className="page-title">{t("results.title")}</h1>
         <p className="page-lead">{t("results.lead")}</p>
 
+        {r ? (
+          <nav className="sec-nav" aria-label={local.navLabel} data-testid="results-nav">
+            <ul>{local.nav.map(([id, label]) => { const l = { href: `#${id}` }; return <li key={id}><a href={l.href}>{label}</a></li>; })}</ul>
+          </nav>
+        ) : null}
+
         <ProofStats lang={lang} variant="results" results={r} />
+        {r ? (
+          <details className="rs-src ci-note" data-testid="ci-method">
+            <summary>{local.ciTitle}</summary>
+            <p>{local.ciA} <code dir="ltr">{r.artifact}</code>. {rsArtifact ? <>{local.ciB} <code dir="ltr">{rsArtifact}</code>. </> : null}{local.ciC}</p>
+          </details>
+        ) : null}
 
         {!r ? (
           <div className="card state" role="status" data-testid="results-pending">
@@ -117,7 +147,7 @@ export default async function ResultsPage() {
               </Fold>
             ) : null}
 
-            <section className="prose" aria-labelledby="scope-h">
+            <section className="prose" id="scope-sec" aria-labelledby="scope-h">
               <h2 id="scope-h">{t("results.scope.title")}</h2>
               <p className="card callout" role="note">
                 <Icon name="scale" size={24} />

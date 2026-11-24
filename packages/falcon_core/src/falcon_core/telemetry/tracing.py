@@ -158,6 +158,11 @@ SPAN_ATTRIBUTES = frozenset(
         "fl.input_type",
         "fl.source",
         "fl.verdict",
+        "fl.voice.duration_ms",
+        "fl.voice.engine",
+        "fl.voice.intent",
+        "fl.voice.lang",
+        "fl.voice.wake",
         "fl.tier_reached",
         "fl.model_route",
         "fl.stop_reason",
@@ -243,3 +248,11 @@ COLLECTOR_ALLOWED_ATTRIBUTES = (
     )
 )
 COLLECTOR_ALLOWED_RESOURCE = frozenset({"service.name", "service.version", "deployment.environment"})
+
+
+def traceparent_of(span: trace.Span) -> str | None:
+    """W3C ``traceparent`` of a live span (None when the span has no valid context)."""
+    ctx = span.get_span_context()
+    if not ctx.is_valid:
+        return None
+    return f"00-{ctx.trace_id:032x}-{ctx.span_id:016x}-{int(ctx.trace_flags):02x}"

@@ -27,6 +27,8 @@ const CAPS_FALSE_PORT = Number(process.env.APP_PORT_CAPS_FALSE);
 const CAPS_TRUE_PORT = Number(process.env.APP_PORT_CAPS_TRUE);
 /** Set to a running stack's gateway (e.g. https://localhost:8443) to run tests/live through Caddy. */
 const LIVE = process.env.LIVE_BASE_URL;
+/** The spoken demo line (wav) the fake microphone plays; set by `make voice-e2e`. */
+const VOICE_WAV = process.env.VOICE_E2E_WAV;
 
 export default defineConfig({
   testDir: "./tests",
@@ -49,9 +51,24 @@ export default defineConfig({
     // Screenshot capture, on demand only: SHOTS=1 pnpm exec playwright test --project=shots
     ...(process.env.SHOTS ? [{ name: "shots", testMatch: /shots\/.*\.shots\.ts/, timeout: 120_000, use: { ...devices["Desktop Chrome"] } }] : []),
     // Through the real gateway, on demand only: LIVE_BASE_URL=https://localhost:8443 pnpm exec playwright test --project=live
-    ...(LIVE ? [{ name: "live", testMatch: /live\/.*\.live\.ts/, timeout: 90_000, use: { ...devices["Pixel 7"], viewport: { width: 390, height: 844 }, baseURL: LIVE, ignoreHTTPSErrors: true } }] : []),
+    // The @voice-live suite needs a spoken wav and macOS `say`: run it with `make voice-e2e` (see tests/live/voice.live.ts).
+    ...(VOICE_WAV ? [{
+      name: "voice-live",
+      testMatch: /live\/voice\.live\.ts/,
+      timeout: 240_000,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 900 },
+        baseURL: process.env.BASE_URL ?? process.env.LIVE_BASE_URL ?? "https://localhost:8443",
+        ignoreHTTPSErrors: true,
+        launchOptions: {
+          args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${VOICE_WAV}%noloop`, "--autoplay-policy=no-user-gesture-required"],
+        },
+      },
+    }] : []),
+    ...(LIVE ? [{ name: "live", testMatch: /live\/.*\.live\.ts/, testIgnore: /live\/voice\.live\.ts/, timeout: 90_000, use: { ...devices["Pixel 7"], viewport: { width: 390, height: 844 }, baseURL: LIVE, ignoreHTTPSErrors: true } }] : []),
   ],
-  webServer: LIVE ? undefined : [
+  webServer: LIVE || VOICE_WAV ? undefined : [
     {
       command: "node .next/standalone/server.js",
       url: `http://127.0.0.1:${APP_PORT}/api/health`,

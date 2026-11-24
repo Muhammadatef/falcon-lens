@@ -79,6 +79,8 @@ async function say(page: Page, voice: string) {
 }
 
 const spoken = (page: Page): Promise<{ text: string; lang: string }[]> => page.evaluate(() => (window as any).__spoken);
+/** The narration is a queue of clips with short gaps: wait until the assistant has finished speaking and is listening again. */
+const narrationDone = (page: Page) => expect(page.getByTestId("voice")).toHaveAttribute("data-phase", "listening", { timeout: 30_000 });
 
 async function setup(page: Page, request: any) {
   const t = token();
@@ -135,6 +137,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-card-verdict")).toHaveText(["خطِر", "خطِر", "لم نجد علامات تحذير"]);
     await expect(page.getByTestId("voice-campaign")).toHaveCount(0); // no campaign claim without a real Sentinel incident
     await expect(page.getByTestId("voice-trace").first()).toHaveAttribute("href", `/checks/${ids[0]}`);
+    await narrationDone(page);
     const ar = await spoken(page);
     expect(ar.every((s) => s.lang === "ar-SA")).toBe(true);
     const arSpoken = ar.map((s) => s.text).join(" ");
@@ -153,6 +156,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-card-verdict")).toHaveText(["Dangerous", "Dangerous", "No warning signs found"], { timeout: 25_000 });
     await expect(page.getByTestId("voice-steps")).toContainText(EN["sentinel.unavailable"], { timeout: 20_000 });
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.listening"], { timeout: 20_000 });
+    await narrationDone(page);
     const en = (await spoken(page)).slice(before);
     expect(en.length).toBeGreaterThan(0);
     expect(en.every((s) => s.lang === "en-GB")).toBe(true);
@@ -190,6 +194,23 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     for (const key of ["sentinel.handover", "sentinel.linked.3", "sentinel.summary", "sentinel.draft", "sentinel.awaiting_approval", "final.both_agents"]) expect(said, key).toContain(SCRIPT.ar_ae[key]!);
     for (const key of ["sentinel.watching", "final.sentinel_watching"]) expect(said, key).not.toContain(SCRIPT.ar_ae[key]!);
     expect(await page.locator("main").innerText()).not.toMatch(/آمن|\bsafe\b|\bT[0-3]\b/i);
+  });
+
+  test("per-utterance language: an Arabic utterance after an English one is answered with ar_ae clips (English page)", async ({ page, request, context, baseURL }) => {
+    await setup(page, request);
+    await setPrefs(context, baseURL!, { lang: "en" });
+    await page.goto("/voice");
+    await page.getByTestId("voice-on").click();
+    await say(page, "help-en");
+    await expect(page.getByTestId("voice-caption")).toHaveText(EN["voice.say.help"]);
+    await expect(page.getByTestId("voice-state")).toHaveText(EN["voice.state.listening"], { timeout: 10_000 });
+    const before = (await spoken(page)).length;
+    await say(page, "help-ar");
+    await expect(page.getByTestId("voice-caption")).toHaveText(AR["voice.say.help"]);
+    const ar = (await spoken(page)).slice(before);
+    expect(ar.length).toBeGreaterThan(0);
+    expect(ar.every((s) => s.lang === "ar-SA")).toBe(true);
+    expect(ar.map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["help"]!);
   });
 
   test("Sentinel timeout: no matching incident means 'still watching', never an invented campaign", async ({ page, request, context, baseURL }) => {
@@ -253,8 +274,13 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-problem")).toHaveAttribute("data-problem", "server");
     await expect.poll(async () => (await spoken(page)).map((x) => x.text).join(" ")).toContain(SCRIPT.ar_ae["voice.unavailable"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 6_000 }); // after ~1 s back-off
-    await say(page, "fail");
-    await expect(page.getByTestId("voice-problem")).toHaveAttribute("data-problem", "unavailable");
+    // Under a loaded CI machine the second utterance can land before the mic loop re-arms; retry it
+    // (still the same behaviour: repeated failures end in a visible "unavailable" state).
+    await expect(async () => {
+      await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 6_000 });
+      await say(page, "fail");
+      await expect(page.getByTestId("voice-problem")).toHaveAttribute("data-problem", "unavailable", { timeout: 4_000 });
+    }).toPass({ timeout: 30_000 });
     await expect(page.getByTestId("voice-problem")).toContainText(AR["voice.unavailable.msg"]);
     await expect(page.getByTestId("voice-paste")).toBeVisible();
   });

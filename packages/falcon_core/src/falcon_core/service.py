@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import logging
+import re
 from collections.abc import Awaitable, Callable, Mapping
 from contextlib import AbstractAsyncContextManager
 from typing import Any
@@ -12,6 +13,8 @@ from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
+from opentelemetry import context as otel_context
+from opentelemetry.propagate import extract
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     CollectorRegistry,
@@ -19,6 +22,7 @@ from prometheus_client import (
     Gauge,
     generate_latest,
 )
+from starlette.types import Receive, Scope, Send
 
 from falcon_core import __version__
 from falcon_core.logging import configure_logging
@@ -29,6 +33,7 @@ Lifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
 DepCheck = Callable[[], Awaitable[bool]]
 
 log = logging.getLogger("falcon.service")
+_TRACEPARENT_RE = re.compile(r"^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$")
 
 _DEFAULT_PORTS = {"postgresql": 5432, "postgres": 5432, "redis": 6379, "http": 80, "https": 443}
 
@@ -50,6 +55,24 @@ def tcp_check(url: str, timeout: float = 1.5) -> DepCheck:
     return check
 
 
+_TRACE_HEADERS = (b"traceparent", b"tracestate", b"baggage")
+
+
+class _FalconApp(FastAPI):
+    """FastAPI's native tracing adopts any inbound trace context before user middleware runs, so untrusted
+    callers' W3C trace headers are dropped here, ahead of it."""
+
+    trust: Callable[[Request], bool] = staticmethod(lambda _r: False)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        has_trace = scope["type"] in ("http", "websocket") and any(
+            k.lower() in _TRACE_HEADERS for k, _ in scope["headers"]
+        )
+        if has_trace and not self.trust(Request(scope)):
+            scope = {**scope, "headers": [(k, v) for k, v in scope["headers"] if k.lower() not in _TRACE_HEADERS]}
+        await super().__call__(scope, receive, send)
+
+
 def create_app(
     service: str,
     *,
@@ -58,6 +81,7 @@ def create_app(
     title: str | None = None,
     protect: bool = False,
     token: str | None = None,
+    trust_traceparent: Callable[[Request], bool] | None = None,
 ) -> FastAPI:
     """Build a FastAPI app for one Falcon Lens service.
 
@@ -66,8 +90,12 @@ def create_app(
 
     With ``protect=True`` every path except ``/healthz`` and ``/readyz`` needs
     ``Authorization: Bearer <token>`` (fail-closed: 503 if no token is configured).
+
+    An inbound W3C ``traceparent`` is adopted only when ``trust_traceparent(request)`` is true (a trusted internal
+    caller); otherwise, and by default, every request starts a fresh trace so outside callers cannot inject trace ids.
     """
     configure_logging(service)
+    trust = trust_traceparent or (lambda _r: False)
     # Spans go to the otel-collector (-> Phoenix) only when OTEL_EXPORTER_OTLP_ENDPOINT is set.
     setup_tracing(service)
     registry = CollectorRegistry()
@@ -85,7 +113,8 @@ def create_app(
         name: (tcp_check(dep) if isinstance(dep, str) else dep) for name, dep in (deps or {}).items()
     }
 
-    app = FastAPI(title=title or service, version=__version__, lifespan=lifespan)
+    app = _FalconApp(title=title or service, version=__version__, lifespan=lifespan)
+    app.trust = trust
     app.state.registry = registry
 
     if protect:
@@ -106,12 +135,19 @@ def create_app(
         if request.url.path in ("/healthz", "/readyz", "/metrics"):
             return await call_next(request)
         # Route template only (never the raw path or query: they can carry ids or URLs).
-        with fl_span(f"http {request.method}", "CHAIN", **{"fl.source": service}) as sp:
-            response = await call_next(request)
-            route = request.scope.get("route")
-            sp.set_attribute("http.request.method", request.method)
-            sp.set_attribute("http.route", str(getattr(route, "path", "unmatched"))[:80])
-            sp.set_attribute("http.response.status_code", response.status_code)
+        # A valid W3C `traceparent` makes this span a child of the caller's (voice checks link this way).
+        parent = request.headers.get("traceparent", "")
+        token = otel_context.attach(extract({"traceparent": parent})) if _TRACEPARENT_RE.match(parent) else None
+        try:
+            with fl_span(f"http {request.method}", "CHAIN", **{"fl.source": service}) as sp:
+                response = await call_next(request)
+                route = request.scope.get("route")
+                sp.set_attribute("http.request.method", request.method)
+                sp.set_attribute("http.route", str(getattr(route, "path", "unmatched"))[:80])
+                sp.set_attribute("http.response.status_code", response.status_code)
+        finally:
+            if token is not None:
+                otel_context.detach(token)
         requests_total.labels(service, request.method, str(response.status_code)).inc()
         return response
 

@@ -5,6 +5,7 @@
  * lib/eval-areas.generated.json); this module only labels and formats. Copy here carries no digits.
  */
 import extra from "./results-extra.generated.json";
+import { AR_NOTES } from "./artifact-notes-ar";
 import type { Lang } from "./contracts";
 import { loadResults, type ResultsView } from "./results";
 import { loadAreas, rowText, type Area, type AreaRow } from "./results-areas";
@@ -633,3 +634,10 @@ export const KPI_COPY = {
   },
 } as const;
 export const kpiCopy = (lang: Lang) => KPI_COPY[lang];
+
+// ───────── Artifact prose in Arabic ─────────
+/** Arabic text of a published artifact note, or null when it has no translation (the UI then shows the English, labelled). */
+export function artifactNote(text: string, lang: Lang): string | null {
+  if (!text) return null;
+  return lang === "en" ? text : (AR_NOTES[text] ?? null);
+}

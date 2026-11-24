@@ -48,3 +48,10 @@ def test_http_surface(mod) -> None:  # type: ignore[no-untyped-def]
     assert c.post("/stt", content=b"not audio at all", headers={**h, "Content-Type": "audio/wav"}).status_code == 422
     too_long = (np.zeros(16000 * 16, dtype="<i2")).tobytes()  # 16 s of raw PCM, 512 KB
     assert c.post("/stt", content=too_long, headers={**h, "Content-Type": "audio/L16"}).status_code == 422
+
+
+def test_pick_lang_hint_only_breaks_ties(mod) -> None:  # type: ignore[no-untyped-def]
+    assert mod.pick_lang("ar", 0.9, "en") == "ar"
+    assert mod.pick_lang("en", 0.9, "ar") == "en"
+    assert mod.pick_lang("fr", 0.3, "en") == "en"
+    assert mod.pick_lang("en", 0.3, None) == "ar"
