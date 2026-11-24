@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon-lens.local/contracts/hunt_candidate.schema.json",
+  "title": "HuntCandidate",
+  "description": "One look-alike domain found by the Sentinel hunt mode (docs/design/HUNTER.md section 4). The hunt finds, the Investigator arbiter decides: status `confirmed` only means the arbiter said suspicious or dangerous. prescore is a queue priority, never a risk score. The live domain name is stored only in Postgres; every projection carries the defanged name and its sha256.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["candidate_id", "domain_defanged", "domain_sha256", "brand_id", "discovery", "permutation_kind", "reasons", "provenance", "first_seen", "upstream_seen", "prescore", "status", "verdict_id", "verdict", "incident_id", "time_to_detection_s"],
+  "properties": {
+    "candidate_id": { "type": "string", "pattern": "^hc_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "domain_defanged": { "type": "string", "pattern": "^[^.]+(\\[\\.\\][^.]+)+$", "description": "Registrable domain, defanged (`[.]`); never a live name." },
+    "domain_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "sha256 of the lowercase A-label registrable domain." },
+    "brand_id": { "type": "string" },
+    "discovery": { "type": "string", "enum": ["ct", "permutation", "search", "ads", "maps"] },
+    "permutation_kind": { "type": ["string", "null"], "enum": ["typo", "homoglyph", "combosquat", "tld_swap", null] },
+    "reasons": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^(brand_token_in_cert|resolves_a|has_mx|cert_fresh|permutation:(typo|homoglyph|combosquat|tld_swap))$" } },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "terms_url", "retrieved_at", "source"],
+      "properties": {
+        "source_id": { "type": "string" },
+        "terms_url": { "type": ["string", "null"] },
+        "retrieved_at": { "type": "string", "format": "date-time" },
+        "source": { "type": "string", "enum": ["live", "fixture", "replay"] }
+      }
+    },
+    "first_seen": { "type": "string", "format": "date-time", "description": "When the hunt first saw this candidate." },
+    "upstream_seen": { "type": ["string", "null"], "format": "date-time", "description": "Earliest certificate not_before from crt.sh, when known (crt.sh JSON rows carry no log-entry timestamp)." },
+    "prescore": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Queue priority only (operator view). Never a risk score; never reaches the arbiter." },
+    "status": { "type": "string", "enum": ["new", "unregistered", "queued", "submitted", "confirmed", "cleared", "already_known", "skipped_quota", "error"] },
+    "verdict_id": { "type": ["string", "null"] },
+    "verdict": { "type": ["string", "null"], "enum": ["no_warning_signs", "suspicious", "dangerous", null] },
+    "incident_id": { "type": ["string", "null"] },
+    "time_to_detection_s": { "type": ["number", "null"], "minimum": 0, "description": "Arbiter verdict time minus the earliest upstream timestamp held (certificate not_before or RDAP registration date); null when no basis is known." },
+    "time_to_detection_basis": { "type": ["string", "null"], "enum": ["cert_not_before", "rdap", null], "description": "Optional. Which upstream timestamp time_to_detection_s is measured from; the UI names it next to the figure." }
+  }
+}

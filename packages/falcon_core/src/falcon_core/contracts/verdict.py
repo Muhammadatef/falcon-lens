@@ -11,7 +11,7 @@ from falcon_core.contracts.evidence import Evidence, Tier
 
 Source = Literal["live", "replay", "synthetic", "fixture"]
 ModelRoute = Literal["cloud", "local", "none"]
-Channel = Literal["web", "extension", "api", "mcp", "voice"]
+Channel = Literal["web", "extension", "api", "mcp", "voice", "hunt"]
 
 
 class Brand(BaseModel):

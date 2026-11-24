@@ -26,6 +26,7 @@ class Indicator(BaseModel):
     sha256: str | None = None
     first_seen: datetime
     blocked_until: datetime | None = None
+    found_by: Literal["user", "hunt"] | None = None
 
 
 class TimelineEntry(BaseModel):
@@ -70,11 +71,25 @@ class IncidentAction(BaseModel):
     at: datetime | None = None
 
 
+class Detection(BaseModel):
+    """Who found the incident's domains first (hunt mode, docs/design/HUNTER.md section 4)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    origin: Literal["user", "hunt", "mixed"]
+    found_before_report: bool
+    first_hunt_seen: datetime | None
+    first_user_seen: datetime | None
+
+
+IncidentType = Literal["campaign", "kit_reuse", "report_burst", "reputation_flip", "quality", "early_warning"]
+
+
 class Incident(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     incident_id: str = Field(pattern=r"^inc_[0-9A-HJKMNP-TV-Z]{26}$")
-    type: Literal["campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"]
+    type: IncidentType
     severity: Literal["low", "medium", "high", "critical"]
     severity_reason: SeverityReason | None = None
     status: Literal["open", "triaging", "awaiting_approval", "mitigated", "closed", "false_positive"]
@@ -88,5 +103,6 @@ class Incident(BaseModel):
     actions: list[IncidentAction]
     source: Source
     channels: list[Channel] | None = None
+    detection: Detection | None = None
     created_at: datetime
     updated_at: datetime
