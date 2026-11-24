@@ -281,6 +281,23 @@ export function publicIncidentTitle(type: unknown, brandId: unknown): { ar: stri
   }
 }
 
+/** One fixed sentence per Sentinel rule (services/sentinel/rules.yaml R1..R5). `{c}` = linked checks, `{d}` = distinct domains. */
+const RULE_LINES: Readonly<Record<string, { ar: string; en: string }>> = {
+  R1: { ar: "ظهرت {c} فحوصات مرتبطة على {d} نطاقات جديدة بالبصمة نفسها خلال فترة قصيرة.", en: "{c} linked checks on {d} new domains with the same page fingerprint in a short window." },
+  R2: { ar: "أُعيد استخدام عُدّة الصفحة نفسها في {c} فحوصات على {d} نطاقات.", en: "The same page kit was reused in {c} checks across {d} domains." },
+  R3: { ar: "ارتفع عدد البلاغات المتشابهة: {c} فحوصات مرتبطة.", en: "A burst of similar reports: {c} linked checks." },
+  R4: { ar: "تغيّرت سمعة نطاق كان يبدو سليمًا: {c} فحوصات مرتبطة.", en: "A domain's reputation changed: {c} linked checks." },
+  R5: { ar: "ملاحظة جودة على نتائج الفحص: {c} فحوصات مرتبطة.", en: "A quality note on check results: {c} linked checks." },
+};
+const GENERIC_REASON = { ar: "ربط الحارس {c} فحوصات مرتبطة بهذه الحادثة.", en: "Sentinel linked {c} checks to this incident." };
+
+/** Public severity line from the rule ids and counts only; free text is never used. Unknown rule: generic line. */
+export function publicSeverityLine(ruleIds: readonly string[], linked: number, domains: number): { ar: string; en: string } {
+  const line = ruleIds.map((r) => RULE_LINES[r]).find((l) => l !== undefined) ?? GENERIC_REASON;
+  const fill = (x: string) => x.replace("{c}", String(linked)).replace("{d}", String(domains));
+  return { ar: fill(line.ar), en: fill(line.en) };
+}
+
 const INDICATOR_KINDS = new Set(["domain", "url", "host"]);
 
 /** Incident for the public board and trace header: titles, severity, counts, defanged domains, action TYPES and status only. */
@@ -309,12 +326,11 @@ export function toPublicIncident(raw: unknown): Obj | null {
     }))
     .filter((a) => a.action_id && a.tool && a.status !== null)
     .slice(0, 20);
-  const reason = isObj(raw.severity_reason) ? raw.severity_reason : {};
   return {
     incident_id: raw.incident_id,
     type: code(raw.type) ?? "",
     severity,
-    severity_reason: { ar: scrubAr(reason.ar, 300), en: scrub(reason.en, 300) },
+    severity_reason: publicSeverityLine(codes(raw.rule_ids, 12).filter((r) => Object.hasOwn(RULE_LINES, r)), Array.isArray(raw.linked_verdicts) ? raw.linked_verdicts.filter((v) => typeof v === "string" && VERDICT_ID.test(v)).slice(0, 50).length : 0, new Set(indicators.map((i) => i.value_defanged)).size),
     status,
     brand_id: code(raw.brand_id),
     rule_ids: codes(raw.rule_ids, 12),

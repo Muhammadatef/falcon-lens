@@ -151,13 +151,13 @@ test.describe("public history is read only and leaks nothing", () => {
       await expect(rows).toHaveCount(2);
       for (const row of await rows.all()) await expect(row).toContainText(title);
       let body = await page.locator("main").innerText();
-      expect(body).not.toMatch(/text removed|أُزيل النص|0501234567|x\?t=1/);
+      expect(body).not.toMatch(/text removed|أُزيل النص|number removed|evil|0501234567|x\?t=1/);
       expect(body).not.toContain(id);
 
       await page.goto(`/incidents/${id}`);
       await expect(page.getByTestId("trace-incident-title")).toHaveText(title);
       body = await page.locator("main").innerText();
-      expect(body).not.toMatch(/text removed|أُزيل النص|0501234567|x\?t=1/);
+      expect(body).not.toMatch(/text removed|أُزيل النص|number removed|evil|0501234567|x\?t=1/);
       expect(body).not.toContain(id);
       expect(body).not.toContain("vd_");
       const details = page.getByTestId("trace-technical");

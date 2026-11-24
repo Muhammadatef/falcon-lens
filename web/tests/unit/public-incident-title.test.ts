@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BRAND_NAMES } from "@/lib/brand-names";
-import { publicIncidentTitle, toPublicIncident } from "@/lib/public-history";
+import { publicIncidentTitle, publicSeverityLine, toPublicIncident } from "@/lib/public-history";
 
 const IID = "inc_01HZX3K9Q2M4N5P6R7S8T9V0WX";
 const base = { incident_id: IID, type: "campaign", severity: "high", status: "open", created_at: "2026-11-24T10:00:00Z", updated_at: "2026-11-24T10:00:00Z", source: "live" };
@@ -34,5 +34,12 @@ describe("public incident title is built from structured fields only", () => {
     expect(found.length).toBeGreaterThan(20);
     for (const [, id, en, ar] of found) expect(BRAND_NAMES[id!]).toEqual({ ar: ar!.trim(), en: en!.trim() });
     expect(Object.keys(BRAND_NAMES)).toHaveLength(found.length);
+  });
+  it("severity line comes from rule ids and counts only", () => {
+    expect(publicSeverityLine(["R1"], 3, 3).en).toBe("3 linked checks on 3 new domains with the same page fingerprint in a short window.");
+    expect(publicSeverityLine(["R3"], 4, 1).ar).toContain("4");
+    expect(publicSeverityLine(["R99", "<x>"], 2, 0).en).toBe("Sentinel linked 2 checks to this incident.");
+    const out = toPublicIncident({ ...base, rule_ids: ["R1"], severity_reason: { ar: "اتصل 0501234567", en: "Call evil.test/x" } })!;
+    expect(JSON.stringify(out.severity_reason)).not.toMatch(/evil|0501234567|removed/);
   });
 });
