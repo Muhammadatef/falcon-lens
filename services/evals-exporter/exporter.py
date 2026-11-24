@@ -22,13 +22,15 @@ Layout understood (everything else falls back to a generic flattener):
     <ts>.json                 main T1 + arbiter artifact (``metrics`` map "split.name", "split.name_ci95")
     fp_regress/*.json         held-out real-site false-alarm runs (``false_positive_rate``, ``by_serves_web``)
     redteam/*.json            red-team runs (``attack_success_rate``, per-case ``kind``, or ``by_category``)
-    message_text/*.json, dspy/*.json, fits/*.json    generic: numeric leaves and {value, ci95} objects
+    message_text/*.json, dspy/*.json, fits/*.json, route_compare, cost_per_check, ...   generic: numeric leaves and
+    {value, ci95} objects (dotted keys split into path parts). redteam also reads summary.overall / summary.by_category.
+    provenance is normalised to real / synthetic / fixture / mixed / unknown (per row for mixed artifacts).
 
 Metrics (all gauges):
     fl_eval_metric{metric,split,source,artifact,provenance}, fl_eval_ci_low / fl_eval_ci_high (same labels),
     fl_eval_n (same labels, when the artifact states n), fl_eval_artifact_timestamp{source,artifact},
     fl_eval_artifact_latest{source,artifact} (1 for the newest artifact of a source),
-    fl_eval_artifact_info{source,artifact,git_sha,created_at,provenance,dataset_hash} (1),
+    fl_eval_artifact_info{source,artifact,git_sha,created_at,provenance,dataset_hash,set,role,route} (1),
     fl_eval_exporter_artifacts, fl_eval_exporter_errors.
 """
 
@@ -56,7 +58,11 @@ DEFAULT_PROVENANCE = {
     "message_text": "synthetic",
     "dspy": "unknown",
     "fits": "real",
+    "arabic_clarity": "fixture",
 }
+PROVENANCE_VALUES = ("real", "synthetic", "fixture", "mixed", "unknown")
+# Sources whose artifact text says "real ... + synthetic ...": rows are labelled one by one (see row_provenance).
+MIXED_SOURCES = {"synthetic_split", "sandbox_t2", "faithfulness"}
 _LABEL_ESC = str.maketrans({"\\": "\\\\", '"': '\\"', "\n": "\\n"})
 
 
@@ -69,6 +75,47 @@ def wilson(k: int, n: int, z: float = 1.959964) -> tuple[float, float]:
     c = p + z * z / (2 * n)
     h = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
     return (c - h) / d, (c + h) / d
+
+
+def normalise_provenance(raw: Any) -> str:
+    """Map an artifact's free-text provenance onto the bounded label set real/synthetic/fixture/mixed/unknown."""
+    t = str(raw or "").strip().lower()
+    if not t:
+        return "unknown"
+    if t in PROVENANCE_VALUES:
+        return t
+    if t.startswith("synthetic fixtures") or "fixture-backed" in t or t.startswith("shipped arabic"):
+        return "fixture"
+    if t.startswith("synthetic"):
+        return "synthetic"
+    if t.startswith("real"):
+        return "mixed" if "synthetic" in t or "fixture" in t else "real"
+    return "mixed" if "real" in t and "synthetic" in t else "unknown"
+
+
+def row_provenance(source: str, metric: str, default: str) -> str:
+    """Per-row provenance where one artifact carries both real and synthetic numbers."""
+    if metric.startswith("message_path."):
+        return "synthetic"
+    if source == "synthetic_split":
+        if metric.startswith("synthetic_"):
+            return "synthetic"
+        if metric.startswith(("real_", "manifest_")) or metric.startswith("n.real"):
+            return "real"
+        if metric.startswith("n.synthetic"):
+            return "synthetic"
+    elif source == "sandbox_t2":
+        if metric.startswith("real_site"):
+            return "real"
+        if "synthetic" in metric or "fixture" in metric:
+            return "fixture"
+    elif source == "faithfulness":
+        if "real_items" in metric:
+            return "real"
+        if "sentinel" in metric or "fixture" in metric or "replay" in metric:
+            return "synthetic"
+        return "real" if metric.split(".")[0] in {"val", "test", "reasons_vs_evidence"} else default
+    return default
 
 
 def _num(v: Any) -> float | None:
@@ -137,15 +184,59 @@ def _fp_rows(doc: dict[str, Any]) -> list[Row]:
             if _num(f.get("value")) is not None:
                 lo, hi = _ci(f)
                 rows.append(Row(name, "heldout", float(f["value"]), lo, hi, _num(g.get("n"))))
-    for key in ("degraded", "errors"):
+    for key in ("degraded", "errors", "false_dangerous", "http_429"):
         if _num(doc.get(key)) is not None:
             rows.append(Row(key, "heldout", float(doc[key]), n=n))
+    counts = doc.get("counts")
+    if isinstance(counts, dict):
+        for label, cnt in counts.items():
+            if _num(cnt) is not None:
+                rows.append(Row(f"verdict.{label}", "heldout", float(cnt), n=n))
+    for grp, suffix in (("serves_web_page", "serves_web"), ("no_web_host", "no_web_host")):
+        g = (doc.get("by_serves_web") or {}).get(grp)
+        if isinstance(g, dict):
+            for key in ("degraded", "false_dangerous", "partial_reads", "static_fallback"):
+                if _num(g.get(key)) is not None:
+                    rows.append(Row(f"{key}_{suffix}", "heldout", float(g[key]), n=_num(g.get("n"))))
     for tier, cnt in (doc.get("by_tier") or {}).items():
         if _num(cnt) is not None:
             rows.append(Row(f"tier_reached.{tier}", "heldout", float(cnt), n=n))
     for reason, cnt in (doc.get("degraded_reasons") or {}).items():
         if _num(cnt) is not None:
             rows.append(Row(f"degraded_reason.{reason}", "heldout", float(cnt), n=n))
+    return rows
+
+
+def _redteam_node_rows(suffix: str, node: dict[str, Any]) -> list[Row]:
+    """harmful rate + counts of one summary node. 'answered' is the number of cases where the model replied."""
+    rows: list[Row] = []
+    cases = _num(node.get("cases"))
+    lo, hi = _ci(node)
+    rate = _num(node.get("rate"))
+    sfx = f".{suffix}" if suffix else ""
+    if rate is not None:
+        rows.append(Row(f"harmful_rate{sfx}", "all", rate, lo, hi, cases))
+    for src, name in (
+        ("harmful", "harmful"),
+        ("llm_ran", "answered"),
+        ("llm_calls_failed", "llm_calls_failed"),
+        ("attack_degraded", "attack_degraded"),
+        ("cases", "cases"),
+    ):
+        v = _num(node.get(src))
+        if v is not None:
+            rows.append(Row(f"{name}{sfx}", "all", v, n=cases))
+    return rows
+
+
+def _redteam_summary_rows(summary: dict[str, Any]) -> list[Row]:
+    rows = _redteam_node_rows("", summary["overall"])
+    for outcome, cnt in (summary["overall"].get("by_outcome") or {}).items():
+        if _num(cnt) is not None:
+            rows.append(Row(f"outcome.{outcome}", "all", float(cnt), n=_num(summary["overall"].get("cases"))))
+    for cat, node in sorted((summary.get("by_category") or {}).items()):
+        if isinstance(node, dict):
+            rows += _redteam_node_rows(str(cat), node)
     return rows
 
 
@@ -159,6 +250,10 @@ def _redteam_rows(doc: dict[str, Any]) -> list[Row]:
         if lo is None and count is not None and total:
             lo, hi = wilson(int(count), int(total))
         rows.append(Row("harmful_rate", "all", rate, lo, hi, total))
+    summary = doc.get("summary")
+    if isinstance(summary, dict) and isinstance(summary.get("overall"), dict):
+        rows += _redteam_summary_rows(summary)
+        return rows
     by_cat = doc.get("by_category")
     if isinstance(by_cat, dict):
         for cat, node in by_cat.items():
@@ -204,7 +299,7 @@ def _walk(node: Any, path: list[str], out: list[Row], depth: int = 0) -> None:
         for k, child in node.items():
             if k in SKIP_KEYS or str(k).endswith("_ci95"):
                 continue
-            _walk(child, [*path, str(k)], out, depth + 1)
+            _walk(child, [*path, *str(k).split(".")], out, depth + 1)
     else:
         v = _num(node)
         if v is not None and path:
@@ -216,6 +311,14 @@ def _generic_rows(doc: dict[str, Any]) -> list[Row]:
     out: list[Row] = []
     _walk(doc, [], out)
     return out
+
+
+def _dspy_rows(doc: dict[str, Any]) -> list[Row]:
+    """Generic numbers plus the adoption decision (adopted 0/1) and the before/after validation means."""
+    rows = _generic_rows(doc)
+    if isinstance(doc.get("adopted"), bool):
+        rows.append(Row("adopted", "all", 1.0 if doc["adopted"] else 0.0))
+    return rows
 
 
 def _fits_rows(doc: dict[str, Any]) -> list[Row]:
@@ -248,6 +351,8 @@ def artifact_rows(source: str, doc: dict[str, Any]) -> list[Row]:
         return _redteam_rows(doc)
     if source == "fits":
         return _fits_rows(doc)
+    if source == "dspy":
+        return _dspy_rows(doc)
     return _generic_rows(doc)
 
 
@@ -255,7 +360,7 @@ def _timestamp(doc: dict[str, Any], path: Path) -> float:
     for key in ("created_at", "generated_at", "fit_date", "date"):
         val = doc.get(key)
         if isinstance(val, str):
-            for fmt in ("%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%d"):
+            for fmt in ("%Y-%m-%dT%H:%M:%SZ", "%Y%m%dT%H%M%SZ", "%Y-%m-%d"):
                 try:
                     return datetime.strptime(val, fmt).replace(tzinfo=UTC).timestamp()
                 except ValueError:
@@ -308,12 +413,18 @@ def render(root: Path) -> tuple[str, int, int]:
         "fl_eval_n": "Sample size behind the metric, as stated in the artifact",
         "fl_eval_artifact_timestamp": "Artifact creation time (unix seconds; file mtime if the artifact has no date)",
         "fl_eval_artifact_latest": "1 for the newest artifact of each source",
-        "fl_eval_artifact_info": "Artifact metadata (git sha, date, provenance, dataset hash)",
+        "fl_eval_artifact_info": "Artifact metadata (sha, date, provenance, dataset hash, fp set, dspy role, route)",
     }
     body: dict[str, list[str]] = {k: [] for k in heads}
     for source, path, doc, ts in docs:
         base = {"source": source, "artifact": path.stem}
-        prov = str(doc.get("provenance") or DEFAULT_PROVENANCE.get(source, "unknown"))
+        default_prov = DEFAULT_PROVENANCE.get(source, "unknown")
+        raw_prov = doc.get("provenance")
+        if raw_prov is None and doc.get("synthetic_data") is True:
+            raw_prov = "synthetic"
+        prov = normalise_provenance(raw_prov) if raw_prov else default_prov
+        if source in MIXED_SOURCES and prov != "mixed" and raw_prov:
+            prov = normalise_provenance(raw_prov)
         body["fl_eval_artifact_timestamp"].append(_line("fl_eval_artifact_timestamp", base, ts))
         if ts == latest[source]:
             body["fl_eval_artifact_latest"].append(_line("fl_eval_artifact_latest", base, 1.0))
@@ -322,11 +433,14 @@ def render(root: Path) -> tuple[str, int, int]:
             "git_sha": str(doc.get("git_sha", ""))[:12],
             "created_at": doc.get("created_at") or doc.get("generated_at") or "",
             "provenance": prov,
+            "set": str(doc.get("set") or "")[:60],
+            "role": str(doc.get("role") or "")[:30],
+            "route": str(doc.get("route") or doc.get("model_route") or "")[:30],
             "dataset_hash": str(doc.get("dataset_hash", ""))[:12],
         }
         body["fl_eval_artifact_info"].append(_line("fl_eval_artifact_info", info, 1.0))
         for row in artifact_rows(source, doc):
-            row_prov = "synthetic" if row.metric.startswith("message_path.") else prov
+            row_prov = row_provenance(source, row.metric, prov)
             lab = {"metric": row.metric, "split": row.split, **base, "provenance": row_prov}
             body["fl_eval_metric"].append(_line("fl_eval_metric", lab, row.value))
             for name, val in (("fl_eval_ci_low", row.lo), ("fl_eval_ci_high", row.hi), ("fl_eval_n", row.n)):
