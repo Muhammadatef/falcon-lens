@@ -17,6 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from falcon_core.cascade.ids import is_verdict_id
 
 Source = Literal["live", "replay", "synthetic", "fixture"]
+CHANNELS = ("web", "extension", "api", "mcp", "voice")
+Channel = Literal["web", "extension", "api", "mcp", "voice"]
 InputType = Literal["url", "message", "email", "image"]
 MAX_URL_BYTES = 4096
 MAX_VISIBLE_TEXT = 4096
@@ -36,6 +38,7 @@ class CheckJob(BaseModel):
     input_type: InputType = "url"
     payload: dict[str, Any] = Field(default_factory=dict)
     source: Source = "live"
+    channel: Channel | None = None
     submitted_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     @field_validator("verdict_id")
@@ -77,19 +80,24 @@ class CheckJob(BaseModel):
             "payload": payload,
             "source": fields.get("source") or "live",
         }
+        if fields.get("channel") in CHANNELS:  # unknown values are dropped, never fatal: it is metadata only
+            data["channel"] = fields["channel"]
         if fields.get("submitted_at"):
             data["submitted_at"] = fields["submitted_at"]
         return cls.model_validate(data)
 
     def to_fields(self) -> dict[str, str]:
         """Inverse of ``from_fields`` (used by tests and replay tools)."""
-        return {
+        out = {
             "verdict_id": self.verdict_id,
             "input_type": self.input_type,
             "payload_json": json.dumps(self.payload, separators=(",", ":")),
             "submitted_at": self.submitted_at.isoformat(),
             "source": self.source,
         }
+        if self.channel:
+            out["channel"] = self.channel
+        return out
 
 
 class SandboxForm(BaseModel):

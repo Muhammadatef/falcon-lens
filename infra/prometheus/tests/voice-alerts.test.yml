@@ -1,0 +1,82 @@
+# promtool unit tests for the voice alerts: promtool test rules infra/prometheus/tests/voice-alerts.test.yml
+# (scripts/tests/test_prometheus_rules.py runs it with promtool, or through the prom/prometheus image).
+rule_files:
+  - ../rules/falcon-alerts.yml
+evaluation_interval: 1m
+
+tests:
+  # 5 failures against 10 answered utterances in 5 minutes (33%): VoiceErrorRate fires.
+  - interval: 1m
+    input_series:
+      - series: 'fl_voice_errors_total{reason="stt_unavailable"}'
+        values: '0+1x20'
+      - series: 'fl_voice_utterances_total{wake="true",intent="check_clipboard",lang="en",engine="native"}'
+        values: '0+2x20'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: VoiceErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Voice assistant: more than 20% of requests failed in 5 minutes"
+              runbook_url: docs/RUNBOOK.md#voice-errors
+
+  # 5 failures against 100 answered utterances (5%): quiet.
+  - interval: 1m
+    input_series:
+      - series: 'fl_voice_errors_total{reason="bad_type"}'
+        values: '0+1x20'
+      - series: 'fl_voice_utterances_total{wake="true",intent="check_clipboard",lang="en",engine="native"}'
+        values: '0+20x20'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: VoiceErrorRate
+        exp_alerts: []
+
+  # One failure and nothing else: the 3-failure floor keeps it quiet.
+  - interval: 1m
+    input_series:
+      - series: 'fl_voice_errors_total{reason="bad_type"}'
+        values: '0 0 1 1 1 1 1 1 1 1 1 1 1 1'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: VoiceErrorRate
+        exp_alerts: []
+
+  # Only the container engine answers for 20 minutes: VoiceNativeEngineDown fires.
+  - interval: 1m
+    input_series:
+      - series: 'fl_voice_utterances_total{wake="true",intent="check_clipboard",lang="en",engine="container"}'
+        values: '0+1x25'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: VoiceNativeEngineDown
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+            exp_annotations:
+              summary: "Voice: the native engine is not answering, the container engine is (slower)"
+              runbook_url: docs/RUNBOOK.md#voice-native-down
+
+  # The native engine answers (container idle): quiet.
+  - interval: 1m
+    input_series:
+      - series: 'fl_voice_utterances_total{wake="true",intent="check_clipboard",lang="en",engine="native"}'
+        values: '0+1x25'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: VoiceNativeEngineDown
+        exp_alerts: []
+
+  # Both engines answered recently: quiet.
+  - interval: 1m
+    input_series:
+      - series: 'fl_voice_utterances_total{wake="true",intent="check_clipboard",lang="en",engine="native"}'
+        values: '0+1x25'
+      - series: 'fl_voice_utterances_total{wake="true",intent="check_clipboard",lang="en",engine="container"}'
+        values: '0+1x25'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: VoiceNativeEngineDown
+        exp_alerts: []

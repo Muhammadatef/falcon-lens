@@ -12,6 +12,8 @@
  * The output keeps the contract shapes (verdict, incident, agent trace) with the private parts emptied, so the
  * existing guards (`parseVerdict`, `parseIncident`, `parseAgentTrace`) and components work unchanged.
  */
+import { arCount, CHECKS, DOMAINS } from "./ar-count";
+import { BRAND_NAMES } from "./brand-names";
 import { defang } from "./defang";
 
 type Obj = Record<string, unknown>;
@@ -33,6 +35,9 @@ const VERDICTS = ["dangerous", "suspicious", "no_warning_signs"] as const;
 const INPUTS = ["url", "message", "email", "image"] as const;
 const SOURCES = ["live", "replay", "synthetic", "fixture"] as const;
 const ROUTES = ["cloud", "local", "none"] as const;
+/** Which client asked (contracts/verdict.schema.json `channel`). A fixed enum: the only client information that is public. */
+export const CHANNELS = ["web", "extension", "api", "mcp", "voice"] as const;
+export type PublicChannel = (typeof CHANNELS)[number];
 const SEVERITIES = ["low", "medium", "high", "critical"] as const;
 const INCIDENT_STATUSES = ["open", "triaging", "awaiting_approval", "mitigated", "closed", "false_positive"] as const;
 const ACTION_STATUSES = ["proposed", "executed", "awaiting_approval", "approved", "rejected", "reverted", "failed"] as const;
@@ -139,6 +144,7 @@ export interface PublicCheckSummary {
   tier_reached: (typeof TIERS)[number];
   model_route: (typeof ROUTES)[number];
   source: (typeof SOURCES)[number];
+  channel: PublicChannel | null;
   agent: { tiers_run: (typeof TIERS)[number][]; extractor_ran: boolean; investigator_ran: boolean; tool_calls: number; llm_calls: number };
 }
 
@@ -167,6 +173,7 @@ export function toPublicCheckSummary(raw: unknown): PublicCheckSummary | null {
     tier_reached: tier,
     model_route: oneOf(raw.model_route, ROUTES) ?? "none",
     source: oneOf(raw.source, SOURCES) ?? "live",
+    channel: oneOf(raw.channel, CHANNELS),
     agent: {
       tiers_run: tiers.length ? tiers : TIERS.slice(0, TIERS.indexOf(tier) + 1),
       extractor_ran: a.extractor_ran === true,
@@ -251,12 +258,65 @@ export function toPublicCheck(raw: unknown): Obj | null {
     final: raw.final,
     trace,
     source: oneOf(raw.source, SOURCES) ?? "live",
+    ...(oneOf(raw.channel, CHANNELS) ? { channel: oneOf(raw.channel, CHANNELS) } : {}),
     latency_ms: Math.round(num(raw.latency_ms, 0, 1e7)),
     created_at: iso(raw.created_at),
   };
 }
 
 /* ── Incidents (Sentinel) ─────────────────────────────────────────────── */
+
+const INCIDENT_TYPES = ["campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"] as const;
+
+/**
+ * Public incident title from STRUCTURED fields only: the type enum and the brand display name from the registry
+ * (brand_id to {ar, en}). The free-text `summary` is never used. An unknown brand_id or type falls back to the
+ * generic line, so no attacker-shaped text can reach the title.
+ */
+export function publicIncidentTitle(type: unknown, brandId: unknown): { ar: string; en: string } {
+  const t = oneOf(type, INCIDENT_TYPES) ?? "campaign";
+  const b = typeof brandId === "string" && Object.hasOwn(BRAND_NAMES, brandId) ? BRAND_NAMES[brandId]! : null;
+  switch (t) {
+    case "report_burst":
+      return b ? { ar: `موجة بلاغات عن انتحال ${b.ar}`, en: `Burst of reports about impersonation of ${b.en}` } : { ar: "موجة بلاغات احتيال", en: "Burst of scam reports" };
+    case "reputation_flip":
+      return b ? { ar: `تغيّر في سمعة نطاق مرتبط بـ${b.ar}`, en: `Reputation change on a domain linked to ${b.en}` } : { ar: "تغيّر في سمعة نطاق مشتبه به", en: "Reputation change on a suspect domain" };
+    case "quality":
+      return { ar: "ملاحظة جودة على نتائج الفحص", en: "Check quality note" };
+    default:
+      return b ? { ar: `حملة احتيال تنتحل ${b.ar}`, en: `Suspected scam campaign impersonating ${b.en}` } : { ar: "حملة احتيال مشتبه بها", en: "Suspected scam campaign" };
+  }
+}
+
+type Line = (n: number) => { ar: string; en: string };
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+/**
+ * One fixed sentence per Sentinel rule, worded after the rule's real condition (services/sentinel/rules.yaml).
+ * R1/R2 count distinct domains (what the rule counts). R3/R5 count reports and feedback, which the public
+ * projection does not carry, so those lines have no number. A count of 0 is omitted.
+ */
+const RULE_LINES: Readonly<Record<string, Line>> = {
+  R1: (d) => ({
+    ar: d > 0 ? `رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة (العدد: ${d}).` : "رُصدت نطاقات جديدة تشبه علامة واحدة خلال ساعة.",
+    en: d > 0 ? `${plural(d, "new lookalike domain", "new lookalike domains")} for one brand within an hour.` : "New lookalike domains for one brand within an hour.",
+  }),
+  R2: (d) => ({
+    ar: d > 0 ? `ظهر ${arCount(d, DOMAINS)} بالبصمة نفسها للصفحة خلال 7 أيام.` : "ظهرت نطاقات بالبصمة نفسها للصفحة خلال 7 أيام.",
+    en: d > 0 ? `${plural(d, "domain", "domains")} with the same page fingerprint within 7 days.` : "Domains with the same page fingerprint within 7 days.",
+  }),
+  R3: () => ({ ar: "وردت عدة بلاغات متشابهة خلال 30 دقيقة.", en: "Several similar scam reports arrived within 30 minutes." }),
+  R4: () => ({ ar: "نطاق لم تظهر عليه علامات تحذير سابقًا صار حكمه الآن «خطير».", en: "A domain that earlier showed no warning signs now has a dangerous verdict." }),
+  R5: () => ({ ar: "وردت عدة ملاحظات بأن الإشارة نفسها أعطت إنذارًا خاطئًا خلال ساعة.", en: "Several feedback reports say the same signal raised a false alarm within an hour." }),
+};
+
+/** Public severity line from the rule ids and counts only; free text is never used. Unknown rule: generic line. */
+export function publicSeverityLine(ruleIds: readonly string[], linked: number, domains: number): { ar: string; en: string } {
+  const rule = ruleIds.find((r) => Object.hasOwn(RULE_LINES, r));
+  if (rule) return RULE_LINES[rule]!(domains);
+  return linked > 0
+    ? { ar: `ربط الحارس ${arCount(linked, CHECKS)} بهذه الحادثة.`, en: `Sentinel linked ${plural(linked, "check", "checks")} to this incident.` }
+    : { ar: "سجّل الحارس هذه الحادثة.", en: "Sentinel recorded this incident." };
+}
 
 const INDICATOR_KINDS = new Set(["domain", "url", "host"]);
 
@@ -286,13 +346,11 @@ export function toPublicIncident(raw: unknown): Obj | null {
     }))
     .filter((a) => a.action_id && a.tool && a.status !== null)
     .slice(0, 20);
-  const summary = isObj(raw.summary) ? raw.summary : {};
-  const reason = isObj(raw.severity_reason) ? raw.severity_reason : {};
   return {
     incident_id: raw.incident_id,
     type: code(raw.type) ?? "",
     severity,
-    severity_reason: { ar: scrubAr(reason.ar, 300), en: scrub(reason.en, 300) },
+    severity_reason: publicSeverityLine(codes(raw.rule_ids, 12).filter((r) => Object.hasOwn(RULE_LINES, r)), Array.isArray(raw.linked_verdicts) ? raw.linked_verdicts.filter((v) => typeof v === "string" && VERDICT_ID.test(v)).slice(0, 50).length : 0, new Set(indicators.map((i) => i.value_defanged)).size),
     status,
     brand_id: code(raw.brand_id),
     rule_ids: codes(raw.rule_ids, 12),
@@ -301,9 +359,11 @@ export function toPublicIncident(raw: unknown): Obj | null {
     linked_verdicts: (Array.isArray(raw.linked_verdicts) ? raw.linked_verdicts : []).filter((v): v is string => typeof v === "string" && VERDICT_ID.test(v)).slice(0, 50),
     // The free-text timeline is not public; the node timeline comes from the trace.
     timeline: [],
-    summary: { ar: scrubAr(summary.ar, 240), en: scrub(summary.en, 240) },
+    // The free-text summary is never shown: the title comes from the structured type and brand only.
+    summary: publicIncidentTitle(raw.type, raw.brand_id),
     actions,
     source: oneOf(raw.source, SOURCES) ?? "live",
+    ...((Array.isArray(raw.channels) ? raw.channels : []).some((c) => oneOf(c, CHANNELS)) ? { channels: [...new Set((raw.channels as unknown[]).map((c) => oneOf(c, CHANNELS)).filter((c): c is PublicChannel => c !== null))].sort() } : {}),
     created_at: iso(raw.created_at),
     updated_at: iso(raw.updated_at),
   };

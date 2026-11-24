@@ -82,7 +82,7 @@ const PY = `
 import json, sys
 sys.path.insert(0, "scripts/submission")
 import capabilities as c
-want = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "url_check", "brand_check", "pipeline", "audit_log", "sentinel_rules", "observability", "sovereign", "pwa"]
+want = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "url_check", "brand_check", "pipeline", "audit_log", "sentinel_rules", "observability", "sovereign", "pwa", "voice_assistant"]
 out = {}
 for cap in c.CAPABILITIES:
     if cap.id in want:

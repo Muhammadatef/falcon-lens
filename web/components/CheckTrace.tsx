@@ -144,6 +144,7 @@ function Body({ verdict: v }: { verdict: Verdict }) {
           <div><dt>{h("ck.input")}</dt><dd>{t(`kind.${v.input_type}`)}</dd></div>
           {host ? <div><dt>{t("kind.url")}</dt><dd><code className="mono" dir="ltr" translate="no" data-testid="check-host">{host}</code></dd></div> : null}
           {v.impersonated_brand ? <div><dt>{h("ck.brand")}</dt><dd><UntrustedText value={lang === "ar" ? v.impersonated_brand.name_ar : v.impersonated_brand.name_en} /></dd></div> : null}
+          {v.channel ? <div><dt>{h("ck.channel")}</dt><dd data-testid="check-channel" data-channel={v.channel}>{h(`ck.channel.${v.channel}` as HistoryKey)}</dd></div> : null}
           <div><dt>{h("ck.latency")}</dt><dd><bdi className="mono">{v.latency_ms} ms</bdi></dd></div>
           <div><dt>{t("i.first")}</dt><dd>{formatTime(lang, v.created_at, true)}</dd></div>
           <div><dt>ID</dt><dd className="mono" dir="ltr" translate="no">{v.verdict_id}</dd></div>

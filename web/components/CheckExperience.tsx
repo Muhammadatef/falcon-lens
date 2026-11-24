@@ -8,6 +8,7 @@ import { CheckBox } from "./CheckBox";
 import { DemoRibbon } from "./Chrome";
 import { AgentChip } from "./AgentChip";
 import { HomeSections } from "./HomeSections";
+import { VoiceEntry } from "./VoiceEntry";
 import { Icon } from "./Icon";
 import { Lens } from "./Lens";
 import { Radar } from "./Radar";
@@ -83,6 +84,7 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed, pen
           </div>
         </div>
 
+        {showResult ? null : <VoiceEntry />}
         {showResult ? <Result state={state} onReset={reset} investigatorLive={investigatorLive} sentinelLive={sentinelLive} /> : null}
 
         <SentinelTicker demo={demo} sentinelLive={sentinelLive} />

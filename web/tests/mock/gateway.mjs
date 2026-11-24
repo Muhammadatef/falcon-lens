@@ -22,7 +22,7 @@ const PORT = Number(process.env.MOCK_PORT ?? 43110);
 const APP_PORT = Number(process.env.APP_PORT ?? 43111);
 /** Two extra app instances whose FL_API_INTERNAL_URL points at /__caps/<mode>: every capability flag forced false / true. */
 const CAP_APPS = { false: Number(process.env.APP_PORT_CAPS_FALSE ?? 43112), true: Number(process.env.APP_PORT_CAPS_TRUE ?? 43113) };
-const CAP_IDS = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "t1_measured_model", "url_check", "brand_check", "pipeline", "audit_log", "sentinel_rules", "observability", "sovereign", "pwa", "dspy_compiled_prompts", "llm_tracing"];
+const CAP_IDS = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "t1_measured_model", "url_check", "brand_check", "pipeline", "audit_log", "sentinel_rules", "observability", "sovereign", "pwa", "dspy_compiled_prompts", "llm_tracing", "voice_assistant"];
 const LIMITS = { url: 4096, message: 8 * 1024, email: 2 * 1024 * 1024, image: 5 * 1024 * 1024 };
 const BODY_LIMITS = { url: 32 * 1024, message: 64 * 1024, email: LIMITS.email + 64 * 1024, image: LIMITS.image + 64 * 1024 };
 
@@ -103,6 +103,7 @@ async function control(req, res, path) {
     boards.set(body.key, { decisions: [], ...body });
     return json(res, 200, { ok: true });
   }
+  if (path === "/__mock/voice" && req.method === "GET") return json(res, 200, { calls: voiceCalls });
   if (path === "/__mock/boards" && req.method === "GET") {
     const b = boards.get(new URL(req.url, "http://x").searchParams.get("key") ?? "");
     return b ? json(res, 200, { decisions: b.decisions }) : problem(req, res, 404, "not-found", "no board");
@@ -150,7 +151,29 @@ async function check(req, res, kind) {
   return json(res, 202, accepted, headers);
 }
 
+/** Voice: the multipart body carries a marker like VOICE:check-ar; the reply is canned. */
+const VOICE_REPLIES = {
+  "check-ar": { transcript: "يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر", lang: "ar", wake: true, intent: "check_clipboard", command: "شغّل عدسة الصقر" },
+  "check-en": { transcript: "Hey Falcon, I have received multiple messages that I feel it's scam, run Falcon Lens", lang: "en", wake: true, intent: "check_clipboard", command: "run Falcon Lens" },
+  "help-ar": { transcript: "يا فالكون ساعدني", lang: "ar", wake: true, intent: "help", command: "ساعدني" },
+  "none-ar": { transcript: "يا فالكون", lang: "ar", wake: true, intent: "none", command: "" },
+  stop: { transcript: "Falcon stop", lang: "en", wake: true, intent: "stop", command: "stop" },
+  noise: { transcript: "what is for dinner", lang: "en", wake: false, intent: "none", command: "" },
+};
+const voiceCalls = [];
+async function voice(req, res) {
+  if (req.headers["x-api-key"] !== "test-read-key") return problem(req, res, 401, "unauthorized", "Unauthorized");
+  const raw = await readBody(req);
+  const text = raw.toString("latin1");
+  voiceCalls.push({ bytes: raw.length, hasAudioPart: /name="audio"/.test(text), langHint: /name="lang_hint"\r\n\r\n(\w+)/.exec(text)?.[1] ?? null, marker: /;T:([a-z0-9]+)/.exec(text)?.[1] ?? null });
+  if (text.includes("VOICE:fail")) return problem(req, res, 503, "unavailable", "Unavailable");
+  const reply = VOICE_REPLIES[/VOICE:([a-z-]+)/.exec(text)?.[1] ?? ""];
+  if (!reply) return problem(req, res, 422, "invalid-request", "Invalid request");
+  return json(res, 200, { duration_ms: 3200, model: "mock-asr", ...reply });
+}
+
 async function api(req, res, path) {
+  if (path === "/v1/voice/utterance" && req.method === "POST") return voice(req, res);
   const checkRoute = /^\/v1\/check\/(url|message|email|image)$/.exec(path);
   if (checkRoute && req.method === "POST") return check(req, res, checkRoute[1]);
 

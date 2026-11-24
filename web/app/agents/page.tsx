@@ -5,6 +5,7 @@ import { CapBadge } from "@/components/CapBadge";
 import { Icon } from "@/components/Icon";
 import { Radar } from "@/components/Radar";
 import { ArchDiagram } from "@/components/arch/ArchDiagram";
+import { VoiceAgentsSection } from "@/components/VoiceAgentsSection";
 import { at } from "@/lib/i18n-arch";
 import { loadCapabilities } from "@/lib/capabilities";
 import { translate, type MessageKey } from "@/lib/i18n";
@@ -89,6 +90,8 @@ export default async function AgentsPage() {
           <p className="muted">{at(lang, "arch.biz.lead")}</p>
           <ArchDiagram lang={lang} caps={caps as unknown as Record<string, boolean>} view="biz" />
         </section>
+
+        <VoiceAgentsSection lang={lang} caps={caps} view="biz" />
 
         <section aria-labelledby="promises-h">
           <div className="sec-head"><h2 id="promises-h">{t("agents.promises.title")}</h2></div>

@@ -145,7 +145,18 @@ describe("toPublicCheckSummary / page", () => {
   });
 
   it("returns exactly the summary fields", () => {
-    expect(Object.keys(toPublicCheckSummary(row)!).sort()).toEqual(["agent", "created_at", "degraded", "degraded_reasons", "display", "input_type", "model_route", "risk_score", "source", "tier_reached", "verdict", "verdict_id"]);
+    expect(Object.keys(toPublicCheckSummary(row)!).sort()).toEqual(["agent", "channel", "created_at", "degraded", "degraded_reasons", "display", "input_type", "model_route", "risk_score", "source", "tier_reached", "verdict", "verdict_id"]);
+  });
+
+  it("passes only the channel enum (the one public client marker)", () => {
+    expect(toPublicCheckSummary({ ...row, channel: "voice" })!.channel).toBe("voice");
+    expect(toPublicCheckSummary({ ...row, channel: "10.0.0.7; drop table" })!.channel).toBeNull();
+    expect(toPublicCheckSummary(row)!.channel).toBeNull();
+    const detail = toPublicCheck({ ...verdictDoc(), channel: "voice" });
+    expect(detail?.channel).toBe("voice");
+    expect(toPublicCheck({ ...verdictDoc(), channel: "telegram" })).not.toHaveProperty("channel");
+    const inc = toPublicIncident({ ...incidentDoc(), channels: ["voice", "web", "evil", "voice"] });
+    expect(inc?.channels).toEqual(["voice", "web"]);
   });
 
   it("drops bad rows and bad cursors from a page", () => {
@@ -185,7 +196,7 @@ const incidentDoc = () => ({
 describe("toPublicIncident", () => {
   const out = toPublicIncident(incidentDoc())!;
   it("keeps title, severity, counts and action types with status", () => {
-    expect((out.summary as { en: string }).en).toBe("Phishing campaign");
+    expect((out.summary as { en: string }).en).toBe("Suspected scam campaign impersonating Falcon Demo Bank"); // structured title, never the free-text summary
     expect(out.severity).toBe("high");
     expect(out.linked_verdicts).toEqual([VID]);
     expect((out.actions as { tool: string; status: string }[]).map((a) => [a.tool, a.status])).toEqual([["draft_takedown", "awaiting_approval"], ["block_indicator", "executed"]]);

@@ -18,6 +18,7 @@ members = [
   "services/mcp",
   "services/egress",
   "services/sandbox",
+  "services/voice",
 ]
 
 [tool.uv.sources]
@@ -28,6 +29,7 @@ falcon-sentinel = { workspace = true }
 falcon-mcp-service = { workspace = true }
 falcon-egress = { workspace = true }
 falcon-sandbox = { workspace = true }
+falcon-voice = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -38,6 +40,7 @@ dev = [
   "falcon-mcp-service",
   "falcon-egress",
   "falcon-sandbox",
+  "falcon-voice",
   "pytest>=8.3",
   "pytest-asyncio>=0.25",
   "httpx>=0.28",
@@ -70,8 +73,8 @@ ignore = ["S104", "SIM905", "UP047"]  # S104: services bind 0.0.0.0 in container
 [tool.ruff.lint.isort]
 known-local-folder = ["conftest", "scoring_helpers"]
 known-first-party = [
-  "falcon_core", "falcon_api", "falcon_worker", "falcon_sentinel",
-  "falcon_mcp", "falcon_egress", "falcon_sandbox",
+  "voice_clips", "falcon_core", "falcon_api", "falcon_worker", "falcon_sentinel",
+  "falcon_mcp", "falcon_egress", "falcon_sandbox", "falcon_voice",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -85,6 +88,9 @@ known-first-party = [
 "packages/falcon_core/src/falcon_core/tools/**" = ["E501"]
 "services/sentinel/sentinel_core/**" = ["S311", "S324", "UP047"]
 "scripts/smoke.py" = ["S101", "S501"]
+"scripts/voice_bench.py" = ["S603", "S607", "E501"]  # drives macOS `say` and ffmpeg to build the synthetic set
+"services/api/tests/test_voice_integration.py" = ["S603", "S607"]
+"tools/voice_clips/**" = ["S603", "S607", "E501"]  # offline generator shells out to say/ffmpeg with fixed args
 # Seeded sampling and bootstrap statistics: reproducibility matters, not cryptographic strength.
 "scripts/fp_regress.py" = ["S311"]
 "evals/datasets/build_heldout_legit.py" = ["S311"]
@@ -95,9 +101,13 @@ strict = true
 plugins = ["pydantic.mypy"]
 # Strict applies to falcon_core itself (CLAUDE.md). Tests are linted by ruff but not type-checked:
 # several test dirs ship a `conftest.py` and mypy reports them as duplicate modules.
-files = ["packages/falcon_core/src", "services/api/src", "services/worker/src", "services/mcp/src"]
+files = ["packages/falcon_core/src", "services/api/src", "services/worker/src", "services/mcp/src", "services/voice/src"]
 explicit_package_bases = true
-mypy_path = "packages/falcon_core/src:services/api/src:services/worker/src:services/mcp/src"
+mypy_path = "packages/falcon_core/src:services/api/src:services/worker/src:services/mcp/src:services/voice/src"
+
+[[tool.mypy.overrides]]
+module = ["faster_whisper", "faster_whisper.*"]
+ignore_missing_imports = true  # container fallback engine only
 
 [[tool.mypy.overrides]]
 module = ["joblib", "joblib.*"]

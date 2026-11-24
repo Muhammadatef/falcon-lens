@@ -142,3 +142,21 @@ def test_scrape_job_for_the_evals_exporter() -> None:
     cfg = yaml.safe_load((ROOT / "infra" / "prometheus" / "prometheus.yml").read_text())
     jobs = {j["job_name"]: j for j in cfg["scrape_configs"]}
     assert jobs["evals-exporter"]["static_configs"][0]["targets"] == ["evals-exporter:9109"]
+
+
+def test_command_overview_has_the_voice_row_with_real_voice_metrics() -> None:
+    panels = _boards()["1-command-overview"]["panels"]
+    titles = [p["title"] for p in panels]
+    row = titles.index("Voice assistant | المساعد الصوتي")
+    voice = panels[row + 1 : row + 5]
+    assert [p["type"] for p in panels[row : row + 1]] == ["row"]
+    exprs = " ".join(e for p in voice for e in _exprs(p))
+    for needed in (
+        "fl_voice_utterances_total",
+        "fl_voice_latency_seconds_bucket",
+        "fl_voice_errors_total",
+        "fl_voice_checks_total",
+    ):
+        assert needed in exprs, needed
+    assert "by (wake, intent, lang)" in exprs and "engine" in exprs
+    assert "transcript" not in exprs.lower()

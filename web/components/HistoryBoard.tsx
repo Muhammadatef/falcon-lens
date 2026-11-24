@@ -165,6 +165,7 @@ function CheckRow({ s, demo }: { s: VerdictSummary; demo: boolean }) {
         <span className="vpill"><Icon name={s.verdict} size={20} />{t(`v.${s.verdict}`)}</span>
         <span className="pill" data-testid="check-row-risk">{h("hs.risk")} <bdi className="mono">{s.risk_score}</bdi></span>
         <SourceBadge source={s.source} />
+        {s.channel === "voice" ? <span className="pill" data-testid="voice-badge" lang={lang} title={h("ck.channel.voice")}><Icon name="mic" size={14} />{h("hs.channel.voice")}</span> : null}
         {s.degraded ? <span className="pill pill--wait">{h("hs.degraded")}</span> : null}
         <time className="small hs-time" dateTime={s.created_at}>{formatTime(lang, s.created_at, true)}</time>
       </div>

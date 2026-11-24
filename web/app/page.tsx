@@ -1,6 +1,7 @@
 import { CheckExperience } from "@/components/CheckExperience";
 import { loadCapabilities } from "@/lib/capabilities";
 import { VERDICT_ID_RE } from "@/lib/contracts";
+import "./voice/voice.css";
 import { translate } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/meta";
 import { serverLang } from "@/lib/server-lang";

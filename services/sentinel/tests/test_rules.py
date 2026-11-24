@@ -171,3 +171,15 @@ def test_rule_replay_idempotent(rid):
     s.process(sets[rid])
     s.process(list(reversed(sets[rid])))
     assert s.store.all() == first and len(first) == 1 and first[0]["rule_ids"] == [rid]
+
+
+def test_incident_lists_the_channels_of_its_linked_checks():
+    """Voice checks reach the Sentinel through the normal events; the incident shows which channels they came from."""
+    evs = [verdict_ev(f"kit-{i}.test", i, simhash=7, channel="voice" if i < 2 else "web") for i in range(3)]
+    s = Sentinel(InMemoryIncidentStore())
+    s.process(evs)
+    (inc,) = s.store.all()
+    assert inc["channels"] == ["voice", "web"]
+    plain = Sentinel(InMemoryIncidentStore())
+    plain.process([verdict_ev(f"kit-{i}.test", i, simhash=7) for i in range(3)])
+    assert "channels" not in plain.store.all()[0]

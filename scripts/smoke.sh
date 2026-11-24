@@ -62,3 +62,9 @@ for _ in $(seq 1 60); do
 done
 
 uv run python scripts/smoke.py
+
+# Microphone policy through the gateway: allowed for our own origin on /voice only (the gateway must defer to the app's header).
+pp() { curl -ksI "$FL_GATEWAY_URL$1" | tr -d '\r' | awk 'tolower($1)=="permissions-policy:" {print}'; }
+pp /voice | grep -q 'microphone=(self)' || { echo "smoke: /voice must send microphone=(self) through the gateway" >&2; exit 1; }
+pp / | grep -q 'microphone=()' || { echo "smoke: / must send microphone=() through the gateway" >&2; exit 1; }
+echo "smoke: microphone policy ok (/voice self, / off)"
