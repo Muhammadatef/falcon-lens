@@ -8,6 +8,7 @@ import { translate, translateMaybe, type MessageKey } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/meta";
 import { loadResults } from "@/lib/results";
 import { AttacksSection, Badge, FpHistorySection, KpiGridSection, OpsSection, RealSyntheticSection } from "@/components/ResultsKpi";
+import { Fold } from "@/components/Fold";
 import { areaRowBadge } from "@/lib/results-kpi";
 import { areaLabels, areaNote, areaScope, areaTitle, loadAreas, pendingKeys, pendingLabel, rowLabel, rowText, type Area } from "@/lib/results-areas";
 import { serverLang } from "@/lib/server-lang";
@@ -52,7 +53,7 @@ function AreaBlock({ area, lang }: { area: Area; lang: Lang }) {
             <div className="card metric" key={key} data-testid={`row-${area.id}-${key}`}>
               <span className="lbl">{rowLabel(area.id, key, lang)}</span>
               <b>{x.main}</b>
-              <Badge kind={areaRowBadge(area, key)} lang={lang} />
+              <Badge kind={areaRowBadge(area, key)} lang={lang} short />
               {x.detail ? <span className="ci">{x.detail}</span> : null}
               {x.ci ? <span className="ci">{L.ci}: {x.ci}</span> : null}
             </div>
@@ -110,11 +111,10 @@ export default async function ResultsPage() {
             ) : null}
 
             {areas.length > 0 ? (
-              <section aria-labelledby="areas-h" data-testid="areas">
-                <div className="sec-head"><h2 id="areas-h">{L.measured}</h2></div>
+              <Fold id="areas-h" title={L.measured} testId="areas" openOnDesktop={false}>
                 <p className="muted">{L.measuredLead}</p>
                 {areas.map((a) => <AreaBlock key={a.id} area={a} lang={lang} />)}
-              </section>
+              </Fold>
             ) : null}
 
             <section className="prose" aria-labelledby="scope-h">
@@ -126,18 +126,16 @@ export default async function ResultsPage() {
             </section>
 
             {pend.main.length + pend.extra.length > 0 ? (
-              <section className="prose" aria-labelledby="ne-h" data-testid="not-evaluated">
-                <h2 id="ne-h">{t("results.ne.title")}</h2>
+              <Fold id="ne-h" title={t("results.ne.title")} testId="not-evaluated">
                 <p>{t("results.ne.lead")}</p>
                 <ul className="chips">
                   {pend.main.map((k) => <li className="chip" key={k}>{translateMaybe(lang, "ne", k)}</li>)}
                   {pend.extra.map((k) => <li className="chip" key={k}>{pendingLabel(k, lang)}</li>)}
                 </ul>
-              </section>
+              </Fold>
             ) : null}
 
-            <section className="prose" aria-labelledby="prov-h">
-              <h2 id="prov-h">{t("results.prov.title")}</h2>
+            <Fold id="prov-h" title={t("results.prov.title")} testId="provenance">
               <ul>
                 <li>{t("results.prov.artifact")}: <code>{r.artifact}</code></li>
                 <li>{t("results.prov.date")}: <code>{r.createdAt}</code></li>
@@ -145,7 +143,7 @@ export default async function ResultsPage() {
                 <li>{local.scopeRaw}: <code>{r.scope}</code></li>
                 <li>{local.commit}: <code>{r.gitSha}</code>{r.gitSha.endsWith("-dirty") ? <> {local.dirty}</> : null}</li>
               </ul>
-            </section>
+            </Fold>
           </>
         )}
 

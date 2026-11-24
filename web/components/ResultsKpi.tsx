@@ -11,16 +11,18 @@ import {
   type Badge as BadgeKind,
   type Fig,
   type FpHistory,
+  type FpRunView,
   type OpsRow,
   type RsGroup,
 } from "@/lib/results-kpi";
 import type { ResultsView } from "@/lib/results";
+import { Fold } from "@/components/Fold";
 
 /** Provenance badge: REAL / SYNTHETIC / FIXTURE (or MIXED where an artifact says both). Text, not colour alone. */
-export function Badge({ kind, lang }: { kind: BadgeKind; lang: Lang }) {
+export function Badge({ kind, lang, short = false }: { kind: BadgeKind; lang: Lang; short?: boolean }) {
   return (
     <span className="prov-badge" data-badge={kind} title={BADGE_HELP[kind][lang]} dir="auto">
-      {BADGE_LABEL[kind][lang]}
+      {short ? kind : BADGE_LABEL[kind][lang]}
     </span>
   );
 }
@@ -30,7 +32,7 @@ function FigView({ fig, ciLabel }: { fig: Fig; ciLabel: string }) {
     <>
       <b>{fig.main}</b>
       {fig.detail ? <span className="ci">{fig.detail}</span> : null}
-      {fig.ci ? <span className="ci">{ciLabel}: {fig.ci}</span> : null}
+      {fig.ci ? <span className="ci"><span className="vh">{ciLabel}: </span><bdi dir="ltr">{fig.ci}</bdi></span> : null}
     </>
   );
 }
@@ -46,43 +48,54 @@ export function KpiGridSection({ view, lang }: { view: ResultsView | null; lang:
         <h2 id="kpi-h">{c.kpiTitle}</h2>
         <Badge kind={grid.badge} lang={lang} />
       </div>
-      <p className="muted">{c.kpiLead}</p>
+      <p className="muted">{c.kpiLead} {c.legend}</p>
       <p className="muted" data-testid="kpi-scope">{c.kpiScope}</p>
-      <div className="kpis">
-        {grid.rows.map((row) => (
-          <article className="card kpi" key={row.key} data-testid={`kpi-${row.key}`}>
-            <h3 className="kpi-name">{row.label}</h3>
-            <p className="kpi-explain">{row.explain}</p>
-            <div className="kpi-cols">
-              {cols.map((sp) => {
-                const cell = row.cells.find((x) => x.split === sp);
-                return (
-                  <div className="metric kpi-cell" key={sp} data-testid={`metric-${sp === "test" ? "test" : "val"}-${row.key}`}>
-                    <span className="lbl">{c[sp]}</span>
-                    {cell ? <FigView fig={cell.fig} ciLabel={c.ci} /> : <b>–</b>}
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-        ))}
-        <article className="card kpi" data-testid="kpi-official">
-          <h3 className="kpi-name">{c.official}</h3>
-          <p className="kpi-explain">{c.officialHelp}</p>
-          <div className="kpi-cols">
-            {cols.map((sp) => (
-              <div className="metric kpi-cell" key={sp} data-testid={`metric-${sp}-official`}>
-                <span className="lbl">{c[sp]}</span>
-                {grid.official[sp] !== null ? <b>{grid.official[sp]}</b> : <b>–</b>}
-              </div>
+      <div className="tbl-wrap kpi-wrap">
+        <table className="tbl kpi-tbl">
+          <caption className="vh">{c.kpiTitle}</caption>
+          <thead>
+            <tr>
+              <th scope="col" className="kpi-h0"><span className="vh">{c.kpiTitle}</span></th>
+              {cols.map((sp) => (
+                <th scope="col" key={sp}>
+                  {c[sp]}
+                  <span className="ci"> n = {grid.n[sp]}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {grid.rows.map((row) => (
+              <tr key={row.key} data-testid={`kpi-${row.key}`}>
+                <th scope="row">
+                  <span className="kpi-name">{row.label}</span>
+                  <span className="kpi-explain">{row.explain}</span>
+                </th>
+                {cols.map((sp) => {
+                  const cell = row.cells.find((x) => x.split === sp);
+                  return (
+                    <td key={sp} className="kpi-cell" data-testid={`metric-${sp}-${row.key}`}>
+                      {cell ? <FigView fig={cell.fig} ciLabel={c.ci} /> : <b>–</b>}
+                    </td>
+                  );
+                })}
+              </tr>
             ))}
-          </div>
-        </article>
+            <tr data-testid="kpi-official">
+              <th scope="row">
+                <span className="kpi-name">{c.official}</span>
+                <span className="kpi-explain">{c.officialHelp}</span>
+              </th>
+              {cols.map((sp) => (
+                <td key={sp} className="kpi-cell" data-testid={`metric-${sp}-official`}>
+                  <b>{grid.official[sp] !== null ? grid.official[sp] : "–"}</b>
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <p className="muted kpi-n" data-testid="kpi-n">
-        {c.val}: n = {grid.n.val} · {c.test}: n = {grid.n.test}
-        {grid.countsFromReScore ? <> · {c.kpiCounts}</> : null}
-      </p>
+      {grid.countsFromReScore ? <p className="muted kpi-n" data-testid="kpi-n">{c.kpiCounts}</p> : null}
     </section>
   );
 }
@@ -94,15 +107,34 @@ function Group({ g, lang, ciLabel }: { g: RsGroup; lang: Lang; ciLabel: string }
         <h4 className="h4">{g.title}</h4>
         <Badge kind={g.badge} lang={lang} />
       </div>
-      {g.counts.length > 0 ? <p className="ci rs-counts">{g.counts.join(" · ")}</p> : null}
-      <div className="rs-metrics">
-        {g.metrics.map((m) => (
-          <div className="metric" key={m.key} data-testid={`rs-${g.id}-${m.key}`}>
-            <span className="lbl">{m.label}</span>
-            <FigView fig={m.fig} ciLabel={ciLabel} />
-            <Badge kind={m.badge} lang={lang} />
-          </div>
-        ))}
+      <div className="tbl-wrap">
+        <table className="tbl rs-tbl">
+          <caption className="vh">{g.title}</caption>
+          <thead>
+            <tr>
+              <th scope="col"><span className="vh">{g.title}</span></th>
+              {g.columns.map((col) => (
+                <th scope="col" key={col.key}>
+                  {col.label}
+                  {col.counts ? <span className="ci">{col.counts}</span> : null}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {g.metrics.map((m) => (
+              <tr key={m.key} data-testid={`rs-${g.id}-${m.key}`}>
+                <th scope="row">
+                  <span className="rs-lbl">{m.label}</span>
+                  <Badge kind={m.badge} lang={lang} short />
+                </th>
+                {m.figs.map((f, i) => (
+                  <td key={g.columns[i]!.key}>{f ? <FpCell fig={f} ciLabel={ciLabel} /> : <span className="muted">–</span>}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       {g.caveat ? <p className="muted rs-caveat"><span dir="ltr" lang="en">{g.caveat}</span></p> : null}
     </div>
@@ -116,7 +148,7 @@ export function RealSyntheticSection({ lang }: { lang: Lang }) {
   return (
     <section aria-labelledby="rs-h" data-testid="real-synthetic" className="kpi-sec">
       <div className="sec-head"><h2 id="rs-h">{c.rsTitle}</h2></div>
-      <p className="muted">{c.rsLead}</p>
+      <p className="muted">{c.rsLead} {c.legend}</p>
       <div className="rs-cols">
         <div className="rs-col" data-testid="rs-real">
           <h3 className="h3">{c.rsReal} <Badge kind="REAL" lang={lang} /></h3>
@@ -131,11 +163,14 @@ export function RealSyntheticSection({ lang }: { lang: Lang }) {
           <p className="card callout" role="note"><span>{c.rsSynthNote}</span></p>
         </div>
       </div>
+      <details className="rs-src" data-testid="rs-src">
+        <summary>{c.artifact}</summary>
       <ul className="area-prov">
         <li>{c.artifact}: <code dir="ltr">{rs.artifact}</code>{rs.messageArtifact ? <> · <code dir="ltr">{rs.messageArtifact}</code></> : null}</li>
         <li><span dir="ltr" lang="en">{rs.provenance}</span></li>
         <li><span dir="ltr" lang="en">{rs.separationRule}</span></li>
       </ul>
+      </details>
     </section>
   );
 }
@@ -191,34 +226,29 @@ function FpCell({ fig, ciLabel }: { fig: Fig | null; ciLabel: string }) {
     <span className="fp-fig">
       <b>{fig.main}</b>
       {fig.detail ? <span className="ci">{fig.detail}</span> : null}
-      {fig.ci ? <span className="ci">{ciLabel}: {fig.ci}</span> : null}
+      {fig.ci ? <span className="ci"><span className="vh">{ciLabel}: </span><bdi dir="ltr">{fig.ci}</bdi></span> : null}
     </span>
   );
 }
 
-export function FpHistorySection({ lang }: { lang: Lang }) {
-  const h = buildFpHistory(lang);
+const SHOWN = 3;
+
+function FpTable({ runs, lang }: { runs: FpRunView[]; lang: Lang }) {
   const c = kpiCopy(lang);
-  if (!h) return null;
   return (
-    <section aria-labelledby="fp-h" data-testid="fp-history" className="kpi-sec">
-      <div className="sec-head"><h2 id="fp-h">{c.fpTitle}</h2><Badge kind="REAL" lang={lang} /></div>
-      <p className="muted">{c.fpLead}</p>
-      <p className="muted" data-testid="fp-scope">{c.fpScope}</p>
-      <Spark h={h} lang={lang} />
-      <div className="tbl-wrap" role="region" tabIndex={0} aria-label={c.fpTitle}>
-        <table className="tbl fp-tbl">
-          <caption>{c.fpTitle}</caption>
-          <thead>
-            <tr>
-              <th scope="col">{c.fpRun}</th>
-              <th scope="col">{c.fpAll}</th>
-              <th scope="col">{c.fpWeb}</th>
-              <th scope="col">{c.fpNoWeb}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {h.runs.map((r) => (
+    <div className="tbl-wrap" role="region" tabIndex={0} aria-label={c.fpTitle}>
+      <table className="tbl fp-tbl">
+        <caption>{c.fpTitle}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{c.fpRun}</th>
+            <th scope="col">{c.fpAll}</th>
+            <th scope="col">{c.fpWeb}</th>
+            <th scope="col">{c.fpNoWeb}</th>
+          </tr>
+        </thead>
+        <tbody>
+            {runs.map((r) => (
               <tr key={r.artifact} data-testid={r.newest ? "fp-newest" : "fp-run"} className={r.newest ? "fp-newest" : undefined} aria-current={r.newest ? "true" : undefined}>
                 <th scope="row">
                   <span className="fp-date" dir="ltr">{r.date}</span>
@@ -242,11 +272,30 @@ export function FpHistorySection({ lang }: { lang: Lang }) {
                 <td><FpCell fig={r.noWeb} ciLabel={c.ci} /></td>
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function FpHistorySection({ lang }: { lang: Lang }) {
+  const h = buildFpHistory(lang);
+  const c = kpiCopy(lang);
+  if (!h) return null;
+  return (
+    <Fold id="fp-h" title={c.fpTitle} badge={<Badge kind="REAL" lang={lang} />} testId="fp-history">
+      <p className="muted">{c.fpLead}</p>
+      <p className="muted" data-testid="fp-scope">{c.fpScope}</p>
+      <Spark h={h} lang={lang} />
+      <FpTable runs={h.runs.slice(0, SHOWN)} lang={lang} />
+      {h.runs.length > SHOWN ? (
+        <details className="fp-all" data-testid="fp-all">
+          <summary>{c.fpShowAll} {h.runs.length}</summary>
+          <FpTable runs={h.runs.slice(SHOWN)} lang={lang} />
+        </details>
+      ) : null}
       <p className="card callout" role="note" data-testid="fp-note"><span>{c.fpNote}</span></p>
-    </section>
+    </Fold>
   );
 }
 
@@ -255,8 +304,7 @@ export function AttacksSection({ lang }: { lang: Lang }) {
   const c = kpiCopy(lang);
   if (budgets.length === 0) return null;
   return (
-    <section aria-labelledby="atk-h" data-testid="attacks" className="kpi-sec">
-      <div className="sec-head"><h2 id="atk-h">{c.atkTitle}</h2><Badge kind={budgets[0]!.badge} lang={lang} /></div>
+    <Fold id="atk-h" title={c.atkTitle} badge={<Badge kind={budgets[0]!.badge} lang={lang} />} testId="attacks">
       <p className="muted">{c.atkLead}</p>
       <p className="muted" data-testid="atk-scope">{c.atkScope}</p>
       {budgets.map((b) => (
@@ -284,7 +332,7 @@ export function AttacksSection({ lang }: { lang: Lang }) {
         </div>
       ))}
       <p className="card callout" role="note" data-testid="atk-note"><span>{c.atkNote}</span></p>
-    </section>
+    </Fold>
   );
 }
 
@@ -296,7 +344,7 @@ function OpsCards({ rows, lang }: { rows: OpsRow[]; lang: Lang }) {
         <div className="card metric" key={r.key} data-testid={`ops-${r.key}`}>
           <span className="lbl">{r.label}</span>
           <FigView fig={r.fig} ciLabel={c.ci} />
-          <Badge kind={r.badge} lang={lang} />
+          <Badge kind={r.badge} lang={lang} short />
         </div>
       ))}
     </div>
@@ -309,8 +357,7 @@ export function OpsSection({ lang }: { lang: Lang }) {
   if (o.cost.length + o.agreement.length + o.stability.length === 0 && !o.extractor) return null;
   const ex = o.extractor;
   return (
-    <section aria-labelledby="ops-h" data-testid="ops" className="kpi-sec">
-      <div className="sec-head"><h2 id="ops-h">{c.opsTitle}</h2></div>
+    <Fold id="ops-h" title={c.opsTitle} testId="ops">
       <p className="muted">{c.opsLead}</p>
       <p className="muted" data-testid="ops-scope">{c.opsScope}</p>
       {o.cost.length > 0 ? <><h3 className="h3">{c.opsCost}</h3><OpsCards rows={o.cost} lang={lang} /></> : null}
@@ -343,7 +390,7 @@ export function OpsSection({ lang }: { lang: Lang }) {
                 <div className="card metric" key={a.key} data-testid={`ops-agree-${a.key}`}>
                   <span className="lbl">{a.label}</span>
                   <FigView fig={a.fig} ciLabel={c.ci} />
-                  <Badge kind={ex.badge} lang={lang} />
+                  <Badge kind={ex.badge} lang={lang} short />
                 </div>
               ))}
             </div>
@@ -351,6 +398,6 @@ export function OpsSection({ lang }: { lang: Lang }) {
         </>
       ) : null}
       {o.stability.length > 0 ? <><h3 className="h3">{c.opsStable}</h3><OpsCards rows={o.stability} lang={lang} /></> : null}
-    </section>
+    </Fold>
   );
 }

@@ -145,6 +145,7 @@ test.describe("judge-facing content", () => {
       await setPrefs(context, baseURL!, { lang });
       await page.goto("/results");
       await expect(page.getByTestId("areas")).toBeVisible();
+      await page.getByTestId("areas").locator("summary").first().click();
       for (const id of ["redteam", "faithfulness", "stability", "route_compare", "t3_investigator", "sandbox_t2", "brand_new_pages", "synthetic_split", "message_text", "cost_per_check", "arabic_clarity"]) {
         await expect(page.getByTestId(`area-${id}`), id).toBeVisible();
       }

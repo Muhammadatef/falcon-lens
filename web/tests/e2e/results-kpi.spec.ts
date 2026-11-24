@@ -12,6 +12,13 @@ async function serious(page: Page) {
   const found = await new AxeBuilder({ page }).withTags(WCAG).analyze();
   return found.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`);
 }
+/** Open a collapsible section (closed by default on phone, opened on desktop after mount). */
+async function openFold(page: Page, id: string) {
+  const d = page.getByTestId(id);
+  await expect(d).toBeVisible();
+  if ((await d.getAttribute("open")) === null) await d.locator("summary").first().click();
+  await expect(d).toHaveAttribute("open", "");
+}
 const x = extra as unknown as { fpHistory: { artifact: string }[]; redteam: Record<string, { categories: Record<string, { cases: number; harmful: number; answered: number }> }> };
 
 for (const lang of ["ar", "en"] as const) {
@@ -56,9 +63,11 @@ for (const lang of ["ar", "en"] as const) {
 
     test("held-out live false alarms: every run listed, newest first and highlighted, sparkline drawn", async ({ page }) => {
       await page.goto("/results");
-      await expect(page.getByTestId("fp-history")).toBeVisible();
+      await openFold(page, "fp-history");
       await expect(page.getByTestId("fp-spark").locator("svg polyline")).toHaveCount(2);
       const rows = page.getByTestId("fp-history").locator("tbody tr");
+      await expect(page.getByTestId("fp-history").locator(":scope > .fold-body > .tbl-wrap tbody tr")).toHaveCount(3);
+      await page.getByTestId("fp-all").locator("summary").first().click();
       await expect(rows).toHaveCount(x.fpHistory.length);
       await expect(rows.first()).toHaveAttribute("data-testid", "fp-newest");
       await expect(page.getByTestId("fp-newest")).toHaveCount(1);
@@ -70,6 +79,7 @@ for (const lang of ["ar", "en"] as const) {
 
     test("attacks: harmful count always beside the answered count, for every category", async ({ page }) => {
       await page.goto("/results");
+      await openFold(page, "attacks");
       const ext = x.redteam.extended!.categories;
       for (const [cat, v] of Object.entries(ext)) {
         const row = page.getByTestId(`atk-extended-${cat}`);
@@ -83,6 +93,7 @@ for (const lang of ["ar", "en"] as const) {
 
     test("cost and operations: cost, agreement, extractor per route, stability", async ({ page }) => {
       await page.goto("/results");
+      await openFold(page, "ops");
       await expect(page.getByTestId("ops-cloud_usd_per_check")).toContainText("$");
       await expect(page.getByTestId("ops-local_usd_per_check")).toContainText("0");
       await expect(page.getByTestId("ops-exact_label_agreement")).toContainText("%");
@@ -99,6 +110,21 @@ for (const lang of ["ar", "en"] as const) {
       expect(body).not.toMatch(/Abu Dhabi Police|شرطة أبوظبي/);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
       expect(await serious(page)).toEqual([]);
+      for (const id of ["fp-history", "attacks", "ops", "areas"]) await openFold(page, id);
+      expect(await serious(page), "all sections open").toEqual([]);
+    });
+
+    test("phone page is short with the folds closed, and the folds open by keyboard", async ({ page }) => {
+      test.skip((page.viewportSize()?.width ?? 1440) >= 720, "phone only");
+      await page.goto("/results");
+      for (const id of ["fp-history", "attacks", "ops", "areas"]) await expect(page.getByTestId(id)).not.toHaveAttribute("open", "");
+      const height = await page.evaluate(() => document.documentElement.scrollHeight);
+      expect(height, `phone page height ${height}px`).toBeLessThan(8000);
+      await expect(page.getByTestId("kpi-grid")).toBeVisible();
+      await expect(page.getByTestId("real-synthetic")).toBeVisible();
+      await page.getByTestId("attacks").locator("summary").focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByTestId("attacks")).toHaveAttribute("open", "");
     });
   });
 }

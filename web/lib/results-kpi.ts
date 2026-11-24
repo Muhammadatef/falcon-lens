@@ -228,17 +228,24 @@ export function buildKpiGrid(view: ResultsView | null, lang: Lang): KpiGrid | nu
 export const loadKpiGrid = (lang: Lang) => buildKpiGrid(loadResults(), lang);
 
 // ───────── 2. Real vs synthetic ─────────
+export interface RsColumn {
+  key: string;
+  label: string;
+  /** Example counts of this column, e.g. "142 scam · 104 legitimate". */
+  counts: string;
+}
 export interface RsMetric {
   key: string;
   label: string;
-  fig: Fig;
+  /** One figure per column (null when the artifact has none). */
+  figs: (Fig | null)[];
   badge: Badge;
 }
 export interface RsGroup {
   id: string;
   title: string;
   badge: Badge;
-  counts: string[];
+  columns: RsColumn[];
   metrics: RsMetric[];
   caveat: string;
 }
@@ -254,58 +261,53 @@ export interface RealSynthetic {
 }
 
 const RS_COPY = {
-  recallWarning: { ar: "احتيال نُبّه عليه (الاستدعاء)", en: "Scams warned (recall)" },
-  fprWarning: { ar: "سليم نُبّه عليه خطأً (الإنذار الخاطئ)", en: "Legitimate wrongly warned (false alarms)" },
-  precisionWarning: { ar: "تنبيهات كانت احتيالاً فعلاً (الدقة)", en: "Warnings that were real scams (precision)" },
-  recall: { ar: "رسائل احتيالية نُبّه عليها", en: "Scam messages warned" },
-  fpr: { ar: "رسائل سليمة نُبّه عليها خطأً", en: "Legitimate messages wrongly warned" },
+  recallWarning: { ar: "احتيال نُبّه عليه", en: "Scams warned" },
+  fprWarning: { ar: "سليم نُبّه عليه خطأً", en: "False alarms" },
+  precisionWarning: { ar: "تنبيهات صحيحة (الدقة)", en: "Correct warnings (precision)" },
+  recall: { ar: "احتيال نُبّه عليه", en: "Scams warned" },
+  fpr: { ar: "سليم نُبّه عليه خطأً", en: "False alarms" },
   val: { ar: "التحقق", en: "Validation" },
   test: { ar: "الاختبار", en: "Test" },
+  all: { ar: "الكل", en: "All" },
   legit: { ar: "سليم", en: "legitimate" },
   phishing: { ar: "احتيالي", en: "scam" },
-  realT: { ar: "حقيقي: إعادة تقييم التحقق", en: "Real: validation re-scored" },
-  realTT: { ar: "حقيقي: إعادة تقييم الاختبار", en: "Real: test re-scored" },
+  realT: { ar: "حقيقي: إعادة تقييم المجموعة المجمدة", en: "Real: the frozen split re-scored" },
   urls: { ar: "اصطناعي: روابط نماذج الاختبار", en: "Synthetic: demo-bank test links" },
   msgs: { ar: "اصطناعي: رسائل نصية (مجموعة الفصل)", en: "Synthetic: text messages (split suite)" },
-  mtVal: { ar: "رسائل نصية اصطناعية: التحقق", en: "Synthetic text messages: validation" },
-  mtTest: { ar: "رسائل نصية اصطناعية: الاختبار", en: "Synthetic text messages: test" },
+  mt: { ar: "رسائل نصية اصطناعية (مؤلف واحد)", en: "Synthetic text messages (single author)" },
 } satisfies Record<string, Bilingual>;
+
+type RsKey = "recallWarning" | "fprWarning" | "precisionWarning";
 
 export function buildRealSynthetic(lang: Lang): RealSynthetic | null {
   const rs = ex.realSynthetic;
   if (!rs) return null;
   const c = RS_COPY;
-  const split = (s: ExtraSplit, badge: Badge, keys: ("recallWarning" | "fprWarning" | "precisionWarning")[]): RsMetric[] =>
-    keys.flatMap((key) => {
-      const fig = rateFig(s?.[key] as Row | undefined, lang);
-      return fig ? [{ key, label: c[key][lang], fig, badge }] : [];
-    });
-  const counts = (s: ExtraSplit) => {
-    const nPh = num(s?.nPhishing);
-    const nLe = num(s?.nLegit);
-    return [nPh !== null ? `${nPh} ${c.phishing[lang]}` : "", nLe !== null ? `${nLe} ${c.legit[lang]}` : ""].filter(Boolean);
-  };
-  const real: RsGroup[] = (["val", "test"] as const).flatMap((sp) => {
-    const s = rs.real[sp];
-    if (!s) return [];
-    return [{ id: `real-${sp}`, title: sp === "val" ? c.realT[lang] : c.realTT[lang], badge: rs.badges.real, counts: counts(s), metrics: split(s, rs.badges.real, ["recallWarning", "fprWarning", "precisionWarning"]), caveat: "" }];
+  const counts = (nPh: unknown, nLe: unknown) => [num(nPh) !== null ? `${num(nPh)} ${c.phishing[lang]}` : "", num(nLe) !== null ? `${num(nLe)} ${c.legit[lang]}` : ""].filter(Boolean).join(" · ");
+  const group = (id: string, title: string, badge: Badge, cols: { key: "val" | "test" | "all"; s: ExtraSplit }[], keys: RsKey[], caveat = ""): RsGroup => ({
+    id,
+    title,
+    badge,
+    columns: cols.map((x) => ({ key: x.key, label: c[x.key][lang], counts: counts(x.s?.nPhishing, x.s?.nLegit) })),
+    metrics: keys.flatMap((key) => {
+      const figs = cols.map((x) => rateFig(x.s?.[key] as Row | undefined, lang));
+      return figs.some(Boolean) ? [{ key, label: c[key][lang], figs, badge }] : [];
+    }),
+    caveat,
   });
+  const real: RsGroup[] = [];
+  const cols = (["val", "test"] as const).flatMap((k) => (rs.real[k] ? [{ key: k, s: rs.real[k] }] : []));
+  if (cols.length) real.push(group("real-split", c.realT[lang], rs.badges.real, cols, ["recallWarning", "fprWarning", "precisionWarning"]));
   const synthetic: RsGroup[] = [];
-  if (rs.syntheticUrls) synthetic.push({ id: "synthetic-urls", title: c.urls[lang], badge: rs.badges.syntheticUrls, counts: counts(rs.syntheticUrls), metrics: split(rs.syntheticUrls, rs.badges.syntheticUrls, ["recallWarning", "fprWarning", "precisionWarning"]), caveat: rs.syntheticUrlsCaveat });
-  if (rs.syntheticMessages) synthetic.push({ id: "synthetic-messages", title: c.msgs[lang], badge: rs.badges.syntheticMessages, counts: counts(rs.syntheticMessages), metrics: split(rs.syntheticMessages, rs.badges.syntheticMessages, ["recallWarning", "fprWarning"]), caveat: "" });
+  if (rs.syntheticUrls) synthetic.push(group("synthetic-urls", c.urls[lang], rs.badges.syntheticUrls, [{ key: "all", s: rs.syntheticUrls }], ["recallWarning", "fprWarning", "precisionWarning"], rs.syntheticUrlsCaveat));
+  if (rs.syntheticMessages) synthetic.push(group("synthetic-messages", c.msgs[lang], rs.badges.syntheticMessages, [{ key: "all", s: rs.syntheticMessages }], ["recallWarning", "fprWarning"]));
   const mt = ex.messageText;
   if (mt) {
-    for (const sp of ["val", "test"] as const) {
-      const s = mt[sp];
-      if (!s) continue;
-      const metrics: RsMetric[] = [];
-      const r = rateFig(s.recall, lang);
-      const f = rateFig(s.fpr, lang);
-      if (r) metrics.push({ key: "recall", label: c.recall[lang], fig: r, badge: mt.badge });
-      if (f) metrics.push({ key: "fpr", label: c.fpr[lang], fig: f, badge: mt.badge });
-      const cn = [s.nScam !== null ? `${s.nScam} ${c.phishing[lang]}` : "", s.nLegit !== null ? `${s.nLegit} ${c.legit[lang]}` : ""].filter(Boolean);
-      synthetic.push({ id: `message-text-${sp}`, title: sp === "val" ? c.mtVal[lang] : c.mtTest[lang], badge: mt.badge, counts: cn, metrics, caveat: "" });
-    }
+    const as = (s: MsgSplit | undefined): ExtraSplit => (s ? { nPhishing: s.nScam ?? undefined, nLegit: s.nLegit ?? undefined, recallWarning: s.recall, fprWarning: s.fpr } : undefined);
+    const mcols = (["val", "test"] as const).flatMap((k) => (mt[k] ? [{ key: k, s: as(mt[k]) }] : []));
+    const g = group("message-text", c.mt[lang], mt.badge, mcols, ["recallWarning", "fprWarning"]);
+    g.metrics = g.metrics.map((m) => ({ ...m, label: m.key === "recallWarning" ? c.recall[lang] : c.fpr[lang] }));
+    synthetic.push(g);
   }
   return {
     artifact: rs.artifact,
@@ -506,6 +508,7 @@ export const KPI_COPY = {
   ar: {
     kpiTitle: "المؤشرات الرئيسية",
     kpiLead: "كاشف الروابط المُشحون على مجموعتين منفصلتين: التحقق (ضُبطت عليها العتبات) والاختبار (قُرئت للتقييم). كل مؤشر معه عدد الأمثلة ونطاق الثقة 95%.",
+    legend: "تحت كل رقم: عدد الأمثلة ثم نطاق الثقة 95%.",
     kpiScope: "النطاق: تحليل العنوان مع المحكّم على روابط حقيقية، دون اتصال، دون نموذج لغوي ودون زيارة الصفحة.",
     kpiCounts: "عدد أمثلة كل مؤشر من إعادة تقييم المجموعة المجمدة نفسها، وهي تطابق الملف الرئيسي.",
     val: "التحقق",
@@ -528,6 +531,7 @@ export const KPI_COPY = {
     fpScope: "النطاق: الخدمة الحية كاملة على مجموعات محجوزة من نطاقات مشروعة، وكل صف قراءة منفصلة.",
     fpNote: "المجموعة التي تُقاس مجدداً بعد تعديل الشيفرة لا تبقى غير مرئية لتلك التعديلات؛ تُقرأ صفوفها اللاحقة على هذا الأساس. وسمنا كل قراءة متكررة على المجموعة نفسها.",
     fpAll: "كل المواقع",
+    fpShowAll: "عرض كل القراءات:",
     fpWeb: "تقدّم صفحة ويب",
     fpNoWeb: "بلا صفحة ويب",
     fpRun: "القراءة",
@@ -567,6 +571,7 @@ export const KPI_COPY = {
   en: {
     kpiTitle: "Headline KPIs",
     kpiLead: "The shipped link detector on two separate sets: validation (where thresholds were chosen) and test (read once for scoring). Each KPI shows its example count and 95% range.",
+    legend: "Under each figure: the example count, then the 95% range.",
     kpiScope: "Scope: address analysis with the arbiter on real links, offline, no language model and no page visit.",
     kpiCounts: "Example counts come from re-scoring the same frozen split, which matches the main artifact.",
     val: "Validation",
@@ -589,6 +594,7 @@ export const KPI_COPY = {
     fpScope: "Scope: the whole live service on held-out sets of legitimate domains; each row is a separate read.",
     fpNote: "A set measured again after code changes is no longer unseen by those changes, so read its later rows that way. Every repeat read on the same set is marked.",
     fpAll: "All sites",
+    fpShowAll: "Show all runs:",
     fpWeb: "Serves a web page",
     fpNoWeb: "No web page",
     fpRun: "Run",

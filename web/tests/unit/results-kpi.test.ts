@@ -72,10 +72,10 @@ describe("results KPI sections: every displayed number exists in the bundled JSO
       expect(rs.synthetic.length).toBeGreaterThan(0);
       check("totals", `${rs.realTotal} ${rs.syntheticTotal}`);
       for (const g of [...rs.real, ...rs.synthetic]) {
-        check(`${g.id} counts`, g.counts.join(" "));
+        check(`${g.id} counts`, g.columns.map((x) => x.counts).join(" "));
         expect(g.metrics.length).toBeGreaterThan(0);
         for (const mt of g.metrics) {
-          check(`${g.id}.${mt.key}`, figText(mt.fig));
+          check(`${g.id}.${mt.key}`, mt.figs.map(figText).join(" "));
           expect(["REAL", "SYNTHETIC", "FIXTURE"]).toContain(mt.badge);
         }
       }
