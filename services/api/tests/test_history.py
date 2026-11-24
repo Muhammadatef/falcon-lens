@@ -61,9 +61,10 @@ async def test_read_scope_can_list_and_stream_but_not_operate(
         r = await c.get("/v1/verdicts", headers={"X-API-Key": read_key})
         assert r.status_code == 200 and [i["verdict_id"] for i in r.json()["items"]] == [vid(1)]
         # httpx's ASGI transport buffers a response, so the stream is bounded by STREAM_MAX_S (patched to 0.5 s).
-        async with asyncio.timeout(4), c.stream(
-            "GET", "/v1/verdicts/stream", headers={"X-API-Key": read_key, "Last-Event-ID": "0-0"}
-        ) as s:
+        async with (
+            asyncio.timeout(4),
+            c.stream("GET", "/v1/verdicts/stream", headers={"X-API-Key": read_key, "Last-Event-ID": "0-0"}) as s,
+        ):
             assert s.status_code == 200
             lines = [line async for line in s.aiter_lines()]
         assert any(line.startswith("event: verdict") for line in lines)
