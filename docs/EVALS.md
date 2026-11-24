@@ -68,5 +68,15 @@ make redteam-shipped BUDGET=extended PAIRED=evals/results/published/redteam/<pro
 | `brand_new_pages/` | detection of new lookalike fixtures on hosts absent from every feed and from training | synthetic fixtures |
 | `t3_investigator/` | forbidden tool calls (must be 0), step budget, label change against the run without T3, only on runs that reach the uncertain band | synthetic fixtures |
 | `arabic_clarity/` | 30-item Arabic rating sheet (`rating_sheet.csv`) and automated phone-fit and reading-level checks; the human result stays `pending_human_rating` until `--ingest` of a filled sheet | shipped templates |
+| `sovereign/` | sovereign-mode proof (`scripts/sovereign_proof.py`): FL_SOVEREIGN_MODE=1, no cloud key, per local model: demo scenarios, voice utterance, Sentinel LLM summary, which model each role used, egress audit; failed runs are published too | synthetic fixtures, synthetic speech |
 
 Fixtures are the invented Falcon Demo Bank on `.test` hosts, labelled as test fixtures, served only by an offline fixture renderer; no live page is visited. The red-team shipped-cascade artifact (PR #84) covers prompt injection and is not repeated here.
+
+### Sovereign-mode proof (what "runs fully locally" may and may not claim)
+
+Source: `evals/results/published/sovereign/sovereign_<model>_<ts>.json`, written by `scripts/sovereign_proof.py` against an isolated stack (compose project `flsov`) with `FL_SOVEREIGN_MODE=1` and no `ANTHROPIC_API_KEY`. Four fresh-stack runs are published (2 per model), the failed ones too; one machine, invented Falcon Demo Bank fixtures, synthetic `say` speech.
+- Both local models, `inkling-2-mini-chat` (Ollama) and Qwen 3.8 27B (`alibaba:qwen3.8:27b:mirai:mirai-m:4` via the :8085 gate, needs `FL_LOCAL_NO_THINK=1`), passed 7 of 7 scenarios (six demo scenarios + Sentinel scene) in every run; every LLM call in the logs has route `local` and the expected model id.
+- Voice utterance passed in every run through the container faster-whisper (`faster-whisper-small`, wake + intent correct, about 1.1 to 1.7 s).
+- Sentinel incident LLM summary was accepted by the faithfulness verifier in 1 of 4 runs (inkling run 2); in the other 3 the model was called but its summary was rejected and the template was used, so those 3 runs are published as `failed`. Do not claim "every Sentinel summary is written by the local model".
+- Egress audit, all 4 runs: no key in any LLM service, 0 requests reached the Anthropic base-URL sink, no cloud-LLM host in any service log or egress-proxy log. This shows no LLM traffic left the machine; it is not a claim that nothing left it.
+- Still needs the internet in sovereign mode: RDAP/crt.sh/IANA lookups about the checked domain, reputation feeds, the sandbox's one passive visit to the checked site, and the one-time download of the speech model weights (huggingface.co, own allow-listed proxy).

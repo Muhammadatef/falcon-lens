@@ -123,9 +123,10 @@ class OllamaProvider:
 
     route: Route = "local"
 
-    def __init__(self, base_url: str, client: httpx.AsyncClient | None = None) -> None:
+    def __init__(self, base_url: str, client: httpx.AsyncClient | None = None, *, no_think: bool = False) -> None:
         self._url = base_url.rstrip("/") + "/v1/chat/completions"
         self._client = client
+        self._no_think = no_think
 
     async def complete(self, req: ProviderRequest) -> ProviderResponse:
         body = {
@@ -137,6 +138,8 @@ class OllamaProvider:
             "messages": [{"role": "system", "content": req.system}]
             + [{"role": t.role, "content": t.content} for t in req.turns],
         }
+        if self._no_think:  # FL_LOCAL_NO_THINK: reasoning models would otherwise answer with empty content
+            body["chat_template_kwargs"] = {"enable_thinking": False}
         try:
             if self._client is not None:
                 resp = await self._client.post(self._url, json=body, timeout=req.timeout_s)

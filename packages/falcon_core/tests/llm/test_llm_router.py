@@ -378,6 +378,22 @@ async def test_ollama_provider_shape_and_special_token_strip() -> None:
     assert resp.text == GOOD and resp.usage.output_tokens == 18
 
 
+async def test_local_no_think_sends_enable_thinking_false_only_when_set() -> None:
+    bodies: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": GOOD}}], "usage": {}})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await OllamaProvider("http://gate.test:8085", client=client).complete(_preq("q"))
+        await OllamaProvider("http://gate.test:8085", client=client, no_think=True).complete(_preq("q"))
+    assert "chat_template_kwargs" not in bodies[0]
+    assert bodies[1]["chat_template_kwargs"] == {"enable_thinking": False}
+    assert RouterConfig.from_env({"FL_LOCAL_NO_THINK": "1"}).local_no_think
+    assert not RouterConfig.from_env({}).local_no_think
+
+
 async def test_ollama_http_error_is_provider_error() -> None:
     async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(500))) as c:
         with pytest.raises(ProviderError):

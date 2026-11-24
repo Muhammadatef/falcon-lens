@@ -2,7 +2,7 @@
 
 Variables (.env.example): ``FL_SOVEREIGN_MODE``, ``ANTHROPIC_API_KEY``, ``FL_CLOUD_MODEL_<ROLE>``,
 ``FL_LLM_TIMEOUT_S``, ``OLLAMA_BASE_URL``, ``FL_LOCAL_MODEL``, ``FL_LOCAL_VISION_MODEL``,
-``FL_LOCAL_LLM_TIMEOUT_S``, ``FL_SHADOW_RATE``.
+``FL_LOCAL_LLM_TIMEOUT_S``, ``FL_LOCAL_NO_THINK``, ``FL_SHADOW_RATE``.
 """
 
 from __future__ import annotations
@@ -49,6 +49,9 @@ class RouterConfig:
     ollama_base_url: str = "http://host.docker.internal:11434"
     cloud_timeout_s: float = 12.0
     local_timeout_s: float = 60.0
+    # Reasoning models served OpenAI-style (e.g. Qwen 3.x behind a gate) spend max_tokens on hidden thinking and
+    # return empty content; this sends chat_template_kwargs.enable_thinking=false. Off by default (Ollama models).
+    local_no_think: bool = False
     shadow_rate: float = 0.0
 
     @property
@@ -77,5 +80,6 @@ class RouterConfig:
             ollama_base_url=e.get("OLLAMA_BASE_URL") or "http://host.docker.internal:11434",
             cloud_timeout_s=_float(e.get("FL_LLM_TIMEOUT_S"), 12.0),
             local_timeout_s=_float(e.get("FL_LOCAL_LLM_TIMEOUT_S"), 60.0),
+            local_no_think=_truthy(e.get("FL_LOCAL_NO_THINK")),
             shadow_rate=rate,
         )
