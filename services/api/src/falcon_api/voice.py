@@ -15,12 +15,14 @@ from typing import Annotated, Any
 from urllib.parse import urlsplit
 
 import httpx
-from fastapi import Depends, FastAPI, File, Form, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Request, Response, UploadFile
+from opentelemetry import trace
 from prometheus_client import CollectorRegistry, Counter, Histogram
 
 from falcon_api.auth import Principal
 from falcon_api.problem import PROBLEM_RESPONSES, Problem
 from falcon_core.contracts.voice import SttResult, VoiceUtterance
+from falcon_core.telemetry.tracing import fl_span, set_span_attrs, traceparent_of
 from falcon_core.voice.intent import analyse
 
 log = logging.getLogger("falcon.api.voice")
@@ -192,10 +194,23 @@ def register(
     )
     async def utterance(
         request: Request,
+        response: Response,
         audio: Annotated[
             UploadFile, File(description="audio/webm;codecs=opus, audio/wav or audio/ogg; max 15 s and 1 MB")
         ],
         lang_hint: Annotated[str | None, Form(description="ar or en (optional)")] = None,
+    ) -> VoiceUtterance:
+        # One span per utterance (engine, lang, wake, intent, duration: never the transcript or audio). Its W3C
+        # `traceparent` goes back in a response header so the checks this utterance starts can be linked to it.
+        with fl_span("voice.utterance", "CHAIN") as span:
+            out = await handle_utterance(request, audio, lang_hint, span)
+            tp = traceparent_of(span)
+            if tp:
+                response.headers["traceparent"] = tp
+            return out
+
+    async def handle_utterance(
+        request: Request, audio: UploadFile, lang_hint: str | None, span: trace.Span
     ) -> VoiceUtterance:
         t0 = time.perf_counter()
         bucket = f"rl:voice:{client_ip(request)}:{int(time.time() // 60)}"
@@ -240,6 +255,14 @@ def register(
         elapsed = time.perf_counter() - t0
         utterances.labels(str(result.wake).lower(), result.intent, lang, engine).inc()
         latency.labels(engine).observe(elapsed)
+        attrs: dict[str, str | int | bool] = {
+            "fl.voice.engine": engine,
+            "fl.voice.lang": lang,
+            "fl.voice.wake": result.wake,
+            "fl.voice.intent": result.intent,
+            "fl.voice.duration_ms": round(elapsed * 1000),
+        }
+        set_span_attrs(span, **attrs)
         # No transcript, no audio: engine, timing and the intent code only.
         log.info(
             "voice utterance",

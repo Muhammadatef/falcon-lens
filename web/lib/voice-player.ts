@@ -33,6 +33,8 @@ export interface VoicePlayerOptions {
   gapMs?: number;
   /** Text for an id that is not in the manifest, used for the speechSynthesis fallback. */
   fallbackText?: (id: string) => string | undefined;
+  /** Reads a line aloud when its clip is missing (the app passes lib/speech, which picks the best device voice). Default: raw speechSynthesis. */
+  speakFallback?: (text: string, alive: () => boolean) => Promise<unknown>;
   /** Test seams. */
   fetchImpl?: typeof fetch;
   audioContext?: () => AudioContext;
@@ -133,6 +135,7 @@ export function createVoicePlayer(opts: VoicePlayerOptions): VoicePlayer {
   }
 
   function speak(text: string, my: number): Promise<void> {
+    if (opts.speakFallback && my === token) return Promise.resolve(opts.speakFallback(text, () => my === token)).then(() => undefined);
     const s = synth();
     if (!s || typeof SpeechSynthesisUtterance === "undefined" || my !== token) return Promise.resolve();
     return new Promise<void>((resolve) => {

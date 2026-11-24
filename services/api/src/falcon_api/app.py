@@ -13,7 +13,7 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, Literal, cast
 
 import httpx
 import redis.asyncio as aioredis
@@ -85,12 +85,21 @@ api_key_header = APIKeyHeader(
 )
 
 
+ChannelLit = Literal["web", "extension", "api", "mcp", "voice"]
+_CHANNEL_DESC = (
+    "Optional: which client asks (web, extension, api, mcp, voice). Metadata for History, metrics and the Sentinel; "
+    "it never changes the verdict. A repeated identical input answers from the cache with the first channel."
+)
+
+
 class UrlCheck(BaseModel):
     url: str = Field(min_length=1, description="URL to check (max 4 KB). Never fetched by the API.")
+    channel: ChannelLit | None = Field(default=None, description=_CHANNEL_DESC)
 
 
 class MessageCheck(BaseModel):
     text: str = Field(min_length=1, description="Message text (max 8 KB UTF-8).")
+    channel: ChannelLit | None = Field(default=None, description=_CHANNEL_DESC)
 
 
 class Accepted(BaseModel):
@@ -520,6 +529,7 @@ def build_app(
         payload: dict[str, Any],
         fingerprint: str,
         blob_b64: str | None = None,
+        channel: str | None = None,
     ) -> Response:
         j = jobs()
         body_hash = fingerprint
@@ -532,6 +542,7 @@ def build_app(
             fingerprint=fingerprint,
             source=source_for(request),
             blob_b64=blob_b64,
+            channel=channel,
         )
         if st == "queued":
             enqueued.labels(input_type).inc()
@@ -601,6 +612,7 @@ def build_app(
             input_type="url",
             payload={"url": body.url.strip(), "canonical_sha256": fp},
             fingerprint=fp,
+            channel=body.channel,
         )
 
     @app.post(
@@ -628,6 +640,7 @@ def build_app(
             input_type="message",
             payload={"text": body.text, "sha256": fp},
             fingerprint=fp,
+            channel=body.channel,
         )
 
     async def read_upload(file: UploadFile, limit: int) -> bytes:

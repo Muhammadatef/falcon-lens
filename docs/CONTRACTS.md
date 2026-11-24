@@ -27,7 +27,7 @@ Key invariants:
 Owned by builder-platform (API side) and builder-agent-core (worker side). Not public; the public contracts are the schemas above.
 
 **Submit (API -> worker).** `XADD fl:jobs MAXLEN ~5000` with string fields:
-`verdict_id` (`vd_` + ULID), `input_type` (`url|message|email|image`), `payload_json`, `submitted_at` (ISO-8601 UTC), `source` (`live|replay|synthetic|fixture`).
+`verdict_id` (`vd_` + ULID), `input_type` (`url|message|email|image`), `payload_json`, `submitted_at` (ISO-8601 UTC), `source` (`live|replay|synthetic|fixture`), and optionally `channel` (`web|extension|api|mcp|voice`).
 `payload_json` by type:
 - `url`: `{"url": "<as submitted, trimmed>", "canonical_sha256": "<hex>"}`. The API's canonicalisation is for keying only; the worker re-canonicalises and runs the SSRF guard.
 - `message`: `{"text": "...", "sha256": "<hex>"}` (max 8 KB UTF-8).
@@ -44,7 +44,9 @@ The JSON is a full `verdict.schema.json` document with `final` set. Exactly one 
 
 **Redaction.** The API sets `screenshot_url` to `null` for callers without a valid key, so the worker may always include it.
 
-**Events (worker -> Sentinel).** After the final PUBLISH the worker emits one `verdict.created` per final verdict: `XADD fl:events MAXLEN ~ 100000 * event <json>`, a single field named `event` whose value is the full PlatformEvent JSON (`contracts/event.schema.json`). The Sentinel reads exactly that field. Payload: `{verdict, risk_score, input_type, registrable_domain (defanged), brand_id, fingerprints{dom_simhash, favicon_hash, script_embedding_id, asn, registrar, cert_issuer, registered_at}, top_signals[], tier_reached, degraded}`. Unknown fingerprints are `null`. Never raw page or message text.
+**Events (worker -> Sentinel).** After the final PUBLISH the worker emits one `verdict.created` per final verdict: `XADD fl:events MAXLEN ~ 100000 * event <json>`, a single field named `event` whose value is the full PlatformEvent JSON (`contracts/event.schema.json`). The Sentinel reads exactly that field. Payload: `{verdict, risk_score, input_type, registrable_domain (defanged), brand_id, fingerprints{dom_simhash, favicon_hash, script_embedding_id, asn, registrar, cert_issuer, registered_at}, top_signals[], tier_reached, degraded[, channel]}`. Unknown fingerprints are `null`. Never raw page or message text.
+
+**Channel (client marker).** `POST /v1/check/url|message` accept an optional body field `channel` (`web|extension|api|mcp|voice`; anything else is 422). It rides the job (`channel` stream field), is written onto the verdict document (`verdict.schema.json` `channel`), the `verdict.created` payload and `GET /v1/verdicts` summaries, and the Sentinel lists the set of channels of an incident's linked checks (`incident.schema.json` `channels`). It is client-asserted metadata: it never changes a verdict, and an identical input answered from the verdict cache keeps the channel of the first check. The worker counts voice-initiated finals in `fl_voice_checks_total{verdict}`.
 
 **Worker-side keys.** Consumer group `workers` on `fl:jobs`. `fl:wsf:<fingerprint>` = leader verdict_id (worker single-flight, NX, TTL 120 s): a follower waits for the leader's final in `fl:verdict:last:` and re-issues it under its own id. `fl:wclaim:<verdict_id>` = stream entry id (idempotency, TTL 300 s). Malformed jobs go to `fl:jobs:dead` and are acked. The worker fills `vc:<fingerprint>` only for non-degraded finals. Postgres `evidence` (one row per evidence item of a final verdict) is worker-internal.
 

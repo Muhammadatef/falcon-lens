@@ -97,6 +97,27 @@ describe("voice player", () => {
     expect(Date.now() - t0).toBeGreaterThanOrEqual(2 * 20 + 3 * 10 - 8);
   });
 
+  it("hands a missing clip to speakFallback (the app's voice picker) instead of raw speechSynthesis", async () => {
+    const a = mockAudio();
+    const s = mockSynth();
+    const said: string[] = [];
+    const p = createVoicePlayer({
+      lang: "ar_ae",
+      gapMs: 1,
+      fetchImpl: mockFetch(),
+      audioContext: () => a.ctx,
+      synth: s.synth,
+      fallbackText: (id) => (id === "ar_ae.nope" ? "غير موجود" : undefined),
+      speakFallback: async (text, alive) => {
+        if (alive()) said.push(text);
+      },
+    });
+    await p.play(["ar_ae.a", "ar_ae.nope"]);
+    expect(a.log).toEqual(["start"]);
+    expect(said).toEqual(["غير موجود"]);
+    expect(s.spoken).toEqual([]);
+  });
+
   it("falls back to speech for ids missing from the manifest or failing to decode", async () => {
     vi.stubGlobal("SpeechSynthesisUtterance", Utt);
     const a = mockAudio();

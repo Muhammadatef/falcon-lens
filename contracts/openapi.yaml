@@ -354,6 +354,20 @@ components:
       type: object
     MessageCheck:
       properties:
+        channel:
+          anyOf:
+          - enum:
+            - web
+            - extension
+            - api
+            - mcp
+            - voice
+            type: string
+          - type: 'null'
+          description: 'Optional: which client asks (web, extension, api, mcp, voice). Metadata for History,
+            metrics and the Sentinel; it never changes the verdict. A repeated identical input answers
+            from the cache with the first channel.'
+          title: Channel
         text:
           description: Message text (max 8 KB UTF-8).
           minLength: 1
@@ -784,6 +798,20 @@ components:
       type: object
     UrlCheck:
       properties:
+        channel:
+          anyOf:
+          - enum:
+            - web
+            - extension
+            - api
+            - mcp
+            - voice
+            type: string
+          - type: 'null'
+          description: 'Optional: which client asks (web, extension, api, mcp, voice). Metadata for History,
+            metrics and the Sentinel; it never changes the verdict. A repeated identical input answers
+            from the cache with the first channel.'
+          title: Channel
         url:
           description: URL to check (max 4 KB). Never fetched by the API.
           minLength: 1
@@ -808,6 +836,17 @@ components:
           - type: string
           - type: 'null'
           title: Canonical Url
+        channel:
+          anyOf:
+          - enum:
+            - web
+            - extension
+            - api
+            - mcp
+            - voice
+            type: string
+          - type: 'null'
+          title: Channel
         created_at:
           format: date-time
           title: Created At
@@ -954,6 +993,18 @@ components:
       properties:
         agent:
           $ref: '#/components/schemas/AgentActivity'
+        channel:
+          anyOf:
+          - enum:
+            - web
+            - extension
+            - api
+            - mcp
+            - voice
+            type: string
+          - type: 'null'
+          description: Which client asked for the check; null when it did not say.
+          title: Channel
         created_at:
           title: Created At
           type: string

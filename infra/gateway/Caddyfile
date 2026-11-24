@@ -35,7 +35,9 @@ https://localhost:8443 {
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "no-referrer"
-		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		# "?" = default only: the web app sets its own per-page policy (microphone=(self) on /voice only), so an
+		# upstream value must win; API, MCP and static answers have none and get this deny-all default.
+		?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
 		Cross-Origin-Opener-Policy "same-origin"
 		-Server
 	}

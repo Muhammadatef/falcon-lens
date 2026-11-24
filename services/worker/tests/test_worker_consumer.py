@@ -42,6 +42,7 @@ from falcon_core.signals.brands.registry import default_registry
 from falcon_core.signals.cache import RedisCache
 from falcon_core.signals.reputation.mirror import SET_KEY, UPDATED_KEY, FeedMirror
 from falcon_core.signals.url.canonical import canonicalize
+from falcon_core.telemetry import metrics as tm
 from falcon_worker import keys
 from falcon_worker.consumer import RedisVerdictCache, Worker
 from falcon_worker.store import MemoryStore, migration_sql
@@ -86,14 +87,14 @@ class Rig:
         wkw.setdefault("consumer", "w1")
         self.worker = Worker(self.r, Cascade(deps), self.store, registry, self.metrics, poll_s=0.02, **wkw)
 
-    async def submit(self, url: str, input_type: str = "url", **payload: Any) -> str:
+    async def submit(self, url: str, input_type: str = "url", channel: str | None = None, **payload: Any) -> str:
         if not await self.r.exists(UPDATED_KEY):
             await self.r.set(UPDATED_KEY, json.dumps(self.r_sync_updated))
         vid = new_verdict_id()
         c = canonicalize(url)
         body: dict[str, Any] = {"url": url, "canonical_sha256": url_sha256(c)} if url else {}
         body.update(payload)
-        job = CheckJob(verdict_id=vid, input_type=input_type, payload=body)
+        job = CheckJob(verdict_id=vid, input_type=input_type, payload=body, channel=channel)  # type: ignore[arg-type]
         await self.r.xadd(keys.JOBS_STREAM, job.to_fields())
         return vid
 
@@ -163,6 +164,31 @@ async def test_url_job_publishes_partials_final_store_event_cache() -> None:
         )
         == 1
     )  # fmt: skip
+
+
+async def test_voice_channel_reaches_verdict_event_and_metric() -> None:
+    rig = Rig(StubSandboxClient(default=phish_features()))
+    await rig.worker.ensure_group()
+    vid = await rig.submit(DEMO_LOOKALIKE_URL, channel="voice")
+    assert await rig.worker.read_batch(pending=False, block_ms=100) == 1
+    final = json.loads(await rig.r.get(keys.last_key(vid)))
+    VERDICT.validate(final)
+    assert final["channel"] == "voice" and rig.store.verdicts[vid]["channel"] == "voice"
+    ((_, fields),) = await rig.r.xrange(keys.EVENTS_STREAM)
+    ev = json.loads(fields["event"])
+    EVENT.validate(ev)
+    assert ev["payload"]["channel"] == "voice"
+    assert tm.REGISTRY.get_sample_value("fl_voice_checks_total", {"verdict": "dangerous"}) >= 1
+
+
+async def test_no_channel_means_no_channel_field() -> None:
+    rig = Rig(StubSandboxClient(default=phish_features()))
+    await rig.worker.ensure_group()
+    vid = await rig.submit(DEMO_LOOKALIKE_URL)
+    await rig.worker.read_batch(pending=False, block_ms=100)
+    assert "channel" not in json.loads(await rig.r.get(keys.last_key(vid)))
+    ((_, fields),) = await rig.r.xrange(keys.EVENTS_STREAM)
+    assert "channel" not in json.loads(fields["event"])["payload"]
 
 
 async def test_official_job_no_warning_signs() -> None:

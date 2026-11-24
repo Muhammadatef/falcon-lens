@@ -214,3 +214,32 @@ def test_helpers() -> None:
     names = [(e.name, e.url) for e in parse_engines("http://host.docker.internal:8093, http://voice:8000/")]
     assert names == [("native", "http://host.docker.internal:8093"), ("container", "http://voice:8000")]
     assert isinstance(SttEngine("x", "http://x").usable, bool)
+
+
+async def test_utterance_span_has_metadata_only_and_traceparent_links_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    from falcon_core.telemetry import tracing
+
+    exporter = InMemorySpanExporter()
+    provider = tracing.build_provider("t")
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    monkeypatch.setattr(tracing, "get_tracer", lambda: provider.get_tracer("t"))
+    c, key = await make_client(Engines(nat=ok(text=f"Hey Falcon, check my messages {SECRET_WORDS}"), con=ok()))
+    async with c:
+        r = await c.post("/v1/voice/utterance", files=files(wav_bytes(2)), headers={"X-API-Key": key})
+        tp = r.headers["traceparent"]
+        # The caller passes it on: the next request's span becomes a child of voice.utterance.
+        await c.get("/v1/version", headers={"traceparent": tp})
+    done = exporter.get_finished_spans()
+    utt = next(sp for sp in done if sp.name == "voice.utterance")
+    assert (
+        dict(utt.attributes or {}).items()
+        >= {"fl.voice.engine": "native", "fl.voice.lang": "en", "fl.voice.wake": True}.items()
+    )
+    assert "fl.voice.duration_ms" in (utt.attributes or {})
+    assert SECRET_WORDS not in json.dumps({k: str(v) for sp in done for k, v in (sp.attributes or {}).items()})
+    assert tp.startswith(f"00-{utt.context.trace_id:032x}-{utt.context.span_id:016x}-")
+    kids = [sp for sp in done if sp.parent is not None and sp.parent.span_id == utt.context.span_id]
+    assert any(sp.name == "http GET" for sp in kids)

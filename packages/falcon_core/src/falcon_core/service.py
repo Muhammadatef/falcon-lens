@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import logging
+import re
 from collections.abc import Awaitable, Callable, Mapping
 from contextlib import AbstractAsyncContextManager
 from typing import Any
@@ -12,6 +13,8 @@ from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
+from opentelemetry import context as otel_context
+from opentelemetry.propagate import extract
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     CollectorRegistry,
@@ -29,6 +32,7 @@ Lifespan = Callable[[FastAPI], AbstractAsyncContextManager[None]]
 DepCheck = Callable[[], Awaitable[bool]]
 
 log = logging.getLogger("falcon.service")
+_TRACEPARENT_RE = re.compile(r"^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$")
 
 _DEFAULT_PORTS = {"postgresql": 5432, "postgres": 5432, "redis": 6379, "http": 80, "https": 443}
 
@@ -106,12 +110,19 @@ def create_app(
         if request.url.path in ("/healthz", "/readyz", "/metrics"):
             return await call_next(request)
         # Route template only (never the raw path or query: they can carry ids or URLs).
-        with fl_span(f"http {request.method}", "CHAIN", **{"fl.source": service}) as sp:
-            response = await call_next(request)
-            route = request.scope.get("route")
-            sp.set_attribute("http.request.method", request.method)
-            sp.set_attribute("http.route", str(getattr(route, "path", "unmatched"))[:80])
-            sp.set_attribute("http.response.status_code", response.status_code)
+        # A valid W3C `traceparent` makes this span a child of the caller's (voice checks link this way).
+        parent = request.headers.get("traceparent", "")
+        token = otel_context.attach(extract({"traceparent": parent})) if _TRACEPARENT_RE.match(parent) else None
+        try:
+            with fl_span(f"http {request.method}", "CHAIN", **{"fl.source": service}) as sp:
+                response = await call_next(request)
+                route = request.scope.get("route")
+                sp.set_attribute("http.request.method", request.method)
+                sp.set_attribute("http.route", str(getattr(route, "path", "unmatched"))[:80])
+                sp.set_attribute("http.response.status_code", response.status_code)
+        finally:
+            if token is not None:
+                otel_context.detach(token)
         requests_total.labels(service, request.method, str(response.status_code)).inc()
         return response
 

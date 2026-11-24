@@ -18,6 +18,7 @@ from .events import INCIDENT_SCHEMA_PATH, Event, parse_time
 from .ids import make_ulid
 from .rules import DEFAULT_RULES_PATH, SEVERITIES, Match, Rule, evaluate, load_rules
 
+CHANNELS = frozenset({"web", "extension", "api", "mcp", "voice"})
 SOURCE_PRIORITY = ("live", "replay", "synthetic", "fixture")
 
 
@@ -176,7 +177,11 @@ def build_incident(
         severity = _max_sev(severity, o["severity"])
     updated = max([f.event.occurred_at for f in fs] + ([parse_time(existing["updated_at"])] if existing else []))
 
+    channel_set = {c for f in fs if isinstance((c := f.event.payload.get("channel")), str) and c in CHANNELS}
+    channel_set |= {c for o in others for c in o.get("channels", ())}
     inc: dict[str, Any] = dict(existing or {})
+    if channel_set:  # contracts/incident.schema.json `channels`: which clients the linked checks came from
+        inc["channels"] = sorted(channel_set)
     inc.update(
         {
             "incident_id": iid,

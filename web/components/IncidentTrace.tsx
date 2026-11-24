@@ -133,6 +133,7 @@ function Header({ incident }: { incident: Incident }) {
             <span>{incident.incident_id}</span>
             {incident.brand_id ? <span>{tt("tr.brand")}={incident.brand_id}</span> : null}
             {incident.rule_ids.map((r) => <span key={r}>rule:{r}</span>)}
+            {(incident.channels ?? []).map((c) => <span key={c} data-testid="incident-channel" translate="no">channel:{c}</span>)}
           </div>
           <h3>{tt("tr.verdicts")}</h3>
           {incident.linked_verdicts.length === 0 ? <p className="muted">{t("i.none")}</p> : (
