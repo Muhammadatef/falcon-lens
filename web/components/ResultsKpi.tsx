@@ -6,6 +6,7 @@ import {
   buildFpHistory,
   buildKpiGrid,
   buildOps,
+  artifactNote,
   buildRealSynthetic,
   kpiCopy,
   type Badge as BadgeKind,
@@ -27,11 +28,16 @@ export function Badge({ kind, lang, short = false }: { kind: BadgeKind; lang: La
   );
 }
 
+/** "0 من 50": the words keep the page direction, every number is isolated (no forced LTR on Arabic phrases). */
+function CountOf({ text }: { text: string }) {
+  return <>{text.split(/(\d[\d.,]*%?)/).map((part, i) => (i % 2 === 1 ? <bdi key={i} dir="ltr">{part}</bdi> : part))}</>;
+}
+
 function FigView({ fig, ciLabel }: { fig: Fig; ciLabel: string }) {
   return (
     <>
       <b>{fig.main}</b>
-      {fig.detail ? <span className="ci">{fig.detail}</span> : null}
+      {fig.detail ? <span className="ci"><CountOf text={fig.detail} /></span> : null}
       {fig.ci ? <span className="ci"><span className="vh">{ciLabel}: </span><bdi dir="ltr">{fig.ci}</bdi></span> : null}
     </>
   );
@@ -43,7 +49,7 @@ export function KpiGridSection({ view, lang }: { view: ResultsView | null; lang:
   if (!grid) return null;
   const cols = ["val", "test"] as const;
   return (
-    <section aria-labelledby="kpi-h" data-testid="kpi-grid" className="kpi-sec">
+    <section aria-labelledby="kpi-h" id="sec-kpi" data-testid="kpi-grid" className="kpi-sec">
       <div className="sec-head">
         <h2 id="kpi-h">{c.kpiTitle}</h2>
         <Badge kind={grid.badge} lang={lang} />
@@ -136,7 +142,7 @@ function Group({ g, lang, ciLabel }: { g: RsGroup; lang: Lang; ciLabel: string }
           </tbody>
         </table>
       </div>
-      {g.caveat ? <p className="muted rs-caveat"><span dir="ltr" lang="en">{g.caveat}</span></p> : null}
+      {artifactNote(g.caveat, lang) ? <p className="muted rs-caveat">{artifactNote(g.caveat, lang)}</p> : null}
     </div>
   );
 }
@@ -146,7 +152,7 @@ export function RealSyntheticSection({ lang }: { lang: Lang }) {
   const c = kpiCopy(lang);
   if (!rs) return null;
   return (
-    <section aria-labelledby="rs-h" data-testid="real-synthetic" className="kpi-sec">
+    <section aria-labelledby="rs-h" id="sec-rs" data-testid="real-synthetic" className="kpi-sec">
       <div className="sec-head"><h2 id="rs-h">{c.rsTitle}</h2></div>
       <p className="muted">{c.rsLead} {c.legend}</p>
       <div className="rs-cols">
@@ -167,8 +173,8 @@ export function RealSyntheticSection({ lang }: { lang: Lang }) {
         <summary>{c.artifact}</summary>
       <ul className="area-prov">
         <li>{c.artifact}: <code dir="ltr">{rs.artifact}</code>{rs.messageArtifact ? <> · <code dir="ltr">{rs.messageArtifact}</code></> : null}</li>
-        <li><span dir="ltr" lang="en">{rs.provenance}</span></li>
-        <li><span dir="ltr" lang="en">{rs.separationRule}</span></li>
+        {artifactNote(rs.provenance, lang) ? <li>{artifactNote(rs.provenance, lang)}</li> : null}
+        {artifactNote(rs.separationRule, lang) ? <li>{artifactNote(rs.separationRule, lang)}</li> : null}
       </ul>
       </details>
     </section>
@@ -225,7 +231,7 @@ function FpCell({ fig, ciLabel }: { fig: Fig | null; ciLabel: string }) {
   return (
     <span className="fp-fig">
       <b>{fig.main}</b>
-      {fig.detail ? <span className="ci">{fig.detail}</span> : null}
+      {fig.detail ? <span className="ci"><CountOf text={fig.detail} /></span> : null}
       {fig.ci ? <span className="ci"><span className="vh">{ciLabel}: </span><bdi dir="ltr">{fig.ci}</bdi></span> : null}
     </span>
   );
@@ -322,8 +328,8 @@ export function AttacksSection({ lang }: { lang: Lang }) {
               {[...b.rows, b.total].map((r) => (
                 <tr key={r.category} data-testid={`atk-${b.budget}-${r.category}`}>
                   <th scope="row">{r.label}</th>
-                  <td><b dir="ltr">{r.harmful}</b>{r.ci ? <span className="ci"> {c.ci}: {r.ci}</span> : null}</td>
-                  <td><span dir="ltr">{r.answered}</span></td>
+                  <td><b><CountOf text={r.harmful} /></b>{r.ci ? <span className="ci"><CountOf text={c.ci} />: <bdi dir="ltr">{r.ci}</bdi></span> : null}</td>
+                  <td><CountOf text={r.answered} /></td>
                 </tr>
               ))}
             </tbody>

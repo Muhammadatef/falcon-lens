@@ -56,7 +56,7 @@ export default async function AuthoritiesPage() {
           <p><Link className="btn" href="/docs/integration">{dt(lang, "ap.ifaces.more")}</Link></p>
         </section>
 
-        <div className="prose">
+        <div className="prose prose--grid">
           {c.sections.map((s, i) => (
             <section key={s.title} aria-labelledby={`a-${i}`}>
               <h2 id={`a-${i}`}>{s.title}</h2>
@@ -66,7 +66,7 @@ export default async function AuthoritiesPage() {
           ))}
         </div>
 
-        <section className="prose" aria-labelledby="boundary-h">
+        <section className="prose prose--wide" aria-labelledby="boundary-h">
           <h2 id="boundary-h">{c.boundaryTitle}</h2>
           <p>{c.boundaryIn}</p>
           <p>{c.boundaryOut}</p>

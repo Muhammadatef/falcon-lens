@@ -40,3 +40,20 @@
 .ck-calls li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.8rem; overflow-wrap: anywhere; }
 .ck-call-sum { flex: 1 1 100%; color: var(--fl-text-muted); }
 .ck-final .vpill, .ck-sum .vpill { justify-self: start; }
+
+/* P0-5 check trace: verdict first */
+.ck-hero { padding: 0; overflow: hidden; border-color: var(--v-line, var(--fl-border)); }
+.ck-hero-plate { display: flex; align-items: center; gap: var(--fl-space-4); padding: var(--fl-space-5); background: var(--v-solid, var(--fl-surface-2)); color: var(--v-on, var(--fl-text)); border-block-end: 3px solid var(--v-fg, var(--fl-border-strong)); }
+.ck-hero-plate .icon { width: 3.5rem; height: 3.5rem; flex: none; }
+.ck-hero-word { font-size: var(--fl-text-2xl); font-weight: var(--fl-weight-bold); line-height: var(--fl-leading-tight); margin: 0; }
+.ck-hero-score { margin: 0; font-size: var(--fl-text-lg); font-weight: var(--fl-weight-medium); }
+.ck-hero-body { padding: var(--fl-space-5); display: grid; gap: var(--fl-space-3); background: linear-gradient(to bottom, var(--v-tint, transparent), transparent 10rem); }
+.ck-hero-body h2 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); margin: 0; }
+.ck-reasons li { font-size: var(--fl-text-lg); line-height: 1.7; }
+.ck-more { border-block-start: 1px solid var(--fl-border); padding-block-start: var(--fl-space-2); }
+.ck-more > summary { display: flex; align-items: center; gap: var(--fl-space-2); cursor: pointer; min-height: 2.75rem; font-size: var(--fl-text-sm); font-weight: var(--fl-weight-medium); color: var(--fl-text-muted); }
+.ck-tech-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; list-style: none; margin: var(--fl-space-2) 0 0; padding: 0; }
+.ck-tech-chips li { font-family: var(--fl-font-mono); font-size: var(--fl-text-xs); padding: 0.15rem 0.5rem; border-radius: 6px; background: var(--fl-surface-2); color: var(--fl-text-muted); direction: ltr; }
+.ck-sum .kv-list { max-width: var(--fl-read-max); }
+.ck-sum .kv-list > div { display: grid; grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr); justify-content: start; gap: 0.25rem 1rem; }
+@media (max-width: 719.98px) { .ck-hero-plate { padding: var(--fl-space-4); } .ck-hero-plate .icon { width: 2.75rem; height: 2.75rem; } .ck-sum .kv-list > div { grid-template-columns: minmax(0, 1fr); } }

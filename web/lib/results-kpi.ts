@@ -633,3 +633,22 @@ export const KPI_COPY = {
   },
 } as const;
 export const kpiCopy = (lang: Lang) => KPI_COPY[lang];
+
+// ───────── Artifact prose in Arabic ─────────
+/**
+ * Free-text notes published inside eval artifacts are English only. On the Arabic page a known note is shown in
+ * formal Arabic; an unknown one is hidden rather than shown as an English paragraph. Meaning only, no figures added.
+ */
+const AR_NOTES: Record<string, string> = {
+  "The .test top-level domain itself raises the URL-only prior, so benign .test fixtures are flagged more often than benign real sites; read this FPR as an upper-bound artifact of reserved hosts, not as a field FPR.":
+    "امتداد النطاق .test نفسه يرفع التقدير المبدئي المبني على العنوان وحده، فتُوسَم نماذج الاختبار غير الاحتيالية بامتداد .test أكثر من المواقع الحقيقية غير الاحتيالية. تُقرأ نسبة الإنذار الخاطئ هنا على أنها حدّ أعلى ناتج عن النطاقات المحجوزة، لا نسبة ميدانية.",
+  "real (manifest items) and synthetic (Falcon Demo Bank fixtures), reported side by side":
+    "عناصر حقيقية (من قائمة المجموعة المجمدة) وعناصر اصطناعية (نماذج «بنك الصقر التجريبي»)، تُعرض جنباً إلى جنب.",
+  "real and synthetic numbers are never pooled; no model or threshold was fitted or tuned on any of these items":
+    "لا تُجمع الأرقام الحقيقية مع الاصطناعية، ولم يُدرَّب أي نموذج ولم تُضبط أي عتبة على أي من هذه العناصر.",
+};
+/** The note to show in `lang`, or null when none exists in that language. */
+export function artifactNote(text: string, lang: Lang): string | null {
+  if (!text) return null;
+  return lang === "en" ? text : (AR_NOTES[text] ?? null);
+}

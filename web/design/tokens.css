@@ -71,7 +71,7 @@
 
   /* ── Typography ────────────────────────────────────────────────────── */
   --fl-font-ui: "Readex Pro", "Readex Pro Variable", "Noto Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
-  --fl-font-mono: "JetBrains Mono", "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --fl-font-mono: "JetBrains Mono", "JetBrains Mono Variable", "Readex Pro", "Readex Pro Variable", "Noto Sans Arabic", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   /* Sizes are rem on a 16 px root; body never goes under 1.0625rem (17 px). */
   --fl-text-xs: 0.8125rem;   /* 13: ids, legal; never for instructions */
