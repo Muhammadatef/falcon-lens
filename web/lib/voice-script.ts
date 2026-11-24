@@ -25,7 +25,7 @@ type Pair = readonly [ar_ae: string, en: string];
 const N = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 const FOUND: readonly Pair[] = [
-  ["لقيت مسج وحدة.", "I found one message."],
+  ["لقيت مسج واحد.", "I found one message."],
   ["لقيت مسجين.", "I found two messages."],
   ["لقيت ثلاث مسجات.", "I found three messages."],
   ["لقيت أربع مسجات.", "I found four messages."],
@@ -51,7 +51,7 @@ const OF: readonly Pair[] = [
   ["من عشر.", "of ten."],
 ];
 /** Counts per verdict, for N = 1..10, phrased as the subject of a short sentence. */
-const COUNT_AR = ["مسج وحدة", "مسجين", "ثلاث مسجات", "أربع مسجات", "خمس مسجات", "ست مسجات", "سبع مسجات", "ثمان مسجات", "تسع مسجات", "عشر مسجات"];
+const COUNT_AR = ["مسج واحد", "مسجين", "ثلاث مسجات", "أربع مسجات", "خمس مسجات", "ست مسجات", "سبع مسجات", "ثمان مسجات", "تسع مسجات", "عشر مسجات"];
 const COUNT_EN = ["One message", "Two messages", "Three messages", "Four messages", "Five messages", "Six messages", "Seven messages", "Eight messages", "Nine messages", "Ten messages"];
 const SUM_AR = { dangerous: "منها خطر.", suspicious: "منها مشكوك فيها.", clear: "ما فيها علامات تحذير.", failed: "ما قدرت أشيّكها." };
 const SUM_EN = (n: number) => ({
@@ -121,6 +121,103 @@ export const faqKey = (name: string): string => `faq.${name}`;
 /** The FAQ answer keys the API may return (validated before anything is played). */
 export const FAQ_KEYS: readonly string[] = FAQ.map(([n]) => faqKey(n));
 
+
+/**
+ * What THIS check found: one short spoken line per evidence code (the real signal names from falcon_core). A code that
+ * is not in this table is never spoken (no raw or untrusted text ever reaches speech). Several codes may share a line.
+ */
+type Finding = readonly [codes: readonly string[], key: string, ar_ae: string, en: string];
+const FINDINGS: readonly Finding[] = [
+  [["rep.openphish", "rep.urlhaus", "rep.gsb", "rep.feed_hit"], "find.listed", "الرابط مسجّل في قائمة نصب معروفة.", "The link is on a known scam list."],
+  [["url.combosquat"], "find.combosquat", "العنوان يضيف كلمة لاسم جهة معروفة.", "The address adds a word to a well-known name."],
+  [["url.typosquat"], "find.typosquat", "العنوان قريب مرة من اسم جهة معروفة، بس حروفه مغيّرة.", "The address is a near-copy of a well-known name."],
+  [["url.homograph"], "find.homograph", "العنوان فيه حروف تشبه غيرها عشان تخدعك.", "The address uses look-alike letters to fool you."],
+  [["url.bidi_or_zero_width"], "find.hidden_chars", "العنوان فيه رموز مخفية.", "The address contains hidden characters."],
+  [["url.raw_ip_host"], "find.ip_host", "العنوان أرقام بدل اسم موقع.", "The address is a number instead of a site name."],
+  [["url.free_host_or_tunnel"], "find.free_host", "الموقع على استضافة مجانية أو نفق مؤقت.", "The site sits on free hosting or a temporary tunnel."],
+  [["url.brand_in_subdomain_or_path"], "find.brand_in_path", "اسم جهة معروفة محطوط في العنوان، والموقع مو لها.", "A well-known name is placed in the address, but the site is not theirs."],
+  [["url.userinfo_trick"], "find.userinfo", "العنوان فيه حيلة تخفي الوجهة الحقيقية.", "The address uses a trick to hide where it really goes."],
+  [["url.open_redirect_abuse"], "find.open_redirect", "الرابط يحوّلك لموقع ثاني.", "The link bounces you to another site."],
+  [["url.redirect_chain"], "find.redirects", "الرابط يمر بعدة تحويلات.", "The link goes through several redirects."],
+  [["url.shortener"], "find.shortener", "الرابط مختصر ويخفي وجهته.", "The link is shortened and hides its destination."],
+  [["page.cross_origin_post"], "find.cross_post", "اللي تكتبه يروح لخادم ثاني.", "What you type goes to a different server."],
+  [["page.cloaking"], "find.cloaking", "الصفحة تعرض شي مختلف لأدوات الفحص.", "The page shows something different to scanners."],
+  [["page.hotlinked_brand_assets"], "find.hotlinked", "الصفحة تسحب صور جهة معروفة من موقعها الأصلي.", "The page pulls a well-known brand's images from its real site."],
+  [["visual.favicon_match_brand"], "find.favicon", "أيقونة الموقع منسوخة من جهة معروفة.", "The site icon is copied from a well-known brand."],
+  [["message.brand_url_mismatch"], "find.brand_url_mismatch", "الرابط مو من الجهة اللي تذكرها الرسالة.", "The link is not from the organisation the message names."],
+  [["message.scam_intent"], "find.scam_intent", "الرسالة تطلب رمز أو فلوس بأسلوب النصابين.", "The message asks for a code or money the way scammers do."],
+  [["message.script_match"], "find.script_match", "الرسالة تشبه نص نصب معروف.", "The message matches a known scam script."],
+  [["message.rule.urgency"], "find.urgency", "الرسالة تستعجلك.", "The message rushes you."],
+  [["message.rule.secrecy"], "find.secrecy", "الرسالة تطلب منك تخبي الموضوع.", "The message asks you to keep it secret."],
+  [["message.rule.otp_request"], "find.otp_request", "الرسالة تطلب رمز التحقق.", "The message asks for your verification code."],
+  [["message.rule.remote_access"], "find.remote_access", "الرسالة تطلب تحميل برنامج أو مشاركة شاشتك.", "The message asks you to install an app or share your screen."],
+  [["message.rule.payment"], "find.payment_request", "الرسالة تطلب دفع أو تحويل فلوس.", "The message asks you to pay or transfer money."],
+  [["message.rule.authority"], "find.authority", "الرسالة تدّعي إنها من جهة رسمية.", "The message claims to come from an official body."],
+  [["message.rule.prize"], "find.prize", "الرسالة توعدك بجايزة.", "The message promises you a prize."],
+  [["message.rule.job"], "find.job", "الرسالة تعرض وظيفة مشبوهة.", "The message offers a dubious job."],
+  [["message.rule.investment"], "find.investment", "الرسالة تعرض ربح سريع.", "The message offers fast profit."],
+  [["message.rule.delivery_fee"], "find.delivery_fee", "الرسالة تطلب رسوم توصيل.", "The message asks for a delivery fee."],
+  [["message.rule.fine"], "find.fine", "الرسالة تتكلم عن مخالفة وتطلب دفع.", "The message talks about a fine and asks for payment."],
+  [["email.auth_fail"], "find.email_auth", "الإيميل فشل في فحص هوية المرسل.", "The email failed the sender identity check."],
+  [["email.display_name_impersonation"], "find.display_spoof", "اسم المرسل يتظاهر بجهة معروفة.", "The sender name pretends to be a well-known body."],
+  [["email.reply_to_mismatch"], "find.reply_to", "الرد يروح لعنوان غير عنوان المرسل.", "Replies go to a different address than the sender's."],
+  [["email.link_text_mismatch"], "find.link_text", "الرابط المكتوب غير الرابط الحقيقي.", "The link shown is not the real link."],
+  [["image.qr_decoded"], "find.qr_link", "في الصورة رمز كيو آر يودّي لرابط.", "The image has a QR code that leads to a link."],
+  [["message.contains_url"], "find.contains_url", "في الرسالة رابط.", "The message contains a link."],
+  [["message.contains_phone"], "find.contains_phone", "في الرسالة رقم تتصل عليه.", "The message has a number to call."],
+  [["email.return_path_mismatch"], "find.return_path", "مسار الإرجاع غير عنوان المرسل.", "The return path differs from the sender's address."],
+  [["email.attachment"], "find.attachment", "المرفق ممكن يحمل رابط أو شي مشبوه.", "The attachment may carry a link or something suspicious."],
+];
+/** The page could not be fully opened: said even when it carries no weight. */
+const INCOMPLETE_CODES: readonly string[] = ["sandbox.not_rendered", "sandbox.unreachable", "sandbox.partial_render", "page.truncated", "page.static_fallback", "page.cloaking_inconclusive"];
+/** Brands that may be spoken by name (invented demo brand plus a few registry brands); any other brand is spoken as "a well-known body". */
+const BRAND_CLIPS: readonly (readonly [id: string, ar_ae: string, en: string])[] = [
+  ["falcon_demo_bank", "بنك الصقر التجريبي", "Falcon Demo Bank"],
+  ["emirates_post", "بريد الإمارات", "Emirates Post"],
+  ["etisalat_by_eand", "اتصالات", "Etisalat"],
+  ["salik", "سالك", "Salik"],
+  ["dewa", "كهرباء ومياه دبي", "Dubai Electricity and Water"],
+  ["fab", "بنك أبوظبي الأول", "First Abu Dhabi Bank"],
+  ["adcb", "بنك أبوظبي التجاري", "Abu Dhabi Commercial Bank"],
+  ["emirates_nbd", "بنك الإمارات دبي الوطني", "Emirates NBD"],
+  ["mashreq", "بنك المشرق", "Mashreq"],
+  ["rakbank", "بنك رأس الخيمة الوطني", "RAKBANK"],
+  ["uae_pass", "الهوية الرقمية", "UAE PASS"],
+];
+const BRAND_IDS: ReadonlySet<string> = new Set(BRAND_CLIPS.map(([id]) => id));
+/** Informational codes (weight 0) that still earn a spoken line. */
+const INFO_CODES: readonly string[] = ["message.contains_url", "message.contains_phone", "image.qr_decoded", "email.attachment"];
+/** Every evidence code that has a spoken line (the written table in lib/findings.ts must cover all of them). */
+export const SPOKEN_CODES: readonly string[] = [...FINDINGS.flatMap(([codes]) => codes), ...INCOMPLETE_CODES, "domain.age_days", "domain.cert_age_days", "brand.claimed_not_owned", "page.cred_form"];
+const CODE_KEY: ReadonlyMap<string, string> = new Map(FINDINGS.flatMap(([codes, key]) => codes.map((c) => [c, key] as const)));
+/** What a credential form asked for, by field kind (the real kinds of falcon_core cascade/page.py). */
+const CRED_LINES: readonly (readonly [key: string, ar_ae: string, en: string])[] = [
+  ["card", "الصفحة تطلب بيانات بطاقتك.", "The page asks for your card details."],
+  ["eid", "الصفحة تطلب رقم هويتك الإماراتية.", "The page asks for your Emirates ID number."],
+  ["uae_pass", "الصفحة تطلب بيانات الهوية الرقمية.", "The page asks for your digital identity login."],
+  ["pin", "الصفحة تطلب الرقم السري.", "The page asks for your PIN."],
+  ["password_otp", "الصفحة تطلب كلمة السر والرمز.", "The page asks for a password and a code."],
+  ["password", "الصفحة تطلب كلمة السر.", "The page asks for a password."],
+  ["otp", "الصفحة تطلب رمز التحقق.", "The page asks for a verification code."],
+  ["generic", "الصفحة تطلب بيانات دخول أو بيانات حساسة.", "The page asks for login or sensitive details."],
+];
+const CRED_KINDS = new Set(["password", "card", "cvv", "otp", "pin", "emirates_id", "uae_pass", "card_expiry"]);
+/** The clip for what the page really asked, from observed.field_kinds; the generic line when the kinds are unknown. */
+export function credFormKey(observed: unknown): string {
+  const raw = isObjLike(observed) && Array.isArray(observed.field_kinds) ? observed.field_kinds : [];
+  const k = new Set(raw.filter((x): x is string => typeof x === "string" && CRED_KINDS.has(x)));
+  if (k.has("card") || k.has("cvv") || k.has("card_expiry")) return "find.cred.card";
+  if (k.has("emirates_id")) return "find.cred.eid";
+  if (k.has("uae_pass")) return "find.cred.uae_pass";
+  if (k.has("pin")) return "find.cred.pin";
+  if (k.has("password") && k.has("otp")) return "find.cred.password_otp";
+  if (k.has("password")) return "find.cred.password";
+  if (k.has("otp")) return "find.cred.otp";
+  return "find.cred.generic";
+}
+/** Day counts that have their own wording (0, 1, 2); other counts up to 100 use "before N days" with the exact number clip. */
+const AGE_SPECIAL: readonly Pair[] = [["اليوم.", "today."], ["قبل يوم واحد.", "one day ago."], ["قبل يومين.", "two days ago."]];
+
 export const ARBITER_VERDICTS = ["dangerous", "suspicious", "no_warning_signs", "could_not_check"] as const;
 
 function build(): Record<VoiceLang, Record<string, string>> {
@@ -142,7 +239,24 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("investigator.address", "أشوف عنوان الموقع، يمكن فيه تشابه مخادع.", "Checking the web address for look-alike tricks.");
   put("investigator.page", "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي.", "Opening the page in our isolated browser. Nothing is typed.");
   put("investigator.ai_second_look_local", "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي.", "AI second look, with our local model.");
-  put("investigator.ai_second_look_cloud", "نظرة ثانية بالذكاء الاصطناعي، بموديل كلود.", "AI second look, with Claude.");
+  put("investigator.ai_second_look_cloud", "نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي.", "AI second look, with a cloud language model.");
+
+  // What this check found (see FINDINGS), spoken under each tier.
+  put("find.none", "ما لقينا شي ملفت في هذه الطبقة.", "Nothing notable at this layer.");
+  put("investigator.wording", "أقرا صياغة المسج، وأدوّر على الاستعجال والضغط.", "Reading the wording for urgency and pressure.");
+  for (const [, key, a, e] of FINDINGS) put(key, a, e);
+  for (const [k, a, e] of CRED_LINES) put(`find.cred.${k}`, a, e);
+  put("find.incomplete", "ما قدرنا نفتح الصفحة كامل.", "We couldn't open the page fully.");
+  for (const [kind, ar0, en0] of [["age", "النطاق مسجّل", "The domain was registered"], ["cert", "شهادة الموقع صدرت", "The site certificate was issued"]] as const) {
+    AGE_SPECIAL.forEach(([a, e], i) => put(`find.${kind}.${i}`, `${ar0} ${a}`, `${en0} ${e}`));
+    put(`find.${kind}.lead`, `${ar0} قبل`, `${en0}`);
+    put(`find.${kind}.days`, "يوم.", "days ago.");
+  }
+  for (const [id, a, e] of BRAND_CLIPS) put(`brand.${id}`, a, e);
+  put("find.brand.a", "تدّعي إنها", "It claims to be");
+  put("find.brand.b", "والنطاق مو لهم.", "but the domain is not theirs.");
+  put("find.brand.generic", "تدّعي إنها جهة معروفة والنطاق مو لهم.", "It claims to be a well-known body, but the domain is not theirs.");
+  put("sentinel.campaign", "والحملة تنتحل اسم", "The campaign imitates");
   put("investigator.rules_only", "القواعد حكمت، من غير ذكاء اصطناعي.", "The rules decided, without AI.");
   put("investigator.arbiter_result.dangerous", "الحكم النهائي: المسج خطر!", "The arbiter's decision: dangerous.");
   put("investigator.arbiter_result.suspicious", "الحكم النهائي: المسج مشكوك فيه.", "The arbiter's decision: suspicious.");
@@ -171,7 +285,11 @@ function build(): Record<VoiceLang, Record<string, string>> {
 
   N.forEach((n, i) => {
     const en_ = SUM_EN(n);
-    for (const k of SUMMARY_KINDS) put(`sum.${k}.${n}`, `${COUNT_AR[i]} ${SUM_AR[k]}`, `${COUNT_EN[i]} ${en_[k]}`);
+    for (const k of SUMMARY_KINDS) {
+      // One message is masculine singular ("مسج واحد ... فيه / أشيّكه"); two or more take the plural "منها / فيها".
+      const ar1 = { dangerous: "منها خطِر.", suspicious: "منها مشكوك فيه.", clear: "ما فيه علامات تحذير.", failed: "ما قدرت أشيّكه." };
+      put(`sum.${k}.${n}`, `${COUNT_AR[i]} ${n === 1 ? ar1[k] : SUM_AR[k]}`, `${COUNT_EN[i]} ${en_[k]}`);
+    }
   });
   put("result.dangerous", "هذا المسج خطر!", "This message is dangerous.");
   put("result.suspicious", "هذا المسج مشكوك فيه.", "This message looks suspicious.");
@@ -194,8 +312,11 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("stop", "تمام، وقّفت.", "Okay, I've stopped.");
   put("didnt", "ما فهمت عليك. عيد، لو سمحت.", "Sorry, I didn't catch that. Please say it again.");
   put("clip.empty", "ما لقيت مسجات في اللي نسخته. انسخها وعيد علي.", "I found no messages in what you copied. Copy them and try again.");
-  put("clip.denied", "ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة.", "I couldn't read what you copied. Paste it in the box on the screen.");
+  put("greet.hello", "هلا! شلون أقدر أساعدك اليوم؟", "Hi, how can I help you today?");
   put("error", "صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط.", "Something went wrong. Try again, and don't open any link.");
+  put("voice.too_long", "الكلام طويل شوي، قوله باختصار.", "That was a bit long. Please say it more briefly.");
+  put("voice.catching_up", "لحظة، خلني ألحق عليك.", "One moment, catching up.");
+  put("voice.still_checking", "لحظة، لسا أشيّك.", "Still checking, one moment.");
   put("goodbye", "يزاك الله خير. الله يحفظك.", "Thank you. Take care.");
   for (const [name, a, e] of FAQ) put(faqKey(name), a, e);
   OFF_TOPIC.forEach(([a, e], i) => put(`offtopic.${i + 1}`, a, e));
@@ -252,8 +373,67 @@ export const checkingClips = (i: number, total: number): string[] => (total <= 1
 /** The Investigator agent starts on message i. */
 export const investigatorStartClips = (i: number): string[] => [`investigator.start.${clampN(i)}`];
 
-export type InvestigatorStep = "lists" | "address" | "page" | "ai_second_look_local" | "ai_second_look_cloud" | "rules_only";
+export type InvestigatorStep = "lists" | "address" | "wording" | "page" | "ai_second_look_local" | "ai_second_look_cloud" | "rules_only";
 export const investigatorStepClips = (step: InvestigatorStep): string[] => [`investigator.${step}`];
+
+
+/** The slice of an evidence item that speech may look at. Free text (display, strings inside observed) is never spoken. */
+export interface FindingEvidence {
+  signal: string;
+  observed?: unknown;
+  weight: number;
+  polarity?: string;
+  tier: string;
+  error?: string | null;
+}
+const isObjLike = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const BRAND_ID = /^[a-z0-9_]{2,40}$/;
+
+/** "claims to be {brand}": the brand is named only when it has its own clip, else a generic body. */
+export function brandClaimClips(brandId: unknown): string[] {
+  return typeof brandId === "string" && BRAND_ID.test(brandId) && BRAND_IDS.has(brandId) ? ["find.brand.a", `brand.${brandId}`, "find.brand.b"] : ["find.brand.generic"];
+}
+
+/** The clip keys for ONE evidence item, or null when it has no spoken line (unknown code, trust or neutral, errored). */
+export function findingKeysFor(e: FindingEvidence, verdictBrandId?: string | null): string[] | null {
+  if (INCOMPLETE_CODES.includes(e.signal)) return ["find.incomplete"];
+  if (e.error || e.polarity === "trust" || (!(e.weight > 0) && !INFO_CODES.includes(e.signal))) return null;
+  if (e.signal === "domain.age_days" || e.signal === "domain.cert_age_days") {
+    const kind = e.signal === "domain.age_days" ? "age" : "cert";
+    // Real shape: {age_days: N} (domain/rdap.py) and {cert_age_days: N} (domain/crt.py); a bare number is tolerated.
+    const raw = isObjLike(e.observed) ? e.observed[kind === "age" ? "age_days" : "cert_age_days"] : e.observed;
+    const n = typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : -1;
+    if (n < 0 || n > 100) return null; // older than 100 days is not a warning sign; the exact number clips stop at one hundred
+    return n <= 2 ? [`find.${kind}.${n}`] : [`find.${kind}.lead`, `num.${n}`, `find.${kind}.days`];
+  }
+  if (e.signal === "page.cred_form") return [credFormKey(e.observed)];
+  if (e.signal === "brand.claimed_not_owned") {
+    const id = isObjLike(e.observed) && typeof e.observed.brand_id === "string" ? e.observed.brand_id : verdictBrandId;
+    return brandClaimClips(id);
+  }
+  const key = CODE_KEY.get(e.signal);
+  return key ? [key] : null;
+}
+
+/**
+ * What one tier found: up to two strongest findings (by weight), spoken from real evidence only. A tier that ran with
+ * nothing speakable says so ("nothing notable at this layer"); the AI tier (T3) never does.
+ */
+export function tierFindingGroups(evidence: readonly FindingEvidence[], tier: "T0" | "T1" | "T2" | "T3", verdictBrandId?: string | null): string[][] {
+  const out: string[][] = [];
+  const seen = new Set<string>();
+  const ranked = evidence.filter((e) => e.tier === tier).sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
+  for (const e of ranked) {
+    const keys = findingKeysFor(e, verdictBrandId);
+    if (!keys) continue;
+    const id = keys.join("|");
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(keys);
+    if (out.length === 2) break;
+  }
+  return out.length || tier === "T3" ? out : [["find.none"]];
+}
 
 /** A score 0..100 spoken as words from exact number clips. */
 export function scoreClips(score: number): string[] {
@@ -314,19 +494,25 @@ export interface SentinelFinding {
   summary: boolean;
   /** The incident holds an external takedown draft. */
   drafted: boolean;
+  /** Registry id of the brand the linked checks impersonate, when known (named only when it has a clip). */
+  brand?: string | null;
   /** That draft is awaiting an officer's approval. */
   awaiting: boolean;
 }
 
 /** Spoken ONLY for what the incident shows: nothing is said that the data does not prove. */
-export function sentinelFindingClips(f: SentinelFinding): string[] {
-  const out: string[] = [];
-  if (f.linkStep && f.linked >= 2) out.push(`sentinel.linked.${Math.min(10, Math.floor(f.linked))}`);
-  if (f.summary) out.push("sentinel.summary");
-  if (f.drafted) out.push("sentinel.draft");
-  if (f.drafted && f.awaiting) out.push("sentinel.awaiting_approval");
+export function sentinelFindingGroups(f: SentinelFinding): string[][] {
+  const out: string[][] = [];
+  if (f.linkStep && f.linked >= 2) {
+    out.push([`sentinel.linked.${Math.min(10, Math.floor(f.linked))}`]);
+    if (typeof f.brand === "string" && BRAND_IDS.has(f.brand)) out.push(["sentinel.campaign", `brand.${f.brand}`]);
+  }
+  if (f.summary) out.push(["sentinel.summary"]);
+  if (f.drafted) out.push(["sentinel.draft"]);
+  if (f.drafted && f.awaiting) out.push(["sentinel.awaiting_approval"]);
   return out;
 }
+export const sentinelFindingClips = (f: SentinelFinding): string[] => sentinelFindingGroups(f).flat();
 
 /**
  * The closing utterance: summary, what to do, then the one-line wrap-up that names what actually happened:

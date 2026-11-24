@@ -20,6 +20,7 @@ from falcon_api.admin import public_route
 from falcon_api.auth import Principal
 from falcon_api.canon import canonicalize_url, sha256_hex
 from falcon_api.db import SubmissionStore
+from falcon_api.hunt import meta_block as hunt_meta_block
 from falcon_api.intel import (
     SentinelClient,
     campaign_of,
@@ -33,6 +34,7 @@ from falcon_api.intel import (
 from falcon_api.problem import PROBLEM_RESPONSES, Problem
 from falcon_core.config import Settings
 from falcon_core.contracts.agent_trace import AgentTrace
+from falcon_core.contracts.hunt import HuntMeta
 from falcon_core.telemetry.metrics import record_campaign_board_view
 
 EVENTS_STREAM = "fl:events"
@@ -96,6 +98,11 @@ class Meta(BaseModel):
     feeds: dict[str, bool]
     llm_route: dict[str, Any] | None = Field(
         default=None, description="Active language-model route (read-only): mode, local_model, sovereign."
+    )
+    hunt: HuntMeta | None = Field(
+        default=None,
+        description="Sentinel hunt mode (capability flag): enabled, paused, interval, sources with their status "
+        "(live, ready_needs_key, disabled) and terms page, last cycle time. Null when the Sentinel cannot be asked.",
     )
 
 
@@ -507,6 +514,7 @@ def register(app: FastAPI, c: Ctx) -> None:
         """Public runtime facts for UIs: verdict band thresholds, model ids, sovereign mode, enabled feeds."""
         out = meta(c.settings)
         out["llm_route"] = await public_route(c.settings, c.state.get("redis"))
+        out["hunt"] = await hunt_meta_block(c.sentinel())
         return out
 
 

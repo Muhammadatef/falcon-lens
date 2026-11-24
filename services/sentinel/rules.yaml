@@ -3,6 +3,7 @@
 #
 # detector: threshold | flip
 # where:    feature -> value | {in: [...]} | {not_in: [...]} | {exists: bool}
+# where:    origin = hunt | user (set by the consumer from its own hunt_candidates table, never the client label)
 # group_by: brand_id | dom_simhash (Hamming<=6 cluster) | script_cluster (cosine>=0.88 cluster) | signal | domain
 # distinct: feature or "event_id" counted distinct inside one window
 # new_domains: only count domains whose first observation (any event) is within `window` of the counted event
@@ -75,3 +76,22 @@ rules:
     distinct: event_id
     min_count: 5
     severity_floor: low
+
+  # Hunt mode (docs/design/HUNTER.md): one arbiter-confirmed dangerous look-alike that the Sentinel's own hunt
+  # submitted opens an early warning. The hunt never publishes domain.observed, so an unscored candidate can
+  # never reach any rule. A suspicious hunt verdict opens nothing alone; it still counts toward R1 and R2.
+  - id: R6
+    name: early_warning
+    type: early_warning
+    detector: threshold
+    event_types: [verdict.created, verdict.upgraded]
+    where:
+      origin: hunt
+      verdict: dangerous
+      lookalike: true
+    group_by: domain
+    window_minutes: 1440
+    distinct: domain
+    min_count: 1
+    severity_floor: medium
+    merge_into: [R1]

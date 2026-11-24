@@ -126,6 +126,32 @@ BLOCKS_REVERTED = _c("blocks_reverted_total", "Blocks reverted")
 EVENT_LAG = _g("event_lag_seconds", "Age of the oldest unprocessed bus event")
 SENTINEL_DLQ = _c("sentinel_dead_letter_total", "Events moved to the dead-letter stream")
 
+# Sentinel hunt mode (docs/design/HUNTER.md section 5). Every series carries `source` (live|fixture|replay) so
+# fixture-fed demo hunting stays labelled. No domain name is ever a label.
+HUNT_TTD_BUCKETS = (60.0, 300.0, 900.0, 3600.0, 6 * 3600.0, 86400.0, 3 * 86400.0, 7 * 86400.0, 30 * 86400.0)
+HUNT_CYCLES = _c("hunt_cycles_total", "Hunt cycles by outcome", ("outcome", "source"))
+HUNT_SOURCE_REQUESTS = _c(
+    "hunt_source_requests_total", "Outbound hunt requests (DoH, crt.sh) by outcome", ("source_id", "outcome", "source")
+)
+HUNT_CANDIDATES = _c("hunt_candidates_total", "New hunt candidates recorded", ("discovery", "source"))
+HUNT_SUBMITTED = _c("hunt_submitted_total", "Hunt candidates submitted to the Investigator", ("source",))
+HUNT_CONFIRMED = _c("hunt_confirmed_total", "Hunt candidates the arbiter confirmed or cleared", ("verdict", "source"))
+HUNT_ALREADY_KNOWN = _c("hunt_already_known_total", "Hunt candidates a person had already checked", ("source",))
+HUNT_QUOTA_REMAINING = _g("hunt_quota_remaining", "Hunt submission quota left in the window", ("quota", "source"))
+HUNT_ENABLED = _g("hunt_enabled", "1 if the hunt task runs (FL_HUNT_ENABLED), else 0", ("source",))
+HUNT_LAST_SUCCESS = _g(
+    "hunt_last_success_timestamp_seconds", "Unix time of the last successful poll per source", ("source_id", "source")
+)
+HUNT_TIME_TO_DETECTION = _h(
+    "hunt_time_to_detection_seconds",
+    "Arbiter verdict time minus the earliest upstream timestamp (cert not_before or RDAP registration)",
+    HUNT_TTD_BUCKETS,
+    ("basis", "source"),
+)
+HUNT_LEAD = _h(
+    "hunt_lead_seconds", "First person check of a domain minus the hunt verdict time", HUNT_TTD_BUCKETS, ("source",)
+)
+
 P = ParamSpec("P")
 R = TypeVar("R")
 

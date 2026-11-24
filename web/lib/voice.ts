@@ -247,11 +247,11 @@ const RANK = { T0: 0, T1: 1, T2: 2, T3: 3 } as const;
 export function newProgressSteps(v: Verdict, kind: "url" | "message", seen: Set<ProgressStep>): ProgressStep[] {
   const reached = RANK[v.tier_reached];
   const tiers = new Set(v.evidence.map((e) => e.tier));
-  const ran = (t: keyof typeof RANK) => reached >= RANK[t] && (t === "T0" || tiers.has(t) || (t === "T3" && (v.trace ?? []).some((s) => s.kind === "llm")));
+  const ran = (t: keyof typeof RANK) => reached >= RANK[t] && (t === "T0" || tiers.has(t) || (t === "T3" && (v.trace ?? []).some((s) => s.kind === "llm")) || (t !== "T3" && (v.trace ?? []).some((s) => s.kind === "tier" && `${s.name ?? ""} ${s.summary}`.includes(t))));
   const wanted: ProgressStep[] = [];
   if (ran("T0")) wanted.push("lists");
   if (ran("T1")) wanted.push(kind === "url" ? "lookalike" : "wording");
-  if (kind === "url" && ran("T2")) wanted.push("browser");
+  if (ran("T2") && (kind === "url" || tiers.has("T2") || (v.trace ?? []).some((s) => s.kind === "tier" && `${s.name ?? ""} ${s.summary}`.includes("T2")))) wanted.push("browser"); // a message that carries a link has its page visit too
   if (ran("T3")) wanted.push("ai");
   const fresh = wanted.filter((s) => !seen.has(s));
   fresh.forEach((s) => seen.add(s));

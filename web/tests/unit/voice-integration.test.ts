@@ -58,7 +58,7 @@ describe("narration is composed of pre-generated clip ids only", () => {
       expect(CLIPS.some((c) => c.id === clipId("en", k))).toBe(true);
     }
     expect(stepKeys("lists", { model_route: "none" } as never)).toEqual(["investigator.lists"]);
-    expect(stepKeys("wording", { model_route: "none" } as never)).toEqual([]);
+    expect(stepKeys("wording", { model_route: "none" } as never)).toEqual(["investigator.wording"]);
   });
 
   it("the spoken text and the keys never drift apart", () => {

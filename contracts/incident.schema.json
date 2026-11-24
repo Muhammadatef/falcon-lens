@@ -8,7 +8,7 @@
   "required": ["incident_id", "type", "severity", "status", "rule_ids", "indicators", "linked_verdicts", "timeline", "actions", "created_at", "updated_at", "source"],
   "properties": {
     "incident_id": { "type": "string", "pattern": "^inc_[0-9A-HJKMNP-TV-Z]{26}$" },
-    "type": { "type": "string", "enum": ["campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"] },
+    "type": { "type": "string", "enum": ["campaign", "kit_reuse", "report_burst", "reputation_flip", "quality", "early_warning"] },
     "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
     "severity_reason": { "type": "object", "properties": { "ar": { "type": "string" }, "en": { "type": "string" }, "evidence_ids": { "type": "array", "items": { "type": "string" } } } },
     "status": { "type": "string", "enum": ["open", "triaging", "awaiting_approval", "mitigated", "closed", "false_positive"] },
@@ -25,7 +25,8 @@
           "value_defanged": { "type": "string" },
           "sha256": { "type": "string" },
           "first_seen": { "type": "string", "format": "date-time" },
-          "blocked_until": { "type": ["string", "null"], "format": "date-time" }
+          "blocked_until": { "type": ["string", "null"], "format": "date-time" },
+          "found_by": { "type": "string", "enum": ["user", "hunt"], "description": "Optional. Whether the first check of this indicator came from a person (any user channel or a report) or from the Sentinel hunt mode." }
         }
       }
     },
@@ -51,7 +52,19 @@
       }
     },
     "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"] },
-    "channels": { "type": "array", "uniqueItems": true, "items": { "type": "string", "enum": ["web", "extension", "api", "mcp", "voice"] }, "description": "Optional. Channels of the linked checks (from the verdict events); a bounded enum, never a user identity." },
+    "channels": { "type": "array", "uniqueItems": true, "items": { "type": "string", "enum": ["web", "extension", "api", "mcp", "voice", "hunt"] }, "description": "Optional. Channels of the linked checks (from the verdict events); a bounded enum, never a user identity." },
+    "detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "found_before_report", "first_hunt_seen", "first_user_seen"],
+      "description": "Optional. Who found the incident's domains first. found_before_report is true only when, for every domain indicator, the first event is a hunt verdict and no user-channel verdict or report.submitted for that domain is older; once false it never becomes true again.",
+      "properties": {
+        "origin": { "type": "string", "enum": ["user", "hunt", "mixed"] },
+        "found_before_report": { "type": "boolean" },
+        "first_hunt_seen": { "type": ["string", "null"], "format": "date-time" },
+        "first_user_seen": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
     "created_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" }
   }

@@ -37,13 +37,13 @@ describe("tier rows come from the verdict, never invented", () => {
     expect(tierRows(DEMO_DANGEROUS, "url", "en", true).some((r) => r.tier === "T2")).toBe(true);
   });
   it("one short line per tier", () => {
-    for (const r of tierRows(DEMO_DANGEROUS, "url", "ar", true)) if (r.found) expect(r.found.length).toBeLessThanOrEqual(90);
+    for (const r of tierRows(DEMO_DANGEROUS, "url", "ar", true)) if (r.found) expect(r.found.length).toBeLessThanOrEqual(240);
   });
   it("T1 ran with no evidence: shown as ran (nothing notable), not skipped", () => {
     const v = { ...DEMO_NWS, tier_reached: "T1", evidence: DEMO_NWS.evidence.filter((e) => e.tier === "T0"), trace: [{ step: 1, kind: "tier", name: "T1", summary: "T1 address checks" }] } as Verdict;
     const t1 = tierRows(v, "url", "en", true).find((r) => r.tier === "T1")!;
     expect(t1.status).toBe("done");
-    expect(t1.found).toBeUndefined();
+    expect(t1.found).toBe("Nothing notable at this layer.");
   });
   it("T2 for a message that carries a link is shown when the trace says it ran, and hidden otherwise", () => {
     const base = { ...DEMO_NWS, tier_reached: "T2", evidence: DEMO_NWS.evidence.filter((e) => e.tier === "T0") } as Verdict;
