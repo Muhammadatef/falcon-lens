@@ -157,7 +157,7 @@ def _candidates_en(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
             (
                 2,
                 [
-                    "A second agent, the Sentinel, links checks into campaigns, blocks indicators internally and "
+                    "A second agent, the Sentinel (Dir' | درع), links checks into campaigns, blocks indicators internally and "
                     "drafts takedowns that wait for human approval.",
                     "A second agent, the Sentinel, links checks into campaigns and drafts takedowns for human "
                     "approval.",
@@ -211,14 +211,14 @@ def _candidates_ar(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
                 (
                     2,
                     [
-                        "ووكيله الثاني «الحارس» يربط منذ الآن أحداث الفحص (المُعاد تشغيلها في هذه النسخة) في حوادث، "
+                        "ووكيله الثاني «درع» يربط منذ الآن أحداث الفحص (المُعاد تشغيلها في هذه النسخة) في حوادث، "
                         "ويُعدّ مسودات طلبات الإزالة بانتظار موافقة بشرية.",
-                        "ووكيله الثاني «الحارس» يربط منذ الآن أحداث الفحص المُعاد تشغيلها في حوادث.",
+                        "ووكيله الثاني «درع» يربط منذ الآن أحداث الفحص المُعاد تشغيلها في حوادث.",
                     ],
                 )
             )
         elif caps.get("sentinel_rules"):
-            out.append((2, ["أُنجز حتى الآن: قواعد الربط في «الحارس»."]))
+            out.append((2, ["أُنجز حتى الآن: قواعد الربط في «درع»."]))
     if mvp and caps.get("brand_check"):
         out.append(
             (
@@ -236,9 +236,9 @@ def _candidates_ar(caps: Mapping[str, bool]) -> list[tuple[int, list[str]]]:
             (
                 2,
                 [
-                    "وكيل ثانٍ اسمه «الحارس» يربط الفحوص المتشابهة في حملات، ويحظر المؤشرات داخلياً، ويُعدّ مسودات طلبات "
+                    "وكيل ثانٍ اسمه «درع» (Dir') يربط الفحوص المتشابهة في حملات، ويحظر المؤشرات داخلياً، ويُعدّ مسودات طلبات "
                     "الإزالة ولا يرسلها قبل موافقة بشرية.",
-                    "وكيل ثانٍ اسمه «الحارس» يربط الفحوص المتشابهة في حملات ويُعدّ مسودات طلبات الإزالة بانتظار موافقة "
+                    "وكيل ثانٍ اسمه «درع» يربط الفحوص المتشابهة في حملات ويُعدّ مسودات طلبات الإزالة بانتظار موافقة "
                     "بشرية.",
                 ],
             )

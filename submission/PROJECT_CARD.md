@@ -19,10 +19,10 @@ Falcon Lens is an Arabic-first AI agent for UAE residents: paste a suspicious li
 
 ## Brief Description (Arabic)
 
-Length: 589 of 600 characters, 4 sentences. Use it only if the form accepts Arabic.
+Length: 586 of 600 characters, 4 sentences. Use it only if the form accepts Arabic.
 
 ```text
-«عدسة الصقر» وكيل ذكاء اصطناعي صُمّم بالعربية أولاً لسكان الإمارات: الصق رابطاً أو رسالة أو بريداً إلكترونياً أو صورة تشكّ فيه، فيعطيك حكماً مدعوماً بالأدلة يبيّن ماذا وجد، ولماذا، وماذا تفعل الآن. يكشف فحص الهوية الصفحات التي تنتحل اسم جهة معروفة على نطاق لا تملكه، حتى لو لم تُدرج في أي قائمة حظر، والدرجة يحسبها محكّم حتمي لا نموذج لغوي. وكيل ثانٍ اسمه «الحارس» يربط الفحوص المتشابهة في حملات ويُعدّ مسودات طلبات الإزالة بانتظار موافقة بشرية. يمكن تشغيل نماذجه كلها محلياً، ويوفّر واجهتي REST و MCP الجاهزتين للربط مع أنظمة الشرطة، وهو مشروع مستقل، غير مربوط بشرطة أبوظبي وغير تابع لها.
+«عدسة الصقر» وكيل ذكاء اصطناعي صُمّم بالعربية أولاً لسكان الإمارات: الصق رابطاً أو رسالة أو بريداً إلكترونياً أو صورة تشكّ فيه، فيعطيك حكماً مدعوماً بالأدلة يبيّن ماذا وجد، ولماذا، وماذا تفعل الآن. يكشف فحص الهوية الصفحات التي تنتحل اسم جهة معروفة على نطاق لا تملكه، حتى لو لم تُدرج في أي قائمة حظر، والدرجة يحسبها محكّم حتمي لا نموذج لغوي. وكيل ثانٍ اسمه «درع» يربط الفحوص المتشابهة في حملات ويُعدّ مسودات طلبات الإزالة بانتظار موافقة بشرية. يمكن تشغيل نماذجه كلها محلياً، ويوفّر واجهتي REST و MCP الجاهزتين للربط مع أنظمة الشرطة، وهو مشروع مستقل، غير مربوط بشرطة أبوظبي وغير تابع لها.
 ```
 
 ## Tools Used
@@ -30,7 +30,7 @@ Length: 589 of 600 characters, 4 sentences. Use it only if the form accepts Arab
 Comma-separated. Generated from the lockfiles, the compose file, the source imports and the model defaults, so it lists only what the shipped code uses.
 
 ```text
-Claude Sonnet, Claude Haiku, Inkling 2 Mini (local model), Ollama (local models), Python, TypeScript, Docker Compose, uv, pnpm, Anthropic API (Claude models), FastAPI, LangGraph, LangGraph Postgres checkpointer, Model Context Protocol Python SDK, OpenTelemetry SDK, Playwright, Prometheus Python client, Pydantic, redis-py, tldextract (Public Suffix List), Uvicorn, zxing-cpp (QR decoding), motion, Next.js, React, Readex Pro (font), JetBrains Mono (font), Alertmanager, Arize Phoenix, Caddy, Grafana, Grafana Alloy, Grafana Loki, OpenTelemetry Collector, pgvector (PostgreSQL), Prometheus, Redis, Cloudflare Tunnel, GitHub Actions, gitleaks, pip-audit, Trivy, scikit-learn
+Claude Sonnet, Claude Haiku, Inkling 2 Mini (local model), Ollama (local models), Python, TypeScript, Docker Compose, uv, pnpm, Anthropic API (Claude models), av, FastAPI, faster-whisper, LangGraph, LangGraph Postgres checkpointer, Model Context Protocol Python SDK, OpenTelemetry SDK, Playwright, Prometheus Python client, Pydantic, redis-py, tldextract (Public Suffix List), Uvicorn, zxing-cpp (QR decoding), motion, Next.js, React, Readex Pro (font), JetBrains Mono (font), Alertmanager, Arize Phoenix, Caddy, Grafana, Grafana Alloy, Grafana Loki, OpenTelemetry Collector, pgvector (PostgreSQL), Prometheus, Redis, Cloudflare Tunnel, GitHub Actions, gitleaks, pip-audit, Trivy, scikit-learn
 ```
 
 ## Repository URL
