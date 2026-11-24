@@ -13,6 +13,7 @@ help: ## List every make target with a one-line description (this list)
 
 up: ## Start core + obs, wait until every service is healthy
 	@test -f .env || { echo "Missing .env: run 'cp .env.example .env' first." >&2; exit 1; }
+	@python3 scripts/ensure_local_secrets.py .env
 	$(COMPOSE) up -d --build
 	@scripts/wait_healthy.sh 300
 	@scripts/urls.sh
