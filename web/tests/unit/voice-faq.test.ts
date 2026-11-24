@@ -44,7 +44,7 @@ describe("voice FAQ script", () => {
   });
 
   it("the data answer matches docs/PRIVACY.md: processed locally and deleted, only a fingerprint and the result are kept", () => {
-    expect(SCRIPT.en["faq.data_stored"]).toMatch(/voice is processed on this machine and not kept/);
+    expect(SCRIPT.en["faq.data_stored"]).toMatch(/voice is processed on this device and isn't kept/);
     expect(SCRIPT.en["faq.data_stored"]).toMatch(/defanged copy of the link, the evidence and the result/);
     expect(SCRIPT.en["faq.agents"]).not.toMatch(/nothing is sent/i);
     for (const l of ["ar_ae", "en"] as const) expect(SCRIPT[l]["offtopic.1"]).not.toMatch(/protect|أحميك/i);
