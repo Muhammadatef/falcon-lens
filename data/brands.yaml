@@ -17,8 +17,8 @@
 #   emits nothing (caller ID can be spoofed, so a match is never trust). A brand without official_contacts never
 #   produces that evidence. Numbers that could not be read on the entity's own page are OMITTED:
 #   - adcb: adcb.com answered HTTP 403 to every fetch (bot protection); no number recorded.
-#   - uae_pass: uaepass.ae renders no text to a fetcher. 600561111 appears on icp.gov.ae/en/uae-pass/ (ICP, not the
-#     UAE PASS operator); left out pending an L1 decision.
+#   - uae_pass: uaepass.ae renders no text to a fetcher; 600561111 is listed on the official ICP site
+#     (icp.gov.ae/en/uae-pass/, federal government), accepted by L1 on 2026-11-24.
 #   - dubai_police: dubaipolice.gov.ae is a script-only app; 901 is cited by news and mediaoffice.ae only. Omitted.
 #   - etisalat_by_eand: only 101 was read (eand.ae support page); 800 101 for non-customers appears in search
 #     snippets of an etisalat.ae page that now returns 404. Omitted.
@@ -85,6 +85,10 @@ brands:
     verification_l1: "TLS cert (OV/EV) subject O=Government of Dubai; HTTPS visit from host 2026-11-22 returned 200."
     keywords_en: [uae pass, uaepass, digital id, verify identity, account suspended, login]
     keywords_ar: [الهوية الرقمية, يو ايه اي باس, تحقق, تعليق الحساب]
+    official_contacts:
+      - {kind: phone, value: "+971600561111", local: "600561111", label_en: "Digital Identity team (24/7)", label_ar: "فريق الهوية الرقمية (على مدار الساعة)",
+         source_url: https://icp.gov.ae/en/uae-pass/, retrieved_at: 2026-11-24,
+         note: "listed on the official ICP site (icp.gov.ae), not on uaepass.ae"}
     logo_ref: null
     favicon_hash: null
     unverified_notes: "uaepass.ae (and docs.uaepass.ae) appear in search/App Store listing only; uaepass.ae page returned no content to the fetcher, u.ae page not fetched successfully. Omitted pending manual check. name_ar is a descriptive form, not confirmed."

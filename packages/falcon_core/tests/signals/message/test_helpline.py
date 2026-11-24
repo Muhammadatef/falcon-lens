@@ -6,6 +6,7 @@ number list (hosts under .test). Real registry numbers are only checked for shap
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -25,7 +26,7 @@ from falcon_core.signals.brands.contacts import (
     E164_UAE,
     extract_numbers,
     mask_number,
-    number_sha256,
+    number_id,
     parse_contacts,
     to_e164,
 )
@@ -38,6 +39,7 @@ SRC = "https://falcon-demo-bank.test/contact"  # TEST FIXTURE host, never resolv
 DEMO_OFFICIAL = "+971800000001"  # invented, fixture-only
 FAKE = "800 1234 567"
 FAKE_E164 = "+9718001234567"
+KEY = "test-only-hmac-key-0123456789abcdefghij"  # TEST FIXTURE, not a real secret
 
 DEMO = {
     "brand_id": "falcon_demo_bank",
@@ -56,6 +58,11 @@ DEMO = {
 }  # fmt: skip
 # Same invented brand, but no verified numbers: the signal must stay silent.
 DEMO_NO_NUMBERS = {k: v for k, v in DEMO.items() if k != "official_contacts"}
+
+
+@pytest.fixture(autouse=True)
+def _no_hmac_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("FL_EVIDENCE_HMAC_KEY", raising=False)  # tests set it explicitly when they need it
 
 
 def reg(entry: dict[str, Any] = DEMO) -> BrandRegistry:
@@ -132,7 +139,8 @@ def test_extract_spans_point_at_the_number() -> None:
 
 def test_mask_never_shows_the_full_number() -> None:
     m = mask_number(FAKE_E164)
-    assert m == "+97180***67" and re.sub(r"\D", "", m) != re.sub(r"\D", "", FAKE_E164)
+    assert m == "+971 80••••••67" and re.sub(r"\D", "", m) == "9718067"
+    assert mask_number("+971501234567") == "+971 50•••••67"
 
 
 # --- registry ---------------------------------------------------------------------------------------
@@ -198,7 +206,7 @@ def test_fake_number_claiming_the_bank_is_flagged_once_masked() -> None:
     assert ev.family == "brand" and ev.polarity == "risk" and ev.tier == "T1" and ev.weight == 0.0
     assert ev.observed == {
         "brands": ["falcon_demo_bank"],
-        "numbers": [{"masked": "+97180***67", "sha256": number_sha256(FAKE_E164)}],
+        "numbers": [{"masked": "+971 80••••••67"}],
         "count": 1,
     }
     blob = json.dumps(ev.to_dict(), ensure_ascii=False)
@@ -208,18 +216,19 @@ def test_fake_number_claiming_the_bank_is_flagged_once_masked() -> None:
 
 def test_arabic_message_with_arabic_indic_digits_is_flagged() -> None:
     [ev] = flagged("بنك الصقر التجريبي: تم إيقاف بطاقتك. اتصل بخدمة العملاء على ٨٠٠ ١٢٣٤ ٥٦٧")
-    assert ev.observed["numbers"][0]["sha256"] == number_sha256(FAKE_E164)
+    assert ev.observed["numbers"][0]["masked"] == "+971 80••••••67"
 
 
 @pytest.mark.parametrize("form", ["+971 800 1234 567", "00971-800-1234567", "٨٠٠١٢٣٤٥٦٧", "800.1234.567"])
-def test_every_written_form_gives_the_same_hash(form: str) -> None:
+def test_every_written_form_gives_the_same_keyed_id(form: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FL_EVIDENCE_HMAC_KEY", KEY)
     [ev] = flagged(f"Falcon Demo Bank support: {form}")
-    assert ev.observed["numbers"][0]["sha256"] == number_sha256(FAKE_E164)
+    assert ev.observed["numbers"][0] == {"masked": "+971 80••••••67", "id": number_id(FAKE_E164, KEY)}
 
 
 def test_mobile_number_with_brand_is_flagged() -> None:
     [ev] = flagged("بنك الصقر: للتحقق من حسابك تواصل واتساب ٠٥٠ ١٢٣ ٤٥٦٧")
-    assert ev.observed["numbers"][0]["masked"] == "+97150***67"
+    assert ev.observed["numbers"][0]["masked"] == "+971 50•••••67"
 
 
 @pytest.mark.parametrize("form", ["800 000001", "+971800000001", "٨٠٠٠٠٠٠٠١", "00971 800 000 001"])
@@ -229,7 +238,7 @@ def test_official_number_emits_nothing(form: str) -> None:
 
 def test_official_and_fake_together_flags_only_the_fake() -> None:
     [ev] = flagged(f"Falcon Demo Bank: 800 000001 is busy, call {FAKE} instead")
-    assert ev.observed["count"] == 1 and ev.observed["numbers"][0]["sha256"] == number_sha256(FAKE_E164)
+    assert ev.observed["count"] == 1 and ev.observed["numbers"][0]["masked"] == "+971 80••••••67"
 
 
 def test_number_without_a_brand_emits_nothing() -> None:
@@ -313,3 +322,30 @@ def test_weight_zero_leaves_the_arbiter_output_unchanged() -> None:
     assert with_.verdict == without.verdict and with_.fired_rules == without.fired_rules
     assert with_.weighted_evidence[0].weight == 0.0
     assert template_reasons(with_, "en") == template_reasons(without, "en")
+
+
+# --- privacy: no bare hash, keyed id only with a configured key ---------------------------------------------
+
+
+def test_no_bare_hash_without_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("FL_EVIDENCE_HMAC_KEY", raising=False)
+    [ev] = flagged(f"Falcon Demo Bank: call {FAKE}")
+    assert ev.observed["numbers"] == [{"masked": "+971 80••••••67"}]
+    blob = json.dumps(ev.to_dict(), ensure_ascii=False)
+    for h in (hashlib.sha256, hashlib.sha1, hashlib.md5):
+        for form in (FAKE_E164, FAKE_E164[1:], "8001234567", FAKE):
+            assert h(form.encode()).hexdigest()[:16] not in blob
+
+
+def test_keyed_id_is_hmac_and_depends_on_the_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    import hmac
+
+    a = number_id(FAKE_E164, KEY)
+    assert a == "hm_" + hmac.new(KEY.encode(), FAKE_E164.encode(), hashlib.sha256).hexdigest()[:32]
+    assert a != number_id(FAKE_E164, KEY + "x")
+    assert hashlib.sha256(FAKE_E164.encode()).hexdigest()[:32] not in str(a)
+    assert number_id(FAKE_E164, "short") is None  # a weak key is ignored, never used
+    monkeypatch.setenv("FL_EVIDENCE_HMAC_KEY", KEY)
+    [ev] = flagged(f"Falcon Demo Bank: call {FAKE}")
+    assert ev.observed["numbers"][0]["id"] == a
+    assert "1234567" not in json.dumps(ev.to_dict(), ensure_ascii=False)

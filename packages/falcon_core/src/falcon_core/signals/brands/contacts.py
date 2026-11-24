@@ -13,6 +13,8 @@ recognised without any prefix. Pure functions, no I/O.
 from __future__ import annotations
 
 import hashlib
+import hmac
+import os
 import re
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
@@ -110,12 +112,26 @@ def extract_numbers(text: str) -> list[tuple[str, tuple[int, int]]]:
 
 
 def mask_number(e164: str) -> str:
-    """Partially masked form for evidence and logs: country code and first digits, then the last two only."""
-    return e164[:6] + "***" + e164[-2:] if len(e164) > 8 else e164[:3] + "***"
+    """Masked form for evidence: country code, first two national digits, then only the last two ("+971 80•••••67")."""
+    if not e164.startswith("+971") or len(e164) < 10:
+        return "+971 •••"
+    nat = e164[4:]
+    return f"+971 {nat[:2]}{'•' * (len(nat) - 4)}{nat[-2:]}"
 
 
-def number_sha256(e164: str) -> str:
-    return hashlib.sha256(e164.encode("ascii")).hexdigest()
+HMAC_ENV = "FL_EVIDENCE_HMAC_KEY"
+_MIN_KEY = 32
+
+
+def number_id(e164: str, key: str | None = None) -> str | None:
+    """Stable correlation id: HMAC-SHA256 of the E.164 number keyed with ``FL_EVIDENCE_HMAC_KEY``.
+
+    Never a bare hash (a UAE number space is small enough to reverse one). Returns None when no key of at least
+    32 characters is configured, so the evidence then carries the masked form only."""
+    k = key if key is not None else os.environ.get(HMAC_ENV, "")
+    if len(k) < _MIN_KEY:
+        return None
+    return "hm_" + hmac.new(k.encode("utf-8"), e164.encode("ascii"), hashlib.sha256).hexdigest()[:32]
 
 
 def _https(url: str) -> bool:

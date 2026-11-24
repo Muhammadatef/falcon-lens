@@ -5,7 +5,8 @@ The text names a registered brand and gives a UAE phone number that is on no bra
 - a number that IS on the list emits nothing: caller ID can be spoofed, so a match is never trust;
 - a brand with no verified numbers emits nothing (an incomplete registry must not raise false alarms);
 - a number with no brand named emits nothing.
-Evidence carries the masked number and its sha256, never the full number. Weight 0 until an owner-approved fit
+Evidence carries the masked number (plus a keyed HMAC id only when FL_EVIDENCE_HMAC_KEY is set), never the number
+or a bare hash. Weight 0 until an owner-approved fit
 (docs/SCORING.md §2 note); the arbiter treats a name missing from params.yaml as weight 0.
 
 ``helpline_evidence`` is pure (no network, no logging) and serves message and email bodies (T1, through
@@ -17,7 +18,7 @@ from __future__ import annotations
 import re
 
 from falcon_core.signals.base import Evidence, SignalContext, SignalSpec, signal
-from falcon_core.signals.brands.contacts import extract_numbers, mask_number, number_sha256
+from falcon_core.signals.brands.contacts import extract_numbers, mask_number, number_id
 from falcon_core.signals.brands.registry import Brand, BrandRegistry, default_registry
 from falcon_core.signals.limits import HARD_MAX_MESSAGE_CHARS
 from falcon_core.signals.message.normalize import MAX_MESSAGE_CHARS, normalize
@@ -79,7 +80,7 @@ def helpline_evidence(
             polarity="risk",
             observed={
                 "brands": [b.brand_id for b in claimed],
-                "numbers": [{"masked": mask_number(n), "sha256": number_sha256(n)} for n in unofficial[:MAX_REPORTED]],
+                "numbers": [_number(n) for n in unofficial[:MAX_REPORTED]],
                 "count": len(unofficial),
             },
             display=dict(DISPLAY),
@@ -88,6 +89,13 @@ def helpline_evidence(
             confidence=0.7,
         )
     ]
+
+
+def _number(e164: str) -> dict[str, str]:
+    out = {"masked": mask_number(e164)}
+    if (nid := number_id(e164)) is not None:
+        out["id"] = nid  # keyed HMAC, only when FL_EVIDENCE_HMAC_KEY is set; never a bare hash
+    return out
 
 
 def _reg(ctx: SignalContext) -> BrandRegistry:
