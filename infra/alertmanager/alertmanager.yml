@@ -10,5 +10,7 @@ route:
   routes:
     - matchers: ['source="replay"']
       receiver: 'null'
+    - matchers: ['severity="info"']
+      receiver: 'null'
 receivers:
   - name: 'null'

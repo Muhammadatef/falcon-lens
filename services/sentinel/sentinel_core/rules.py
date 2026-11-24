@@ -15,7 +15,7 @@ import yaml
 from .correlate import Features, group_label, sessions, window_trigger
 
 DEFAULT_RULES_PATH = Path(os.environ.get("FL_SENTINEL_RULES") or Path(__file__).resolve().parents[1] / "rules.yaml")
-INCIDENT_TYPES = {"campaign", "kit_reuse", "report_burst", "reputation_flip", "quality"}
+INCIDENT_TYPES = {"campaign", "kit_reuse", "report_burst", "reputation_flip", "quality", "early_warning"}
 SEVERITIES = ("low", "medium", "high", "critical")
 
 

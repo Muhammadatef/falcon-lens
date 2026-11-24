@@ -40,6 +40,7 @@ import redis.asyncio as aioredis
 import yaml
 from fastapi import FastAPI, Header, HTTPException
 from redis.exceptions import RedisError
+from sentinel_core.hunt.config import default_config as default_hunt_config
 from sentinel_core.incidents import Sentinel
 
 from falcon_core.config import get_settings
@@ -51,6 +52,11 @@ from falcon_core.tools.sentinel import ToolContext
 from .consumer import Consumer
 from .db import IncidentCache, PgRepo
 from .graph import ApprovalError, Deps, TriageRunner, set_default_runner
+from .hunt.link import HuntLinker
+from .hunt.runtime import maybe_start
+from .hunt.settings import HuntSettings
+from .hunt.store import PgHuntStore
+from .hunt.views import candidates_view, state_view
 from .llm import LLMClient, RouterLLM, StubLLM
 from .metrics import REQUEUE_FAILURES, SentinelMetrics
 from .trace import assemble_trace
@@ -84,6 +90,9 @@ class Runtime:
     runner: TriageRunner | None = None
     cache: IncidentCache | None = None
     repo: PgRepo | None = None
+    hunt_store: PgHuntStore | None = None
+    hunt_settings: HuntSettings | None = None
+    redis: Any = None
 
 
 rt = Runtime()
@@ -166,6 +175,14 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
                 if inc and inc["status"] == "open":
                     queue.put_nowait(i)
 
+        hunt_settings = HuntSettings.from_env()
+        hunt_store = PgHuntStore(
+            repo.pool,
+            owner_dsn=os.environ.get("FL_DATABASE_OWNER_URL") or None,
+            app_role=os.environ.get("FL_SENTINEL_DB_ROLE") or None,
+        )
+        await hunt_store.init()  # tables exist even while hunting is off, so verdict linking never fails
+        rt.hunt_store, rt.hunt_settings, rt.redis = hunt_store, hunt_settings, client
         consumer = Consumer(
             client,
             repo,
@@ -173,6 +190,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             Sentinel(cache, official_domains=official_domains()),
             CONSUMER,
             on_incidents,
+            hunt=HuntLinker(hunt_store),
         )
         await consumer.setup()
         try:
@@ -185,6 +203,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             asyncio.create_task(triage_loop(consumer, runner, queue)),
             asyncio.create_task(retry_stuck_loop(runner)),
         ]
+        hunt_task = await maybe_start(stack, hunt_settings, hunt_store, client)  # None unless FL_HUNT_ENABLED
+        if hunt_task is not None:
+            tasks.append(hunt_task)
         try:
             yield
         finally:
@@ -248,6 +269,26 @@ async def get_trace(incident_id: str, x_operator_key: str | None = Header(None))
     if rt.cache is None or rt.repo is None or rt.cache.get(incident_id) is None:
         raise HTTPException(404, "not found")
     return assemble_trace(incident_id, await rt.repo.trace_list(incident_id))
+
+
+@app.get("/internal/hunt")
+async def hunt_state(x_operator_key: str | None = Header(None)) -> dict[str, Any]:
+    """GET /internal/hunt: hunt mode state (enabled, paused, sources, last cycle, counts). Operator key required."""
+    _operator(x_operator_key)
+    settings = rt.hunt_settings or HuntSettings.from_env()
+    return await state_view(settings, default_hunt_config(), rt.hunt_store, rt.redis)
+
+
+@app.get("/internal/hunt/candidates")
+async def hunt_candidates(
+    view: str = "public", limit: int = 100, x_operator_key: str | None = Header(None)
+) -> dict[str, Any]:
+    """GET /internal/hunt/candidates?view=public|operator: confirmed-only projection or the full operator list."""
+    _operator(x_operator_key)
+    if rt.hunt_store is None:
+        return {"items": [], "counts": {}}
+    incidents = {i["incident_id"]: i for i in (rt.cache.all() if rt.cache else [])}
+    return await candidates_view(rt.hunt_store, incidents, operator=view == "operator", limit=max(1, min(limit, 500)))
 
 
 async def _decide(incident_id: str, action_id: str, who: str, ok: bool) -> dict[str, Any]:

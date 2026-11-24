@@ -17,8 +17,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from falcon_core.cascade.ids import is_verdict_id
 
 Source = Literal["live", "replay", "synthetic", "fixture"]
-CHANNELS = ("web", "extension", "api", "mcp", "voice")
-Channel = Literal["web", "extension", "api", "mcp", "voice"]
+CHANNELS = ("web", "extension", "api", "mcp", "voice", "hunt")
+Channel = Literal["web", "extension", "api", "mcp", "voice", "hunt"]
 InputType = Literal["url", "message", "email", "image"]
 MAX_URL_BYTES = 4096
 MAX_VISIBLE_TEXT = 4096
@@ -127,6 +127,7 @@ class SandboxFeatures(BaseModel):
     favicon_sha256: str | None = None
     favicon_phash: str | None = None
     screenshot_phash: str | None = None
+    screenshot_sha256: str | None = None  # name of the privately stored PNG (sandbox screens/<sha>.png)
     dom_simhash: str | None = None
     cloaking: dict[str, Any] = Field(default_factory=dict)
     # Sandbox-classified exfiltration targets: [{"origin", "category"}] (bot API, webhook, relay).

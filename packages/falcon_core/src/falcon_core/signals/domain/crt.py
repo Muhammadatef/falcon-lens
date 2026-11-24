@@ -113,6 +113,7 @@ def summarize(rows: Any, domain: str) -> dict[str, Any]:
         "latest_not_before": latest[0].isoformat(),
         "issuer_dn": latest_dn[:200],
         "issuer": issuer_org(latest_dn) if latest_dn else None,
+        "latest_not_after": (lambda d: d.isoformat() if d else None)(_parse_ts(latest[1].get("not_after"))),
         "siblings_total": len(siblings),
         "siblings": sorted(siblings)[:MAX_SIBLINGS],
     }
@@ -196,7 +197,13 @@ async def run(ctx: SignalContext) -> list[Evidence]:
             Evidence(
                 signal="domain.cert_issuer",
                 family="domain",
-                observed={"issuer": info["issuer"], "issuer_dn": info.get("issuer_dn")},
+                observed={
+                    "issuer": info["issuer"],
+                    "issuer_dn": info.get("issuer_dn"),
+                    "not_before": info.get("latest_not_before"),
+                    "not_after": info.get("latest_not_after"),
+                    "source": "crt.sh (latest certificate seen in CT logs)",
+                },
                 display={
                     "en": f"Certificate issuer: {info['issuer']}"[:200],
                     "ar": f"جهة إصدار الشهادة: {info['issuer']}"[:200],

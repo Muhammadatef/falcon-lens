@@ -38,6 +38,8 @@ async def test_three_evidence_items() -> None:
     assert age.observed["cert_age_days"] == 4  # first cert 2026-11-18 -> 2026-11-22
     assert age.observed["certs_seen"] == 3 and age.polarity == "risk" and age.source == "crt"
     assert got["domain.cert_issuer"].observed["issuer"] == "Synthetic CA"  # latest cert's issuer
+    assert got["domain.cert_issuer"].observed["not_before"].startswith("2026-11-20")
+    assert "not_after" in got["domain.cert_issuer"].observed
     sib = got["domain.ct_siblings"].observed
     assert sib["domains"] == ["falcon-demo-pay.net", "sibling-one.com"] and sib["count"] == 2
     assert http.calls == [CRT]

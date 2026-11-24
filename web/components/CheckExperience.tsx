@@ -5,6 +5,7 @@ import { usePrefs } from "@/lib/prefs";
 import { useCheck } from "@/lib/use-check";
 import { lensStateFor } from "@/lib/verdict-stream";
 import { CheckBox } from "./CheckBox";
+import { CheckSteps } from "./CheckSteps";
 import { DemoRibbon } from "./Chrome";
 import { AgentChip } from "./AgentChip";
 import { HomeSections } from "./HomeSections";
@@ -86,6 +87,7 @@ export function CheckExperience({ demo, initialId, initialText, shareFailed, pen
 
         {showResult ? null : <VoiceEntry />}
         {showResult ? <Result state={state} onReset={reset} investigatorLive={investigatorLive} sentinelLive={sentinelLive} /> : null}
+        {showResult && state.verdict ? <CheckSteps verdict={state.verdict} /> : null}
 
         <SentinelTicker demo={demo} sentinelLive={sentinelLive} />
         <HomeSections investigatorLive={investigatorLive} sentinelLive={sentinelLive} />

@@ -1,6 +1,7 @@
 # Sentinel hunt mode (docs/design/HUNTER.md). Declarative, like rules.yaml; the LLM agent cannot edit this file.
 # Loaded by sentinel_core/hunt/config.py. Brands come only from data/brands.yaml; no brand name lives here.
-# Runtime switches (kill switch, interval, quotas, proxy) are environment variables (HUNTER.md section 5).
+# default_enabled only says which sources FL_HUNT_SOURCES lists by default; nothing runs unless the master
+# switch FL_HUNT_ENABLED=true (default false). Runtime switches (kill switch, interval, quotas, proxy) are environment variables (HUNTER.md section 5).
 version: 1
 
 sources:
@@ -17,7 +18,7 @@ sources:
   ct_lookup:
     kind: ct
     terms_url: https://crt.sh/
-    default_enabled: true
+    default_enabled: false    # crt.sh publishes no terms of use (checked 2026-11-24): opt in via FL_HUNT_SOURCES
   ct_search:
     kind: ct
     terms_url: https://crt.sh/

@@ -68,8 +68,13 @@ class VerdictSummary(BaseModel):
     tier_reached: TierLit
     model_route: Literal["cloud", "local", "none"]
     source: Literal["live", "replay", "synthetic", "fixture"]
-    channel: Literal["web", "extension", "api", "mcp", "voice"] | None = Field(
+    channel: Literal["web", "extension", "api", "mcp", "voice", "hunt"] | None = Field(
         default=None, description="Which client asked for the check; null when it did not say."
+    )
+    trace_id: str | None = Field(
+        default=None,
+        pattern=r"^[0-9a-f]{32}$",
+        description="OpenTelemetry trace id of the check; null when tracing was off. Metadata for operator links.",
     )
     agent: AgentActivity
 
@@ -135,6 +140,7 @@ def summarize(doc: dict[str, Any]) -> dict[str, Any] | None:
             "model_route": doc["model_route"],
             "source": effective_source(str(doc.get("source") or "live"), [_host_of(doc.get("canonical_url"))]),
             "channel": doc.get("channel"),
+            "trace_id": doc.get("trace_id") if re.fullmatch(r"[0-9a-f]{32}", str(doc.get("trace_id") or "")) else None,
             "agent": {
                 "tiers_run": tiers,
                 "extractor_ran": extractor,
@@ -231,6 +237,8 @@ def register(
                         continue
                     raw_payload = ev.get("payload")
                     payload: dict[str, Any] = raw_payload if isinstance(raw_payload, dict) else {}
+                    if payload.get("channel") == "hunt":
+                        continue  # hunt checks are the Sentinel's own: never in the public history
                     if verdict and payload.get("verdict") != verdict:
                         continue
                     if input_type and payload.get("input_type") != input_type:
@@ -289,6 +297,9 @@ def register(
                         ev = _event_of(fields)
                         if ev is None or ev["verdict_id"] in seen:
                             continue
+                        pl = ev.get("payload")
+                        if isinstance(pl, dict) and pl.get("channel") == "hunt":
+                            continue  # hunt checks never reach the public history stream
                         summary = await load_summary(ev)
                         if summary is None:
                             continue

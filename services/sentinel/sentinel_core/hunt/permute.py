@@ -183,7 +183,7 @@ def permute_brand(brand: Brand, registry: BrandRegistry, cfg: PermutationConfig)
         base_of[reg] = base
         streams[kind].append(reg)
 
-    for base, (label, suffix) in zip(brand.verified_domains, brand.domain_parts, strict=False):
+    for base, (label, suffix) in zip(brand.verified_domains, brand.domain_parts, strict=True):
         if not label or not suffix:
             continue
         homes = _homes(brand, suffix, cfg)

@@ -99,5 +99,6 @@ class Verdict(BaseModel):
     screenshot_url: str | None = None
     source: Source = "live"
     channel: Channel | None = None
+    trace_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{32}$")
     latency_ms: int = Field(ge=0)
     created_at: datetime

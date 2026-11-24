@@ -57,3 +57,94 @@ class HuntCandidate(BaseModel):
     incident_id: str | None
     time_to_detection_s: float | None = Field(ge=0)
     time_to_detection_basis: Literal["cert_not_before", "rdap"] | None = None
+
+
+# ---- REST projections (GET /v1/hunt/candidates, GET/PUT /v1/admin/hunt, Meta.hunt); openapi.yaml is generated
+# from the API models that use these. The public feed never carries prescore or a live name.
+
+SourceStatus = Literal["live", "ready_needs_key", "disabled"]
+
+
+class BrandName(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    ar: str
+    en: str
+
+
+class HuntSourceInfo(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    kind: Discovery
+    status: SourceStatus
+    terms_url: str | None
+
+
+class HuntMeta(BaseModel):
+    """`hunt` block of GET /v1/meta: what the hunt mode is and is not doing right now (capability flag)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool
+    paused: bool
+    interval_min: int
+    sources: list[HuntSourceInfo]
+    last_cycle_at: datetime | None
+
+
+class HuntFeedItem(BaseModel):
+    """One arbiter-confirmed candidate, public projection (defanged; no prescore)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    candidate_id: str = Field(pattern=r"^hc_[0-9A-HJKMNP-TV-Z]{26}$")
+    domain_defanged: str = Field(pattern=r"^[^.]+(\[\.\][^.]+)+$")
+    brand_id: str
+    brand_name: BrandName | None = None
+    discovery: Discovery
+    permutation_kind: PermutationKind | None
+    reasons: list[Annotated[str, Field(pattern=REASON_PATTERN)]]
+    first_seen: datetime
+    verdict: Literal["suspicious", "dangerous"]
+    incident_id: str | None
+    found_before_report: bool
+    time_to_detection_s: float | None = Field(ge=0)
+    time_to_detection_basis: Literal["cert_not_before", "rdap"] | None
+    source: Literal["live", "fixture", "replay"]
+
+
+class HuntFeed(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[HuntFeedItem]
+    counts: dict[CandidateStatus, int] = Field(
+        description="All candidates by status (unconfirmed ones appear only here)."
+    )
+
+
+class HuntAdminItem(HuntCandidate):
+    """Operator view: the full contract record (defanged) plus the incident's found_before_report."""
+
+    found_before_report: bool
+
+
+class HuntAdmin(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool
+    paused: bool
+    interval_min: int
+    sources: list[HuntSourceInfo]
+    last_cycle_at: datetime | None
+    last_cycle_outcome: str | None
+    counts: dict[CandidateStatus, int]
+    quota: dict[str, int]
+    prescore_min: int
+    items: list[HuntAdminItem]
+
+
+class HuntAdminIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    paused: bool = Field(description="true pauses every outbound hunt request within one request; false resumes.")

@@ -7,13 +7,13 @@ For a native Emirati reviewer. Left: the line the assistant SPEAKS. Right: its E
 Rules for the lines: short, natural Emirati speech, respectful to an elderly listener, never the word for "safe",
 never asking for personal, bank or ID details, no phone numbers.
 
-Lines: 273. Digits are written out in words (`num.0` to `num.100`).
+Lines: 351. Digits are written out in words (`num.0` to `num.100`).
 
 | Emirati line | English meaning | Reviewer / OK |
 |---|---|---|
 | هلا، سامعك. | Yes, I'm listening. |  |
 | لحظة، أقرا اللي نسخته. | One moment, reading what you copied. |  |
-| لقيت مسج وحدة. | I found one message. |  |
+| لقيت مسج واحد. | I found one message. |  |
 | لقيت مسجين. | I found two messages. |  |
 | لقيت ثلاث مسجات. | I found three messages. |  |
 | لقيت أربع مسجات. | I found four messages. |  |
@@ -56,7 +56,82 @@ Lines: 273. Digits are written out in words (`num.0` to `num.100`).
 | أشوف عنوان الموقع، يمكن فيه تشابه مخادع. | Checking the web address for look-alike tricks. |  |
 | أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي. | Opening the page in our isolated browser. Nothing is typed. |  |
 | نظرة ثانية بالذكاء الاصطناعي، بموديل محلي. | AI second look, with our local model. |  |
-| نظرة ثانية بالذكاء الاصطناعي، بموديل كلود. | AI second look, with Claude. |  |
+| نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي. | AI second look, with a cloud language model. |  |
+| ما لقينا شي ملفت في هذه الطبقة. | Nothing notable at this layer. |  |
+| أقرا صياغة المسج، وأدوّر على الاستعجال والضغط. | Reading the wording for urgency and pressure. |  |
+| الرابط مسجّل في قائمة نصب معروفة. | The link is on a known scam list. |  |
+| العنوان يضيف كلمة لاسم جهة معروفة. | The address adds a word to a well-known name. |  |
+| العنوان قريب مرة من اسم جهة معروفة، بس حروفه مغيّرة. | The address is a near-copy of a well-known name. |  |
+| العنوان فيه حروف تشبه غيرها عشان تخدعك. | The address uses look-alike letters to fool you. |  |
+| العنوان فيه رموز مخفية. | The address contains hidden characters. |  |
+| العنوان أرقام بدل اسم موقع. | The address is a number instead of a site name. |  |
+| الموقع على استضافة مجانية أو نفق مؤقت. | The site sits on free hosting or a temporary tunnel. |  |
+| اسم جهة معروفة محطوط في العنوان، والموقع مو لها. | A well-known name is placed in the address, but the site is not theirs. |  |
+| العنوان فيه حيلة تخفي الوجهة الحقيقية. | The address uses a trick to hide where it really goes. |  |
+| الرابط يحوّلك لموقع ثاني. | The link bounces you to another site. |  |
+| الرابط يمر بعدة تحويلات. | The link goes through several redirects. |  |
+| الرابط مختصر ويخفي وجهته. | The link is shortened and hides its destination. |  |
+| اللي تكتبه يروح لخادم ثاني. | What you type goes to a different server. |  |
+| الصفحة تعرض شي مختلف لأدوات الفحص. | The page shows something different to scanners. |  |
+| الصفحة تسحب صور جهة معروفة من موقعها الأصلي. | The page pulls a well-known brand's images from its real site. |  |
+| أيقونة الموقع منسوخة من جهة معروفة. | The site icon is copied from a well-known brand. |  |
+| الرابط مو من الجهة اللي تذكرها الرسالة. | The link is not from the organisation the message names. |  |
+| الرسالة تطلب رمز أو فلوس بأسلوب النصابين. | The message asks for a code or money the way scammers do. |  |
+| الرسالة تشبه نص نصب معروف. | The message matches a known scam script. |  |
+| الرسالة تستعجلك. | The message rushes you. |  |
+| الرسالة تطلب منك تخبي الموضوع. | The message asks you to keep it secret. |  |
+| الرسالة تطلب رمز التحقق. | The message asks for your verification code. |  |
+| الرسالة تطلب تحميل برنامج أو مشاركة شاشتك. | The message asks you to install an app or share your screen. |  |
+| الرسالة تطلب دفع أو تحويل فلوس. | The message asks you to pay or transfer money. |  |
+| الرسالة تدّعي إنها من جهة رسمية. | The message claims to come from an official body. |  |
+| الرسالة توعدك بجايزة. | The message promises you a prize. |  |
+| الرسالة تعرض وظيفة مشبوهة. | The message offers a dubious job. |  |
+| الرسالة تعرض ربح سريع. | The message offers fast profit. |  |
+| الرسالة تطلب رسوم توصيل. | The message asks for a delivery fee. |  |
+| الرسالة تتكلم عن مخالفة وتطلب دفع. | The message talks about a fine and asks for payment. |  |
+| الإيميل فشل في فحص هوية المرسل. | The email failed the sender identity check. |  |
+| اسم المرسل يتظاهر بجهة معروفة. | The sender name pretends to be a well-known body. |  |
+| الرد يروح لعنوان غير عنوان المرسل. | Replies go to a different address than the sender's. |  |
+| الرابط المكتوب غير الرابط الحقيقي. | The link shown is not the real link. |  |
+| في الصورة رمز كيو آر يودّي لرابط. | The image has a QR code that leads to a link. |  |
+| في الرسالة رابط. | The message contains a link. |  |
+| في الرسالة رقم تتصل عليه. | The message has a number to call. |  |
+| مسار الإرجاع غير عنوان المرسل. | The return path differs from the sender's address. |  |
+| المرفق ممكن يحمل رابط أو شي مشبوه. | The attachment may carry a link or something suspicious. |  |
+| الصفحة تطلب بيانات بطاقتك. | The page asks for your card details. |  |
+| الصفحة تطلب رقم هويتك الإماراتية. | The page asks for your Emirates ID number. |  |
+| الصفحة تطلب بيانات الهوية الرقمية. | The page asks for your digital identity login. |  |
+| الصفحة تطلب الرقم السري. | The page asks for your PIN. |  |
+| الصفحة تطلب كلمة السر والرمز. | The page asks for a password and a code. |  |
+| الصفحة تطلب كلمة السر. | The page asks for a password. |  |
+| الصفحة تطلب رمز التحقق. | The page asks for a verification code. |  |
+| الصفحة تطلب بيانات دخول أو بيانات حساسة. | The page asks for login or sensitive details. |  |
+| ما قدرنا نفتح الصفحة كامل. | We couldn't open the page fully. |  |
+| النطاق مسجّل اليوم. | The domain was registered today. |  |
+| النطاق مسجّل قبل يوم واحد. | The domain was registered one day ago. |  |
+| النطاق مسجّل قبل يومين. | The domain was registered two days ago. |  |
+| النطاق مسجّل قبل | The domain was registered |  |
+| يوم. | days ago. |  |
+| شهادة الموقع صدرت اليوم. | The site certificate was issued today. |  |
+| شهادة الموقع صدرت قبل يوم واحد. | The site certificate was issued one day ago. |  |
+| شهادة الموقع صدرت قبل يومين. | The site certificate was issued two days ago. |  |
+| شهادة الموقع صدرت قبل | The site certificate was issued |  |
+| يوم. | days ago. |  |
+| بنك الصقر التجريبي | Falcon Demo Bank |  |
+| بريد الإمارات | Emirates Post |  |
+| اتصالات | Etisalat |  |
+| سالك | Salik |  |
+| كهرباء ومياه دبي | Dubai Electricity and Water |  |
+| بنك أبوظبي الأول | First Abu Dhabi Bank |  |
+| بنك أبوظبي التجاري | Abu Dhabi Commercial Bank |  |
+| بنك الإمارات دبي الوطني | Emirates NBD |  |
+| بنك المشرق | Mashreq |  |
+| بنك رأس الخيمة الوطني | RAKBANK |  |
+| الهوية الرقمية | UAE PASS |  |
+| تدّعي إنها | It claims to be |  |
+| والنطاق مو لهم. | but the domain is not theirs. |  |
+| تدّعي إنها جهة معروفة والنطاق مو لهم. | It claims to be a well-known body, but the domain is not theirs. |  |
+| والحملة تنتحل اسم | The campaign imitates |  |
 | القواعد حكمت، من غير ذكاء اصطناعي. | The rules decided, without AI. |  |
 | الحكم النهائي: المسج خطر! | The arbiter's decision: dangerous. |  |
 | الحكم النهائي: المسج مشكوك فيه. | The arbiter's decision: suspicious. |  |
@@ -186,10 +261,10 @@ Lines: 273. Digits are written out in words (`num.0` to `num.100`).
 | خدمة الصوت مو متوفرة الحين. استخدم خانة اللصق. | The voice service isn't available right now. Please use the paste box. |  |
 | بصير شيّك، بس ما قدرت أوصل لدرع. | Baseer checked, but I couldn't reach Dir. |  |
 | بصير شيّك، ودرع يظل يراقب. | Baseer checked, and Dir keeps watching. |  |
-| مسج وحدة منها خطر. | One message is dangerous. |  |
-| مسج وحدة منها مشكوك فيها. | One message looks suspicious. |  |
-| مسج وحدة ما فيها علامات تحذير. | One message showed no warning signs. |  |
-| مسج وحدة ما قدرت أشيّكها. | One message could not be checked. |  |
+| مسج واحد منها خطِر. | One message is dangerous. |  |
+| مسج واحد منها مشكوك فيه. | One message looks suspicious. |  |
+| مسج واحد ما فيه علامات تحذير. | One message showed no warning signs. |  |
+| مسج واحد ما قدرت أشيّكه. | One message could not be checked. |  |
 | مسجين منها خطر. | Two messages are dangerous. |  |
 | مسجين منها مشكوك فيها. | Two messages look suspicious. |  |
 | مسجين ما فيها علامات تحذير. | Two messages showed no warning signs. |  |
@@ -255,8 +330,11 @@ Lines: 273. Digits are written out in words (`num.0` to `num.100`).
 | تمام، وقّفت. | Okay, I've stopped. |  |
 | ما فهمت عليك. عيد، لو سمحت. | Sorry, I didn't catch that. Please say it again. |  |
 | ما لقيت مسجات في اللي نسخته. انسخها وعيد علي. | I found no messages in what you copied. Copy them and try again. |  |
-| ما قدرت أقرا اللي نسخته. الصقه في الخانة اللي على الشاشة. | I couldn't read what you copied. Paste it in the box on the screen. |  |
+| هلا! شلون أقدر أساعدك اليوم؟ | Hi, how can I help you today? |  |
 | صار خلل. جرّب مرة ثانية، ولا تفتح أي رابط. | Something went wrong. Try again, and don't open any link. |  |
+| الكلام طويل شوي، قوله باختصار. | That was a bit long. Please say it more briefly. |  |
+| لحظة، خلني ألحق عليك. | One moment, catching up. |  |
+| لحظة، لسا أشيّك. | Still checking, one moment. |  |
 | يزاك الله خير. الله يحفظك. | Thank you. Take care. |  |
 | البنك ما يطلب منك الرمز أبداً. لا تعطيه لأي أحد، حتى لو قال إنه من البنك. | Your bank never asks for your one-time code. Never share it with anyone, even if they say they are the bank. |  |
 | لا تخاف، بس تصرّف بسرعة. لا تدخل أي بيانات، وكلّم بنكك، وغيّر أرقامك السرية. | Don't panic, but act fast. Don't enter any details, call your bank, and change your passcodes. |  |

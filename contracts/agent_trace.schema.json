@@ -41,6 +41,11 @@
         "run_id": {
           "type": "string"
         },
+        "trace_id": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "Optional. OpenTelemetry trace id of this run's sentinel.triage span (operators open it in Phoenix). Absent when tracing was off."
+        },
         "started_at": {
           "type": "string",
           "format": "date-time"

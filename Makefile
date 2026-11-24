@@ -3,7 +3,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose --profile core --profile obs
 DEMO = PYTHONPATH=scripts uv run python -m falcon_demo
 
-.PHONY: voice-e2e demo-mode-check demo-mode-on demo-mode-off voice-rehearsal redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
+.PHONY: batch demo-hunt hunt-once voice-e2e demo-mode-check demo-mode-on demo-mode-off voice-rehearsal redteam-shipped regress-legit eval-baseline fit-thresholds help up down smoke openapi test test-web eval eval-gate redteam redteam-fixtures xss seed replay demo demo-reset tunnel tunnel-stop urls unblock scan submission guard lint typecheck ci-local ci-local-pr dspy-optimize
 
 help: ## List every make target with a one-line description (this list)
 	@echo "Usage: make <target>   (details for every script: docs/SCRIPTS.md)"
@@ -36,6 +36,13 @@ test-web: ## web: typecheck + eslint + vitest + production build + Playwright e2
 unblock: ## Revert a Sentinel block: make unblock ID=act_xxx (needs DATABASE_URL and REDIS_URL, host-reachable)
 	@test -n "$(ID)" || { echo "usage: make unblock ID=act_<id>" >&2; exit 2; }
 	uv run python -m falcon_sentinel.unblock $(ID)
+
+demo-hunt: ## Offline hunting demo step: one hunt cycle on the TEST FIXTURE source only, for falcon_demo_bank (needs FL_HUNT_API_KEY in .env; see docs/DEMO.md)
+	docker compose exec -T -e FL_HUNT_SOURCES=fixture sentinel python -m falcon_sentinel.hunt.once --brand falcon_demo_bank
+
+hunt-once: ## One Sentinel hunt cycle for one brand inside the running sentinel container: make hunt-once BRAND=<brand_id> (sources/quotas from FL_HUNT_*; pause key honoured)
+	@test -n "$(BRAND)" || { echo "usage: make hunt-once BRAND=<brand_id from data/brands.yaml>" >&2; exit 2; }
+	docker compose exec -T sentinel python -m falcon_sentinel.hunt.once --brand "$(BRAND)"
 
 dspy-optimize: ## offline DSPy prompt optimisation for every LLM role (ADR-002). DSPY_ROUTE=cloud|local; default cloud if ANTHROPIC_API_KEY is already in the environment, else local (Ollama)
 	uv run --group dspy python evals/dspy/optimize.py $(if $(DSPY_ROUTE),--route $(DSPY_ROUTE),) $(ARGS)
@@ -73,6 +80,9 @@ openapi: ## Regenerate contracts/openapi.yaml from the FastAPI app (CI fails on 
 eval: ## offline eval (val + test): JSON + HTML + latest.prom under evals/results/
 	uv run python -m evals.harness.run
 	uv run python -m evals.message_text.run  # message-text eval, val only, report-only (--publish adds the frozen test split)
+batch: ## check a URL list against the running API: make batch FILE=urls.txt [OUT=results.csv] [CONCURRENCY=4] [MODE=strict|lenient]
+	@test -n "$(FILE)" || { echo "usage: make batch FILE=urls.txt [OUT=results.csv] [CONCURRENCY=4] [MODE=strict|lenient]"; exit 2; }
+	uv run python scripts/batch_check.py "$(FILE)" --out "$(or $(OUT),results.csv)" --concurrency "$(or $(CONCURRENCY),4)" --mode "$(or $(MODE),strict)"
 redteam: ## prompt-injection / obfuscation red-team suite; exits non-zero if attack success > 0 (FL_LIVE_LLM=1: live model)
 	uv run python -m evals.redteam
 
