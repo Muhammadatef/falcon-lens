@@ -58,8 +58,10 @@ async def test_read_scope_can_list_and_stream_but_not_operate(redis: Any, store:
         assert r.status_code == 200 and [i["verdict_id"] for i in r.json()["items"]] == [vid(1)]
         s = await c.get("/v1/verdicts/stream", headers={"X-API-Key": read_key, "Last-Event-ID": "0-0"}, timeout=10)
         assert s.status_code == 200
-        approve = "/v1/incidents/inc_00000000000000000000000000/actions/act_x/approve"
-        assert (await c.post(approve, headers={"X-API-Key": read_key})).status_code == 403
+        base = "/v1/incidents/inc_00000000000000000000000000/actions/act_x"
+        for verb in ("approve", "reject"):
+            assert (await c.post(f"{base}/{verb}", headers={"X-API-Key": read_key})).status_code == 403
+        assert (await c.get("/v1/intel/stix", headers={"X-API-Key": read_key})).status_code == 403
 
 
 async def test_redaction_no_userinfo_no_raw_text(client: httpx.AsyncClient, redis: Any, store: FakeStore) -> None:

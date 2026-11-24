@@ -42,42 +42,71 @@ const MODES = ["read", "internal_auto", "external_draft"] as const;
 
 /* ── Text scrubbing ───────────────────────────────────────────────────── */
 
+const SCHEME_URL_RE = /[a-z][a-z0-9+.-]*:\/\/[^\s<>"'«»]*/giu;
+const BARE_URL_RE = /(?<![\p{L}\p{N}@._%+-])(?:[\p{L}\p{N}-]+\[?\.\]?)+[\p{L}\p{N}-]+(?::\d{1,5})?(?:[/?#][^\s<>"'«»]*)?/gu;
 const EMAIL_RE = /[\p{L}\p{N}._%+'-]+(?:@|\[at\]|\(at\))[\p{L}\p{N}-]+(?:\[?\.\]?[\p{L}\p{N}-]+)+/giu;
-const URLISH_RE = /(?:[a-z][a-z0-9+.-]*:\/\/)?(?:[^\s/@]+@)?[\p{L}\p{N}-]+(?:\[?\.\]?[\p{L}\p{N}-]+)+(?::\d{1,5})?(?:[/?#][^\s]*)?/giu;
-const PHONE_RE = /(?<![\p{L}\p{N}])\+?\(?\d[\d\s().-]{5,}\d(?![\p{L}\p{N}])/gu;
+const PHONE_RE = /(?<![\p{L}\p{N}])(?:\+|00)?\(?\d[\d\s().-]{5,}\d(?![\p{L}\p{N}])/gu;
 const LONG_DIGITS_RE = /\d{6,}/g;
 const ARABIC_DIGITS = /[٠-٩۰-۹]/g;
+const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+/** Anything that still looks like a query, fragment, userinfo or port-plus-path after scrubbing: fail closed. */
+const RESIDUE_RE = /[?#@]|:\d{2,5}\//;
+export const REMOVED_LINK = "[link removed]";
+export const REMOVED_TEXT = "[text removed]";
 
-/** Host (and nothing else) of a link-like token, defanged; null when the token is not a link (v1.2, e.g.). */
-function hostToken(token: string): string | null {
-  const m = /^((?:[a-z][a-z0-9+.-]*):\/\/)?(?:[^\s/@]+@)?([\p{L}\p{N}-]+(?:\[?\.\]?[\p{L}\p{N}-]+)+)/iu.exec(token);
+/**
+ * Reduces one link-like token to its defanged HOST: userinfo, port, path, query and fragment are dropped.
+ * IPv4 and dotless hosts are kept as hosts; IPv6 or an unparseable authority returns null.
+ */
+function reduceLink(token: string): string | null {
+  const m = /^(?:([a-z][a-z0-9+.-]*):\/\/)?([^/?#\s]*)/i.exec(token);
   if (!m) return null;
-  const host = m[2]!.replace(/\[\.\]/g, ".").toLowerCase();
-  const tld = host.slice(host.lastIndexOf(".") + 1);
-  if (!/^\p{L}{2,}$/u.test(tld) && !/^xn--[a-z0-9-]+$/.test(tld)) return null;
-  const secure = /^(?:https|hxxps):/i.test(m[1] ?? "");
-  const scheme = m[1] ? (secure ? "hxxps://" : "hxxp://") : "";
+  let authority = m[2]!;
+  authority = authority.slice(authority.lastIndexOf("@") + 1);
+  if (authority.startsWith("[") && !/^[\p{L}\p{N}-]+\[\.\]/u.test(authority)) return null; // IPv6 literal
+  const host = authority.replace(/:\d*$/, "").replace(/\[\.\]/g, ".").replace(/\.+$/, "").toLowerCase();
+  if (!/^[\p{L}\p{N}][\p{L}\p{N}.-]{0,252}$/u.test(host)) return null;
+  const scheme = m[1] ? (/^(?:https|hxxps)$/i.test(m[1]) ? "hxxps://" : "hxxp://") : "";
   return defang(`${scheme}${host}`);
 }
 
-/** Removes emails, phone-like numbers and everything after the host of any link. Idempotent. */
+/** A bare token (no scheme) is only a link when it has a path/query/port, is an IPv4, or ends in a letter TLD. */
+function bareLink(token: string): string | null {
+  const hasTail = /[/?#]/.test(token) || /:\d{1,5}(?:[/?#]|$)/.test(token);
+  const host = /^[^/?#:]*/.exec(token)![0].replace(/\[\.\]/g, ".").toLowerCase();
+  const tld = host.slice(host.lastIndexOf(".") + 1);
+  const alphaTld = /^\p{L}{2,}$/u.test(tld) || /^xn--[a-z0-9-]+$/.test(tld);
+  if (!hasTail && !IPV4.test(host) && !alphaTld) return null;
+  if (!hasTail && !IPV4.test(host) && token === host && !host.includes(".")) return null;
+  return reduceLink(token);
+}
+
+/** `hxxps://user:pw@a[.]b:8443/path?q=1#f` becomes `hxxps://a[.]b`; null when it is not a link. */
+export function hostOf(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 4096) return null;
+  const t = value.trim();
+  if (!t || /\s/.test(t)) return null;
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? reduceLink(t) : bareLink(t);
+}
+
+/**
+ * Removes links (host only is kept, defanged), emails and phone-like numbers from free text. Order matters:
+ * links FIRST (so `user:pw@host:8443/p?x#f` never reaches the email pass), then emails, then numbers. Idempotent.
+ * Fail closed: if anything shaped like a query, fragment, `@` or port-plus-path survives, the whole text is replaced.
+ */
 export function scrub(input: unknown, max = 400): string {
   if (typeof input !== "string") return "";
   let s = input.replace(CONTROL, " ").replace(ARABIC_DIGITS, (d) => String("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹".indexOf(d) % 10));
+  s = s.replace(SCHEME_URL_RE, (t) => reduceLink(t) ?? REMOVED_LINK);
+  s = s.replace(BARE_URL_RE, (t) => bareLink(t) ?? t);
   s = s.replace(EMAIL_RE, "[email]");
-  s = s.replace(URLISH_RE, (token) => hostToken(token) ?? token);
   s = s.replace(PHONE_RE, "[number]").replace(LONG_DIGITS_RE, "[number]");
   s = s.replace(/\s+/g, " ").trim();
+  if (RESIDUE_RE.test(s)) return REMOVED_TEXT;
   return s.length > max ? `${s.slice(0, max - 1)}…` : s;
 }
 
 const bilingual = (v: unknown, max = 400): { ar: string; en: string } => (isObj(v) ? { ar: scrub(v.ar, max), en: scrub(v.en, max) } : { ar: "", en: "" });
-
-/** `hxxps://user:pw@a[.]b/path?q=1` becomes `hxxps://a[.]b`; null when it is not a link. */
-export function hostOf(value: unknown): string | null {
-  if (typeof value !== "string" || value.length > 4096) return null;
-  return hostToken(value.trim());
-}
 
 /* ── Checks (Investigator) ────────────────────────────────────────────── */
 

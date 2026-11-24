@@ -158,7 +158,7 @@ def register(
     client_ip: Callable[[Request], str],
     per_ip_per_min: int = 60,
 ) -> None:
-    Operator = Depends(require("read"))
+    ReadScope = Depends(require("read"))
 
     async def ip_gate(request: Request) -> None:
         """Per-address limit on top of the per-key one (the gateway forwards X-Falcon-Client-IP)."""
@@ -192,7 +192,7 @@ def register(
         dependencies=[Depends(ip_gate)],
     )
     async def list_verdicts(
-        _p: Annotated[Principal, Operator],
+        _p: Annotated[Principal, ReadScope],
         cursor: Annotated[str | None, Query(max_length=64, description="Opaque cursor from `next_cursor`.")] = None,
         limit: Annotated[int, Query(ge=1, le=100, description="Page size.")] = 25,
         verdict: VerdictLit | None = None,
@@ -244,7 +244,7 @@ def register(
     )
     async def verdicts_stream(
         request: Request,
-        _p: Annotated[Principal, Operator],
+        _p: Annotated[Principal, ReadScope],
         _gate: Annotated[None, Depends(stream_acquire)],
         last_event_id: Annotated[str | None, Header()] = None,
     ) -> AsyncIterator[ServerSentEvent]:
