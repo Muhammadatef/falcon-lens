@@ -8,6 +8,8 @@ import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { syncEvalAreas } from "./eval-areas.mjs";
+import { syncResultsExtra } from "./results-extra.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repo = join(web, "..");
@@ -42,6 +44,11 @@ if (existsSync(fpDir)) {
     console.log("sync-results: fp_regress", best.f);
   }
 }
+
+// Per-area compact JSON for /results (scripts/eval-areas.mjs).
+syncEvalAreas(web, published);
+// KPI sections: per-KPI counts, real vs synthetic, live false-alarm history, red-team per category, extractor per route.
+syncResultsExtra(web, published, repo);
 
 const assets = join(repo, "docs", "assets");
 if (existsSync(assets)) {

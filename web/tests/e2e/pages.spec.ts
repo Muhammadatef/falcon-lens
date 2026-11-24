@@ -6,6 +6,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import capabilities from "../../lib/capabilities.generated.json";
+import areas from "../../lib/eval-areas.generated.json";
 import results from "../../lib/results.generated.json";
 import { formatMetric } from "../../lib/results";
 import { expect, setPrefs, test } from "./helpers";
@@ -134,8 +135,32 @@ test.describe("judge-facing content", () => {
     await expect(page.getByTestId("metric-test-precision")).toContainText(formatMetric("precision", m["test.precision"]!, "ar"));
     await expect(page.getByTestId("metric-test-recall")).toContainText(formatMetric("recall", m["test.recall"]!, "ar"));
     await expect(page.getByTestId("metric-test-official")).toContainText(String(m["test.official_false_dangerous"]));
-    await expect(page.getByTestId("split-test")).toContainText("95%");
+    await expect(page.getByTestId("kpi-grid")).toContainText("95%");
     await expect(page.getByTestId("not-evaluated")).toBeVisible();
+  });
+
+  test("results: each formerly unmeasured area shows its measured figure, scope and caveat; pending only where the artifact says so", async ({ page, context, baseURL }) => {
+    const bundle = areas as unknown as { areas: Record<string, { rows: Record<string, { value: number; k: number | null; n: number | null }> }> };
+    for (const lang of ["ar", "en"] as const) {
+      await setPrefs(context, baseURL!, { lang });
+      await page.goto("/results");
+      await expect(page.getByTestId("areas")).toBeVisible();
+      await page.getByTestId("areas").locator("summary").first().click();
+      for (const id of ["redteam", "faithfulness", "stability", "route_compare", "t3_investigator", "sandbox_t2", "brand_new_pages", "synthetic_split", "message_text", "cost_per_check", "arabic_clarity"]) {
+        await expect(page.getByTestId(`area-${id}`), id).toBeVisible();
+      }
+      const rt = bundle.areas.redteam!.rows;
+      const harmful = page.getByTestId("row-redteam-extended_harmful");
+      await expect(harmful).toContainText(String(rt.extended_harmful!.value));
+      await expect(harmful).toContainText(String(rt.extended_harmful!.n));
+      await expect(page.getByTestId("row-redteam-extended_answered")).toContainText(String(rt.extended_answered!.value));
+      await expect(page.getByTestId("row-redteam-production_answered")).toContainText(String(rt.production_answered!.value));
+      await expect(page.getByTestId("note-redteam")).toBeVisible();
+      const ne = page.getByTestId("not-evaluated");
+      await expect(ne.locator("li")).toHaveCount(3);
+      const body = await page.locator("main").innerText();
+      expect(body).not.toMatch(/\bsafe\b|آمن/i);
+    }
   });
 
   test("authorities: says ready to connect, not connected, shows three outcomes and the interface flags", async ({ page, context, baseURL }) => {

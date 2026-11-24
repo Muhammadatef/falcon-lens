@@ -1,0 +1,629 @@
+{
+  "available": true,
+  "areas": {
+    "faithfulness": {
+      "artifact": "faithfulness_58c5380c_20261123T140938Z.json",
+      "date": "2026-11-23T14:09:38Z",
+      "provenance": "real (val/test URL items, offline) + synthetic (fixture verdicts, replayed incidents), reported apart",
+      "route": "none for reasons; local and cloud for Sentinel summaries",
+      "model": "none (templates)",
+      "caveat": "",
+      "rows": {
+        "reasons_faithful": {
+          "kind": "rate",
+          "value": 1,
+          "k": 97,
+          "n": 97,
+          "lo": 0.9619,
+          "hi": 1
+        },
+        "verdicts_fully_faithful": {
+          "kind": "rate",
+          "value": 1,
+          "k": 107,
+          "n": 107,
+          "lo": 0.9653,
+          "hi": 1
+        },
+        "sentinel_cloud_claims_kept": {
+          "kind": "rate",
+          "value": 0.8787878787878788,
+          "k": 29,
+          "n": 33,
+          "lo": 0.7267,
+          "hi": 0.9518
+        },
+        "sentinel_cloud_kept_cite_valid": {
+          "kind": "rate",
+          "value": 1,
+          "k": 21,
+          "n": 21,
+          "lo": 0.8454,
+          "hi": 1
+        },
+        "sentinel_local_claims_kept": {
+          "kind": "rate",
+          "value": 1,
+          "k": 10,
+          "n": 10,
+          "lo": 0.7225,
+          "hi": 1
+        },
+        "sentinel_local_kept_cite_valid": {
+          "kind": "rate",
+          "value": 1,
+          "k": 10,
+          "n": 10,
+          "lo": 0.7225,
+          "hi": 1
+        }
+      },
+      "notEvaluated": []
+    },
+    "stability": {
+      "artifact": "stability_58c5380c_20261123T140938Z.json",
+      "date": "2026-11-23T14:09:38Z",
+      "provenance": "synthetic fixtures (Falcon Demo Bank, .test hosts), offline substitutes for sandbox and network",
+      "route": "local",
+      "model": "inkling-2-mini-chat",
+      "caveat": "fixture-backed renderer, stub DNS, no network signals; the local model shares the GPU with other jobs, so timeouts are possible and are counted, not hidden.",
+      "rows": {
+        "ai_on_all_three_identical": {
+          "kind": "rate",
+          "value": 0.75,
+          "k": 9,
+          "n": 12,
+          "lo": 0.4677,
+          "hi": 0.9111
+        },
+        "ai_on_among_completed": {
+          "kind": "rate",
+          "value": 1,
+          "k": 9,
+          "n": 9,
+          "lo": 0.7008,
+          "hi": 1
+        },
+        "ai_off_all_three_identical": {
+          "kind": "rate",
+          "value": 1,
+          "k": 12,
+          "n": 12,
+          "lo": 0.7575,
+          "hi": 1
+        }
+      },
+      "notEvaluated": []
+    },
+    "route_compare": {
+      "artifact": "route_compare_58c5380c_20261123T140938Z.json",
+      "date": "2026-11-23T14:09:38Z",
+      "provenance": "synthetic fixtures (Falcon Demo Bank, .test hosts); offline sandbox and network substitutes",
+      "route": "local+cloud",
+      "model": "inkling-2-mini-chat",
+      "caveat": "",
+      "rows": {
+        "exact_label_agreement": {
+          "kind": "rate",
+          "value": 1,
+          "k": 23,
+          "n": 23,
+          "lo": 0.8569,
+          "hi": 1
+        },
+        "cloud_recall_warning": {
+          "kind": "rate",
+          "value": 0.5333333333333333,
+          "k": 8,
+          "n": 15,
+          "lo": 0.3012,
+          "hi": 0.7519
+        },
+        "local_recall_warning": {
+          "kind": "rate",
+          "value": 0.5333333333333333,
+          "k": 8,
+          "n": 15,
+          "lo": 0.3012,
+          "hi": 0.7519
+        },
+        "cloud_benign_warning": {
+          "kind": "rate",
+          "value": 0.375,
+          "k": 3,
+          "n": 8,
+          "lo": 0.1368,
+          "hi": 0.6943
+        },
+        "local_benign_warning": {
+          "kind": "rate",
+          "value": 0.375,
+          "k": 3,
+          "n": 8,
+          "lo": 0.1368,
+          "hi": 0.6943
+        }
+      },
+      "notEvaluated": []
+    },
+    "cost_per_check": {
+      "artifact": "cost_per_check_33179245_20261123T160925Z.json",
+      "date": "2026-11-23T16:09:25Z",
+      "provenance": "synthetic fixtures; cost depends on prompt sizes of this corpus (short pages and messages)",
+      "route": "cloud (priced) + local (zero marginal)",
+      "model": "inkling-2-mini-chat",
+      "caveat": "",
+      "rows": {
+        "cloud_usd_per_check": {
+          "kind": "usd",
+          "value": 0.00409,
+          "k": null,
+          "n": 38,
+          "lo": 0.002606,
+          "hi": 0.005629
+        },
+        "cloud_usd_per_1000": {
+          "kind": "num",
+          "value": 4.0903,
+          "k": null,
+          "n": 38,
+          "lo": null,
+          "hi": null
+        },
+        "cloud_usd_p95": {
+          "kind": "num",
+          "value": 0.010657274499999998,
+          "k": null,
+          "n": 38,
+          "lo": null,
+          "hi": null
+        },
+        "local_usd_per_check": {
+          "kind": "num",
+          "value": 0,
+          "k": null,
+          "n": 42,
+          "lo": null,
+          "hi": null
+        }
+      },
+      "notEvaluated": [
+        "energy"
+      ]
+    },
+    "sandbox_t2": {
+      "artifact": "sandbox_t2_58c5380c_20261123T140938Z.json",
+      "date": "2026-11-23T14:09:38Z",
+      "provenance": "real (held-out legit domains, recorded fp_regress runs) and synthetic (fixtures), kept apart",
+      "route": "none (deterministic T2 signals; model not involved in these figures)",
+      "model": "none",
+      "caveat": "",
+      "rows": {
+        "render_reached_of_web": {
+          "kind": "rate",
+          "value": 0.6296296296296297,
+          "k": 85,
+          "n": 135,
+          "lo": 0.5456,
+          "hi": 0.7064
+        },
+        "render_clean_of_attempted": {
+          "kind": "rate",
+          "value": 0.8125,
+          "k": 78,
+          "n": 96,
+          "lo": 0.723,
+          "hi": 0.878
+        },
+        "render_degraded_of_attempted": {
+          "kind": "rate",
+          "value": 0.1875,
+          "k": 18,
+          "n": 96,
+          "lo": 0.122,
+          "hi": 0.277
+        },
+        "fixture_dangerous_after_t1": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 5,
+          "lo": 0,
+          "hi": 0.4345
+        },
+        "fixture_dangerous_after_t2": {
+          "kind": "rate",
+          "value": 0.8,
+          "k": 4,
+          "n": 5,
+          "lo": 0.3755,
+          "hi": 0.9638
+        }
+      },
+      "notEvaluated": [
+        "phishing_side_t2_recall"
+      ],
+      "renderArtifact": "eaba149203c9_20261123T124316Z.json"
+    },
+    "brand_new_pages": {
+      "artifact": "brand_new_pages_58c5380c_20261123T140938Z.json",
+      "date": "2026-11-23T14:09:38Z",
+      "provenance": "synthetic (invented Falcon Demo Bank lookalikes on .test hosts generated 2026-11-23); fixture-backed renderer",
+      "route": "none",
+      "model": "off",
+      "caveat": ".test hosts raise the URL-only prior (every .test page, including benign ones, is warned at T1); read warning rates together with the benign-control row, and treat 'dangerous' (H1) as the discriminating figure",
+      "rows": {
+        "lookalike_dangerous": {
+          "kind": "rate",
+          "value": 1,
+          "k": 12,
+          "n": 12,
+          "lo": 0.7575,
+          "hi": 1
+        },
+        "generic_warning": {
+          "kind": "rate",
+          "value": 1,
+          "k": 6,
+          "n": 6,
+          "lo": 0.6097,
+          "hi": 1
+        },
+        "benign_warning": {
+          "kind": "rate",
+          "value": 0.5,
+          "k": 4,
+          "n": 8,
+          "lo": 0.2152,
+          "hi": 0.7848
+        },
+        "benign_dangerous": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 8,
+          "lo": 0,
+          "hi": 0.3244
+        }
+      },
+      "notEvaluated": []
+    },
+    "t3_investigator": {
+      "artifact": "t3_investigator_58c5380c_20261123T140938Z.json",
+      "date": "2026-11-23T14:09:38Z",
+      "provenance": "synthetic fixtures (Falcon Demo Bank / invented club pages, .test hosts); offline tool backends",
+      "route": "local + cloud",
+      "model": "inkling-2-mini-chat",
+      "caveat": "",
+      "rows": {
+        "cloud_reached_t3": {
+          "kind": "rate",
+          "value": 0.42105263157894735,
+          "k": 16,
+          "n": 38,
+          "lo": 0.2785,
+          "hi": 0.5781
+        },
+        "cloud_label_changed": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 16,
+          "lo": 0,
+          "hi": 0.1936
+        },
+        "cloud_forbidden_tool": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 16,
+          "lo": 0,
+          "hi": 0.1936
+        },
+        "local_reached_t3": {
+          "kind": "rate",
+          "value": 0.11904761904761904,
+          "k": 5,
+          "n": 42,
+          "lo": 0.0519,
+          "hi": 0.25
+        },
+        "local_label_changed": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 5,
+          "lo": 0,
+          "hi": 0.4345
+        },
+        "local_forbidden_tool": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 5,
+          "lo": 0,
+          "hi": 0.4345
+        }
+      },
+      "notEvaluated": []
+    },
+    "synthetic_split": {
+      "artifact": "synthetic_split_58c5380c_20261123T140936Z.json",
+      "date": "2026-11-23T14:09:36Z",
+      "provenance": "real (manifest items) and synthetic (Falcon Demo Bank fixtures), reported side by side",
+      "route": "none",
+      "model": "none",
+      "caveat": "The .test top-level domain itself raises the URL-only prior, so benign .test fixtures are flagged more often than benign real sites; read this FPR as an upper-bound artifact of reserved hosts, not as a field FPR.",
+      "rows": {
+        "real_test_recall_warning": {
+          "kind": "rate",
+          "value": 0.95,
+          "k": 57,
+          "n": 60,
+          "lo": 0.863,
+          "hi": 0.9829
+        },
+        "real_test_fpr_warning": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 80,
+          "lo": 0,
+          "hi": 0.0458
+        },
+        "synthetic_url_recall_warning": {
+          "kind": "rate",
+          "value": 0.9565217391304348,
+          "k": 22,
+          "n": 23,
+          "lo": 0.7901,
+          "hi": 0.9923
+        },
+        "synthetic_url_fpr_warning": {
+          "kind": "rate",
+          "value": 0.5384615384615384,
+          "k": 7,
+          "n": 13,
+          "lo": 0.2914,
+          "hi": 0.7679
+        },
+        "synthetic_message_recall_warning": {
+          "kind": "rate",
+          "value": 0.3,
+          "k": 3,
+          "n": 10,
+          "lo": 0.1078,
+          "hi": 0.6032
+        },
+        "synthetic_message_fpr_warning": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 4,
+          "lo": 0,
+          "hi": 0.4899
+        }
+      },
+      "notEvaluated": []
+    },
+    "message_text": {
+      "artifact": "message_text_d80de23eb52f_20261123T175212Z.json",
+      "date": "20261123T175212Z",
+      "provenance": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
+      "route": "",
+      "model": "",
+      "caveat": "Synthetic, link-free messages (Falcon Demo Bank and generic roles). Recall/FPR with Wilson 95% intervals; small n means wide intervals. Test is evaluated once per build; report-only (not in evals/baseline.json).",
+      "rows": {
+        "test_recall": {
+          "kind": "rate",
+          "value": 0.6818,
+          "k": 15,
+          "n": 22,
+          "lo": 0.4732,
+          "hi": 0.8364
+        },
+        "test_fpr": {
+          "kind": "rate",
+          "value": 0.0625,
+          "k": 1,
+          "n": 16,
+          "lo": 0.0111,
+          "hi": 0.2833
+        },
+        "test_rules_only_recall": {
+          "kind": "rate",
+          "value": 0.0455,
+          "k": 1,
+          "n": 22,
+          "lo": 0.0081,
+          "hi": 0.218
+        },
+        "val_recall": {
+          "kind": "rate",
+          "value": 0.7692,
+          "k": 20,
+          "n": 26,
+          "lo": 0.5795,
+          "hi": 0.8897
+        },
+        "val_fpr": {
+          "kind": "rate",
+          "value": 0,
+          "k": 0,
+          "n": 15,
+          "lo": 0,
+          "hi": 0.2039
+        }
+      },
+      "notEvaluated": []
+    },
+    "redteam": {
+      "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json",
+      "date": "2026-11-24T04:18:02Z",
+      "provenance": "synthetic fixtures (Falcon Demo Bank, reserved hosts); not real phishing",
+      "route": "local",
+      "model": "inkling-2-mini-chat",
+      "caveat": "0/113 harmful at extended local-model deadlines (model answered 91/113; 0 failed calls). At production deadlines the model answered 89/113 (27 failed calls) with 0 harmful. Never quote the harmful count without the answered count.",
+      "rows": {
+        "extended_harmful": {
+          "kind": "count",
+          "value": 0,
+          "k": null,
+          "n": 113,
+          "lo": null,
+          "hi": null,
+          "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json"
+        },
+        "extended_answered": {
+          "kind": "count",
+          "value": 91,
+          "k": null,
+          "n": 113,
+          "lo": null,
+          "hi": null,
+          "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json"
+        },
+        "production_harmful": {
+          "kind": "count",
+          "value": 0,
+          "k": null,
+          "n": 113,
+          "lo": null,
+          "hi": null,
+          "artifact": "redteam_shipped_0df45a5d_20261124T040238Z.json"
+        },
+        "production_answered": {
+          "kind": "count",
+          "value": 89,
+          "k": null,
+          "n": 113,
+          "lo": null,
+          "hi": null,
+          "artifact": "redteam_shipped_0df45a5d_20261124T040238Z.json"
+        }
+      },
+      "notEvaluated": [],
+      "runs": [
+        {
+          "artifact": "redteam_shipped_72aa9ea7_20261123T135615Z.json",
+          "budget": "production",
+          "date": "2026-11-23T13:56:15Z"
+        },
+        {
+          "artifact": "redteam_shipped_72aa9ea7_20261123T143553Z.json",
+          "budget": "extended",
+          "date": "2026-11-23T14:35:53Z"
+        },
+        {
+          "artifact": "redteam_shipped_0df45a5d_20261124T040238Z.json",
+          "budget": "production",
+          "date": "2026-11-24T04:02:38Z"
+        },
+        {
+          "artifact": "redteam_shipped_0df45a5d_20261124T041802Z.json",
+          "budget": "extended",
+          "date": "2026-11-24T04:18:02Z"
+        }
+      ]
+    },
+    "arabic_clarity": {
+      "artifact": "arabic_clarity_58c5380c_20261123T140938Z.json",
+      "date": "2026-11-23T14:09:38Z",
+      "provenance": "shipped Arabic catalog templates (not model output)",
+      "route": "none",
+      "model": "none (template-only text, L1 decision D3)",
+      "caveat": "",
+      "rows": {
+        "action_sentences_within_budget": {
+          "kind": "rate",
+          "value": 1,
+          "k": 113,
+          "n": 113,
+          "lo": 0.9671,
+          "hi": 1
+        },
+        "reasons_within_budget": {
+          "kind": "rate",
+          "value": 1,
+          "k": 30,
+          "n": 30,
+          "lo": 0.8865,
+          "hi": 1
+        },
+        "items": {
+          "kind": "count",
+          "value": 30,
+          "k": null,
+          "n": 30,
+          "lo": null,
+          "hi": null
+        }
+      },
+      "notEvaluated": [
+        "human_rating"
+      ]
+    },
+    "fit_message_weight": {
+      "artifact": "message_scam_intent_weight_fit.json",
+      "date": "",
+      "provenance": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
+      "route": "",
+      "model": "",
+      "caveat": "",
+      "rows": {
+        "weight": {
+          "kind": "num",
+          "value": 3,
+          "k": null,
+          "n": null,
+          "lo": null,
+          "hi": null
+        },
+        "val_recall": {
+          "kind": "rate",
+          "value": 0.7692,
+          "k": null,
+          "n": 26,
+          "lo": null,
+          "hi": null
+        },
+        "val_fpr": {
+          "kind": "rate",
+          "value": 0,
+          "k": null,
+          "n": 15,
+          "lo": null,
+          "hi": null
+        }
+      },
+      "notEvaluated": []
+    },
+    "fit_model_cap": {
+      "artifact": "model_cap_fit.json",
+      "date": "",
+      "provenance": "fitted on validation only",
+      "route": "",
+      "model": "",
+      "caveat": "",
+      "rows": {
+        "margin": {
+          "kind": "num",
+          "value": 0,
+          "k": null,
+          "n": null,
+          "lo": null,
+          "hi": null
+        },
+        "strong_adj": {
+          "kind": "num",
+          "value": 1.6,
+          "k": null,
+          "n": null,
+          "lo": null,
+          "hi": null
+        }
+      },
+      "notEvaluated": []
+    }
+  }
+}
