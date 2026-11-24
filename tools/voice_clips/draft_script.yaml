@@ -1,0 +1,23 @@
+# Draft script (~20 lines) in the voice_script.yaml format. Replaced by
+# packages/falcon_core/src/falcon_core/i18n/voice_script.yaml once that lands.
+clips:
+  - {id: greet_ar, lang: ar_ae, text: "هلا والله، أنا صقر. ألصق الرابط أو الرسالة وأنا أفحصها لك."}
+  - {id: listening_ar, lang: ar_ae, text: "أسمعك، تفضل."}
+  - {id: checking_ar, lang: ar_ae, text: "ثواني، أفحص لك الموضوع."}
+  - {id: step_domain_ar, lang: ar_ae, text: "أتحقق من عمر الموقع وسجل النطاق."}
+  - {id: step_page_ar, lang: ar_ae, text: "أفتح الصفحة في بيئة معزولة، بدون ما أدخل أي بيانات."}
+  - {id: step_text_ar, lang: ar_ae, text: "أحلل نص الرسالة وأدور على علامات الاحتيال."}
+  - {id: verdict_scam_ar, lang: ar_ae, text: "انتبه، هذا الرابط احتيال على الأغلب. لا تفتحه ولا تدخل أي بيانات."}
+  - {id: verdict_suspicious_ar, lang: ar_ae, text: "فيه علامات مريبة. الأفضل لا تتعامل معه، وتتأكد من الجهة الرسمية."}
+  - {id: verdict_clear_ar, lang: ar_ae, text: "ما لقينا علامات تحذير، لكن خلك حذر دايماً."}
+  - {id: ask_again_ar, lang: ar_ae, text: "ما فهمت عليك زين. ممكن تعيد؟"}
+  - {id: never_share_ar, lang: ar_ae, text: "لا تشارك رقم بطاقتك ولا الرمز السري مع أي أحد."}
+  - {id: greet_en, lang: en, text: "Hello, I am Falcon. Paste a link or a message and I will check it for you."}
+  - {id: listening_en, lang: en, text: "I'm listening."}
+  - {id: checking_en, lang: en, text: "One moment while I check this."}
+  - {id: step_domain_en, lang: en, text: "Checking the age and registration of the domain."}
+  - {id: step_page_en, lang: en, text: "Opening the page in an isolated sandbox, without entering any data."}
+  - {id: verdict_scam_en, lang: en, text: "Warning. This looks like a scam. Do not open it or enter any details."}
+  - {id: verdict_suspicious_en, lang: en, text: "There are suspicious signs. Avoid it and confirm with the official source."}
+  - {id: verdict_clear_en, lang: en, text: "No warning signs found, but stay cautious."}
+  - {id: never_share_en, lang: en, text: "Never share your card number or PIN with anyone."}
