@@ -1,0 +1,879 @@
+{
+  "available": true,
+  "main": {
+    "artifact": "20261123T122549Z.json",
+    "badge": "REAL",
+    "scope": "offline T1 + arbiter on URLs; real data only; temporal_cut false (single poll)"
+  },
+  "realSynthetic": {
+    "artifact": "synthetic_split_58c5380c_20261123T140936Z.json",
+    "date": "2026-11-23T14:09:36Z",
+    "provenance": "real (manifest items) and synthetic (Falcon Demo Bank fixtures), reported side by side",
+    "separationRule": "real and synthetic numbers are never pooled; no model or threshold was fitted or tuned on any of these items",
+    "manifest": {
+      "real": 1034,
+      "synthetic": 0,
+      "realBySplit": {
+        "excluded": {
+          "legit": 0,
+          "phishing": 4
+        },
+        "test": {
+          "legit": 80,
+          "phishing": 60
+        },
+        "train": {
+          "legit": 284,
+          "phishing": 360
+        },
+        "val": {
+          "legit": 104,
+          "phishing": 142
+        }
+      }
+    },
+    "matchesMain": true,
+    "real": {
+      "val": {
+        "nLegit": 104,
+        "nPhishing": 142,
+        "recallWarning": {
+          "value": 0.971830985915493,
+          "k": 138,
+          "n": 142,
+          "lo": 0.9298,
+          "hi": 0.989
+        },
+        "fprWarning": {
+          "value": 0.019230769230769232,
+          "k": 2,
+          "n": 104,
+          "lo": 0.0053,
+          "hi": 0.0674
+        },
+        "precisionWarning": {
+          "value": 0.9857142857142858,
+          "k": 138,
+          "n": 140,
+          "lo": 0.9494,
+          "hi": 0.9961
+        },
+        "recallDangerous": {
+          "value": 0,
+          "k": 0,
+          "n": 142,
+          "lo": 0,
+          "hi": 0.0263
+        },
+        "fprDangerous": {
+          "value": 0,
+          "k": 0,
+          "n": 104,
+          "lo": 0,
+          "hi": 0.0356
+        }
+      },
+      "test": {
+        "nLegit": 80,
+        "nPhishing": 60,
+        "recallWarning": {
+          "value": 0.95,
+          "k": 57,
+          "n": 60,
+          "lo": 0.863,
+          "hi": 0.9829
+        },
+        "fprWarning": {
+          "value": 0,
+          "k": 0,
+          "n": 80,
+          "lo": 0,
+          "hi": 0.0458
+        },
+        "precisionWarning": {
+          "value": 1,
+          "k": 57,
+          "n": 57,
+          "lo": 0.9369,
+          "hi": 1
+        },
+        "recallDangerous": {
+          "value": 0,
+          "k": 0,
+          "n": 60,
+          "lo": 0,
+          "hi": 0.0602
+        },
+        "fprDangerous": {
+          "value": 0,
+          "k": 0,
+          "n": 80,
+          "lo": 0,
+          "hi": 0.0458
+        }
+      }
+    },
+    "syntheticUrls": {
+      "nLegit": 13,
+      "nPhishing": 23,
+      "recallWarning": {
+        "value": 0.9565217391304348,
+        "k": 22,
+        "n": 23,
+        "lo": 0.7901,
+        "hi": 0.9923
+      },
+      "fprWarning": {
+        "value": 0.5384615384615384,
+        "k": 7,
+        "n": 13,
+        "lo": 0.2914,
+        "hi": 0.7679
+      },
+      "precisionWarning": {
+        "value": 0.7586206896551724,
+        "k": 22,
+        "n": 29,
+        "lo": 0.5789,
+        "hi": 0.8778
+      },
+      "recallDangerous": {
+        "value": 0,
+        "k": 0,
+        "n": 23,
+        "lo": 0,
+        "hi": 0.1431
+      },
+      "fprDangerous": {
+        "value": 0,
+        "k": 0,
+        "n": 13,
+        "lo": 0,
+        "hi": 0.2281
+      }
+    },
+    "syntheticUrlsCaveat": "The .test top-level domain itself raises the URL-only prior, so benign .test fixtures are flagged more often than benign real sites; read this FPR as an upper-bound artifact of reserved hosts, not as a field FPR.",
+    "syntheticMessages": {
+      "nLegit": 4,
+      "nPhishing": 10,
+      "recallWarning": {
+        "value": 0.3,
+        "k": 3,
+        "n": 10,
+        "lo": 0.1078,
+        "hi": 0.6032
+      },
+      "fprWarning": {
+        "value": 0,
+        "k": 0,
+        "n": 4,
+        "lo": 0,
+        "hi": 0.4899
+      }
+    },
+    "badges": {
+      "real": "REAL",
+      "syntheticUrls": "FIXTURE",
+      "syntheticMessages": "SYNTHETIC"
+    }
+  },
+  "messageText": {
+    "artifact": "message_text_d80de23eb52f_20261123T175212Z.json",
+    "date": "20261123T175212Z",
+    "provenance": "synthetic, single-author, supervisor-audited 2026-11-23 (reviews/PR-88.md)",
+    "badge": "SYNTHETIC",
+    "val": {
+      "n": 41,
+      "nScam": 26,
+      "nLegit": 15,
+      "recall": {
+        "value": 0.7692,
+        "k": 20,
+        "n": 26,
+        "lo": 0.5795,
+        "hi": 0.8897
+      },
+      "fpr": {
+        "value": 0,
+        "k": 0,
+        "n": 15,
+        "lo": 0,
+        "hi": 0.2039
+      }
+    },
+    "test": {
+      "n": 38,
+      "nScam": 22,
+      "nLegit": 16,
+      "recall": {
+        "value": 0.6818,
+        "k": 15,
+        "n": 22,
+        "lo": 0.4732,
+        "hi": 0.8364
+      },
+      "fpr": {
+        "value": 0.0625,
+        "k": 1,
+        "n": 16,
+        "lo": 0.0111,
+        "hi": 0.2833
+      }
+    }
+  },
+  "fpHistory": [
+    {
+      "artifact": "fp_regress_548e8b31f4e6_20261123T020303Z.json",
+      "date": "2026-11-23T02:03:03Z",
+      "set": "heldout_legit_2.csv",
+      "sha": "548e8b3",
+      "n": 200,
+      "all": {
+        "value": 0.355,
+        "k": null,
+        "n": 200,
+        "lo": 0.295,
+        "hi": 0.42
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": null,
+      "postHoc": false,
+      "changes": null,
+      "badge": "REAL"
+    },
+    {
+      "artifact": "fp_regress_cf54d06bf2b1_20261123T022301Z.json",
+      "date": "2026-11-23T02:23:01Z",
+      "set": "heldout_legit_2.csv",
+      "sha": "cf54d06",
+      "n": 200,
+      "all": {
+        "value": 0.355,
+        "k": null,
+        "n": 200,
+        "lo": 0.295,
+        "hi": 0.42
+      },
+      "web": {
+        "value": 0.2603,
+        "k": null,
+        "n": 146,
+        "lo": 0.1849,
+        "hi": 0.3356
+      },
+      "noWeb": {
+        "value": 0.6111,
+        "k": null,
+        "n": 54,
+        "lo": 0.4815,
+        "hi": 0.7407
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": null,
+      "postHoc": false,
+      "changes": {
+        "count": 4,
+        "subjects": [
+          "feat(evals): serves_web split for held-out set 2 and fp_regress; decisions",
+          "fix(scoring): score the emitted domain age names; pin params weight keys to emitted evidence; force_t2 test helper",
+          "docs: decisions for PR 52 round 2",
+          "chore(evals): fp_regress artifact on held-out set 2 (frozen rules 548e8b3)"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "377a04d53570_20261123T024324Z.json",
+      "date": "2026-11-23T02:43:24Z",
+      "set": "heldout_legit_2.csv",
+      "sha": "377a04d",
+      "n": 200,
+      "all": {
+        "value": 0.355,
+        "k": null,
+        "n": 200,
+        "lo": 0.295,
+        "hi": 0.42
+      },
+      "web": {
+        "value": 0.2603,
+        "k": null,
+        "n": 146,
+        "lo": 0.1918,
+        "hi": 0.3356
+      },
+      "noWeb": {
+        "value": 0.6111,
+        "k": null,
+        "n": 54,
+        "lo": 0.4815,
+        "hi": 0.7407
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": null,
+      "postHoc": false,
+      "changes": {
+        "count": 21,
+        "subjects": [
+          "chore: drop unemitted page.js_obfuscation/anti_inspection weights (L1); fp_regress artifact lists items",
+          "chore(evals): fp_regress artifacts under published/fp_regress (readme metrics reads published/*.json only); set 2 measured on frozen rules",
+          "test(sandbox): restore SSRF/limit integration tests, rewrite egress refusal test",
+          "chore(web): regenerate bundled results artifact (generated by sync-results)"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "9725895a5537_20261123T032418Z.json",
+      "date": "2026-11-23T03:24:18Z",
+      "set": "heldout_legit_2.csv",
+      "sha": "9725895",
+      "n": 200,
+      "all": {
+        "value": 0.35,
+        "k": null,
+        "n": 200,
+        "lo": 0.29,
+        "hi": 0.415
+      },
+      "web": {
+        "value": 0.2534,
+        "k": null,
+        "n": 146,
+        "lo": 0.1781,
+        "hi": 0.3288
+      },
+      "noWeb": {
+        "value": 0.6111,
+        "k": null,
+        "n": 54,
+        "lo": 0.4815,
+        "hi": 0.7407
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": null,
+      "postHoc": false,
+      "changes": {
+        "count": 2,
+        "subjects": [
+          "fix(sandbox): treat interrupted navigation (client-side redirect) as non-fatal, re-apply policy to final URL",
+          "chore(evals): fp_regress artifact on main + #54 (items listed); sandbox diagnosis in PR body"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "a2f083cf1a77_20261123T085415Z.json",
+      "date": "2026-11-23T08:54:15Z",
+      "set": "heldout_legit_2.csv",
+      "sha": "a2f083c",
+      "n": 200,
+      "all": {
+        "value": 0.285,
+        "k": null,
+        "n": 200,
+        "lo": 0.23,
+        "hi": 0.345
+      },
+      "web": {
+        "value": 0.1644,
+        "k": null,
+        "n": 146,
+        "lo": 0.1027,
+        "hi": 0.2329
+      },
+      "noWeb": {
+        "value": 0.6111,
+        "k": null,
+        "n": 54,
+        "lo": 0.4815,
+        "hi": 0.7407
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": null,
+      "postHoc": false,
+      "changes": {
+        "count": 1,
+        "subjects": [
+          "fix(sandbox): redirect hops commit an inert stub instead of aborting (chrome-error race); blocked_by_policy always carries its reason"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "97c1734e0c4a_20261123T110105Z.json",
+      "date": "2026-11-23T11:01:05Z",
+      "set": "heldout_legit_2.csv",
+      "sha": "97c1734",
+      "n": 200,
+      "all": {
+        "value": 0.25,
+        "k": null,
+        "n": 200,
+        "lo": 0.195,
+        "hi": 0.31
+      },
+      "web": {
+        "value": 0.1164,
+        "k": null,
+        "n": 146,
+        "lo": 0.0685,
+        "hi": 0.1712
+      },
+      "noWeb": {
+        "value": 0.6111,
+        "k": null,
+        "n": 54,
+        "lo": 0.4815,
+        "hi": 0.7407
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": null,
+      "postHoc": false,
+      "changes": {
+        "count": 19,
+        "subjects": [
+          "fix(sandbox): navigation/extraction time budget, main-document size cap that truncates instead of failing, partial reads, concurrency 6",
+          "fix(sentinel): give the model real counts, a budget that fits three local calls",
+          "fix(sentinel): rule fallback draft also when no model proposal gives a valid takedown; tell the model each tool's arg shape",
+          "test(sentinel): verifier stays narrow; event types come from the event contract"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "b459fbc61d4c_20261123T111114Z.json",
+      "date": "2026-11-23T11:11:13Z",
+      "set": "heldout_legit_2.csv",
+      "sha": "b459fbc",
+      "n": 200,
+      "all": {
+        "value": 0.255,
+        "k": null,
+        "n": 200,
+        "lo": 0.195,
+        "hi": 0.315
+      },
+      "web": {
+        "value": 0.1233,
+        "k": null,
+        "n": 146,
+        "lo": 0.0685,
+        "hi": 0.1781
+      },
+      "noWeb": {
+        "value": 0.6111,
+        "k": null,
+        "n": 54,
+        "lo": 0.4815,
+        "hi": 0.7407
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": null,
+      "postHoc": false,
+      "changes": {
+        "count": 1,
+        "subjects": [
+          "fix(cloaking): no cloaking verdict when one profile was read partially or truncated"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "079cde6c4409_20261123T113511Z.json",
+      "date": "2026-11-23T11:35:11Z",
+      "set": "heldout_legit_2.csv",
+      "sha": "079cde6",
+      "n": 200,
+      "all": {
+        "value": 0.215,
+        "k": null,
+        "n": 200,
+        "lo": 0.16,
+        "hi": 0.275
+      },
+      "web": {
+        "value": 0.0685,
+        "k": null,
+        "n": 146,
+        "lo": 0.0342,
+        "hi": 0.1096
+      },
+      "noWeb": {
+        "value": 0.6111,
+        "k": null,
+        "n": 54,
+        "lo": 0.4815,
+        "hi": 0.7407
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": null,
+      "postHoc": false,
+      "changes": {
+        "count": 21,
+        "subjects": [
+          "fix(page): cross_origin_post means form data leaves the origin; payload-less script POSTs become weight-0 page.telemetry_beacon",
+          "web: sync bundled eval artifact",
+          "evals: regenerate baseline once (grown dataset + refit), publish artifact; TASKS T-030/T-031; DECISIONS",
+          "evals: fp_regress held-out set 2 after the sandbox budget fix (final b459fbc61d4c; 97c1734e0c4a is the run before the partial-cloaking fix)"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "73c0c81218ea_20261123T120931Z.json",
+      "date": "2026-11-23T12:09:31Z",
+      "set": "heldout_legit_3.csv",
+      "sha": "73c0c81",
+      "n": 200,
+      "all": {
+        "value": 0.18,
+        "k": null,
+        "n": 200,
+        "lo": 0.13,
+        "hi": 0.235
+      },
+      "web": {
+        "value": 0.0764,
+        "k": null,
+        "n": 157,
+        "lo": 0.0382,
+        "hi": 0.121
+      },
+      "noWeb": {
+        "value": 0.5581,
+        "k": null,
+        "n": 43,
+        "lo": 0.4186,
+        "hi": 0.6977
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": 17,
+      "postHoc": false,
+      "changes": {
+        "count": 13,
+        "subjects": [
+          "fix(sandbox,cascade): partial reads fail closed (partial_render), credential pages count every cross-site script POST, cloaking_inconclusive evidence, partial flags in the artifact, held-out set 3",
+          "test: defang bot endpoint literal",
+          "evals: fp_regress held-out set 2 with payload-based cross_origin_post (079cde6c4409)",
+          "fix(web): how-it-works SVG: no hard-coded status, scan bar behind text, no overflow"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "eaba149203c9_20261123T124316Z.json",
+      "date": "2026-11-23T12:43:16Z",
+      "set": "heldout_legit_4.csv",
+      "sha": "eaba149",
+      "n": 200,
+      "all": {
+        "value": 0.27,
+        "k": null,
+        "n": 200,
+        "lo": 0.21,
+        "hi": 0.33
+      },
+      "web": {
+        "value": 0.1481,
+        "k": null,
+        "n": 135,
+        "lo": 0.0889,
+        "hi": 0.2074
+      },
+      "noWeb": {
+        "value": 0.5231,
+        "k": null,
+        "n": 65,
+        "lo": 0.4,
+        "hi": 0.6615
+      },
+      "wilson": null,
+      "falseDangerous": null,
+      "partialReads": 18,
+      "postHoc": false,
+      "changes": {
+        "count": 2,
+        "subjects": [
+          "feat(scoring): cap credential_page_rule-only posts at suspicious unless corroborated; undeclared huge main documents refused; set seed in artifact; held-out set 4",
+          "evals: fp_regress on unseen held-out set 3 (73c0c81218ea), rules frozen"
+        ]
+      },
+      "badge": "REAL"
+    },
+    {
+      "artifact": "38dbd64b1fd4_20261123T163104Z.json",
+      "date": "2026-11-23T16:31:04Z",
+      "set": "heldout_legit_5.csv",
+      "sha": "38dbd64",
+      "n": 200,
+      "all": {
+        "value": 0.265,
+        "k": null,
+        "n": 200,
+        "lo": 0.205,
+        "hi": 0.325
+      },
+      "web": {
+        "value": 0.1489,
+        "k": null,
+        "n": 141,
+        "lo": 0.0922,
+        "hi": 0.2128
+      },
+      "noWeb": {
+        "value": 0.5424,
+        "k": null,
+        "n": 59,
+        "lo": 0.4237,
+        "hi": 0.661
+      },
+      "wilson": [
+        0.2087,
+        0.3302
+      ],
+      "falseDangerous": 1,
+      "partialReads": 10,
+      "postHoc": false,
+      "changes": {
+        "count": 45,
+        "subjects": [
+          "feat(sandbox,cascade): one bounded render retry, static (no-JS) fallback read, DNS vs slow wording; held-out set 5",
+          "fix(grafana): show source artifact on eval tiles, Wilson CI wording for red team, fits exports measured values only",
+          "fix(web): llm_tracing probe also finds setup_tracing in the shared service start-up (falcon_core/service.py)",
+          "fix(alerts): repoint EvalRegression to the evals-exporter labels, add promtool unit tests"
+        ]
+      },
+      "badge": "REAL"
+    }
+  ],
+  "redteam": {
+    "extended": {
+      "artifact": "redteam_shipped_72aa9ea7_20261123T143553Z.json",
+      "date": "2026-11-23T14:35:53Z",
+      "provenance": "synthetic fixtures (Falcon Demo Bank, reserved hosts); not real phishing",
+      "badge": "FIXTURE",
+      "overall": {
+        "cases": 113,
+        "harmful": 1,
+        "answered": 90,
+        "lo": 0.0016,
+        "hi": 0.0484
+      },
+      "categories": {
+        "email": {
+          "cases": 9,
+          "harmful": 0,
+          "answered": 4,
+          "lo": 0,
+          "hi": 0.2992
+        },
+        "image": {
+          "cases": 4,
+          "harmful": 0,
+          "answered": 0,
+          "lo": 0,
+          "hi": 0.4899
+        },
+        "message": {
+          "cases": 38,
+          "harmful": 1,
+          "answered": 37,
+          "lo": 0.0047,
+          "hi": 0.135
+        },
+        "page": {
+          "cases": 50,
+          "harmful": 0,
+          "answered": 49,
+          "lo": 0,
+          "hi": 0.0714
+        },
+        "url": {
+          "cases": 12,
+          "harmful": 0,
+          "answered": 0,
+          "lo": 0,
+          "hi": 0.2425
+        }
+      }
+    },
+    "production": {
+      "artifact": "redteam_shipped_72aa9ea7_20261123T135615Z.json",
+      "date": "2026-11-23T13:56:15Z",
+      "provenance": "synthetic fixtures (Falcon Demo Bank, reserved hosts); not real phishing",
+      "badge": "FIXTURE",
+      "overall": {
+        "cases": 113,
+        "harmful": 1,
+        "answered": 0,
+        "lo": 0.0016,
+        "hi": 0.0484
+      },
+      "categories": {
+        "email": {
+          "cases": 9,
+          "harmful": 0,
+          "answered": 0,
+          "lo": 0,
+          "hi": 0.2992
+        },
+        "image": {
+          "cases": 4,
+          "harmful": 0,
+          "answered": 0,
+          "lo": 0,
+          "hi": 0.4899
+        },
+        "message": {
+          "cases": 38,
+          "harmful": 1,
+          "answered": 0,
+          "lo": 0.0047,
+          "hi": 0.135
+        },
+        "page": {
+          "cases": 50,
+          "harmful": 0,
+          "answered": 0,
+          "lo": 0,
+          "hi": 0.0714
+        },
+        "url": {
+          "cases": 12,
+          "harmful": 0,
+          "answered": 0,
+          "lo": 0,
+          "hi": 0.2425
+        }
+      }
+    }
+  },
+  "extractor": {
+    "artifact": "route_compare_58c5380c_20261123T140938Z.json",
+    "date": "2026-11-23T14:09:38Z",
+    "provenance": "synthetic fixtures (Falcon Demo Bank, .test hosts); offline sandbox and network substitutes",
+    "badge": "FIXTURE",
+    "cloud": {
+      "model": "claude-haiku-5-5",
+      "n": 24,
+      "rows": {
+        "all_four": {
+          "value": 0.7916666666666666,
+          "k": 19,
+          "n": 24,
+          "lo": 0.5953,
+          "hi": 0.9076
+        },
+        "brand": {
+          "value": 1,
+          "k": 24,
+          "n": 24,
+          "lo": 0.862,
+          "hi": 1
+        },
+        "language": {
+          "value": 0.9166666666666666,
+          "k": 22,
+          "n": 24,
+          "lo": 0.7415,
+          "hi": 0.9768
+        },
+        "script": {
+          "value": 0.875,
+          "k": 21,
+          "n": 24,
+          "lo": 0.69,
+          "hi": 0.9566
+        },
+        "no_extraction": {
+          "value": 0,
+          "k": 0,
+          "n": 24,
+          "lo": 0,
+          "hi": 0.138
+        }
+      }
+    },
+    "local": {
+      "model": "inkling-2-mini-chat",
+      "n": 24,
+      "rows": {
+        "all_four": {
+          "value": 0.7083333333333334,
+          "k": 17,
+          "n": 24,
+          "lo": 0.5083,
+          "hi": 0.8509
+        },
+        "brand": {
+          "value": 0.75,
+          "k": 18,
+          "n": 24,
+          "lo": 0.551,
+          "hi": 0.88
+        },
+        "language": {
+          "value": 0.7916666666666666,
+          "k": 19,
+          "n": 24,
+          "lo": 0.5953,
+          "hi": 0.9076
+        },
+        "script": {
+          "value": 0.7916666666666666,
+          "k": 19,
+          "n": 24,
+          "lo": 0.5953,
+          "hi": 0.9076
+        },
+        "no_extraction": {
+          "value": 0.16666666666666666,
+          "k": 4,
+          "n": 24,
+          "lo": 0.0668,
+          "hi": 0.3585
+        }
+      }
+    },
+    "agreement": {
+      "brand": {
+        "value": 0.9,
+        "k": 18,
+        "n": 20,
+        "lo": 0.699,
+        "hi": 0.9721
+      },
+      "language": {
+        "value": 0.95,
+        "k": 19,
+        "n": 20,
+        "lo": 0.7639,
+        "hi": 0.9911
+      },
+      "requested_data": {
+        "value": 1,
+        "k": 20,
+        "n": 20,
+        "lo": 0.8389,
+        "hi": 1
+      },
+      "script": {
+        "value": 0.8,
+        "k": 16,
+        "n": 20,
+        "lo": 0.584,
+        "hi": 0.9193
+      }
+    }
+  }
+}

@@ -135,7 +135,7 @@ test.describe("judge-facing content", () => {
     await expect(page.getByTestId("metric-test-precision")).toContainText(formatMetric("precision", m["test.precision"]!, "ar"));
     await expect(page.getByTestId("metric-test-recall")).toContainText(formatMetric("recall", m["test.recall"]!, "ar"));
     await expect(page.getByTestId("metric-test-official")).toContainText(String(m["test.official_false_dangerous"]));
-    await expect(page.getByTestId("split-test")).toContainText("95%");
+    await expect(page.getByTestId("kpi-grid")).toContainText("95%");
     await expect(page.getByTestId("not-evaluated")).toBeVisible();
   });
 

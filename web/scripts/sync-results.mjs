@@ -9,6 +9,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFi
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { syncEvalAreas } from "./eval-areas.mjs";
+import { syncResultsExtra } from "./results-extra.mjs";
 
 const web = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repo = join(web, "..");
@@ -46,6 +47,8 @@ if (existsSync(fpDir)) {
 
 // Per-area compact JSON for /results (scripts/eval-areas.mjs).
 syncEvalAreas(web, published);
+// KPI sections: per-KPI counts, real vs synthetic, live false-alarm history, red-team per category, extractor per route.
+syncResultsExtra(web, published, repo);
 
 const assets = join(repo, "docs", "assets");
 if (existsSync(assets)) {

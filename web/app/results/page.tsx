@@ -6,7 +6,9 @@ import { Icon } from "@/components/Icon";
 import type { Lang } from "@/lib/contracts";
 import { translate, translateMaybe, type MessageKey } from "@/lib/i18n";
 import { pageMetadata } from "@/lib/meta";
-import { formatCi, formatMetric, loadResults, type SplitView } from "@/lib/results";
+import { loadResults } from "@/lib/results";
+import { AttacksSection, Badge, FpHistorySection, KpiGridSection, OpsSection, RealSyntheticSection } from "@/components/ResultsKpi";
+import { areaRowBadge } from "@/lib/results-kpi";
 import { areaLabels, areaNote, areaScope, areaTitle, loadAreas, pendingKeys, pendingLabel, rowLabel, rowText, type Area } from "@/lib/results-areas";
 import { serverLang } from "@/lib/server-lang";
 
@@ -35,34 +37,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return pageMetadata(lang, { title: translate(lang, "results.title"), description: translate(lang, "results.lead") });
 }
 
-function SplitBlock({ view, lang }: { view: SplitView; lang: Lang }) {
-  const t = (key: MessageKey, vars?: Record<string, string | number>) => translate(lang, key, vars);
-  const id = `split-${view.split}`;
-  return (
-    <section aria-labelledby={id} data-testid={id}>
-      <div className="sec-head">
-        <h3 id={id} className="h3">{t(view.split === "test" ? "results.split.test" : "results.split.val")}</h3>
-        <span className="chip">{t("results.n", { n: view.n })}</span>
-      </div>
-      <div className="metrics">
-        {view.rows.map((r) => (
-          <div className="card metric" key={r.key} data-testid={`metric-${view.split}-${r.key}`}>
-            <span className="lbl">{t(`metric.${r.key}` as MessageKey)}</span>
-            <b>{formatMetric(r.key, r.value, lang)}</b>
-            {r.lo !== null ? <span className="ci">{t("proof.ci")}: {formatCi(r, lang)}</span> : null}
-          </div>
-        ))}
-        {view.officialFalseDangerous !== null ? (
-          <div className="card metric" data-testid={`metric-${view.split}-official`}>
-            <span className="lbl">{t("proof.official")}</span>
-            <b>{view.officialFalseDangerous}</b>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
 function AreaBlock({ area, lang }: { area: Area; lang: Lang }) {
   const L = areaLabels(lang);
   const id = `area-${area.id}`;
@@ -78,6 +52,7 @@ function AreaBlock({ area, lang }: { area: Area; lang: Lang }) {
             <div className="card metric" key={key} data-testid={`row-${area.id}-${key}`}>
               <span className="lbl">{rowLabel(area.id, key, lang)}</span>
               <b>{x.main}</b>
+              <Badge kind={areaRowBadge(area, key)} lang={lang} />
               {x.detail ? <span className="ci">{x.detail}</span> : null}
               {x.ci ? <span className="ci">{L.ci}: {x.ci}</span> : null}
             </div>
@@ -121,10 +96,11 @@ export default async function ResultsPage() {
           </div>
         ) : (
           <>
-            <section aria-labelledby="all-h">
-              <div className="sec-head"><h2 id="all-h">{t("results.all.title")}</h2></div>
-              {r.splits.map((s) => <SplitBlock key={s.split} view={s} lang={lang} />)}
-            </section>
+            <KpiGridSection view={r} lang={lang} />
+            <RealSyntheticSection lang={lang} />
+            <FpHistorySection lang={lang} />
+            <AttacksSection lang={lang} />
+            <OpsSection lang={lang} />
 
             {!caps.t1_measured_model ? (
               <p className="card callout" role="note" data-testid="draft-classifier">

@@ -32,8 +32,8 @@ export interface ResultsView {
   notEvaluated: string[];
 }
 
-const METRICS = ["precision", "recall", "f1", "fpr", "pr_auc", "ece"] as const;
-export const PERCENT_METRICS = new Set<string>(["precision", "recall", "f1", "fpr", "pr_auc"]);
+const METRICS = ["precision", "recall", "f1", "accuracy", "fpr", "roc_auc", "pr_auc", "ece"] as const;
+export const PERCENT_METRICS = new Set<string>(["precision", "recall", "f1", "accuracy", "fpr", "roc_auc", "pr_auc"]);
 
 type Loose = Record<string, unknown>;
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);

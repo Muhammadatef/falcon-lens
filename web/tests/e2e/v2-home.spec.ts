@@ -251,7 +251,7 @@ test.describe("proof strip and results (W2-08, ruling 3)", () => {
   test("results: tables, not-measured list, provenance and the evaluation docs link", async ({ page, context, baseURL }) => {
     await setPrefs(context, baseURL!, { lang: "en" });
     await page.goto("/results");
-    await expect(page.getByTestId("split-test")).toBeVisible();
+    await expect(page.getByTestId("kpi-grid")).toBeVisible();
     await expect(page.getByTestId("not-evaluated")).toBeVisible();
     await expect(page.locator('main a[href="/docs/evals"]')).toBeVisible();
     // message_path.* is never shown (spec flag 4)
