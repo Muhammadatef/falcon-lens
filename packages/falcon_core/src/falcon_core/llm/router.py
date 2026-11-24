@@ -18,6 +18,7 @@ The router returns typed data only. It never scores.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import random
@@ -46,6 +47,7 @@ from falcon_core.llm.providers import (
     ProviderResponse,
 )
 from falcon_core.llm.redaction import redact
+from falcon_core.llm.route import LOCAL_MODELS, EffectiveMode, RouteSetting, RouteSource, effective_mode, parse_mode
 from falcon_core.llm.spotlight import UntrustedText, new_nonce, spotlight, spotlight_notice
 from falcon_core.prompts import BASE_SYSTEM, CANARY_LINE, REPAIR_PROMPT, SCHEMA_LINE
 from falcon_core.prompts.compiled import task_text
@@ -82,6 +84,7 @@ class CallRecord:
     cost_usd: float
     ms: int
     error: str | None = None
+    fallback_reason: str | None = None  # set on the local call that replaced a failed cloud call
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,6 +100,8 @@ class LLMResult[T: BaseModel]:
     error: str | None = None
     calls: tuple[CallRecord, ...] = ()
     redactions: Mapping[str, int] = field(default_factory=dict)
+    route_mode: str = "local"  # the operator mode in force for this call (effective, after downgrades)
+    fallback_reason: str | None = None  # why the cloud attempt failed (timeout, error, rate_limit, budget)
 
     @property
     def ok(self) -> bool:
@@ -135,6 +140,7 @@ class LLMRouter:
         rng: random.Random | None = None,
         canary: str | None = None,
         shadow_hook: ShadowHook | None = None,
+        route_source: RouteSource | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self.config = config or RouterConfig.from_env()
@@ -142,7 +148,10 @@ class LLMRouter:
         self._cloud: Provider | None = None
         if self.config.cloud_enabled:
             self._cloud = cloud or AnthropicProvider(self.config.anthropic_api_key or "")
-        self._local: Provider = local or OllamaProvider(self.config.ollama_base_url)
+        self._local_injected = local
+        self._locals: dict[str, Provider] = {}
+        self._route_source = route_source
+        self._setting: RouteSetting | None = None
         self._rng = rng or random.Random()  # noqa: S311 - sampling, not security
         self.canary = canary or new_canary()
         self._shadow_hook = shadow_hook
@@ -152,13 +161,42 @@ class LLMRouter:
 
     # --- routing -----------------------------------------------------------------------------
 
+    async def refresh_route(self) -> None:
+        """Pick up the operator's runtime choice (Redis, cached a few seconds). Never raises."""
+        if self._route_source is not None:
+            with contextlib.suppress(Exception):  # keep the last known setting
+                self._setting = await self._route_source.get()
+
+    def mode(self) -> tuple[EffectiveMode, str | None]:
+        """The route mode in force and, when it was downgraded, why (no key, sovereign)."""
+        requested = self._setting.mode if self._setting else (parse_mode(self.config.llm_route) or "auto")
+        return effective_mode(requested, sovereign=self.config.sovereign_mode, cloud_available=self._cloud is not None)
+
+    def local_model(self, role: Role) -> str:
+        if role == "vision":
+            return self.config.local_vision_model
+        pick = self._setting.local_model if self._setting else None
+        return pick if pick in LOCAL_MODELS and pick else self.config.local_model
+
+    def _local_for(self, model: str) -> Provider:
+        if self._local_injected is not None:
+            return self._local_injected
+        base = self.config.local_base_for(model)
+        prov = self._locals.get(base)
+        if prov is None:
+            prov = self._locals[base] = OllamaProvider(base)
+        return prov
+
     def plan(self, role: Role) -> list[tuple[Route, str, Provider]]:
-        """Ordered attempts for a role: cloud then local, or local only."""
+        """Ordered attempts for a role, by the route mode: cloud then local, local only, or cloud only."""
         out: list[tuple[Route, str, Provider]] = []
+        mode, _ = self.mode()
         cloud_model = self.config.cloud_models.get(role)
-        if self._cloud is not None and cloud_model:
+        if mode != "local" and self._cloud is not None and cloud_model:
             out.append(("cloud", cloud_model, self._cloud))
-        out.append(("local", self.config.local_model_for(role), self._local))
+        if mode != "cloud_only":
+            lm = self.local_model(role)
+            out.append(("local", lm, self._local_for(lm)))
         return out
 
     def primary_route(self, role: Role) -> Route:
@@ -218,28 +256,45 @@ class LLMRouter:
     # --- main entry --------------------------------------------------------------------------
 
     async def complete_json[T: BaseModel](self, req: JsonRequest[T]) -> LLMResult[T]:
+        await self.refresh_route()
+        route_mode, _why = self.mode()
         start = self._clock()
         deadline = start + req.timeout_s if req.timeout_s is not None else None
         user, redactions = self._user_turn(req)
         turns = [*req.history, ChatTurn("user", user)]
         calls: list[CallRecord] = []
         fell_back = False
+        fb_reason: str | None = None
 
         resp: ProviderResponse | None = None
         used: tuple[Route, str, Provider] | None = None
         system = ""
         for route, model, provider in self.plan(req.role):
             system = self._system_for(req, route)
-            r = await self._call(req, route, model, provider, system, turns, deadline, calls)
+            r = await self._call(req, route, model, provider, system, turns, deadline, calls, fb_reason, route_mode)
             if r is not None:
                 resp, used = r, (route, model, provider)
                 break
             if route == "cloud":
-                fell_back = True
-                self.metrics.inc(m.LLM_FALLBACK, role=req.role)
+                fb_reason = (calls[-1].error if calls else None) or "error"
+                if route_mode == "cloud_with_local_fallback":
+                    fell_back = True
+                    self.metrics.inc(m.LLM_FALLBACK, role=req.role)
 
         if resp is None or used is None:
-            return self._finish(req, "none", None, None, calls, fell_back, False, "all routes failed", redactions)
+            return self._finish(
+                req,
+                "none",
+                None,
+                None,
+                calls,
+                fell_back,
+                False,
+                "all routes failed",
+                redactions,
+                route_mode=route_mode,
+                fb_reason=fb_reason,
+            )
 
         route, model, provider = used
         if self.leaks_canary(resp.text):
@@ -248,11 +303,35 @@ class LLMRouter:
                 "canary leak",
                 extra={"role": req.role, "route": route, "verdict_id": req.verdict_id},
             )
-            return self._finish(req, route, model, None, calls, fell_back, True, "canary leak", redactions)
+            return self._finish(
+                req,
+                route,
+                model,
+                None,
+                calls,
+                fell_back,
+                True,
+                "canary leak",
+                redactions,
+                route_mode=route_mode,
+                fb_reason=fb_reason,
+            )
 
         try:
             value = parse_model(resp.text, req.schema, req.validation_context)
-            result = self._finish(req, route, model, value, calls, fell_back, False, None, redactions)
+            result = self._finish(
+                req,
+                route,
+                model,
+                value,
+                calls,
+                fell_back,
+                False,
+                None,
+                redactions,
+                route_mode=route_mode,
+                fb_reason=fb_reason,
+            )
             self._maybe_shadow(req, route, system, turns, value)
             return result
         except ParseError as first:
@@ -263,15 +342,64 @@ class LLMRouter:
             ]
             r2 = await self._call(req, route, model, provider, system, repair_turns, deadline, calls)
             if r2 is None:
-                return self._finish(req, route, model, None, calls, fell_back, False, first.summary, redactions)
+                return self._finish(
+                    req,
+                    route,
+                    model,
+                    None,
+                    calls,
+                    fell_back,
+                    False,
+                    first.summary,
+                    redactions,
+                    route_mode=route_mode,
+                    fb_reason=fb_reason,
+                )
             if self.leaks_canary(r2.text):
                 self.metrics.inc(m.CANARY_LEAK, role=req.role)
-                return self._finish(req, route, model, None, calls, fell_back, True, "canary leak", redactions)
+                return self._finish(
+                    req,
+                    route,
+                    model,
+                    None,
+                    calls,
+                    fell_back,
+                    True,
+                    "canary leak",
+                    redactions,
+                    route_mode=route_mode,
+                    fb_reason=fb_reason,
+                )
             try:
                 value = parse_model(r2.text, req.schema, req.validation_context)
             except ParseError as second:
-                return self._finish(req, route, model, None, calls, fell_back, False, second.summary, redactions)
-            return self._finish(req, route, model, value, calls, fell_back, False, None, redactions, repaired=True)
+                return self._finish(
+                    req,
+                    route,
+                    model,
+                    None,
+                    calls,
+                    fell_back,
+                    False,
+                    second.summary,
+                    redactions,
+                    route_mode=route_mode,
+                    fb_reason=fb_reason,
+                )
+            return self._finish(
+                req,
+                route,
+                model,
+                value,
+                calls,
+                fell_back,
+                False,
+                None,
+                redactions,
+                repaired=True,
+                route_mode=route_mode,
+                fb_reason=fb_reason,
+            )
 
     async def _call(
         self,
@@ -283,6 +411,8 @@ class LLMRouter:
         turns: Sequence[ChatTurn],
         deadline: float | None,
         calls: list[CallRecord],
+        fallback_reason: str | None = None,
+        route_mode: str | None = None,
     ) -> ProviderResponse | None:
         """One provider call inside an OpenInference LLM span: role, route, model, latency and
         token counts only. Prompts and outputs are never recorded (untrusted text)."""
@@ -291,7 +421,11 @@ class LLMRouter:
             model=model, role=req.role, verdict_id=req.verdict_id, provider=_provider_name(route, model)
         ) as sp:
             sp.set_attribute("fl.llm.route", route)
-            resp = await self._call_inner(req, route, model, provider, system, turns, deadline, calls)
+            sp.set_attribute("fl.llm.route_mode", route_mode or self.mode()[0])
+            sp.set_attribute("fl.llm.fallback", fallback_reason is not None)
+            if fallback_reason:
+                sp.set_attribute("fl.llm.fallback_reason", fallback_reason)
+            resp = await self._call_inner(req, route, model, provider, system, turns, deadline, calls, fallback_reason)
             if len(calls) > n:
                 rec = calls[-1]
                 sp.set_attribute("fl.latency_ms", rec.ms)
@@ -317,13 +451,15 @@ class LLMRouter:
         turns: Sequence[ChatTurn],
         deadline: float | None,
         calls: list[CallRecord],
+        fallback_reason: str | None = None,
     ) -> ProviderResponse | None:
+        fb = "true" if fallback_reason else "false"
         timeout = self._timeout_for(route)
         if deadline is not None:
             timeout = min(timeout, deadline - self._clock())
         if timeout <= 0:
-            calls.append(CallRecord(route, model, Usage(), 0.0, 0, "budget exhausted"))
-            self.metrics.inc(m.LLM_CALLS, role=req.role, route=route, outcome="budget")
+            calls.append(CallRecord(route, model, Usage(), 0.0, 0, "budget", fallback_reason))
+            self.metrics.inc(m.LLM_CALLS, role=req.role, route=route, outcome="budget", fallback=fb)
             return None
         preq = ProviderRequest(
             model=model,
@@ -339,9 +475,13 @@ class LLMRouter:
         except (ProviderError, TimeoutError) as exc:
             kind = exc.kind if isinstance(exc, ProviderError) else "timeout"
             ms = int((self._clock() - t0) * 1000)
-            calls.append(CallRecord(route, model, Usage(), 0.0, ms, kind))
+            calls.append(CallRecord(route, model, Usage(), 0.0, ms, kind, fallback_reason))
             self.metrics.inc(
-                m.LLM_CALLS, role=req.role, route=route, outcome="timeout" if kind == "timeout" else "error"
+                m.LLM_CALLS,
+                role=req.role,
+                route=route,
+                outcome="timeout" if kind == "timeout" else "error",
+                fallback=fb,
             )
             self.metrics.observe(m.LLM_CALL_SECONDS, ms / 1000, role=req.role, route=route)
             log.info(
@@ -357,8 +497,8 @@ class LLMRouter:
             return None
         ms = int((self._clock() - t0) * 1000)
         usd = cost_usd(route, model, resp.usage)
-        calls.append(CallRecord(route, model, resp.usage, usd, ms))
-        self.metrics.inc(m.LLM_CALLS, role=req.role, route=route, outcome="ok")
+        calls.append(CallRecord(route, model, resp.usage, usd, ms, None, fallback_reason))
+        self.metrics.inc(m.LLM_CALLS, role=req.role, route=route, outcome="ok", fallback=fb)
         self.metrics.observe(m.LLM_CALL_SECONDS, ms / 1000, role=req.role, route=route)
         self.metrics.inc(
             m.LLM_TOKENS,
@@ -379,6 +519,7 @@ class LLMRouter:
                 "out_tokens": resp.usage.output_tokens,
                 "cost_usd": round(usd, 6),
                 "verdict_id": req.verdict_id,
+                "fallback": fallback_reason,
             },
         )
         return resp
@@ -395,6 +536,8 @@ class LLMRouter:
         error: str | None,
         redactions: Mapping[str, int],
         repaired: bool = False,
+        route_mode: str = "local",
+        fb_reason: str | None = None,
     ) -> LLMResult[T]:
         usage = Usage()
         for c in calls:
@@ -421,6 +564,8 @@ class LLMRouter:
             error=error,
             calls=tuple(calls),
             redactions=dict(redactions),
+            route_mode=route_mode,
+            fallback_reason=fb_reason,
         )
 
     # --- shadow ------------------------------------------------------------------------------
@@ -433,7 +578,12 @@ class LLMRouter:
         turns: Sequence[ChatTurn],
         value: BaseModel,
     ) -> None:
-        if not req.allow_shadow or self.config.shadow_rate <= 0 or self._cloud is None:
+        if (
+            not req.allow_shadow
+            or self.config.shadow_rate <= 0
+            or self._cloud is None
+            or self.mode()[0] != "cloud_with_local_fallback"
+        ):
             return  # sovereign / no key: never shadow to the cloud
         if self._rng.random() >= self.config.shadow_rate:
             return

@@ -61,7 +61,10 @@ LLM_COST = _c("llm_cost_usd_total", "LLM spend in USD", ("model",))
 LLM_FALLBACK = _c("llm_fallback_total", "LLM calls that fell back to the local model", ("role",))
 # Per-call view of the LLM router (additive; the token/cost/fallback counters above stay as they were).
 # outcome: ok | timeout | error | budget (one series per provider call, so a repaired call counts twice).
-LLM_CALLS = _c("llm_calls_total", "Provider calls by role, route and outcome", ("role", "route", "outcome"))
+# fallback: "true" when the call ran because the cloud attempt of the same request failed.
+LLM_CALLS = _c(
+    "llm_calls_total", "Provider calls by role, route, outcome and fallback", ("role", "route", "outcome", "fallback")
+)
 LLM_CALL_SECONDS = _h("llm_call_seconds", "Provider call wall time", LLM_CALL_BUCKETS, ("role", "route"))
 # status: ok | repaired | fallback (caller template used) | failed. One series per finished request.
 LLM_RESULTS = _c("llm_results_total", "Finished LLM requests by role and result", ("role", "status"))

@@ -28,7 +28,7 @@ _SPECIAL_TOKEN_RE = re.compile(r"<\|[a-z_]{2,40}\|>")
 
 
 class ProviderError(Exception):
-    def __init__(self, kind: Literal["timeout", "error", "unavailable"], detail: str = "") -> None:
+    def __init__(self, kind: Literal["timeout", "error", "unavailable", "rate_limit"], detail: str = "") -> None:
         super().__init__(f"{kind}: {detail}" if detail else kind)
         self.kind = kind
         self.detail = detail
@@ -105,6 +105,8 @@ class AnthropicProvider:
             msg = await self._client.messages.create(**kwargs)
         except anthropic.APITimeoutError as exc:
             raise ProviderError("timeout", type(exc).__name__) from exc
+        except anthropic.RateLimitError as exc:
+            raise ProviderError("rate_limit", type(exc).__name__) from exc
         except anthropic.APIError as exc:
             raise ProviderError("error", type(exc).__name__) from exc
         text = "".join(getattr(b, "text", "") for b in msg.content if getattr(b, "type", None) == "text")
