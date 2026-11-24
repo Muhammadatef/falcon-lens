@@ -98,8 +98,8 @@ def check_one(base: str, key: str, row: dict[str, Any]) -> dict[str, Any]:
 
 
 def submit(a: argparse.Namespace) -> int:
-    rows = [json.loads(ln) for ln in (PRIV / "set.jsonl").read_text().splitlines()]
-    raw = PRIV / "raw.jsonl"
+    rows = [json.loads(ln) for ln in (PRIV / a.set).read_text().splitlines()]
+    raw = PRIV / a.raw
     done = {json.loads(ln)["url"] for ln in raw.read_text().splitlines()} if raw.exists() else set()
     todo = [r for r in rows if r["url"] not in done]
     # interleave classes so a budget cut still leaves both classes covered
@@ -129,8 +129,13 @@ def publish(_: argparse.Namespace) -> int:
     ok = [r for r in raw_rows if "error" not in r]
     errs = [r for r in raw_rows if "error" in r]
     summary = summarise(ok)
+    raw2 = PRIV / "raw2.jsonl"
+    rows2 = [json.loads(ln) for ln in raw2.read_text().splitlines()] if raw2.exists() else []
+    ok2 = [r for r in rows2 if "error" not in r]
+    legit_main = [r for r in ok if r["label"] == 0]
+    summary2 = summarise(ok2 + legit_main) if ok2 else None
     examples = {"missed_phishing": [], "false_alarms_on_legit": [], "dangerous_on_legit": []}
-    for r in ok:
+    for r in ok + ok2:
         if r["label"] == 1 and r["verdict"] == "no_warning_signs":
             examples["missed_phishing"].append(
                 {"url": defang(r["url"], host_only=True), "verdict": r["verdict"], "tier": r["tier"],
@@ -180,12 +185,25 @@ def publish(_: argparse.Namespace) -> int:
         },
         "http_429": HTTP_429[0],
         "results": summary,
+        "results_second_source": summary2,
+        "second_source": {
+            "what": "100 seeded-random hosts from the Phishing.Database ACTIVE domain list (MIT), not in the OpenPhish rows "
+            "the live stack ingests; submitted as http://<host>/; legit rows are the same 100 as the main run",
+            "n_submitted": len(rows2),
+            "n_errors": len(rows2) - len(ok2),
+        },
         "error_examples_defanged": examples,
         "caveats": [
             "Legit labels are not hand-audited: a Tranco site is labelled legit when it served a page and was on no keyless "
             "public blocklist (Phishing.Database ACTIVE list, OpenPhish feed); Google Safe Browsing was not used (no key configured).",
             "Phishing labels are the feed's own: a listed URL may already be dead or taken down; those are reported separately.",
-            "Phishing sources are one feed collected in one poll, so the sample is not independent of the feed the model was trained on.",
+            "Main-set phishing came from the OpenPhish feed that the live stack also ingests: a reputation lookup (T0) can "
+            "catch these without any model. Read the main-set recall as feed-coverage plus pipeline, and use "
+            "results_second_source (hosts from a feed the stack does not query) and the no_reputation_hit groups for the model's own detection.",
+            "The same feed supplied the earlier training data, so the main phishing sample is not independent of it.",
+            "23 URLs of the main set were submitted once in a discarded pilot of this same run before two extra fields were "
+            "recorded; the raw rows were thrown away and all 200 were resubmitted, so those 23 may have been served from the verdict cache (latency).",
+            "A request that hits the per-key rate limit waits for Retry-After and retries; latency_s includes that wait, http_429 counts the retries.",
             "Single run on one day, n=200; intervals are wide for subsets. Not a test-split result and not tuned on.",
         ],
     }
@@ -202,6 +220,8 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("submit")
     s.add_argument("--base", default=os.environ.get("FL_GATEWAY_URL", "https://localhost:8443"))
+    s.add_argument("--set", default="set.jsonl")
+    s.add_argument("--raw", default="raw.jsonl")
     s.add_argument("--workers", type=int, default=4)
     s.add_argument("--budget-min", type=float, default=45.0)
     sub.add_parser("publish")

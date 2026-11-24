@@ -115,6 +115,7 @@ def group_stats(rows: list[dict[str, Any]], dangerous_only_too: bool = True) -> 
     """Per-group descriptive stats: verdict mix, degraded rate, latency, tier mix, AI-step use."""
     n = len(rows)
     lat = [r["latency_s"] for r in rows if r.get("latency_s") is not None]
+    srv = [r["server_latency_ms"] / 1000 for r in rows if r.get("server_latency_ms") is not None]
     deg = sum(1 for r in rows if r["degraded"])
     out: dict[str, Any] = {
         "n": n,
@@ -128,6 +129,7 @@ def group_stats(rows: list[dict[str, Any]], dangerous_only_too: bool = True) -> 
             "p95": round(percentile(lat, 0.95), 2),
             "max": round(max(lat, default=0.0), 2),
         },
+        "server_latency_s": {"p50": round(percentile(srv, 0.5), 2), "p95": round(percentile(srv, 0.95), 2)},
         "tier_mix": dict(sorted(Counter(r["tier"] for r in rows).items(), key=lambda kv: str(kv[0]))),
         "reached_t3_investigator": _ratio(sum(r["tier"] == "T3" for r in rows), n),
         "llm_evidence_present": _ratio(sum(any(s.startswith("llm.") for s in r.get("signals", [])) for r in rows), n),
@@ -163,6 +165,14 @@ def summarise(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "latency_s_all": {
             "p50": round(percentile([r["latency_s"] for r in rows], 0.5), 2),
             "p95": round(percentile([r["latency_s"] for r in rows], 0.95), 2),
+        },
+        "server_latency_s_all": {
+            "p50": round(
+                percentile([r["server_latency_ms"] / 1000 for r in rows if r.get("server_latency_ms")], 0.5), 2
+            ),
+            "p95": round(
+                percentile([r["server_latency_ms"] / 1000 for r in rows if r.get("server_latency_ms")], 0.95), 2
+            ),
         },
         "degraded_rate_all": _ratio(sum(r["degraded"] for r in rows), len(rows)),
     }
