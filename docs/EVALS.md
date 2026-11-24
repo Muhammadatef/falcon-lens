@@ -94,3 +94,19 @@ Source: `evals/results/published/sovereign/sovereign_<model>_<ts>.json`, written
 - Sentinel incident LLM summary was accepted by the faithfulness verifier in 1 of 4 runs (inkling run 2); in the other 3 the model was called but its summary was rejected and the template was used, so those 3 runs are published as `failed`. Do not claim "every Sentinel summary is written by the local model".
 - Egress audit, all 4 runs. The proof is: no `ANTHROPIC_API_KEY` in any LLM service, the sovereign flag set in every one, and only route `local` in the LLM call logs and metrics. The egress proxy logged 0 destinations in these runs, so that log proves nothing on its own. The Anthropic base-URL sink counted 0 hits, but these four runs did not self-test that the sink was listening, so do not cite the 0 as evidence (the runner now records a self-test hit). This shows no LLM traffic was configured or observed to leave the machine; it is not a claim that nothing left it.
 - Still needs the internet in sovereign mode: RDAP/crt.sh/IANA lookups about the checked domain, reputation feeds, the sandbox's one passive visit to the checked site, and the one-time download of the speech model weights (huggingface.co, own allow-listed proxy).
+
+## Running your own test set (`make batch`, `/ops/batch`)
+
+`scripts/batch_check.py` submits a URL list to a running API and writes one CSV row per URL (columns in the README, "Run your own test set"). It is a user tool, not a merge-gate eval: it never touches the frozen test split and does not write to `evals/results/`.
+
+Binary mapping, because the verdict has three values and a hidden test set has two labels:
+
+| Verdict | strict (default) | lenient |
+|---|---|---|
+| dangerous | fraud | fraud |
+| suspicious | fraud | legit |
+| no_warning_signs | legit | legit |
+| could_not_check (rejected URL, network error, no final verdict in time) | fraud | legit |
+
+When a `label` column exists the script prints precision, recall, F1 and FPR with 95% Wilson intervals for both modes, and repeats precision and recall with `could_not_check` rows excluded, so an outage is not mistaken for a model error. Numbers it prints come from your file and your run; they are not project metrics and must not be quoted as such.
+
