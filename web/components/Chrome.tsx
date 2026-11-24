@@ -55,8 +55,8 @@ export function Header() {
         <Link className="brand" href="/">
           <BrandMark />
           <span>
-            {t("brand")}
-            <small>FALCON LENS</small>
+            <span lang={lang}>{t("brand")}</span>
+            <small lang={lang === "ar" ? "en" : "ar"} dir={lang === "ar" ? "ltr" : "rtl"}>{translate(lang === "ar" ? "en" : "ar", "brand")}</small>
           </span>
         </Link>
         <nav className="nav" id="site-nav" data-open={open ? "true" : undefined} aria-label={t("nav.label")}>
@@ -80,7 +80,7 @@ export function Header() {
           <button className="tool tool--theme" type="button" data-testid="theme-toggle" aria-label={t(theme === "dark" ? "theme.light" : "theme.dark")} onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
             <Icon name={theme === "dark" ? "sun" : "moon"} size={20} />
           </button>
-          <button className="tool menu-btn" type="button" data-testid="menu-toggle" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen((v) => !v)}>
+          <button className="tool menu-btn" type="button" data-testid="menu-toggle" aria-label={t(open ? "nav.menu.close" : "nav.menu")} aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen((v) => !v)}>
             <Icon name={open ? "x" : "menu"} size={20} />
             <span>{t(open ? "nav.menu.close" : "nav.menu")}</span>
           </button>

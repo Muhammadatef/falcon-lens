@@ -153,7 +153,7 @@ export function IncidentBoard({ demo }: { demo: boolean }) {
                 <label htmlFor="operator-key"><Icon name="key" size={20} />{t("ops.key.label")}</label>
                 <div className="keybox-row">
                   <input id="operator-key" className="mono" type="password" autoComplete="off" spellCheck={false} dir="ltr" value={draftKey} placeholder={key ? "••••••••" : ""} onChange={(e) => setDraftKey(e.target.value)} data-testid="key-input" />
-                  <button className="btn btn--sm" type="submit">{t("ops.key.save")}</button>
+                  <button className="btn btn--sm btn--primary" type="submit">{t("ops.key.save")}</button>
                   {key ? <button className="btn btn--sm" type="button" onClick={forgetKey}>{t("ops.key.clear")}</button> : null}
                 </div>
                 <p className="small">{t("ops.key.hint")}</p>
@@ -167,10 +167,10 @@ export function IncidentBoard({ demo }: { demo: boolean }) {
                 <div className="sk" />
               </div>
             ) : load.state === "unauthorized" ? (
-              <div className="card state" role="status" data-testid="ops-unauthorized">
+              <div className="card state" role={key ? "alert" : "status"} data-testid="ops-unauthorized" data-rejected={key ? "true" : "false"}>
                 <Icon name="key" size={40} />
-                <h2 className="h3">{t("ops.unauth.title")}</h2>
-                <p className="muted">{t("ops.unauth.body")}</p>
+                <h2 className="h3">{key ? t("ops.unauth.title") : t("ops.need.title")}</h2>
+                <p className="muted">{key ? t("ops.unauth.body") : t("ops.need.body")}</p>
               </div>
             ) : load.state === "not_connected" ? (
               <div className="card state" role="status" data-testid="ops-not-connected">

@@ -447,7 +447,7 @@ def slide_agents(f: Facts) -> Slide:
     s = Slide("agents", "Two AI agents", "وكيلان ذكيان")
     w = 5.95
     agent_card(
-        s, MARGIN, w, "brand", "The Investigator", "المحقّق", "judges one input", glyph="lens",
+        s, MARGIN, w, "brand", "The Investigator", "بصير | Baseer", "judges one input", glyph="lens",
         lines=(
             f.planned("url_check", "Checks a link, message, email or image in tiers, from known lists to an isolated page visit."),
             f.planned("investigator", "An AI model reads only the uncertain cases, through typed tools."),
@@ -455,7 +455,7 @@ def slide_agents(f: Facts) -> Slide:
         ),
     )  # fmt: skip
     agent_card(
-        s, MARGIN + w + 0.2, w, "sand", "The Sentinel", "الحارس", "watches around the clock", glyph="radar",
+        s, MARGIN + w + 0.2, w, "sand", "The Sentinel", "درع | Dir'", "watches around the clock", glyph="radar",
         lines=(
             f.planned("sentinel_agent", "Links similar checks into campaigns and incidents."),
             "Blocks indicators inside the system, reversibly, and drafts takedown requests.",
@@ -526,7 +526,7 @@ def slide_how(f: Facts) -> Slide:
 
 
 def slide_sentinel(f: Facts, img: dict[str, Path]) -> Slide:
-    s = Slide("sentinel", "Sentinel and approval", "الحارس والموافقة")
+    s = Slide("sentinel", "Sentinel and approval", "درع والموافقة")
     pw = 6.1
     ph = pw * 780 / 1152
     s.add(
@@ -813,6 +813,61 @@ def slide_authorities(f: Facts) -> Slide:
     return s
 
 
+def slide_onprem(f: Facts) -> Slide:
+    s = Slide("onprem", "On-premise deployment", "التشغيل داخل الجهة")
+    s.add(
+        tb(
+            MARGIN,
+            1.8,
+            12.1,
+            0.7,
+            p("The whole stack can run inside the authority's network.", 26, "brand", True),
+            anchor="m",
+        )
+    )
+    cols = [
+        (
+            "What runs inside",
+            (
+                "The same Docker Compose stack",
+                "Every model role on a local model, through any OpenAI-compatible server",
+                "Local speech recognition and locally generated voice clips",
+                "REST, SSE, MCP, STIX export, signed webhooks: ready to connect, not connected",
+            ),
+        ),
+        (
+            "Still needed for production",
+            (
+                "The authority's own sign-on and roles",
+                "Scaling and high availability (proven on one machine only)",
+                "Closed-network feeds or mirrors for link lookups and the sandbox visit",
+                "The authority's own security review and penetration test",
+            ),
+        ),
+    ]
+    w = 5.95
+    for i, (head, lines) in enumerate(cols):
+        x = MARGIN + i * (w + 0.2)
+        s.add(
+            card(x, 2.75, w, 4.2),
+            tb(
+                x + 0.3,
+                2.85,
+                w - 0.5,
+                4.0,
+                Para([Run(head, 20, "text", True)], after=6),
+                *[p("- " + ln, 15, "muted") for ln in lines],
+                anchor="t",
+            ),
+        )
+    s.notes = (
+        "If an authority adopts Falcon Lens, the same stack runs inside its network. In sovereign mode every model role runs on a local model on its own servers, speech recognition is local, "
+        "and integration goes through the REST interface, server-sent events, the MCP server, the STIX export and signed webhooks. It is ready to connect and not connected, and nothing here implies endorsement. "
+        "A production deployment would still need the authority's own sign-on and roles, scaling and high availability that we have only shown on one machine, closed-network feeds for link lookups, and its own security review and penetration test."
+    )
+    return s
+
+
 GROUPS: list[tuple[str, list[str]]] = [
     ("AI and agents", ["LangGraph", "Anthropic API", "Ollama", "Model Context Protocol Python SDK", "scikit-learn"]),
     ("Backend", ["Python", "FastAPI", "Pydantic", "Playwright", "Redis", "pgvector"]),
@@ -1016,6 +1071,7 @@ def build_slides(f: Facts, img: dict[str, Path]) -> list[Slide]:
         slide_evidence(f),
         slide_security(f),
         slide_authorities(f),
+        slide_onprem(f),
         slide_architecture(f, img),
         slide_roadmap(f),
         slide_team(f),

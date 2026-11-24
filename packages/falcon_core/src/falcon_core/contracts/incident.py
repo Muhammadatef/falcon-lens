@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from falcon_core.contracts.verdict import ModelRoute, Source
+from falcon_core.contracts.verdict import Channel, ModelRoute, Source
 
 
 class SeverityReason(BaseModel):
@@ -87,5 +87,6 @@ class Incident(BaseModel):
     summary: IncidentSummary | None = None
     actions: list[IncidentAction]
     source: Source
+    channels: list[Channel] | None = None
     created_at: datetime
     updated_at: datetime

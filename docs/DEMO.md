@@ -163,9 +163,13 @@ Do not narrate a verdict before it is on screen. The "Expected" rows below descr
 | Say | "The page tries to talk the model into clearing it. The model that reads page text has no tools and cannot touch the score, so the attempt only adds evidence against the page." |
 | Proof shot | `make redteam` in the terminal, ending with its summary line. Read the injection result from that output on screen; do not quote it from memory. |
 
+## The voice scene: "Hey Falcon"
+
+Shows both agents being narrated live. Open `/voice`, allow the microphone, copy one demo message (kit item M1), then say "Hey Falcon, check what I copied" (<span dir="rtl">يا فالكون، افحص اللي نسخته</span> works too). Keep the screen in frame: the assistant reads the message, narrates the Investigator (Baseer | بصير) tier by tier, says what it found, the verdict and what to do now, then the Sentinel (Dir' | درع) hand-over. The English voice is Kokoro; the Arabic voice is macOS `say` (Majed). A cloned Emirati voice is pending an owner-consented recording and must not be claimed. After the take the checks appear in `/history` with the Voice badge. Rehearse with `make voice-rehearsal`; native speech engine with `make voice-native`. The speech benchmark is on synthetic speech only (`evals/results/published/voice/`); do not quote it as real-microphone accuracy. Say "no warning signs found", never "safe".
+
 ## The Sentinel scene
 
-Shows the second agent: single checks become one incident, internal actions run, external actions wait for a human.
+Shows the second agent, the Sentinel (Dir' | درع): single checks become one incident, internal actions run, external actions wait for a human.
 
 Before the take, return to a clean seeded state so no old incident is on the board:
 
@@ -228,6 +232,19 @@ Needs an Android phone with Chrome and the tunnel address. iOS has no share targ
 | 5 | Scroll once to the footer. | «عدسة الصقر مشروع مستقل لمسابقة، غير تابع لشرطة أبوظبي ولا يمثّلها.» |
 
 Record the phone with a screen recording plus one shot of the hand holding it, so it is clear this is a real device.
+
+## The voice scene: "Hey Falcon"
+
+Needs the stack up (`make up`), the speech engine (`make voice-native`, or the container engine alone, a little slower) and a browser on `/voice` with the microphone allowed. Copy the three Falcon Demo Bank test messages (fixtures only, never a real brand), tap hands-free, and say: «يا فالكون، افحص رسائلي» or "Hey Falcon, check my messages".
+
+| What you see and hear | What proves it |
+|---|---|
+| The page shows the live steps while the Investigator checks each message, then the Sentinel card (or "still watching" when no incident links them yet). | The steps come from the real progress stream of each check; the Sentinel line appears only when an incident links these checks. |
+| The summary is spoken from pre-generated clips. | `/agents` and `/docs/agents` list what ships; speech synthesis is only the fallback for a missing clip. |
+| `/history` lists the three checks with the "Voice" badge. | The badge reads the `channel` field of each check (`voice`). |
+| Grafana, Command overview, row "Voice assistant" (المساعد الصوتي). | Counts come from `fl_voice_*` metrics. |
+
+`make voice-rehearsal` plays the demo lines through the real speech route. `make voice-e2e` runs the whole scene with a real browser against a stack (see `reviews/VOICE-E2E-*.md` for the recorded result); it needs macOS `say`.
 
 ## Reset between takes
 

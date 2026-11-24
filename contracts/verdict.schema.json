@@ -86,6 +86,7 @@
     },
     "screenshot_url": { "type": ["string", "null"], "description": "Only for authenticated integration keys; never for anonymous callers." },
     "source": { "type": "string", "enum": ["live", "replay", "synthetic", "fixture"], "default": "live" },
+    "channel": { "type": "string", "enum": ["web", "extension", "api", "mcp", "voice"], "description": "Optional. Which client asked for this check (set by the client on the check request; low-cardinality metadata, not an identity). Absent when the client did not say." },
     "latency_ms": { "type": "integer", "minimum": 0 },
     "created_at": { "type": "string", "format": "date-time" }
   },

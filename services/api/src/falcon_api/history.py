@@ -67,6 +67,9 @@ class VerdictSummary(BaseModel):
     tier_reached: TierLit
     model_route: Literal["cloud", "local", "none"]
     source: Literal["live", "replay", "synthetic", "fixture"]
+    channel: Literal["web", "extension", "api", "mcp", "voice"] | None = Field(
+        default=None, description="Which client asked for the check; null when it did not say."
+    )
     agent: AgentActivity
 
 
@@ -123,6 +126,7 @@ def summarize(doc: dict[str, Any]) -> dict[str, Any] | None:
             "tier_reached": reached,
             "model_route": doc["model_route"],
             "source": doc.get("source") or "live",
+            "channel": doc.get("channel"),
             "agent": {
                 "tiers_run": tiers,
                 "extractor_ran": extractor,

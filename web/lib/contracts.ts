@@ -11,6 +11,9 @@ export type Tier = "T0" | "T1" | "T2" | "T3";
 export type InputType = "url" | "message" | "email" | "image";
 export type Polarity = "risk" | "trust" | "neutral";
 export type DataSource = "live" | "replay" | "synthetic" | "fixture";
+/** Which client asked for a check (contracts/verdict.schema.json `channel`). */
+export type Channel = "web" | "extension" | "api" | "mcp" | "voice";
+export const CHANNEL_VALUES: readonly Channel[] = ["web", "extension", "api", "mcp", "voice"];
 export type Lang = "ar" | "en";
 
 export const TIERS: readonly Tier[] = ["T0", "T1", "T2", "T3"];
@@ -89,6 +92,7 @@ export interface Verdict {
   trace?: TraceStep[];
   screenshot_url?: string | null;
   source?: DataSource;
+  channel?: Channel;
   latency_ms: number;
   created_at: string;
 }
@@ -123,6 +127,7 @@ export interface Incident {
   summary?: { ar?: string; en?: string; generated_by?: string; model_route?: string } | null;
   actions: IncidentAction[];
   source: DataSource;
+  channels?: Channel[];
   created_at: string;
   updated_at: string;
 }
@@ -269,6 +274,7 @@ export function parseVerdict(raw: unknown): Verdict | null {
     final: raw.final,
     trace: parseTrace(raw.trace),
     source: oneOf(raw.source, ["live", "replay", "synthetic", "fixture"] as const) ?? "live",
+    ...(oneOf(raw.channel, CHANNEL_VALUES) ? { channel: oneOf(raw.channel, CHANNEL_VALUES) as Channel } : {}),
     latency_ms: num(raw.latency_ms),
     created_at: str(raw.created_at),
   };
@@ -342,6 +348,7 @@ export function parseIncident(raw: unknown): Incident | null {
     summary: optBilingual(raw.summary) ?? null,
     actions,
     source: oneOf(raw.source, ["live", "replay", "synthetic", "fixture"] as const) ?? "live",
+    ...(Array.isArray(raw.channels) ? { channels: raw.channels.filter((c): c is Channel => oneOf(c, CHANNEL_VALUES) !== null) } : {}),
     created_at: str(raw.created_at),
     updated_at: str(raw.updated_at),
   };

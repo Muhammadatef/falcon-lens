@@ -214,3 +214,103 @@ def test_helpers() -> None:
     names = [(e.name, e.url) for e in parse_engines("http://host.docker.internal:8093, http://voice:8000/")]
     assert names == [("native", "http://host.docker.internal:8093"), ("container", "http://voice:8000")]
     assert isinstance(SttEngine("x", "http://x").usable, bool)
+
+
+async def test_hint_is_passed_through_but_result_lang_follows_detection() -> None:
+    seen: list[str] = []
+
+    def engine(req: httpx.Request) -> httpx.Response:
+        seen.append(req.url.params.get("lang", ""))
+        return httpx.Response(200, json=stt_reply(text="هاي فالكون افحص الرابط", lang="ar"))
+
+    c, key = await make_client(Engines(nat=engine, con=ok()))
+    async with c:
+        r = await c.post(
+            "/v1/voice/utterance", files=files(wav_bytes(1)), data={"lang_hint": "en"}, headers={"X-API-Key": key}
+        )
+    assert r.status_code == 200
+    assert seen == ["en"]
+    assert r.json()["lang"] == "ar"
+
+
+async def test_utterance_span_has_metadata_only_and_traceparent_links_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    from falcon_core.telemetry import tracing
+
+    exporter = InMemorySpanExporter()
+    provider = tracing.build_provider("t")
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    monkeypatch.setattr(tracing, "get_tracer", lambda: provider.get_tracer("t"))
+    c, key = await make_client(Engines(nat=ok(text=f"Hey Falcon, check my messages {SECRET_WORDS}"), con=ok()))
+    monkeypatch.setenv("FL_WEB_READ_KEY", key)  # the web server key: its traceparent is trusted
+    async with c:
+        r = await c.post("/v1/voice/utterance", files=files(wav_bytes(2)), headers={"X-API-Key": key})
+        tp = r.headers["traceparent"]
+        # The caller passes it on: the next request's span becomes a child of voice.utterance.
+        await c.get("/v1/version", headers={"traceparent": tp, "X-API-Key": key})
+    done = exporter.get_finished_spans()
+    utt = next(sp for sp in done if sp.name == "voice.utterance")
+    assert (
+        dict(utt.attributes or {}).items()
+        >= {"fl.voice.engine": "native", "fl.voice.lang": "en", "fl.voice.wake": True}.items()
+    )
+    assert "fl.voice.duration_ms" in (utt.attributes or {})
+    assert SECRET_WORDS not in json.dumps({k: str(v) for sp in done for k, v in (sp.attributes or {}).items()})
+    assert tp.startswith(f"00-{utt.context.trace_id:032x}-{utt.context.span_id:016x}-")
+    kids = [sp for sp in done if sp.parent is not None and sp.parent.span_id == utt.context.span_id]
+    assert any(sp.name == "http GET" for sp in kids)
+
+
+async def test_inbound_traceparent_ignored_unless_internal_caller(monkeypatch: pytest.MonkeyPatch) -> None:
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    from falcon_core.telemetry import tracing
+
+    exporter = InMemorySpanExporter()
+    provider = tracing.build_provider("t")
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    monkeypatch.setattr(tracing, "get_tracer", lambda: provider.get_tracer("t"))
+    monkeypatch.setenv("FL_WEB_READ_KEY", "some-other-server-key")
+    c, key = await make_client(Engines(nat=ok(), con=ok()))
+    forged = f"00-{'ab' * 16}-{'cd' * 8}-01"
+    async with c:
+        await c.get("/v1/version", headers={"traceparent": forged, "X-API-Key": key})  # valid key, not the server key
+        await c.get("/v1/version", headers={"traceparent": forged})  # no key at all
+
+    spans = [sp for sp in exporter.get_finished_spans() if sp.name.startswith("http")]
+    assert len(spans) >= 2
+    assert all(f"{sp.context.trace_id:032x}" != "ab" * 16 for sp in spans)
+
+
+async def test_trace_headers_trust_boundary(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fastapi import FastAPI
+
+    from falcon_core.service import _FalconApp
+
+    seen: list[list[tuple[bytes, bytes]]] = []
+
+    async def inner(self: Any, scope: Any, receive: Any, send: Any) -> None:
+        seen.append(scope["headers"])
+
+    monkeypatch.setattr(FastAPI, "__call__", inner)
+
+    async def run(headers: list[tuple[bytes, bytes]], trusted: bool) -> list[tuple[bytes, bytes]]:
+        app = _FalconApp()
+        app.trust = lambda _r: trusted
+        await app({"type": "http", "headers": headers}, None, None)  # type: ignore[arg-type]
+        return seen[-1]
+
+    tp = b"00-" + b"ab" * 16 + b"-" + b"cd" * 8 + b"-01"
+    hdrs = [
+        (b"traceparent", tp),
+        (b"TraceParent", tp),
+        (b"tracestate", b"a=b"),
+        (b"Baggage", b"k=v"),
+        (b"baggage", b"k=v"),
+        (b"x-keep", b"1"),
+    ]
+    assert await run(hdrs, trusted=False) == [(b"x-keep", b"1")]
+    assert await run(hdrs, trusted=True) == hdrs

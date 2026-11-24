@@ -192,3 +192,31 @@ groups:
         annotations:
           summary: "Score distribution drift index is {{ $value }}"
           runbook_url: docs/RUNBOOK.md#score-drift
+
+  - name: falcon-voice
+    rules:
+      # More than 1 in 5 voice requests failed over 5 minutes (needs at least 3 failures, so one bad clip is quiet).
+      # Failures are fl_voice_errors_total{reason}; answered utterances are fl_voice_utterances_total.
+      - alert: VoiceErrorRate
+        expr: |
+          sum(increase(fl_voice_errors_total{data!="synthetic-replay"}[5m])) >= 3
+          and
+          sum(increase(fl_voice_errors_total{data!="synthetic-replay"}[5m]))
+            / (sum(increase(fl_voice_errors_total{data!="synthetic-replay"}[5m])) + sum(increase(fl_voice_utterances_total{data!="synthetic-replay"}[5m]))) > 0.2
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "Voice assistant: more than 20% of requests failed in 5 minutes"
+          runbook_url: docs/RUNBOOK.md#voice-errors
+      # The container engine answered in the last 10 minutes and the native (GPU) engine did not:
+      # the assistant still works but is slower. `unless` also fires when native never answered since the API started.
+      - alert: VoiceNativeEngineDown
+        expr: |
+          sum(increase(fl_voice_utterances_total{data!="synthetic-replay",engine="container"}[10m])) > 0
+          unless
+          sum(increase(fl_voice_utterances_total{data!="synthetic-replay",engine="native"}[10m])) > 0
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "Voice: the native engine is not answering, the container engine is (slower)"
+          runbook_url: docs/RUNBOOK.md#voice-native-down

@@ -22,7 +22,7 @@ const PORT = Number(process.env.MOCK_PORT ?? 43110);
 const APP_PORT = Number(process.env.APP_PORT ?? 43111);
 /** Two extra app instances whose FL_API_INTERNAL_URL points at /__caps/<mode>: every capability flag forced false / true. */
 const CAP_APPS = { false: Number(process.env.APP_PORT_CAPS_FALSE ?? 43112), true: Number(process.env.APP_PORT_CAPS_TRUE ?? 43113) };
-const CAP_IDS = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "t1_measured_model", "url_check", "brand_check", "pipeline", "audit_log", "sentinel_rules", "observability", "sovereign", "pwa", "dspy_compiled_prompts", "llm_tracing"];
+const CAP_IDS = ["message_check", "email_check", "image_check", "injection_defence", "investigator", "sentinel_agent", "rest_api", "mcp", "stix", "t1_measured_model", "url_check", "brand_check", "pipeline", "audit_log", "sentinel_rules", "observability", "sovereign", "pwa", "dspy_compiled_prompts", "llm_tracing", "voice_assistant"];
 const LIMITS = { url: 4096, message: 8 * 1024, email: 2 * 1024 * 1024, image: 5 * 1024 * 1024 };
 const BODY_LIMITS = { url: 32 * 1024, message: 64 * 1024, email: LIMITS.email + 64 * 1024, image: LIMITS.image + 64 * 1024 };
 
@@ -155,6 +155,7 @@ async function check(req, res, kind) {
 const VOICE_REPLIES = {
   "check-ar": { transcript: "يا فالكون، وصلتني رسائل كثيرة أشك أنها احتيال، شغّل عدسة الصقر", lang: "ar", wake: true, intent: "check_clipboard", command: "شغّل عدسة الصقر" },
   "check-en": { transcript: "Hey Falcon, I have received multiple messages that I feel it's scam, run Falcon Lens", lang: "en", wake: true, intent: "check_clipboard", command: "run Falcon Lens" },
+  "help-en": { transcript: "Hey Falcon help me", lang: "en", wake: true, intent: "help", command: "help me" },
   "help-ar": { transcript: "يا فالكون ساعدني", lang: "ar", wake: true, intent: "help", command: "ساعدني" },
   "none-ar": { transcript: "يا فالكون", lang: "ar", wake: true, intent: "none", command: "" },
   stop: { transcript: "Falcon stop", lang: "en", wake: true, intent: "stop", command: "stop" },

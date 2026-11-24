@@ -11,6 +11,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Amazon Polly (offline clip pre-generation only; credentials from the environment)
+polly = ["boto3>=1.35"]
 # heavy, Apple-Silicon only; not installed in CI
 mlx = [
   "mlx-audio==0.6.3",
