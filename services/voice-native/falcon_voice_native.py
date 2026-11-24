@@ -34,15 +34,21 @@ from fastapi.responses import JSONResponse
 
 # The guards are shared with the API (packages/falcon_core); no install needed for this standalone project.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "packages" / "falcon_core" / "src"))
-from falcon_core.voice.guard import FRAME_S, clean_transcript, frame_stats, sniff, speech_like  # noqa: E402
+from falcon_core.voice.guard import (  # noqa: E402
+    FRAME_S,
+    PROMPTS,
+    clean_transcript,
+    frame_stats,
+    sniff,
+    speech_like,
+)
 
 SAMPLE_RATE = 16000
 MAX_AUDIO_S = 15.0
 MAX_BYTES = 1024 * 1024
 HF_REPO = "mlx-community/whisper-large-v3-turbo"
 MODEL_NAME = "whisper-large-v3-turbo"
-# Per language (Neo lesson): the Arabic phrases only bias Arabic audio, a mixed prompt is echoed on English/noise.
-PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا صقر. عدسة الصقر."}
+# The decoding prompt is per language (Neo lesson) and shared with the container engine: falcon_core.voice.guard.
 # Optional speed knob (default off, decoding unchanged): skip Whisper's timestamp tokens (scripts/voice_stt_bench.py).
 NO_TIMESTAMPS = os.environ.get("FL_WHISPER_NO_TIMESTAMPS", "") == "1"
 TOKENS_PER_WORD = 6

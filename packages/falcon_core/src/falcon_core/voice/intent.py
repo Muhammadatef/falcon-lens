@@ -99,6 +99,15 @@ def match_wake(text: str) -> tuple[bool, str]:
     return False, ""
 
 
+def _bare_name_rest(text: str) -> str:
+    """The text after a bare leading name ("Falcon, ..." / «صقر، ...»), or "" when it does not open with one."""
+    spans = [(m.end(), norm_word(m.group())) for m in _TOKEN.finditer(text)]
+    spans = [s for s in spans if s[1]]
+    if len(spans) < 2 or not (_is_falcon(spans[0][1]) or spans[0][1] in ("صقر", "سقر", "سكر")):
+        return ""
+    return text[spans[0][0] :].lstrip(" \t\n\r,.،؛;:!?؟-–—…\"'«»").strip()[:MAX_CHARS]
+
+
 # --- intent ----------------------------------------------------------------------------------
 
 _CLIP_EN = (
@@ -113,6 +122,13 @@ _STOP = frozenset(
     {"stop", "cancel", "nevermind", "quit", "exit"} | {"توقف", "وقف", "قف", "الغاء", "الغي", "الغ", "كفايه", "توقفي"}
 )
 _STOP_PHRASES = ("never mind", "that s all", "thats all")
+# What speech recognition writes for a short, bare "Stop" / «توقف» (the live bench heard "Stock."). Read as stop
+# ONLY when they are the whole utterance (one or two words): inside a sentence they keep their own meaning.
+_STOP_SHORT = frozenset(
+    {"stock", "stuff", "top", "stopp", "stops", "stopped", "stahp", "shtop", "stob"}
+    | {"بس", "خلاص", "اوقف", "توقفوا", "وقفي", "وقفوا", "توقفي", "اسكت", "توكف", "تواقف"}
+)
+_STOP_SHORT_MAX = 2
 _HELP_TOKENS = frozenset({"help", "instructions", "guide", "tutorial"})
 _HELP_PHRASES = (
     "what can you do", "what do you do", "how do you work", "how to use", "how do i use", "who are you",
@@ -123,10 +139,27 @@ _CLIPBOARD_AR = ("نسخت", "الحافظه", "حافظه", "نسخ")
 _TEXT_TOKENS = frozenset({"text", "sms", "نص", "النص", "نصي", "نصيه"})
 _VERBS_EN = ("check", "scan", "verif", "analy", "examin", "investigat")
 _QUESTION_WORDS = frozenset(
-    {"should", "does", "do", "is", "are", "how", "what", "where", "who", "why", "when", "which"}
+    {"should", "does", "do", "is", "are", "how", "what", "where", "who", "why", "when", "which", "can", "could"}
     | {"هل", "كيف", "شو", "وش", "ليش", "وين", "شلون", "منو", "ايش", "شنو", "لماذا", "ماذا", "متى", "اين", "مين"}
 )
 _VERBS_AR = ("افحص", "فحص", "تحقق", "تاكد", "حلل")
+# Words that only DESCRIBE a scam. Alone they never start a check ("how do I recognise a scam message?" is a
+# question, not a command): they count only next to "this"/«هذا» or a named thing (message, link, clipboard).
+_SCAM_EN = ("scam", "phish", "fraud", "suspic")
+_SCAM_AR = ("احتيال", "نصب", "نصاب")
+_POINTERS = frozenset(
+    {"this", "that", "these", "those", "it", "them", "my"}
+    | {"هذا", "هذي", "هذه", "هاذي", "هاذا", "هاي", "هذول", "هذيل", "ذي", "ها"}
+)
+# A question inside the sentence ("Somebody gave me a QR code. Should I scan it?"): its FAQ answer comes first.
+_ASKING = (
+    "should i", "shall i", "how do i", "how can i", "how to", "how would i", "can i", "could i", "do i", "is it",
+    "what do i", "what should", "what if", "هل", "كيف", "شلون", "شو اسوي", "وش اسوي", "ايش اسوي", "شنو اسوي",
+)  # fmt: skip
+_POLITE = frozenset({"please", "pls", "kindly", "can", "could", "you", "لو", "سمحت", "تكفي", "تكرم", "فضلا", "ممكن"})
+# Names accepted WITHOUT a greeting ("Falcon, check my messages" / «صقر، افحص الرابط»), and only when what follows is
+# something the assistant does: a sentence that merely starts with the word ("Falcon is a bird") never wakes it.
+_BARE_NAME_INTENTS = frozenset({"check_clipboard", "check_text", "help", "stop", "faq"})
 
 
 def _prefix(toks: list[str], stems: tuple[str, ...]) -> bool:
@@ -146,15 +179,30 @@ def _classify(command: str) -> tuple[Intent, str | None, bool]:
     padded = f" {norm} "
     if any(t in _STOP for t in toks) or any(f" {p} " in padded for p in _STOP_PHRASES):
         return "stop", None, False
+    if len(toks) <= _STOP_SHORT_MAX and all(t in _STOP_SHORT for t in toks):
+        return "stop", None, False
     if is_injection(command):
         return "off_topic", None, True
     run_lens = "run" in toks and ("lens" in toks or any(_is_falcon(t) for t in toks))
-    clipish = run_lens or _contains(toks, _CLIP_AR) or _prefix(toks, _CLIP_EN)
-    verb = _prefix([t for t in toks if not t.startswith("verification")], _VERBS_EN) or _contains(toks, _VERBS_AR)
+    plain = [t for t in toks if not t.startswith("verification")]
+    verb = _prefix(plain, _VERBS_EN) or _contains(toks, _VERBS_AR)
+    lead = [t for t in toks if t not in _POLITE][:1]
+    lead_verb = bool(lead) and (_prefix(lead, _VERBS_EN) or _contains(lead, _VERBS_AR))
+    asking = not lead_verb and (
+        toks[0] in _QUESTION_WORDS or "?" in command or "؟" in command or any(f" {q} " in padded for q in _ASKING)
+    )
+    pointed = any(t in _POINTERS for t in toks) or any(t.startswith("هال") for t in toks)
+    named = _contains(toks, tuple(s for s in _CLIP_AR if s not in _SCAM_AR)) or _prefix(
+        plain, tuple(s for s in _CLIP_EN if s not in _SCAM_EN)
+    )
+    scam_word = _contains(toks, _SCAM_AR) or _prefix(toks, _SCAM_EN)
     faq = match_rules(command)
     # An imperative check ("check this message about a prize") stays a check; a question or a story gets its FAQ answer.
-    if faq and not (clipish and verb and toks[0] not in _QUESTION_WORDS):
+    if faq and not (verb and named and not asking):
         return "faq", faq, False
+    # A check needs a named thing or a verb; a scam word counts only when it points at something ("is THIS a scam").
+    # A question that points at nothing ("what is a scam message") is not a command.
+    clipish = run_lens or ((named or (scam_word and pointed)) and (pointed or not asking))
     if clipish:
         has_clip = _prefix(toks, _CLIPBOARD_EN) or _contains(toks, _CLIPBOARD_AR)
         named_text = any(t in _TEXT_TOKENS for t in toks) and not any(t.startswith("messag") for t in toks)
@@ -188,6 +236,11 @@ def analyse(transcript: str, *, follow_up: bool = False) -> VoiceResult:
     if woke:
         intent, answer, inj = _classify(rest)
         return VoiceResult(True, intent, rest, answer, inj)
+    bare = _bare_name_rest(transcript)
+    if bare and not follow_up:
+        intent, answer, inj = _classify(bare)
+        if intent in _BARE_NAME_INTENTS and not inj:
+            return VoiceResult(True, intent, bare, answer, inj)
     if follow_up:
         command = transcript.strip()[:MAX_CHARS]
         intent, answer, inj = _classify(command)

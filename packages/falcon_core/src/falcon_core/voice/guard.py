@@ -16,6 +16,20 @@ import unicodedata
 from collections.abc import Iterable, Mapping
 
 MAX_N = 6
+# Decoding prompt, per language (a mixed prompt is echoed on English audio and on noise). It DESCRIBES the product
+# and never ends on, or consists of, the wake phrase. Measured on the shipped model with synthetic speech
+# (reviews/AUDIT-VOICE-20261124-1905.md, 52 bench clips + 8 extra):
+#   "Hey Falcon. Falcon Lens." (the old prompt): a spoken "Falcon Lens, check what I copied" came back as
+#       "Check what I copied." (Whisper took the name for the prompt continuing), and silence/noise came back as
+#       the wake phrase itself.
+#   "Glossary: Falcon Lens, Hey Falcon, clipboard.": kept "Falcon Lens" but dropped one leading "Hey Falcon".
+#   no prompt: «يا صقر» became «يا سقرن» / "Hey Falk" on some clips (5 misses).
+#   this prompt: no leading name dropped, the product spelling kept, and non-speech came back as stock phrases
+#       ("The", «ترجمة نانسي قنقر») that contain no wake word.
+PROMPTS = {
+    "en": "Falcon Lens is an assistant; people call it Falcon. It checks copied messages for scams.",
+    "ar": "عدسة الصقر مساعد، ويناديه الناس صقر. يفحص الرسائل المنسوخة ويكشف الاحتيال.",
+}
 COMPRESSION_MAX = 2.4
 _DIACRITICS = re.compile("[ً-ٰٟـ]")
 _DIGIT = re.compile("[0-9٠-٩۰-۹]")
@@ -84,16 +98,16 @@ def echo_guard(text: str, segments: Iterable[Mapping[str, object]]) -> str:
 # «ترجمة نانسي قنقر» without a prompt). None of them is ever a command, so they are dropped.
 _HALLUCINATIONS = re.compile(
     r"(thanks? (you )?for watching\.?|thank you( very much)?\.?|you\.?|bye\.?|\.+|شكرا\.?|شكرا للمشاهده\.?"
-    r"|ترجمه نانسي قنقر\.?|اشتركوا في القناه\.?|لا تنسوا الاشتراك في القناه\.?)",
+    r"|ترجمه نانسي قنقر\.?|اشتركوا في القناه\.?|لا تنسوا الاشتراك في القناه\.?"
+    r"|the end\.?|the\.?)",
     re.IGNORECASE,
 )
 _FOLD = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ة": "ه", "ى": "ي"})
 
-# Words of the two decoding prompts («يا صقر. عدسة الصقر.» / "Hey Falcon. Falcon Lens.") and how Whisper respells
-# them. On silence or steady noise Whisper echoes the prompt; measured on the shipped model: silence gave
-# "Falcon Lens.", pink noise gave «عدسة الصقر. هاي فالكون.». A person says ONE wake phrase, so a transcript made
-# only of prompt words that holds more than one phrase (4+ words, or both scripts) is an echo, not speech.
-_PROMPT_WORDS = frozenset({"hey", "falcon", "lens", "يا", "صقر", "عدسه", "الصقر", "هاي", "فالكون", "لينس", "لنس"})
+# Wake words. A person says ONE wake phrase, so a transcript made only of these words that holds more than one
+# phrase (4+ words, or both scripts) is Whisper repeating itself, not speech. (With the previous prompt, pink noise
+# came back as «عدسة الصقر. هاي فالكون.».)
+_WAKE_WORDS = frozenset({"hey", "falcon", "lens", "يا", "صقر", "عدسه", "الصقر", "هاي", "فالكون", "لينس", "لنس"})
 PROMPT_ECHO_MIN_WORDS = 4
 
 
@@ -101,10 +115,19 @@ def _fold(text: str) -> str:
     return _DIACRITICS.sub("", text.lower()).translate(_FOLD)
 
 
+def _words(text: str) -> list[str]:
+    return [k for k in (_key(w).translate(_FOLD) for w in text.split()) if k]
+
+
+_PROMPT_RUNS = tuple(" " + " ".join(_words(p)) + " " for p in PROMPTS.values())
+
+
 def is_prompt_echo(text: str) -> bool:
-    """True when the transcript is only the decoding prompt repeated back (several wake phrases, nothing else)."""
-    words = [k for k in (_key(w).translate(_FOLD) for w in text.split()) if k]
-    if not words or any(w not in _PROMPT_WORDS for w in words):
+    """True when the transcript is the decoding prompt read back: a run of 4+ words of it, or only wake phrases."""
+    words = _words(text)
+    if len(words) >= PROMPT_ECHO_MIN_WORDS and any(f" {' '.join(words)} " in run for run in _PROMPT_RUNS):
+        return True
+    if not words or any(w not in _WAKE_WORDS for w in words):
         return False
     mixed = any(w.isascii() for w in words) and any(not w.isascii() for w in words)
     return mixed or len(words) >= PROMPT_ECHO_MIN_WORDS

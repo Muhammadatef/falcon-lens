@@ -25,7 +25,7 @@ from fastapi.responses import JSONResponse
 
 from falcon_core.contracts.voice import SttResult
 from falcon_core.service import create_app
-from falcon_core.voice.guard import FRAME_S, clean_transcript, frame_stats, sniff, speech_like
+from falcon_core.voice.guard import FRAME_S, PROMPTS, clean_transcript, frame_stats, sniff, speech_like
 
 log = logging.getLogger("falcon.voice")
 
@@ -33,8 +33,8 @@ MAX_AUDIO_S = 15.0
 MAX_BYTES = 1024 * 1024
 TRANSCRIBE_TIMEOUT_S = 25.0
 SAMPLE_RATE = 16000
-# Short bias towards the product name. Per language: a mixed prompt makes Whisper echo it on noise.
-PROMPTS = {"en": "Hey Falcon. Falcon Lens.", "ar": "يا صقر. عدسة الصقر."}
+# The decoding prompt (a short bias towards the product name, per language) is shared with the native engine:
+# falcon_core.voice.guard.PROMPTS.
 
 
 MIN_LANG_PROB = 0.5
