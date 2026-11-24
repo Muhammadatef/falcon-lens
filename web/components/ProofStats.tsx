@@ -54,7 +54,7 @@ function Offline({ h, lang, variant, t }: { h: Headline; lang: Lang; variant: "h
           <li className="card stat" key={c.id} data-testid={`proof-${c.id}`}>
             <b className="stat-n mono" dir="ltr">{c.value}</b>
             <span className="stat-label">{c.label}</span>
-            {c.ci ? <span className="stat-ci mono" dir="ltr"><bdi>{t("proof.ci")}</bdi>: {c.ci}</span> : null}
+            {c.ci ? <span className="stat-ci">{t("proof.ci")}: <bdi className="mono" dir="ltr">{c.ci}</bdi></span> : null}
             {variant === "results" ? <span className="stat-mean">{c.mean}</span> : null}
           </li>
         ))}

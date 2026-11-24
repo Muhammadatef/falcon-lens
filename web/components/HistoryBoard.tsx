@@ -163,7 +163,7 @@ function CheckRow({ s, demo }: { s: VerdictSummary; demo: boolean }) {
     <li className="card hs-row" data-testid="check-row" data-verdict={s.verdict} data-check-id={s.verdict_id}>
       <div className="hs-top">
         <span className="vpill"><Icon name={s.verdict} size={20} />{t(`v.${s.verdict}`)}</span>
-        <span className="pill mono" data-testid="check-row-risk">{h("hs.risk")} {s.risk_score}</span>
+        <span className="pill" data-testid="check-row-risk">{h("hs.risk")} <bdi className="mono">{s.risk_score}</bdi></span>
         <SourceBadge source={s.source} />
         {s.channel === "voice" ? <span className="pill" data-testid="voice-badge" lang={lang} title={h("ck.channel.voice")}><Icon name="mic" size={14} />{h("hs.channel.voice")}</span> : null}
         {s.degraded ? <span className="pill pill--wait">{h("hs.degraded")}</span> : null}
@@ -171,7 +171,7 @@ function CheckRow({ s, demo }: { s: VerdictSummary; demo: boolean }) {
       </div>
       <h2 className="hs-title">
         <Link className="hs-link" href={l.href} data-testid="check-link">
-          <span className="mono" dir="auto" translate="no">{title}</span>
+          <span className={s.display ? "mono" : undefined} dir="auto" translate="no">{title}</span>
           <span className="sr-only"> · {h("hs.open")}</span>
         </Link>
       </h2>
