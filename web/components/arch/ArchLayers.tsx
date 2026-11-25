@@ -1,5 +1,7 @@
 import type { Lang } from "@/lib/contracts";
 import { Icon, type IconName } from "@/components/Icon";
+import { FlowDiagram } from "@/components/arch/FlowDiagram";
+import { MAIN_FLOW } from "@/lib/arch-flow";
 import { LAYERS, LAYERS_UI, LAYER_LINKS, type Layer, type LayerGroup } from "@/lib/arch-layers";
 
 const LAYER_ICON: Record<Layer["id"], IconName> = { voice: "mic", agents: "spark", platform: "box" };
@@ -30,17 +32,20 @@ function Group({ group, lang, ui, solo }: { group: LayerGroup; lang: Lang; ui: (
 }
 
 /**
- * The architecture as three stacked layers: voice assistant, the two AI agents, platform. Server-rendered, no script:
- * each layer is a native <details> (keyboard and screen-reader friendly), the links between layers carry a label,
- * and the only motion is a small dot travelling down each link (off under prefers-reduced-motion).
+ * The main architecture: voice assistant, the two AI agents, platform. The animated diagram (FlowDiagram, spec
+ * "main") shows every part with the logo of its tool and follows one request through the layers; the same three
+ * layers, step by step in words, are its text version (native <details>, server-rendered, no script needed).
  */
-export function ArchLayers({ lang, heading = "h2" }: { lang: Lang; heading?: "h2" | "h3" }) {
+export function ArchLayers({ lang, caps, view = "full", heading = "h2" }: { lang: Lang; caps: Record<string, boolean>; view?: "full" | "biz"; heading?: "h2" | "h3" }) {
   const ui = LAYERS_UI[lang];
   const Heading = heading;
   return (
     <section className="al" aria-labelledby="al-h" data-testid="arch-layers">
-      <div className="sec-head"><Heading id="al-h">{ui.title}</Heading></div>
-      <p className="muted al-lead">{ui.lead}</p>
+      <div className="sec-head"><Heading id="al-h">{MAIN_FLOW.title[lang]}</Heading></div>
+      <p className="muted al-lead">{MAIN_FLOW.lead[lang]}</p>
+      <FlowDiagram spec="main" lang={lang} caps={caps} view={view}>
+        <h4>{ui.title}</h4>
+        <p className="muted al-lead">{ui.lead}</p>
       <ol className="al-stack" aria-label={ui.flow}>
         {LAYERS.map((layer, index) => {
           const link = LAYER_LINKS.find((l) => l.after === layer.id);
@@ -71,6 +76,7 @@ export function ArchLayers({ lang, heading = "h2" }: { lang: Lang; heading?: "h2
           );
         })}
       </ol>
+      </FlowDiagram>
     </section>
   );
 }

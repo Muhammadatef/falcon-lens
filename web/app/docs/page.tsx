@@ -38,7 +38,7 @@ export default async function DocsLanding() {
           </li>
         ))}
       </ol>
-      <ArchLayers lang={lang} />
+      <ArchLayers lang={lang} caps={caps as unknown as Record<string, boolean>} />
       <p className="card callout docs-back">
         <Icon name="hand" size={24} />
         <Link href="/agents">{dt(lang, "docs.back")}</Link>

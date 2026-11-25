@@ -1,4 +1,6 @@
 import { CapBadge } from "@/components/CapBadge";
+import { FlowDiagram } from "@/components/arch/FlowDiagram";
+import type { Capabilities } from "@/lib/capabilities";
 import type { Lang } from "@/lib/contracts";
 import { bundledDspyRows, excludesZero } from "@/lib/dspy-results";
 import { at, type ArchKey } from "@/lib/i18n-arch";
@@ -6,7 +8,7 @@ import { at, type ArchKey } from "@/lib/i18n-arch";
 const fmt = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 4 });
 
 /** "Why DSPy and LangGraph" (docs/TECHNICAL.md has the same text). Server component; the badge comes from the capability flag. */
-export function WhyDspyLanggraph({ lang, dspyLive, tracingLive }: { lang: Lang; dspyLive: boolean; tracingLive: boolean }) {
+export function WhyDspyLanggraph({ lang, caps, dspyLive, tracingLive }: { lang: Lang; caps: Capabilities; dspyLive: boolean; tracingLive: boolean }) {
   const t = (k: ArchKey) => at(lang, k);
   const rows = dspyLive ? bundledDspyRows() : [];
   return (
@@ -19,6 +21,9 @@ export function WhyDspyLanggraph({ lang, dspyLive, tracingLive }: { lang: Lang; 
       <p>{t("why.dspy.p2")}</p>
       <p>{t("why.dspy.p3")}</p>
       <p className="card pattern" data-testid="dspy-status">{t(dspyLive ? "why.dspy.live" : "why.dspy.inprogress")}</p>
+      <div className="flow-section" data-testid="flow-section-dspy">
+        <FlowDiagram spec="dspy" lang={lang} caps={caps as unknown as Record<string, boolean>} />
+      </div>
       {rows.length > 0 ? (
         <div className="tbl-wrap" data-testid="dspy-table">
           <table className="tbl">

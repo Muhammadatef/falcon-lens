@@ -45,3 +45,6 @@ REMOTE_ACCESS.md
 *.tsbuildinfo
 evals/results/.dspy_cache/
 coverage.xml
+
+# Rendered hand-offs for the deck (architecture video and stills); built by web/tests/shots/arch-video.shots.ts
+deliverables/

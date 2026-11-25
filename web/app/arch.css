@@ -190,3 +190,121 @@
   .al-step:hover { transform: translateY(-1px); }
 }
 @keyframes al-flow { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: 1; } 45% { transform: translateY(2.75rem); opacity: 1; } 55%, 100% { transform: translateY(2.75rem); opacity: 0; } }
+
+/* ── Animated architecture diagrams (components/arch/FlowDiagram, FlowControls, ToolBadge) ─────────────
+   HTML boxes in a responsive grid; wires and the travelling dot are SVG layers placed from measured positions.
+   Paint order matters: bands are in-flow (below the wires), boxes and headings are positioned above the wires,
+   the dot layer is above the boxes. No inline styles (strict CSP). All motion sits behind prefers-reduced-motion. */
+.af { display: grid; gap: var(--fl-space-3); margin: 0; min-width: 0; }
+.af-stage { position: relative; display: grid; gap: var(--fl-space-3); min-width: 0; }
+.af-wires, .af-dots { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; overflow: visible; }
+.af-wires { z-index: 0; }
+.af-dots { z-index: 3; }
+.af-wire { fill: none; stroke: var(--fl-border-strong); stroke-width: 1.5; stroke-dasharray: 3 7; stroke-linecap: round; }
+.af-wire-on { fill: none; stroke: var(--fl-brand); stroke-width: 3; }
+.af-dot { fill: var(--fl-brand); stroke: var(--fl-surface-1); stroke-width: 2; }
+.af-dot-halo { fill: var(--fl-brand); opacity: 0.28; transform-box: fill-box; transform-origin: center; }
+.af[data-motion="static"] .af-dots { display: none; }
+
+.af-band { --af-c: var(--fl-border-strong); display: grid; gap: var(--fl-space-3); min-width: 0; padding: var(--fl-space-3) var(--fl-space-4) var(--fl-space-4); background: var(--fl-surface-1); border: 1px solid var(--fl-border); border-inline-start: 5px solid var(--af-c); border-radius: var(--fl-radius-lg); }
+.af-band[data-band="voice"], .af-band[data-band="gate"] { --af-c: var(--fl-sand); }
+.af-band[data-band="agents"], .af-band[data-band="loop"], .af-band[data-band="graph"], .af-band[data-band="models"] { --af-c: var(--fl-brand); }
+.af-band-head { position: relative; z-index: 1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.1rem 0.6rem; }
+.af-band-icon { display: grid; place-items: center; color: var(--af-c); }
+.af-band-head h3 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); line-height: var(--fl-leading-tight); margin: 0; }
+.af-band-head p { grid-column: 1 / -1; margin: 0; color: var(--fl-text-muted); font-size: var(--fl-text-sm); max-width: 80ch; }
+.af-groups { display: grid; gap: var(--fl-space-3); grid-template-columns: minmax(0, 1fr); align-items: start; }
+.af-group { display: grid; gap: var(--fl-space-2); align-content: start; min-width: 0; }
+.af-group[data-titled="true"] { padding: 0.6rem; border: 1px solid var(--fl-border); border-radius: var(--fl-radius-md); }
+.af-group[data-tone="inv"][data-titled="true"] { border-block-start: 3px solid var(--fl-brand); }
+.af-group[data-tone="sen"][data-titled="true"] { border-block-start: 3px solid var(--fl-sand); }
+.af-group-title { position: relative; z-index: 1; display: flex; align-items: center; gap: 0.45rem; margin: 0; font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); line-height: var(--fl-leading-tight); }
+.af-nodes { display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.25rem), 1fr)); margin: 0; padding: 0; }
+.af-item { display: grid; min-width: 0; }
+.af-node {
+  position: relative; z-index: 1; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.2rem 0.55rem; min-height: 3.6rem; padding: 0.45rem 0.6rem;
+  text-align: start; background: var(--fl-surface-2); color: var(--fl-text); border: 1.5px solid var(--fl-border-strong); border-radius: var(--fl-radius-md);
+  transition: border-color var(--fl-dur-base) var(--fl-ease-out), box-shadow var(--fl-dur-base) var(--fl-ease-out), background var(--fl-dur-fast) var(--fl-ease-out), transform var(--fl-dur-base) var(--fl-ease-out);
+}
+.af-node[data-llm="true"] { border-style: dashed; }
+.af-node:hover { background: var(--fl-surface-3); }
+.af-node[aria-expanded="true"] { box-shadow: 0 0 0 2px var(--fl-brand); }
+.af-node[data-state="done"] { border-color: var(--fl-brand); }
+.af-node[data-state="active"] { border-color: var(--fl-brand); border-style: solid; background: var(--fl-surface-3); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fl-brand) 38%, transparent), var(--fl-glow-brand); z-index: 2; }
+.af-node-text { display: grid; gap: 0.05rem; min-width: 0; }
+.af-node-text b { font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); line-height: 1.35; overflow-wrap: anywhere; }
+.af-node-text small { font-size: var(--fl-text-xs); color: var(--fl-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+.af-no { position: absolute; inset-block-start: -0.6rem; inset-inline-end: -0.4rem; min-inline-size: 1.4rem; block-size: 1.4rem; padding-inline: 0.25rem; display: grid; place-items: center; border-radius: var(--fl-radius-pill); background: var(--fl-surface-1); border: 1.5px solid var(--fl-border-strong); color: var(--fl-text); font-size: 0.75rem; font-style: normal; font-weight: var(--fl-weight-bold); font-variant-numeric: tabular-nums; line-height: 1; }
+.af-node[data-state] .af-no { background: var(--fl-brand); border-color: var(--fl-brand); color: var(--fl-brand-ink); }
+.af-prog { grid-column: 1 / -1; justify-self: start; padding: 0.05rem 0.55rem; border: 1.5px dashed var(--fl-border-strong); border-radius: var(--fl-radius-pill); color: var(--fl-text-muted); font-size: 0.78rem; font-weight: var(--fl-weight-medium); line-height: 1.5; }
+
+/* Badge tile: a vendored logo on a light tile, a text badge, or one of our own icons. */
+.tb { flex: none; display: grid; place-items: center; inline-size: 2.3rem; block-size: 2.3rem; border-radius: 0.6rem; line-height: 1; }
+.tb[data-size="sm"] { inline-size: 1.7rem; block-size: 1.7rem; border-radius: 0.45rem; }
+.tb[data-kind="logo"] { background: #ffffff; border: 1px solid rgb(18 24 38 / 0.16); }
+.tb[data-kind="logo"] svg { display: block; inline-size: 64%; block-size: 64%; }
+.tb[data-kind="mono"] { background: var(--fl-surface-1); border: 1.5px solid var(--fl-border-strong); color: var(--fl-text); font-family: var(--fl-font-mono); font-size: 0.82rem; font-weight: 700; letter-spacing: -0.02em; direction: ltr; }
+.tb[data-kind="mono"][data-len="long"] { font-size: 0.6rem; letter-spacing: -0.04em; }
+.tb[data-kind="icon"] { background: color-mix(in srgb, var(--fl-brand) 13%, var(--fl-surface-1)); border: 1px solid color-mix(in srgb, var(--fl-brand) 45%, transparent); color: var(--fl-brand); }
+.an-main { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
+
+/* Player bar: stays in view under the site header while the diagram scrolls. */
+.afc { position: sticky; inset-block-start: 4.25rem; z-index: 12; display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--fl-space-2) var(--fl-space-4); padding: 0.55rem 0.7rem; background: var(--fl-surface-1); border: 1px solid var(--fl-border-strong); border-radius: var(--fl-radius-lg); box-shadow: var(--fl-shadow-1); }
+.afc-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.afc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-inline-size: var(--fl-tap); min-block-size: var(--fl-tap); padding: 0 0.7rem; background: var(--fl-surface-2); color: var(--fl-text); border: 1.5px solid var(--fl-border-strong); border-radius: var(--fl-radius-md); font-size: var(--fl-text-sm); font-weight: var(--fl-weight-medium); transition: background var(--fl-dur-fast) var(--fl-ease-out); }
+.afc-btn:hover:not(:disabled) { background: var(--fl-surface-3); }
+.afc-btn:disabled { opacity: 0.45; cursor: default; }
+.afc-btn--main { min-inline-size: 7.5rem; background: var(--fl-brand); border-color: var(--fl-brand); color: var(--fl-brand-ink); font-weight: var(--fl-weight-bold); }
+.afc-btn--main:hover:not(:disabled) { background: var(--fl-brand-strong); }
+[dir="rtl"] .afc-glyph[data-dir="true"] { transform: scaleX(-1); }
+.afc-cap { display: grid; align-content: center; gap: 0.1rem; margin: 0; min-block-size: 5.2em; font-size: var(--fl-text-sm); line-height: 1.55; }
+.afc-count { color: var(--fl-brand); font-size: var(--fl-text-xs); font-weight: var(--fl-weight-bold); }
+@media (min-width: 720px) {
+  .afc { grid-template-columns: auto minmax(0, 1fr); }
+  .afc-cap { min-block-size: 3.3em; }
+}
+@media (min-width: 900px) {
+  .af-groups:not([data-count="1"]) { grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+}
+@media (max-width: 479.98px) {
+  .af-band { padding: var(--fl-space-3); }
+}
+
+.af-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin: 0; padding: 0; color: var(--fl-text-muted); font-size: var(--fl-text-xs); }
+.af-legend li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.af-key { display: inline-grid; place-items: center; min-inline-size: 1.3rem; block-size: 1.3rem; border: 1.5px solid var(--fl-border-strong); border-radius: var(--fl-radius-pill); color: var(--fl-text); font-size: 0.7rem; font-style: normal; font-weight: var(--fl-weight-bold); line-height: 1; }
+.af-key[data-key="llm"] { inline-size: 1.7rem; border-style: dashed; border-radius: 0.4rem; }
+.af-key[data-key="mono"] { border-radius: 0.4rem; font-family: var(--fl-font-mono); padding-inline: 0.2rem; }
+.af-note { margin: 0; color: var(--fl-text-faint); font-size: var(--fl-text-xs); }
+.af-alt { background: var(--fl-surface-1); border: 1px solid var(--fl-border); border-radius: var(--fl-radius-md); min-width: 0; }
+.af-alt > summary { display: flex; align-items: center; min-height: var(--fl-tap); padding: 0.5rem var(--fl-space-4); color: var(--fl-brand); font-weight: var(--fl-weight-medium); cursor: pointer; border-radius: var(--fl-radius-md); }
+.af-alt-body { display: grid; gap: var(--fl-space-3); padding: 0 var(--fl-space-4) var(--fl-space-4); min-width: 0; }
+.af-alt-body h4 { font-size: var(--fl-text-md); font-weight: var(--fl-weight-bold); margin: 0; }
+.af-alt-body h5 { font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); color: var(--fl-text-muted); margin: 0 0 0.25rem; }
+.af-alt-steps { list-style: decimal; padding-inline-start: 1.6rem; display: grid; gap: 0.3rem; margin: 0; line-height: 1.7; }
+.af-alt-band ul { list-style: disc; padding-inline-start: 1.4rem; display: grid; gap: 0.25rem; margin: 0; line-height: 1.7; }
+.af-panel-tool { display: flex; align-items: center; gap: 0.6rem; }
+.flow-section { display: grid; gap: var(--fl-space-3); margin-block: var(--fl-space-5); padding-block: 0; min-width: 0; }
+.flow-section > h3 { font-size: var(--fl-text-lg); font-weight: var(--fl-weight-bold); margin: 0; }
+.flow-section > p { margin: 0; color: var(--fl-text-muted); max-width: 80ch; }
+/* The lane diagram's own stepper highlight (ArchDiagram). */
+.an-item[data-flow="true"] .an { border-color: var(--fl-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fl-brand) 38%, transparent), var(--fl-glow-brand); }
+.arch .afc { position: static; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .af[data-armed="true"]:not([data-built="true"]) :is(.af-band, .af-wires) { opacity: 0; }
+  .af[data-built="true"] .af-band { animation: af-rise 640ms var(--fl-ease-out) backwards; }
+  .af[data-built="true"] .af-band[data-i="1"] { animation-delay: 280ms; }
+  .af[data-built="true"] .af-band[data-i="2"] { animation-delay: 560ms; }
+  .af[data-built="true"] .af-band[data-i="3"] { animation-delay: 840ms; }
+  .af[data-built="true"] .af-wires { animation: af-fade 480ms ease-out 1100ms backwards; }
+  .af[data-status="playing"] .af-wire { animation: af-dash 1.1s linear infinite; }
+  .af-dot-halo { animation: af-pulse 1.3s ease-in-out infinite; }
+  .af-node[data-state="active"] { transform: scale(1.035); }
+}
+@keyframes af-rise { from { opacity: 0; transform: translateY(16px); } }
+@keyframes af-fade { from { opacity: 0; } }
+@keyframes af-dash { to { stroke-dashoffset: -20; } }
+@keyframes af-pulse { 0%, 100% { transform: scale(0.8); opacity: 0.32; } 50% { transform: scale(1.25); opacity: 0.12; } }
+/* Headings sit above the wires; a soft halo in the surface colour keeps them readable where a wire passes behind. */
+.af-band-head :is(h3, p), .af-group-title span { text-shadow: 0 0 3px var(--fl-surface-1), 0 0 6px var(--fl-surface-1), 0 0 9px var(--fl-surface-1); }

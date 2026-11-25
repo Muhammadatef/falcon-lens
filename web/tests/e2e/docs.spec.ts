@@ -60,7 +60,10 @@ test.describe("docs content restates the repo documents", () => {
       await expect(img).toHaveAttribute("alt", /.{20,}/);
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
     }
-    expect(await page.locator(".figure img").count()).toBe(2);
+    // The two agent figures are animated diagrams now (tests/e2e/arch-flow.spec.ts), not static images.
+    expect(await page.locator(".figure img").count()).toBe(0);
+    await expect(page.getByTestId("investigator").getByTestId("flow-baseer")).toBeVisible();
+    await expect(page.getByTestId("sentinel").getByTestId("flow-dir")).toBeVisible();
   });
 
   test("building-agents: both diagrams, the six sections, the honest DSPy result, no overflow, in both languages", async ({ page, context, baseURL }) => {

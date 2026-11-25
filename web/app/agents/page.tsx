@@ -94,7 +94,7 @@ export default async function AgentsPage() {
           <span>{t("agents.handoff")}</span>
         </p>
 
-        <ArchLayers lang={lang} />
+        <ArchLayers lang={lang} caps={caps as unknown as Record<string, boolean>} view="biz" />
 
         <section aria-labelledby="biz-arch-h" data-testid="agents-arch">
           <div className="sec-head"><h2 id="biz-arch-h">{at(lang, "arch.biz.title")}</h2></div>
