@@ -67,7 +67,9 @@ def test_key_parity_between_languages() -> None:
     ar, en = load_catalog("ar"), load_catalog("en")
     assert ar.reasons.keys() == en.reasons.keys()
     assert (
-        ar.hard_rules.keys() == en.hard_rules.keys() == {"H1", "H2", "H3", "H4", "H5", "H5s", "H6", "RF1", "RF2", "RF3"}
+        ar.hard_rules.keys()
+        == en.hard_rules.keys()
+        == {"H1", "H2", "H3", "H4", "H5", "H5s", "H6", "H7", "RF1", "RF2", "RF3"}
     )
     assert ar.verdict.keys() == en.verdict.keys() == {"dangerous", "suspicious", "no_warning_signs"}
     assert ar.actions.keys() == en.actions.keys() == {"dangerous", "suspicious", "no_warning_signs"}

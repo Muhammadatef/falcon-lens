@@ -1,4 +1,4 @@
-"""Hard rules H1-H6 (docs/SCORING.md §3). Evaluated before the log-odds score.
+"""Hard rules H1-H7 (docs/SCORING.md §3). Evaluated before the log-odds score.
 
 Each rule is a pure function over *present* evidence (ran, no error, positive observation) and
 returns a ``FiredRule`` naming the evidence ids that triggered it, so reasons can cite them.
@@ -20,7 +20,7 @@ from falcon_core.scoring.evidence import (
 )
 from falcon_core.scoring.params import ScoringParams
 
-RuleId = Literal["H1", "H2", "H3", "H4", "H5", "H6", "RF1", "RF2", "RF3"]
+RuleId = Literal["H1", "H2", "H3", "H4", "H5", "H6", "H7", "RF1", "RF2", "RF3"]
 Effect = Literal["floor_dangerous", "floor_suspicious", "cap_no_warning_signs"]
 InputType = Literal["url", "message", "email", "image"]
 
@@ -83,6 +83,53 @@ def h1_brand_mismatch(
     if not claims or not intent:
         return None
     return FiredRule("H1", "floor_dangerous", tuple(e.id for e in [*claims, *intent]))
+
+
+# H7: a password/card/CVV/OTP/PIN/Emirates ID/UAE PASS input (cascade.page STRONG_KINDS), not a bare e-mail box.
+H7_SECRET_KINDS: frozenset[str] = frozenset(["password", "card", "cvv", "otp", "pin", "emirates_id", "uae_pass"])
+H7_MAX_DOMAIN_AGE_DAYS = 30.0
+
+
+def h7_young_brand_credential(
+    present: Sequence[Evidence],
+    params: ScoringParams,
+    registrable_domain: str | None,
+    verified_domains: Mapping[str, frozenset[str]] | None,
+) -> FiredRule | None:
+    """H7 (SCORING §3): a secret-asking form seen in the sandbox + a deterministic claim of a registered brand the
+    site does not own + a registrable domain younger than 30 days (RDAP). Floors at ``dangerous``.
+
+    Unlike H1 the brand claim may be below θ (a single mention in the page text): the young domain is the
+    corroboration. Every half must be deterministic evidence: an LLM claim never counts, and a domain-age error
+    or a missing age never counts as young. Off unless ``hard_rules.h7_enabled`` (adoption gate, DECISIONS.md).
+    """
+    if not params.h7_enabled:
+        return None
+    forms = [
+        e
+        for e in _by_signal(present, "page.cred_form")
+        if not untrusted_origin(e) and set(_str_list(observed_get(e, "field_kinds"))) & H7_SECRET_KINDS
+    ]
+    claims = [e for e in _by_signal(present, "brand.claimed_not_owned") if not untrusted_origin(e)]
+    if registrable_domain and verified_domains:
+        dom = registrable_domain.lower()
+        claims = [
+            e for e in claims if dom not in verified_domains.get(str(observed_get(e, "brand_id") or ""), frozenset())
+        ]
+    young = [
+        e
+        for e in _by_signal(present, "domain.age_days")
+        if not untrusted_origin(e)
+        and (age := observed_number(e, "age_days")) is not None
+        and 0 <= age < H7_MAX_DOMAIN_AGE_DAYS
+    ]
+    if not forms or not claims or not young:
+        return None
+    return FiredRule("H7", "floor_dangerous", tuple(e.id for e in [*claims, *forms, *young]))
+
+
+def _str_list(value: object) -> list[str]:
+    return [v for v in value if isinstance(v, str)] if isinstance(value, list | tuple) else []
 
 
 def _is_fresh_feed_hit(ev: Evidence, params: ScoringParams) -> bool:
@@ -199,6 +246,7 @@ def evaluate(
     candidates = [
         h2_known_bad(present, params),
         h1_brand_mismatch(present, params, registrable_domain, verified_domains),
+        h7_young_brand_credential(present, params, registrable_domain, verified_domains),
         h4_exfil_to_bot(present),
         h5_message_dangerous_link(present),
         h6_otp_remote_access(present),

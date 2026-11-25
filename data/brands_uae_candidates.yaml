@@ -1,0 +1,162 @@
+# Falcon Lens brand registry, CANDIDATE entries (UAE coverage, feat/uae-coverage-escalation, read 2026-11-25).
+# Same schema and sourcing rules as data/brands.yaml. NOT loaded by default: BrandRegistry.from_file merges this file
+# only when FL_BRANDS_CANDIDATES=1. Reason: on the held-out adoption test (evals/results/published/uae_coverage/) the
+# additions removed 3 false alarms on official domains but also moved 1 phishing page from dangerous to suspicious
+# (the T1 classifier's brand features shift when the registry grows, without a refit), so the gate rule
+# "dangerous recall must go up" was not met. Promote entries into data/brands.yaml only with L1 approval and a refit.
+# This file contains NO logos or images; it implies no endorsement by, or integration with, any entity.
+brands:
+  # --- UAE coverage additions (feat/uae-coverage-escalation, read 2026-11-25) ---------------------------------
+  # Candidates checked and NOT added: Sharjah Islamic Bank (sib.ae answered HTTP 403 to every fetch and its cert is
+  #   domain-validated only, so no page or certificate tied the domain to the bank); Emirates airline and Etihad
+  #   (their domain labels "emirates" / "etihad" and the Arabic «الاتحاد» are everyday words in UAE page text and
+  #   host names, so the brand tokens would claim ordinary UAE sites); u.ae (a one-letter label); Virgin Mobile UAE
+  #   (the page does not name its operator). ICP, UAE PASS, RTA, Salik, MOI, Dubai Police, Emirates Post, e& and
+  #   du were already listed above.
+  - brand_id: aramex
+    name_en: Aramex
+    name_ar: أرامكس
+    category: postal
+    verified_domains: [aramex.com]
+    source_url: https://feeds.dfm.ae/documents/2022/Oct/19/d506e2cb-cc7a-4afb-b16d-a4ce8b0742d8/ARMX_PR_E_19_10_2022.pdf
+    retrieved_at: 2026-11-25
+    verification_evidence:
+      - retrieved_at: 2026-11-25
+        source_url: https://feeds.dfm.ae/documents/2022/Oct/19/d506e2cb-cc7a-4afb-b16d-a4ce8b0742d8/ARMX_PR_E_19_10_2022.pdf
+        shows: "Aramex (DFM: ARMX) filing on the Dubai Financial Market feed: links http://www.aramex.com/ and Investorrelations@aramex.com"
+      - retrieved_at: 2026-11-25
+        source_url: https://www.aramex.com/ae/en
+        shows: "HTTPS answered 403 to automated clients (bot protection); certificate CN=www.aramex.com (domain-validated)"
+    keywords_en: [aramex, parcel, shipment, delivery, customs fee, redelivery, tracking]
+    keywords_ar: [أرامكس, ارامكس, شحنة, طرد, تتبع]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "aramex.com blocks automated fetches, so the domain is taken from the company's own exchange filing. Country paths (aramex.com/ae/...) are on the same registrable domain. name_ar not confirmed on page."
+
+  - brand_id: cbd
+    name_en: Commercial Bank of Dubai
+    name_ar: بنك دبي التجاري
+    category: bank
+    verified_domains: [cbd.ae]
+    source_url: https://www.cbd.ae
+    retrieved_at: 2026-11-25
+    verification_evidence:
+      - retrieved_at: 2026-11-25
+        source_url: https://www.cbd.ae
+        shows: "TLS certificate (OV, DigiCert) subject O=Commercial Bank of Dubai(PSC), CN=*.cbd.ae; HTTPS answered 403 to automated clients"
+    keywords_en: [commercial bank of dubai, online banking, otp, card blocked, kyc update, verify]
+    keywords_ar: [بنك دبي التجاري, تحقق]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "Verified by the organisation-validated certificate only (the site blocks fetchers). The acronym CBD is deliberately NOT in name_en: as page text it is far more common for cannabidiol shops. The 3-letter domain token still feeds the URL lexical signals. name_ar not confirmed on page."
+
+  - brand_id: nbf
+    name_en: National Bank of Fujairah (NBF)
+    name_ar: بنك الفجيرة الوطني
+    category: bank
+    verified_domains: [nbf.ae, nbfislamic.ae]
+    source_url: https://nbf.ae
+    retrieved_at: 2026-11-25
+    verification_evidence:
+      - retrieved_at: 2026-11-25
+        source_url: https://nbf.ae
+        shows: "footer: National Bank of Fujairah PJSC, UAE Central Bank licence BSD/799/84; links nbfislamic.ae, nbfdirect.nbf.ae, nbfaccess.nbf.ae; certificate (OV) O=National Bank Of Fujairah, CN=*.nbf.ae"
+    keywords_en: [national bank of fujairah, nbf, online banking, otp, card blocked, verify]
+    keywords_ar: [بنك الفجيرة الوطني, تحقق]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "nbfislamic.ae is linked from nbf.ae as the bank's Islamic banking site. name_ar not confirmed on page."
+
+  - brand_id: ajman_bank
+    name_en: Ajman Bank
+    name_ar: مصرف عجمان
+    category: bank
+    verified_domains: [ajmanbank.ae]
+    source_url: https://www.ajmanbank.ae
+    retrieved_at: 2026-11-25
+    verification_evidence:
+      - retrieved_at: 2026-11-25
+        source_url: https://www.ajmanbank.ae
+        shows: "footer: Ajman Bank PJSC is licensed by the Central Bank of the UAE; links online.ajmanbank.ae, digitalbanking.ajmanbank.ae; certificate (OV) O=AJMAN BANK, CN=*.ajmanbank.ae"
+    keywords_en: [ajman bank, online banking, otp, card blocked, verify]
+    keywords_ar: [مصرف عجمان, تحقق]
+    official_contacts:
+      - {kind: phone, value: "+971600555522", local: "+971 600 555522", label_en: "Customer service (24/7)", label_ar: "خدمة العملاء (على مدار الساعة)",
+         source_url: https://www.ajmanbank.ae, retrieved_at: 2026-11-25}
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "name_ar not confirmed on page."
+
+  - brand_id: wio
+    name_en: Wio Bank
+    name_ar: بنك ويو
+    category: bank
+    verified_domains: [wio.io]
+    source_url: https://wio.io
+    retrieved_at: 2026-11-25
+    verification_evidence:
+      - retrieved_at: 2026-11-25
+        source_url: https://wio.io
+        shows: "footer: Wio Bank PJSC, licensed and regulated by the Central Bank of the UAE; links secure-account.wio.io; certificate CN=wio.io (domain-validated)"
+    keywords_en: [wio bank, online banking, otp, card blocked, verify]
+    keywords_ar: [بنك ويو, تحقق]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "wioinvest.io is linked from the page but not added (separate product site, not read). name_ar not confirmed on page."
+
+  - brand_id: mohre
+    name_en: Ministry of Human Resources and Emiratisation (MOHRE)
+    name_ar: وزارة الموارد البشرية والتوطين
+    category: government
+    verified_domains: [mohre.gov.ae]
+    source_url: https://www.mohre.gov.ae/en/home
+    retrieved_at: 2026-11-25
+    verification_evidence:
+      - retrieved_at: 2026-11-25
+        source_url: https://www.mohre.gov.ae/en/home
+        shows: "title Ministry of Human Resources & Emiratisation - MOHRE; links eservices.mohre.gov.ae; certificate (OV) O=Ministry of Human Resources and Emiratisation, CN=*.mohre.gov.ae"
+    keywords_en: [mohre, labour card, salary, visa]
+    keywords_ar: [وزارة الموارد البشرية والتوطين]
+    official_contacts:
+      - {kind: phone, value: "+971600590000", local: "600590000", label_en: "Call centre", label_ar: "مركز الاتصال",
+         source_url: https://www.mohre.gov.ae/en/home, retrieved_at: 2026-11-25}
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "Keywords are single words or contain a generic word on purpose: a multi-word phrase such as 'work permit' would claim ordinary HR pages as the ministry. name_ar not confirmed on page."
+
+  - brand_id: dubai_customs
+    name_en: Dubai Customs
+    name_ar: جمارك دبي
+    category: government
+    verified_domains: [dubaicustoms.gov.ae]
+    source_url: https://www.dubaicustoms.gov.ae/en/Pages/default.aspx
+    retrieved_at: 2026-11-25
+    verification_evidence:
+      - retrieved_at: 2026-11-25
+        source_url: https://www.dubaicustoms.gov.ae/en/Pages/default.aspx
+        shows: "title Dubai Customs - Smart Trade and Border Services, Copyright 2026 Dubai Customs; certificate (OV) O=Dubai Customs, CN=*.dubaicustoms.gov.ae"
+    keywords_en: [customs fee, parcel, clearance]
+    keywords_ar: [جمارك دبي, تخليص]
+    official_contacts:
+      - {kind: phone, value: "+9718001886", local: "800 1886", label_en: "Call now", label_ar: "اتصل الآن",
+         source_url: https://www.dubaicustoms.gov.ae/en/Pages/default.aspx, retrieved_at: 2026-11-25}
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "The contact e-mail on the page uses dubaicustoms.ae; that domain was not read and is NOT listed. name_ar not confirmed on page."
+
+  - brand_id: adnoc_distribution
+    name_en: ADNOC Distribution
+    name_ar: أدنوك للتوزيع
+    category: retail
+    verified_domains: [adnocdistribution.ae]
+    source_url: https://www.adnocdistribution.ae/en
+    retrieved_at: 2026-11-25
+    verification_evidence:
+      - retrieved_at: 2026-11-25
+        source_url: https://www.adnocdistribution.ae/en
+        shows: "title Consumer - ADNOC Distribution, footer Copyright ADNOC Distribution - All rights reserved; links smart.adnocdistribution.ae, customerportal.adnocdistribution.ae"
+    keywords_en: [adnoc distribution, adnoc, fuel, rewards, points]
+    keywords_ar: [أدنوك للتوزيع, أدنوك, وقود]
+    logo_ref: null
+    favicon_hash: null
+    unverified_notes: "adnoc.ae (the ADNOC group) is not listed: it was not read. name_ar not confirmed on page."

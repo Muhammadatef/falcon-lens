@@ -217,9 +217,18 @@ class BrandRegistry:
                 self._numbers.setdefault(n, []).append(b.brand_id)
 
     @classmethod
-    def from_file(cls, path: str | Path) -> BrandRegistry:
+    def from_file(cls, path: str | Path, candidates: bool | None = None) -> BrandRegistry:
+        """Load a registry file. ``candidates`` (default: env FL_BRANDS_CANDIDATES) also merges the sibling
+        ``brands_uae_candidates.yaml``: entries that did not pass the held-out adoption gate, off by default."""
         data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-        return cls([_build(e) for e in data.get("brands", [])])
+        entries = list(data.get("brands", []))
+        if candidates if candidates is not None else candidates_enabled():
+            cand = Path(path).with_name(CANDIDATES_FILE)
+            if cand.is_file():
+                seen = {e.get("brand_id") for e in entries}
+                extra = yaml.safe_load(cand.read_text(encoding="utf-8")).get("brands", [])
+                entries += [e for e in extra if e.get("brand_id") not in seen]
+        return cls([_build(e) for e in entries])
 
     @classmethod
     def from_entries(cls, entries: list[dict[str, Any]]) -> BrandRegistry:
@@ -239,6 +248,13 @@ class BrandRegistry:
     def is_official_host(self, host: str) -> bool:
         host = host.lower().rstrip(".")
         return any(host == d or host.endswith("." + d) for d in self._official)
+
+
+CANDIDATES_FILE = "brands_uae_candidates.yaml"
+
+
+def candidates_enabled() -> bool:
+    return os.environ.get("FL_BRANDS_CANDIDATES", "0").strip().lower() in ("1", "true", "yes", "on")
 
 
 def _find_yaml() -> Path:

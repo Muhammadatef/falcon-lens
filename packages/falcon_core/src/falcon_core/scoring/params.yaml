@@ -51,6 +51,9 @@ hard_rules:
   h1_p_floor: 0.95
   h2_max_feed_age_s: 21600              # 6 h
   h3_p_cap: 0.05                        # draft (not in SCORING.md): keeps score consistent with the cap
+  # H7 young domain + brand claim + secret-asking form (SCORING §3). Shipped OFF: on the held-out set it fired 0
+  # times (no gain), so it did not pass the adoption gate (evals/results/published/uae_coverage/); L1 decides.
+  h7_enabled: false
 
 domain_age:
   lt7_days: 2.5

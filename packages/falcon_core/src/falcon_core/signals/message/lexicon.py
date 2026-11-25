@@ -5,6 +5,9 @@ must match (OR within a group). Generic terms only: no real brand names."""
 
 from __future__ import annotations
 
+import os
+from collections.abc import Sequence
+
 Group = dict[str, list[str]]  # lang -> fragments
 
 RULES: dict[str, list[Group]] = {
@@ -336,5 +339,54 @@ RULES: dict[str, list[Group]] = {
         }
     ],
 }
+
+# --- UAE lure phrasing (feat/uae-coverage-escalation, 2026-11-25) ----------------------------------------------------
+# Road-toll fines, identity/visa authority claims, customs-held parcels and "settle now" pay asks, written in generic
+# roles: the only names are public authorities and the national digital ID, which the authority rule already lists in
+# the same way («الهوية والجنسية»). (rule, group index, language, fragments). Merged into RULES when FL_UAE_LURES is
+# on; whether it ships on is decided by the held-out gate (DECISIONS.md, evals/results/published/uae_coverage/).
+UAE_LURES: tuple[tuple[str, int, str, tuple[str, ...]], ...] = (
+    (
+        "fine",
+        0,
+        "en",
+        (
+            "unpaid tolls?",
+            "toll (fines?|violations?|charges|dues|balance|arrears)",
+            "unpaid (road|gate) (charges|fees)",
+        ),
+    ),
+    ("fine", 0, "ar", ("رسوم (عبور|العبور|الطرق|البوابه|البوابات) (غير مدفوعه|مستحقه|متاخره)", "مخالفه (عبور|بوابه)")),
+    ("fine", 0, "arz", ("rusoom (el |al )?(3oboor|bawaba)",)),
+    ("authority", 0, "en", ("identity (and|&) citizenship", "\\bicp\\b", "uae ?pass", "digital identity")),
+    ("authority", 0, "ar", ("الهويه الرقميه",)),
+    ("authority", 0, "arz", ("uae ?pass", "\\bicp\\b")),
+    (
+        "delivery_fee",
+        1,
+        "en",
+        ("(held|on hold|stuck|detained|pending|waiting) (at|in) customs", "customs (duty|clearance|charges?)"),
+    ),
+    ("delivery_fee", 1, "ar", ("محتجز[هة]? (في|لدى) (ال)?جمارك", "(ال)?تخليص (ال)?جمركي")),
+    ("payment", 0, "en", ("settle (now|here|today|it|the|your)", "clear (your|the) (dues|outstanding|balance)")),
+    ("payment", 0, "ar", ("سداد (المبلغ|المستحقات|الرسوم)",)),
+)
+
+
+def uae_lures_enabled() -> bool:
+    """FL_UAE_LURES=1/0 turns the UAE lure fragments on or off (read once, at import)."""
+    return os.environ.get("FL_UAE_LURES", "0").strip().lower() in ("1", "true", "yes", "on")
+
+
+def merge_lures(rules: dict[str, list[Group]], lures: Sequence[tuple[str, int, str, Sequence[str]]]) -> None:
+    """Append lure fragments to the named rule group in place (no duplicates)."""
+    for rule, idx, lang, frags in lures:
+        group = rules[rule][idx]
+        have = group.setdefault(lang, [])
+        have.extend(f for f in frags if f not in have)
+
+
+if uae_lures_enabled():
+    merge_lures(RULES, UAE_LURES)
 
 RULE_NAMES = tuple(RULES)

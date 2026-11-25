@@ -16,7 +16,7 @@ How they combine is NOT written here: ``intent_weights.json`` holds weights fitt
 
 from __future__ import annotations
 
-from falcon_core.signals.message.lexicon import Group
+from falcon_core.signals.message.lexicon import Group, merge_lures, uae_lures_enabled
 
 # Features that reuse the rule detectors in ``lexicon.RULES`` (strengthened there): see intent.py.
 FROM_RULES: tuple[str, ...] = (
@@ -429,6 +429,24 @@ FEATURES: dict[str, list[Group]] = {
         }
     ],
 }
+
+# UAE lure phrasing for the fitted features (same flag as lexicon.UAE_LURES): "your card has been blocked" (singular),
+# customs-held parcels as account trouble, and the toll/customs fee words. Weights are NOT refitted: these widen what
+# an existing feature recognises.
+UAE_INTENT_LURES: tuple[tuple[str, int, str, tuple[str, ...]], ...] = (
+    (
+        "penalty",
+        0,
+        "en",
+        ("has been (blocked|suspended|deactivated|frozen|locked)", "is (blocked|suspended|frozen|locked)"),
+    ),
+    ("account_trouble", 0, "en", ("(held|on hold|stuck|detained) (at|in) customs",)),
+    ("account_trouble", 0, "ar", ("محتجز[هة]? (في|لدى) (ال)?جمارك",)),
+    ("fee_word", 0, "en", ("toll (charges|dues|balance|fines?)", "customs (duty|charges?)")),
+)
+
+if uae_lures_enabled():
+    merge_lures(FEATURES, UAE_INTENT_LURES)
 
 # i18n display of the strongest features reported in ``observed`` (names only, never the text)
 FEATURE_NAMES: tuple[str, ...] = (*FROM_RULES, *FEATURES.keys())

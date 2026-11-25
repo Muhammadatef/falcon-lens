@@ -46,6 +46,8 @@ class ScoringParams:
     attachment_executable_types: frozenset[str] = frozenset()
     informational_errors: frozenset[str] = frozenset()
     degrading_signals: frozenset[str] = frozenset()
+    # H7 (young domain + brand claim + secret-asking form). Off unless params.yaml turns it on after the gate.
+    h7_enabled: bool = False
 
     def __post_init__(self) -> None:
         if not 0.0 < self.tau_low < self.tau_high < 1.0:
@@ -132,7 +134,16 @@ def params_from_mapping(raw: dict[str, object]) -> ScoringParams:
         attachment_executable_types=_str_set(attach, "executable_types"),
         informational_errors=_str_set(raw, "informational_errors"),
         degrading_signals=_str_set(raw, "degrading_signals"),
+        h7_enabled=_flag(hard, "h7_enabled"),
     )
+
+
+def _flag(section: dict[str, object], key: str) -> bool:
+    """An optional boolean; missing means False. Anything but a real bool is an error (no truthy strings)."""
+    value = section.get(key, False)
+    if not isinstance(value, bool):
+        raise ParamsError(f"params.yaml: '{key}' must be true or false")
+    return value
 
 
 def load_params(path: Path | None = None) -> ScoringParams:
