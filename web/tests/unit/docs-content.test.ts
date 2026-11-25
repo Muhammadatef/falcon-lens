@@ -21,10 +21,10 @@ const ALLOWED_DIGIT_TOKENS = /\bT[0-3]\b|\bH[1-6]\b|\bADR-\d{3}\b|\bSHA-256\b|\b
 
 describe("docs content", () => {
   const langs = ["ar", "en"] as const;
-  const pages = DOC_SLUGS.filter((s) => s !== "agents");
+  const pages = DOC_SLUGS.filter((s) => s !== "agents" && s !== "building-agents");
 
-  it("has the eight slugs and rejects others", () => {
-    expect(DOC_SLUGS).toHaveLength(8);
+  it("has the nine slugs and rejects others", () => {
+    expect(DOC_SLUGS).toHaveLength(9);
     expect(isDocSlug("cascade")).toBe(true);
     expect(isDocSlug("nope")).toBe(false);
     expect(isDocSlug("../etc")).toBe(false);
@@ -32,7 +32,7 @@ describe("docs content", () => {
 
   it("types a section for every page in both languages with the same section ids", () => {
     for (const slug of pages) {
-      const ids = (l: "ar" | "en") => DOCS[l][slug as Exclude<typeof slug, "agents">].sections.map((s) => s.id);
+      const ids = (l: "ar" | "en") => DOCS[l][slug as Exclude<typeof slug, "agents" | "building-agents">].sections.map((s) => s.id);
       expect(ids("ar"), slug).toEqual(ids("en"));
       expect(ids("en").length, slug).toBeGreaterThan(2);
     }
@@ -41,7 +41,7 @@ describe("docs content", () => {
   it("types no numeric literal other than protocol versions and identifiers", () => {
     for (const lang of langs) {
       for (const slug of pages) {
-        for (const text of strings(DOCS[lang][slug as Exclude<typeof slug, "agents">])) {
+        for (const text of strings(DOCS[lang][slug as Exclude<typeof slug, "agents" | "building-agents">])) {
           const left = text.replace(ALLOWED_DIGIT_TOKENS, "").replace(/[A-Za-z0-9_.-]*\/[A-Za-z0-9_./{},* -]*/g, "");
           expect(left, `${lang}/${slug}: ${text.slice(0, 80)}`).not.toMatch(/\d/);
         }
@@ -52,7 +52,7 @@ describe("docs content", () => {
   it("never says safe / آمن and never claims a connection", () => {
     for (const lang of langs) {
       for (const slug of pages) {
-        const all = strings(DOCS[lang][slug as Exclude<typeof slug, "agents">]).join("\n");
+        const all = strings(DOCS[lang][slug as Exclude<typeof slug, "agents" | "building-agents">]).join("\n");
         expect(all.toLowerCase(), `${lang}/${slug}`).not.toMatch(/\bsafe(ly|r|st)?\b/);
         expect(all, `${lang}/${slug}`).not.toContain("آمن");
         expect(all, `${lang}/${slug}`).not.toMatch(/endorsed by|مؤيَّد من|integrated with abu dhabi/i);

@@ -1,0 +1,44 @@
+/* /docs/building-agents: lane pipelines and item cards. Logical properties only, so RTL mirrors for free. */
+.ba-toc { padding: var(--fl-space-3) var(--fl-space-4); }
+.ba-toc ol { display: grid; gap: 0.1rem; counter-reset: ba; }
+.ba-toc li { counter-increment: ba; }
+.ba-toc a { display: flex; align-items: center; gap: var(--fl-space-3); min-height: var(--fl-tap); color: var(--fl-text); text-underline-offset: 4px; }
+.ba-toc a::before { content: counter(ba); flex: none; display: grid; place-items: center; inline-size: 1.6rem; block-size: 1.6rem; border-radius: 50%; background: var(--fl-surface-2); border: 1px solid var(--fl-border-strong); font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); font-variant-numeric: tabular-nums; }
+.ba-toc a:hover { color: var(--fl-brand); }
+@media (min-width: 900px) { .ba-toc ol { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--fl-space-5); } }
+.docs-page .docs-sec[id] { scroll-margin-block-start: 5rem; }
+.ba-intro { color: var(--fl-text-muted); line-height: 1.9; max-width: var(--fl-read-max); }
+.ba-items { display: grid; gap: var(--fl-space-3); grid-template-columns: minmax(0, 1fr); }
+.ba-item { display: grid; gap: var(--fl-space-2); align-content: start; min-width: 0; }
+.ba-item h3 { font-size: var(--fl-text-md); font-weight: var(--fl-weight-bold); line-height: var(--fl-leading-tight); }
+.ba-item p { color: var(--fl-text-muted); line-height: 1.9; }
+.ba-path { justify-self: start; max-inline-size: 100%; font-size: var(--fl-text-xs); overflow-wrap: anywhere; background: var(--fl-surface-2); border: 1px solid var(--fl-border); border-radius: 6px; padding: 0.1rem 0.45rem; color: var(--fl-text-muted); }
+@media (min-width: 760px) { .ba-items { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .ba-items { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ba-result .prose { max-width: none; }
+.ba-src { padding: var(--fl-space-3); }
+
+.ba-fig { display: grid; gap: var(--fl-space-4); margin: 0; min-width: 0; }
+.ba-lane { display: grid; gap: var(--fl-space-3); padding: var(--fl-space-3); border: 1px solid var(--fl-border); border-radius: var(--fl-radius-lg); background: var(--fl-surface-1); min-width: 0; }
+.ba-lane-title { display: flex; align-items: center; gap: var(--fl-space-2); font-size: var(--fl-text-sm); font-weight: var(--fl-weight-bold); color: var(--fl-text-muted); }
+.ba-lane-n { flex: none; display: grid; place-items: center; inline-size: 1.5rem; block-size: 1.5rem; border-radius: 50%; border: 1px solid var(--fl-border-strong); background: var(--fl-surface-2); color: var(--fl-text); font-variant-numeric: tabular-nums; }
+.ba-nodes { display: grid; gap: var(--fl-space-4); grid-template-columns: minmax(0, 1fr); }
+.ba-node { position: relative; display: grid; gap: 0.2rem; align-content: start; justify-items: start; min-width: 0; padding: var(--fl-space-3); background: var(--fl-surface-2); color: var(--fl-text); border: 1px solid var(--fl-border-strong); border-inline-start: 5px solid var(--fl-brand); border-radius: var(--fl-radius-md); overflow-wrap: anywhere; }
+.ba-node[data-kind="llm"] { border-inline-start-style: dashed; }
+.ba-node[data-kind="gate"] { background: var(--fl-suspicious-tint); border-color: var(--fl-suspicious-line); }
+.ba-node[data-kind="store"] { border-style: double; border-width: 4px; }
+.ba-id { font-size: var(--fl-text-xs); color: var(--fl-text-muted); }
+.ba-node b { font-weight: var(--fl-weight-bold); line-height: var(--fl-leading-tight); }
+.ba-note { color: var(--fl-text-muted); font-size: var(--fl-text-sm); line-height: 1.7; }
+/* Connector between the nodes of a lane: a dashed rail going down on narrow screens. */
+.ba-node:not(:last-child)::after { content: ""; position: absolute; inset-inline-start: 1.4rem; inset-block-start: 100%; inline-size: 3px; block-size: var(--fl-space-4); background: repeating-linear-gradient(to bottom, var(--fl-brand) 0 4px, transparent 4px 8px); pointer-events: none; }
+@media (min-width: 1100px) {
+  .ba-nodes[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ba-nodes[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ba-nodes[data-n="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ba-nodes[data-n="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .ba-nodes[data-n="6"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  /* Horizontal connector to the next node; the gradient direction follows the reading direction. */
+  .ba-node:not(:last-child)::after { inset-inline-start: 100%; inset-block-start: 1.4rem; inline-size: var(--fl-space-4); block-size: 3px; background: repeating-linear-gradient(to right, var(--fl-brand) 0 4px, transparent 4px 8px); }
+  [dir="rtl"] .ba-node:not(:last-child)::after { background: repeating-linear-gradient(to left, var(--fl-brand) 0 4px, transparent 4px 8px); }
+}

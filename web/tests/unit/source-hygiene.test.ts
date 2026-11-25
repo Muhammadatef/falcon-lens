@@ -43,7 +43,7 @@ describe("source hygiene (app code, not tests)", () => {
     for (const file of files.filter((f) => f.endsWith(".tsx"))) {
       const text = readFileSync(file, "utf8");
       // Internal constants only: nav entries, the /docs/<slug> list, and the figure paths in lib/docs-content.ts.
-      const ALLOWED = ["l.href", "`/docs/${slug", "`/docs/${s", "REPO_BLOB + src", "page.figure.src", "f.src", "skipHref", "traceHref(c.id)", "traceHref(r.outcome.id)", "incidentHref(incident.id)"];
+      const ALLOWED = ["l.href", "`/docs/${slug", "`/docs/${s", "REPO_BLOB + src", "page.figure.src", "f.src", "skipHref", "tocHref", "traceHref(c.id)", "traceHref(r.outcome.id)", "incidentHref(incident.id)"];
       // OperatorLinks.tsx (operator-only) is the one place that links out: every href there comes from the validating
       // builders in lib/observability.ts (trace id must be 32 hex, ids are re-matched, bases are cleaned origins), never from raw verdict text.
       const OPERATOR = file.endsWith("OperatorLinks.tsx") ? ["trace", "logs", "href", "grafanaOverviewUrl(cfg, range)", "grafanaHomeUrl(cfg)", "prometheusAlertsUrl(cfg)", "phoenixHomeUrl(cfg)"] : [];
