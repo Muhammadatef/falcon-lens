@@ -44,6 +44,8 @@ const ar = {
   "docs.architecture.text": "الخدمات ومسار البيانات وعزل الشبكات.",
   "docs.agents.title": "أنماط الوكلاء",
   "docs.agents.text": "حلقة «بصير»، المحقّق، المحدودة، ومسار عمل «درع»، الحارس، والأدوات ونقاط الموافقة البشرية.",
+  "docs.building-agents.title": "كيف بنينا الوكيلين: LangGraph وDSPy",
+  "docs.building-agents.text": "مسار البناء، ومخطط «درع» على LangGraph، ومسار DSPy، وأسباب اختيار كل أداة، وما تركناه عمداً.",
   "docs.cascade.title": "طبقات الفحص T0–T3",
   "docs.cascade.text": "أربع طبقات تبدأ بالأسرع، ولا تتعمق إلا عند الحاجة.",
   "docs.arbiter.title": "المحكّم واحتساب الدرجة",
@@ -76,6 +78,7 @@ const ar = {
   "docs.prov.scope": "النطاق المسجَّل",
   "docs.prov.results": "اعرض النتائج",
   "docs.agents.back": "كيف يحميك الوكيلان الذكيان",
+  "docs.agents.building": "كيف بنينا الوكيلين ولماذا LangGraph وDSPy",
   "docs.fig": "مخطط",
 
   // Authorities (trimmed)
@@ -120,6 +123,8 @@ const en: Record<DocKey, string> = {
   "docs.architecture.text": "Services, data flow and network isolation.",
   "docs.agents.title": "Agent patterns",
   "docs.agents.text": "The bounded loop of the Investigator (Baseer | بصير), the workflow of the Sentinel (Dir' | درع), tools and human gates.",
+  "docs.building-agents.title": "Building the agents: LangGraph and DSPy",
+  "docs.building-agents.text": "The build process, the Sentinel on LangGraph, the DSPy pipeline, why we chose each tool, and what we left out on purpose.",
   "docs.cascade.title": "Cascade T0–T3",
   "docs.cascade.text": "Four tiers, fastest first; deeper only when needed.",
   "docs.arbiter.title": "Arbiter and scoring",
@@ -152,6 +157,7 @@ const en: Record<DocKey, string> = {
   "docs.prov.scope": "Scope as recorded",
   "docs.prov.results": "See the results",
   "docs.agents.back": "How the AI agents protect you",
+  "docs.agents.building": "How we built the agents, and why LangGraph and DSPy",
   "docs.fig": "Diagram",
 
   "ap.ifaces": "Documented interfaces",

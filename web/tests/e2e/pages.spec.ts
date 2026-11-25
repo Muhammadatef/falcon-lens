@@ -11,7 +11,7 @@ import results from "../../lib/results.generated.json";
 import { formatMetric } from "../../lib/results";
 import { expect, setPrefs, test } from "./helpers";
 
-const PAGES = ["/", "/agents", "/docs", "/docs/architecture", "/docs/agents", "/docs/cascade", "/docs/arbiter", "/docs/security", "/docs/evals", "/docs/integration", "/docs/privacy", "/results", "/authorities", "/privacy", "/campaigns", "/ops", "/this-page-does-not-exist"];
+const PAGES = ["/", "/agents", "/docs", "/docs/architecture", "/docs/agents", "/docs/building-agents", "/docs/cascade", "/docs/arbiter", "/docs/security", "/docs/evals", "/docs/integration", "/docs/privacy", "/results", "/authorities", "/privacy", "/campaigns", "/ops", "/this-page-does-not-exist"];
 const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 async function axe(page: Page) {

@@ -7,14 +7,14 @@ import { fmtThreshold } from "../../lib/docs-data";
 import { badgeWord, onAllOnStack, onDefaultStack } from "./flags";
 import { forceCaps, expect, setPrefs, test } from "./helpers";
 
-const SLUGS = ["architecture", "agents", "cascade", "arbiter", "security", "evals", "integration", "privacy"] as const;
+const SLUGS = ["architecture", "agents", "building-agents", "cascade", "arbiter", "security", "evals", "integration", "privacy"] as const;
 const ROUTES = ["/docs", ...SLUGS.map((s) => `/docs/${s}`), "/authorities", "/privacy"];
 
 test.describe("docs landing", () => {
-  test("eight cards, each links to a page that loads", async ({ page, request }) => {
+  test("nine cards, each links to a page that loads", async ({ page, request }) => {
     await page.goto("/docs");
     const cards = page.getByTestId("docs-cards").locator("li");
-    await expect(cards).toHaveCount(8);
+    await expect(cards).toHaveCount(9);
     const hrefs = await cards.locator("a.docs-read").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
     expect(hrefs).toEqual(SLUGS.map((s) => `/docs/${s}`));
     for (const href of hrefs) expect((await request.get(href!)).status(), href!).toBe(200);
@@ -38,7 +38,7 @@ test.describe("docs landing", () => {
     const side = page.getByTestId("docs-side");
     if (await side.isVisible()) {
       await expect(side.locator('a[aria-current="page"]')).toHaveAttribute("href", "/docs/cascade");
-      await expect(side.locator("a")).toHaveCount(9);
+      await expect(side.locator("a")).toHaveCount(10);
     } else {
       await expect(page.locator(".docs-crumb [aria-current='page']")).toBeVisible();
       await expect(page.locator('.docs-crumb a[href="/docs"]')).toBeVisible();
@@ -61,6 +61,26 @@ test.describe("docs content restates the repo documents", () => {
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
     }
     expect(await page.locator(".figure img").count()).toBe(2);
+  });
+
+  test("building-agents: both diagrams, the six sections, the honest DSPy result, no overflow, in both languages", async ({ page, context, baseURL }) => {
+    for (const lang of ["en", "ar"] as const) {
+      await setPrefs(context, baseURL!, { lang });
+      await page.goto("/docs/building-agents");
+      await expect(page.locator("main h1")).toHaveCount(1);
+      await expect(page.locator("main h2")).toHaveCount(6);
+      await expect(page.getByTestId("ba-sentinel")).toContainText("interrupt()");
+      await expect(page.getByTestId("ba-sentinel")).toContainText("Postgres checkpointer");
+      await expect(page.getByTestId("ba-dspy")).toContainText("compiled/");
+      await expect(page.getByTestId("ba-dspy-result")).toHaveAttribute("data-adopted", "0");
+      await expect(page.getByTestId("ba-dspy-table").locator("tbody tr")).toHaveCount(5);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), lang).toBeLessThanOrEqual(0);
+      await expect(page.locator("main")).not.toContainText(/ADR-\d|\bsafe\b|آمن/);
+    }
+    await page.goto("/docs/agents");
+    await expect(page.getByTestId("building-link")).toHaveAttribute("href", "/docs/building-agents");
+    await page.goto("/agents");
+    await expect(page.getByTestId("agents-building-link")).toHaveAttribute("href", "/docs/building-agents");
   });
 
   test("architecture: the diagram loads from the site's own origin in both languages", async ({ page, context, baseURL }) => {
@@ -100,7 +120,7 @@ test.describe("docs content restates the repo documents", () => {
   });
 
   test("every doc page cites its source documents in the repository", async ({ page }) => {
-    for (const slug of SLUGS.filter((s) => s !== "agents")) {
+    for (const slug of SLUGS.filter((s) => s !== "agents" && s !== "building-agents")) {
       await page.goto(`/docs/${slug}`);
       const links = page.getByTestId("doc-sources").locator("a");
       expect(await links.count(), slug).toBeGreaterThan(0);
@@ -131,7 +151,7 @@ test.describe("capability badges on docs follow the flags (default stack: bundle
     await expect(rows.nth(3).getByTestId("cap-badge")).toHaveCount(0);
     await expect(page.locator("#mcp").getByTestId("cap-badge")).toContainText(badgeWord(onDefaultStack("mcp"), "en"));
     await page.goto("/docs");
-    await expect(page.getByTestId("docs-cards").locator("li").nth(4).getByTestId("cap-badge")).toContainText(badgeWord(onDefaultStack("injection_defence"), "en"));
+    await expect(page.getByTestId("docs-cards").locator("li").filter({ has: page.locator('a[href="/docs/security"]') }).getByTestId("cap-badge")).toContainText(badgeWord(onDefaultStack("injection_defence"), "en"));
     await page.goto("/docs/cascade");
     await expect(page.getByTestId("tier-cards").locator(".how-card").nth(3).getByTestId("cap-badge")).toContainText(badgeWord(onDefaultStack("investigator"), "en"));
   });
@@ -142,7 +162,7 @@ test.describe("capability badges on docs with every flag true", () => {
     await forceCaps(context, baseURL!, "true");
     await setPrefs(context, baseURL!, { lang: "en" });
     await page.goto("/docs");
-    await expect(page.getByTestId("docs-cards").locator("li").nth(4).getByTestId("cap-badge")).toContainText("Live");
+    await expect(page.getByTestId("docs-cards").locator("li").filter({ has: page.locator('a[href="/docs/security"]') }).getByTestId("cap-badge")).toContainText("Live");
     await page.goto("/docs/cascade");
     await expect(page.getByTestId("tier-cards").locator(".how-card").nth(3).getByTestId("cap-badge")).toContainText("Live");
     await page.goto("/docs/integration");

@@ -34,7 +34,7 @@ describe("design polish: truthful copy", () => {
     const sources = ["lib/docs-content.ts", "lib/page-content.ts"].map((f) => readFileSync(join(__dirname, "../..", f), "utf8")).join("\n");
     expect(sources).not.toMatch(/so no content leaves the machine|فلا يغادر أي محتوى الجهاز/);
     for (const lang of langs) {
-      const text = DOC_SLUGS.filter((s) => s !== "agents").map((s) => JSON.stringify(DOCS[lang][s])).join(" ");
+      const text = DOC_SLUGS.filter((s): s is Exclude<typeof s, "agents" | "building-agents"> => s !== "agents" && s !== "building-agents").map((s) => JSON.stringify(DOCS[lang][s])).join(" ");
       expect(text).toMatch(lang === "ar" ? /إلى نموذج سحابي/ : /sent to a cloud model/);
     }
   });
