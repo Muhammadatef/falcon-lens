@@ -111,7 +111,7 @@ If the hunting feed is not switched on for the recording, say «ويقدر ير�
 | The cloud model is unreachable | The route falls back to the local model by design; point at `/ops` and say so. |
 | The whole browser fails | Show the five criterion slides and speak to the numbers on them. |
 
-## Questions and answers (ten likely, with honest one-line answers)
+## Questions and answers (eleven likely, with honest one-line answers)
 
 1. **How will you do on our hidden URL set?** "We do not know yet, so give us the file: `make batch FILE=urls.txt` runs it live in two modes, strict (Suspicious counts as flagged) and lenient (only Dangerous), and prints a results table. Our own numbers are the frozen test split and the fresh test, with their limits."
 2. **What about false positives on banks and government sites?** "On the frozen test split no official site was marked Dangerous; on the live full stack the false-alarm rate is above our target (26.5% on 200 held-out sites, against a target of 2.0%), mostly checks that could not finish, and that is our first fix."
@@ -123,6 +123,7 @@ If the hunting feed is not switched on for the recording, say «ويقدر ير�
 8. **Does it scale?** "By design: Redis streams and stateless workers, so you add workers. It is proven on one machine only, and we say so."
 9. **What would a police pilot look like?** "The same stack inside your network, shadow mode first: your sign-on, your feeds, your security review. REST, MCP and STIX are ready to connect; nothing is connected today."
 10. **What are the limits?** "Live false alarms above target, a fresh test of one run with unaudited labels, synthetic voice and red-team sets, and two things not measured yet: a native reader's rating of the Arabic and sandbox recall on labelled phishing pages."
+11. **How will you improve accuracy?** "With more data, and only through the same gate. In the fresh test, almost half of the listed phishing URLs in the second feed were already offline when the sandbox visited (the count is in the fresh-test artifact), so the first step is to catch pages before they die: continuous look-alike hunting, then certificate logs and search, ads and Maps once keys and a licensed feed exist. Next, local models that write the Sentinel summary themselves (schema-constrained output). Then, under a data-sharing agreement, retraining on labelled History and analyst feedback, DSPy on real data, and fine-tuning the local models for Emirati Arabic. We adopt a change only if the paired 95% interval excludes zero and it adds no new false alarm, behind a shadow route first. All of it is planned, none is shipped, and we quote no number for it."
 
 ## Before you go on stage
 

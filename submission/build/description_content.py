@@ -972,6 +972,31 @@ def build(a: Artifacts) -> list[Block]:
         )
     )
 
+    add(("h2", "10.3 Pilot optimisation plan: more data, better accuracy (planned, not shipped)"))
+    add(
+        (
+            "p",
+            "This is what we would do with a pilot and a data-sharing agreement. Every item is planned. No figure below is a result: today's numbers are in section 8, and any change would have to pass the same adoption gate before it is switched on.",
+        )
+    )
+    dead = ev.fresh_dead_line()
+    add(
+        (
+            "ul",
+            [
+                "**Catch scam pages before they die.** "
+                + (f"In the fresh live test, {dead}. " if dead else "In the fresh live test, many listed pages were already offline. ")
+                + "Plan: switch on continuous look-alike hunting (the built, off-by-default hunting job, with its kill switch and quotas); watch certificate-transparency logs once a licensed feed is in place; add search, ads and Maps hunting once API keys are provided (ready, needs a key); and take the first-visit snapshot sooner.",
+                "**Fully local quality.** "
+                + f"Sovereign proof today: {ev.sovereign_line() or 'not published'}. "
+                + "Plan: schema-constrained JSON output for local models (Ollama structured outputs) and shorter prompts per model, so the Sentinel summary is written by the local model instead of the template fallback.",
+                "**Learning from real data.** With labelled History and analyst feedback (approve or reject, false-positive reports) under the agreement: retrain the link and message classifiers and recalibrate the arbiter bands on temporal splits; re-run DSPy prompt optimisation on real labelled data for each route (today it ran for five roles on synthetic data and none was adopted); fine-tune the local models (LoRA or QLoRA on Qwen and Inkling) for Emirati Arabic scam language.",
+                "**The gate stays.** A change is adopted only if the paired 95% interval of the improvement excludes zero and it adds no new false alarms. Every change goes through a shadow or canary route first, and we would publish a monthly evaluation report.",
+                "**More brand coverage.** Add the authorities' official lists (official domains and helplines) to the brand registry: ready to connect, not connected.",
+            ],
+        )
+    )
+
     # ── 11 Criteria map ────────────────────────────────────────────────────────────────────────
     add(("h1", "11. Criteria map: what we built and where the evidence is"))
     add(

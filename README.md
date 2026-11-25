@@ -459,6 +459,16 @@ Unfinished only:
 - **A real connection** to a police or security system needs an agreement with that organisation.
 - **Hunt mode sources:** search results, ad libraries and Maps listings (need API keys and verified provider terms), Certificate Transparency log tailing, and a measured precision figure for hunting (none is claimed today).
 
+### Pilot path: how we would improve accuracy with more data
+
+All of this is **planned, not shipped**. No figure here is a result; current numbers are in the published evaluation files. Every change would pass the same adoption gate first.
+
+- **Catch scam pages before they die.** In the fresh live test almost half of the listed phishing pages in the second feed were already offline when the sandbox visited (the exact count is in `evals/results/published/fresh200/`). Plan: switch on continuous look-alike hunting «درع» (built, off by default, with a kill switch and quotas); certificate-transparency monitoring once a licensed feed is in place; search, ads and Maps hunting once API keys are provided (ready, needs a key); faster first-visit snapshots.
+- **Fully local quality.** Schema-constrained JSON output for local models (Ollama structured outputs) and shorter per-model prompts, so the Sentinel summary is written by the local model instead of the template fallback. The sovereign proof run is marked failed today for exactly that reason.
+- **Learning from real data.** With pilot data under a data-sharing agreement (labelled History plus analyst approve/reject and false-positive reports): retrain the link and message classifiers and recalibrate the arbiter bands on temporal splits; re-run DSPy prompt optimisation on real labelled data per route (today: five roles, synthetic data, none adopted); fine-tune the local models (LoRA or QLoRA on Qwen and Inkling) for Emirati Arabic scam language.
+- **The gate stays.** Adopt a change only if the paired 95% interval excludes zero and it adds no new false alarms; run a shadow or canary route before any switch; publish a monthly evaluation report.
+- **More UAE brand coverage** from the authorities' official lists (official domains and helplines): ready to connect, not connected.
+
 ## For engineers
 
 All technical detail lives in **[`docs/TECHNICAL.md`](docs/TECHNICAL.md)**.
