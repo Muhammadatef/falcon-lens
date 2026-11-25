@@ -206,6 +206,50 @@ CAPABILITIES: tuple[Capability, ...] = (
         ("path:infra/grafana/dashboards/*.json", "path:infra/prometheus/rules/*.yml"),
     ),
     Capability(
+        "evidence_pack",
+        "Police-ready evidence pack (operator ZIP: screenshot, RDAP, hosting, timestamps, SHA-256 manifest, takedown draft, STIX)",
+        ("path:services/api/src/falcon_api/evidence_pack.py", "path:contracts/evidence_pack.schema.json"),
+        "Evidence pack scene",
+    ),
+    Capability(
+        "batch_check",
+        "Batch URL checker (`make batch FILE=...`, strict and lenient)",
+        ("path:scripts/batch_check.py", "make:batch"),
+    ),
+    Capability(
+        "hunter",
+        "Proactive hunter (candidate look-alike domains from certificate logs, scheduled, linked into campaigns)",
+        (
+            "path:services/sentinel/src/falcon_sentinel/hunt/scheduler.py",
+            "path:services/sentinel/sentinel_core/hunt/candidates.py",
+        ),
+    ),
+    Capability(
+        "helpline_registry",
+        "Official-number registry and fake-helpline flag in messages",
+        ("path:packages/falcon_core/src/falcon_core/signals/message/helpline.py",),
+    ),
+    Capability(
+        "voice_findings",
+        "Voice and Check page narrate the real per-check findings and ordered live steps",
+        ("path:web/lib/findings.ts", "path:web/lib/voice-progress.ts"),
+    ),
+    Capability(
+        "observability_links",
+        "Operator-only Phoenix and Grafana links on History, check, incident and /ops",
+        ("path:web/lib/observability.ts", "path:web/tests/unit/observability.test.ts"),
+    ),
+    Capability(
+        "mobile_ios",
+        "iPhone voice (audio/mp4) and mobile layout fixes, with iPhone and Pixel end-to-end tests",
+        ("path:web/tests/e2e/mobile.spec.ts", "path:web/tests/unit/vad-mime.test.ts"),
+    ),
+    Capability(
+        "llm_route_selector",
+        "Operator-selectable language-model route (cloud with local fallback, or local only)",
+        ("path:web/lib/llm-route.ts", "grep:packages/falcon_core/src/falcon_core/llm/*.py::FL_LLM_ROUTE"),
+    ),
+    Capability(
         "voice_assistant",
         'Voice assistant ("Hey Falcon": local speech recognition, same check API, spoken summary)',
         (

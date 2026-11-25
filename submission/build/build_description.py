@@ -330,7 +330,7 @@ figcaption{font-size:8.6pt;color:var(--muted);margin-top:1mm}
 .note{background:#e3f4f2;border-left:4px solid var(--accent);padding:2.5mm 3.5mm;margin:3mm 0;border-radius:2mm;break-inside:avoid}
 .pb{break-after:page}
 .toc{margin:0;padding:0;list-style:none}
-.toc li{display:flex;gap:2mm;margin:1.4mm 0;align-items:baseline}
+.toc li{display:flex;gap:2mm;margin:0.9mm 0;align-items:baseline}
 .toc li.l2{padding-left:7mm;font-size:9.5pt}
 .toc a{color:inherit;text-decoration:none}
 .toc .dots{flex:1;border-bottom:1px dotted #9aa7b2;transform:translateY(-1px)}

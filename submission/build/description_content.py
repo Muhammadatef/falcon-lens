@@ -19,9 +19,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from common import Artifacts, evidence, fmt_pct, tools_by_category
+from common import ROOT, Artifacts, evidence, fmt_pct, tools_by_category
 
 Block = tuple[Any, ...]
+
+
+def shipped(cap_id: str) -> bool:
+    """True when the capability's probes hold in this checkout (a merged feature); else the text says it is planned."""
+    from submission import capabilities as caps  # noqa: PLC0415  (scripts/ is on sys.path)
+
+    cap = next(c for c in caps.CAPABILITIES if c.id == cap_id)
+    return all(caps.probe(ROOT, spec) for spec in cap.probes)
+
+
+def or_planned(cap_id: str, text: str) -> str:
+    return text if shipped(cap_id) else f"Planned, not shipped yet: {text[0].lower()}{text[1:]}"
+
 
 METRIC_PLAIN = {
     "recall": "Of the real scams in the set, the share Falcon Lens flagged. Higher is better.",
@@ -144,6 +157,51 @@ def build(a: Artifacts) -> list[Block]:
             "note",
             "Independence",
             "Falcon Lens is an independent entry for the Abu Dhabi Police x 42 ScamShield AI challenge. It is **not affiliated with or endorsed by Abu Dhabi Police**, uses no police logos or branding, and is **ready to connect, not connected** to any police or government system.",
+        )
+    )
+    add(("h3", "How it maps to the judging criteria"))
+    add(
+        (
+            "table",
+            ["Criterion", "What we built", "Evidence in this document"],
+            [
+                [
+                    "Detection accuracy",
+                    "A cascade T0 to T3 with a fixed arbiter, a verified-official rule, redirects followed in the sealed browser, and a cloaking check.",
+                    "See the results chapter: frozen test split, fresh two-hundred-site test, red-team.",
+                ],
+                [
+                    "Early detection and coverage",
+                    "A brand check that flags look-alike pages no list knows, scam-script recognition for messages with no link. "
+                    + or_planned(
+                        "hunter", "A proactive hunter that finds new look-alike domains from certificate logs."
+                    )
+                    + " "
+                    + or_planned("helpline_registry", "An official-number registry that flags fake helplines.")
+                    + " Search, ads and Maps coverage: ready, needs a key.",
+                    "See the chapters on the sealed browser, results, and limitations.",
+                ],
+                [
+                    "Explainability and actionability",
+                    "Reasons in Arabic tied to evidence, a trace for every check, STIX export, takedown drafts held for a human. "
+                    + or_planned(
+                        "evidence_pack",
+                        "A police evidence pack with a screenshot, WHOIS and RDAP, hosting, UTC timestamps, a SHA-256 manifest and a takedown draft.",
+                    ),
+                    "See the chapters on police features, the verdict and its reasons, and integration.",
+                ],
+                [
+                    "UAE relevance and innovation",
+                    "Arabic first, a registry of UAE brands including banks, TAMM and UAE PASS, a voice assistant in Arabic and English, a perceptual-hash page comparison, campaign linking, a bounded AI Investigator.",
+                    "See the chapters on residents, and the two agents.",
+                ],
+                [
+                    "Feasibility and presentation",
+                    "A live demo on one machine, sovereign mode on local models, an operator route selector, an on-premise pilot path.",
+                    "See the chapters on privacy, results, and integration.",
+                ],
+            ],
+            [1.4, 3.7, 1.5],
         )
     )
     add(("pb",))
@@ -321,6 +379,54 @@ def build(a: Artifacts) -> list[Block]:
             "Screenshot of the Arabic campaign board showing three campaign cards with severity, number of linked checks and advice, next to a similarity radar. All entries are replayed demo data about the invented Falcon Demo Bank.",
             "Figure 8. The campaign board, Arabic view. Replayed demo data from the invented brand Falcon Demo Bank, not real campaigns.",
             5.6,
+        )
+    )
+    add(("h2", "3.3 The voice assistant: Hey Falcon (يا صقر)"))
+    add(
+        (
+            "ul",
+            [
+                '**Wake word and listening.** Say "Hey Falcon" or «يا صقر». Speech is turned into text on our own machine with a local Whisper model; audio and transcripts are not stored or logged.',
+                "**Language per sentence.** Each sentence is answered in the language it was asked in, Arabic or English, so a mixed conversation works.",
+                "**Voices.** The Arabic answers use a pre-generated Emirati-accent Amazon Polly voice (Zayd), produced offline and shipped as clips; the English answers use a local Kokoro voice (am_fenrir). No speech is generated by a cloud service while a user is talking.",
+                "**Captions are the spoken words.** What is written on screen is exactly what is said, and the live steps of both agents are numbered as they happen.",
+                "**Unique findings.** Each check reads out its own findings, taken from that check's evidence, never one fixed sentence for every result. A short sound marks each verdict.",
+                "**No generative answers.** The assistant answers from twenty-two fixed scam-awareness answers written and reviewed by the team, and politely redirects off-topic questions. It does not invent replies.",
+                "**Measured on synthetic clips only.** See the voice benchmark in section 8.4; it uses synthetic speech and noise, not real speakers, so it is an upper bound.",
+            ],
+        )
+    )
+    add(("h2", "3.4 Per-check findings, traces and the police evidence pack"))
+    add(
+        (
+            "ul",
+            [
+                "**Findings on the Check page and in traces.** Every check lists what was actually found for that input, in the same wording on the page, in the trace and in the voice assistant.",
+                "**Police evidence pack.** One download per check: a screenshot of the sealed browser visit; WHOIS and RDAP data with the registrar and its abuse contact; the hosting address, network (ASN) and the registry country; the TLS certificate details; UTC timestamps; a SHA-256 manifest of every file in the pack so tampering is visible; a bilingual (Arabic and English) takedown request draft; and a STIX 2.1 bundle. The draft is held for a human. Nothing is sent.",
+                "**Batch tool.** `make batch` checks a list of URLs from a file and writes a CSV, so a committee can run its own hidden test set. A page at `/ops/batch` does the same in the browser with a key that has the check scope.",
+            ],
+        )
+    )
+    add(("h2", "3.5 The proactive hunter and the official-number registry"))
+    add(
+        (
+            "ul",
+            [
+                "**Hunter (Dir' | درع).** It generates look-alike permutations of registered brand domains and looks them up over DNS-over-HTTPS. It is **off by default**, has a kill switch and daily quotas, and only observes: it registers nothing and visits nothing by itself. Certificate-log search (crt.sh) is switched off. Search, ads and Maps coverage is ready, but needs a key that is not configured.",
+                "**Official-number registry.** Fifty-one official helpline numbers for fourteen brands let the message check recognise a scam text that gives a different number for a known organisation. A number match is context only and carries weight zero in the score; it can never raise or lower a verdict on its own.",
+            ],
+        )
+    )
+    add(("h2", "3.6 Operators: History, route selector and sovereign proof"))
+    add(
+        (
+            "ul",
+            [
+                "**Read-only History.** A public read-only History lists checks and incidents (restricted by sign-in in a real deployment). Operator links open Phoenix traces and Grafana dashboards.",
+                "**AI route selector.** An operator chooses the route for the model roles: a cloud model with a local fallback, or a local-only route using Inkling or Qwen. The arbiter, not the model, still decides every score on every route.",
+                "**Sovereign proof.** The local-only route was run against the scenario set with a network audit that counts calls to a cloud model; results are in section 8.4.",
+                "**Phones and the web.** The web app works on phones, including iPhone, as an installable app, and the project is served at falconlens.app for the demonstration.",
+            ],
         )
     )
     add(("pb",))
@@ -749,6 +855,22 @@ def build(a: Artifacts) -> list[Block]:
         ("Explanation faithfulness", ev.faith_line(), "fixture verdicts"),
         ("AI Investigator layer (T3)", ev.t3_line(), "fixtures"),
         ("DSPy prompt optimisation", ev.dspy_line(), "synthetic replay data"),
+        (
+            "Fresh two-hundred-site live test, main set",
+            ev.fresh_main_line(),
+            "live sites and a feed; one run, one day; legitimate labels not hand-audited; the feed also supplied the phishing",
+        ),
+        (
+            "Fresh test, hosts from a feed the stack does not query",
+            ev.fresh_second_line(),
+            "same single run; read this row for the model's own detection",
+        ),
+        ("Voice assistant benchmark", ev.voice_line(), "synthetic speech and noise, not real speakers; an upper bound"),
+        (
+            "Sovereign proof, local models only",
+            ev.sovereign_line(),
+            "one developer machine, invented fixtures; not a production deployment",
+        ),
     ):
         if line:
             rows2.append([label, line[0].upper() + line[1:] + ".", kind])
@@ -820,9 +942,11 @@ def build(a: Artifacts) -> list[Block]:
             [
                 f"The live false-alarm rate ({a.fp_pct()}) is far above the target. Pages the sandbox cannot open are the main cause.",
                 "The evaluation sets are small and from a single collection poll (no temporal cut), so the ranges are wide.",
-                "Nothing has been measured yet for the sealed-browser layer, the AI Investigator, brand-new-page detection, the cloud and local model routes, or prompt-injection resistance on the shipped cascade.",
+                "The fresh two-hundred-site test is a single run on one day, its legitimate labels are not hand-audited, and its main phishing set came from a feed the stack also reads; the red-team and voice sets are synthetic.",
                 "The prototype uses the OpenPhish community list, which allows research use only. A real deployment needs a licence. Other feeds are disabled until keys are available.",
-                "The Sentinel reads only the checks people send; it does not scan for new look-alike domains on its own.",
+                "The Sentinel reads only the checks people send; it does not scan for new look-alike domains on its own."
+                if not shipped("hunter")
+                else "The proactive hunter reads certificate logs and permutations only; search, ads and Maps coverage need keys that are not configured.",
                 "Data retention is not automated.",
                 "The Arabic strings are written natively, but a native-speaker review is still open.",
                 "Nothing is connected to any police or government system.",
@@ -837,7 +961,10 @@ def build(a: Artifacts) -> list[Block]:
                 "A native reader's rating of the Arabic text, sandbox recall on labelled phishing pages, and bringing the live false-alarm rate down to its target.",
                 "Sign-in (SSO) to restrict the read-only History, which is public until then.",
                 "Adopting DSPy-optimised prompts: the optimiser ran for every model role and none was adopted, because the gains are within noise.",
-                "Active discovery of new look-alike domains.",
+                or_planned("hunter", "Active discovery of new look-alike domains from certificate logs."),
+                or_planned("evidence_pack", "A police evidence pack download."),
+                or_planned("helpline_registry", "An official-number registry for fake helplines."),
+                "Search, ads and Maps coverage once keys are configured.",
                 "A licensed scam-list feed, and additional warning lists once keys exist.",
                 "Automated data retention, and a switch to turn off external look-ups in sovereign mode.",
                 "A real connection to a police or security system, which needs an agreement with that organisation.",
@@ -845,8 +972,63 @@ def build(a: Artifacts) -> list[Block]:
         )
     )
 
-    # ── 11 Glossary ────────────────────────────────────────────────────────────────────────────
-    add(("h1", "11. Glossary in plain words"))
+    # ── 11 Criteria map ────────────────────────────────────────────────────────────────────────
+    add(("h1", "11. Criteria map: what we built and where the evidence is"))
+    add(
+        (
+            "p",
+            "Each of the five judging criteria, what the project does about it, and where the evidence is. Every figure is read from a published evaluation file; limits are stated beside the claim.",
+        )
+    )
+    add(
+        (
+            "table",
+            ["Criterion", "What we built", "Evidence", "Honest limit"],
+            [
+                [
+                    "Detection accuracy",
+                    "Cascade T0 to T3, deterministic arbiter, verified-official rule, redirects followed in the sealed browser, cloaking check.",
+                    "Held-out test split and the fresh two-hundred-site live test (see the results chapter); red-team results (see the results chapter).",
+                    f"Live false-alarm rate {a.fp_pct()} is far above target; sets are small; no sandbox recall on labelled pages yet.",
+                ],
+                [
+                    "Early detection and coverage",
+                    "Brand check for look-alike pages no list knows; scam-script recognition for messages without a link; look-alike hunter; official-number registry.",
+                    "Brand-new-pages and message results (see the results chapter).",
+                    "Hunter is off by default; search, ads and Maps need a key; certificate-log search is off.",
+                ],
+                [
+                    "Explainability and actionability",
+                    "Arabic reasons tied to evidence, per-check findings, a trace per check, police evidence pack with SHA-256 manifest, bilingual takedown draft, STIX.",
+                    "Faithfulness result (see the results chapter).",
+                    "Drafts wait for a human; nothing is sent to any authority.",
+                ],
+                [
+                    "UAE relevance and innovation",
+                    "Arabic first, UAE brand registry, Hey Falcon voice assistant in Arabic and English with an Emirati voice, official-number registry, campaign linking.",
+                    "Voice benchmark and Arabic clarity results (see the results chapter).",
+                    "Voice measured on synthetic clips; native-speaker review of the Arabic is still open.",
+                ],
+                [
+                    "Feasibility and presentation",
+                    "Runs on one machine; sovereign mode on local models; route selector; batch tool for hidden test sets; REST, MCP, STIX and signed webhooks.",
+                    "Sovereign proof and route comparison (see the results chapter).",
+                    "Ready to connect, not connected to any police or government system; scaling is proven on one machine only.",
+                ],
+            ],
+            [1.2, 2.2, 1.9, 1.6],
+        )
+    )
+    add(
+        (
+            "note",
+            "Not affiliated",
+            "Falcon Lens is independent, uses no police branding and is not endorsed by any authority. It never tells a user that a link is harmless; the lowest result is «لم نجد علامات تحذير» (No warning signs found), with a reminder to stay careful.",
+        )
+    )
+
+    # ── 12 Glossary ────────────────────────────────────────────────────────────────────────────
+    add(("h1", "12. Glossary in plain words"))
     glossary = [
         (
             "Phishing",
@@ -912,10 +1094,10 @@ def build(a: Artifacts) -> list[Block]:
     add(("table", ["Term", "Meaning"], [[t, m] for t, m in glossary], [2.0, 4.7]))
 
     # ── 12 Tools and team ──────────────────────────────────────────────────────────────────────
-    add(("h1", "12. Tools used"))
+    add(("h1", "13. Tools used"))
     add(("p", "Generated from the lockfiles and the compose file, so it lists only what the shipped code uses."))
     add(("table", ["Category", "Tools"], [[cat, ", ".join(items)] for cat, items in tools_by_category()], [1.8, 4.9]))
-    add(("h1", "13. Team"))
+    add(("h1", "14. Team"))
     add(("ul", ["Mohamed Atef (Team leader)", "Abdulrahman Alseiari", "MokhmadSalakh Salamov"]))
     add(
         (
