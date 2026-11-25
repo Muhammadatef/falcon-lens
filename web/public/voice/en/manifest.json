@@ -354,16 +354,16 @@
   {
     "id": "en.investigator.ai_second_look_local",
     "file": "en.investigator.ai_second_look_local.mp3",
-    "text": "AI second look, with our local model.",
-    "ms": 1989,
+    "text": "Checking with our AI language model (LLM).",
+    "ms": 2540,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },
   {
     "id": "en.investigator.ai_second_look_cloud",
     "file": "en.investigator.ai_second_look_cloud.mp3",
-    "text": "AI second look, with a cloud language model.",
-    "ms": 2443,
+    "text": "Checking with our AI language model (LLM).",
+    "ms": 2570,
     "engine": "kokoro",
     "voice": "am_fenrir"
   },

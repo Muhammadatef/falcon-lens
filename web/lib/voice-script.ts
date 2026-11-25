@@ -238,8 +238,8 @@ function build(): Record<VoiceLang, Record<string, string>> {
   put("investigator.lists", "أطابقه مع قوائم النصب المعروفة.", "Checking known scam lists.");
   put("investigator.address", "أشوف عنوان الموقع، يمكن فيه تشابه مخادع.", "Checking the web address for look-alike tricks.");
   put("investigator.page", "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي.", "Opening the page in our isolated browser. Nothing is typed.");
-  put("investigator.ai_second_look_local", "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي.", "AI second look, with our local model.");
-  put("investigator.ai_second_look_cloud", "نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي.", "AI second look, with a cloud language model.");
+  put("investigator.ai_second_look_local", "نتأكد بنموذج الذكاء الاصطناعي اللغوي حقنا.", "Checking with our AI language model (LLM).");
+  put("investigator.ai_second_look_cloud", "نتأكد بنموذج الذكاء الاصطناعي اللغوي حقنا.", "Checking with our AI language model (LLM).");
 
   // What this check found (see FINDINGS), spoken under each tier.
   put("find.none", "ما لقينا شي ملفت في هذه الطبقة.", "Nothing notable at this layer.");

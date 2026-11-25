@@ -49,8 +49,8 @@ ar_ae:
   "investigator.lists": "أطابقه مع قوائم النصب المعروفة."
   "investigator.address": "أشوف عنوان الموقع، يمكن فيه تشابه مخادع."
   "investigator.page": "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي."
-  "investigator.ai_second_look_local": "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي."
-  "investigator.ai_second_look_cloud": "نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي."
+  "investigator.ai_second_look_local": "نتأكد بنموذج الذكاء الاصطناعي اللغوي حقنا."
+  "investigator.ai_second_look_cloud": "نتأكد بنموذج الذكاء الاصطناعي اللغوي حقنا."
   "find.none": "ما لقينا شي ملفت في هذه الطبقة."
   "investigator.wording": "أقرا صياغة المسج، وأدوّر على الاستعجال والضغط."
   "find.listed": "الرابط مسجّل في قائمة نصب معروفة."
@@ -375,8 +375,8 @@ en:
   "investigator.lists": "Checking known scam lists."
   "investigator.address": "Checking the web address for look-alike tricks."
   "investigator.page": "Opening the page in our isolated browser. Nothing is typed."
-  "investigator.ai_second_look_local": "AI second look, with our local model."
-  "investigator.ai_second_look_cloud": "AI second look, with a cloud language model."
+  "investigator.ai_second_look_local": "Checking with our AI language model (LLM)."
+  "investigator.ai_second_look_cloud": "Checking with our AI language model (LLM)."
   "find.none": "Nothing notable at this layer."
   "investigator.wording": "Reading the wording for urgency and pressure."
   "find.listed": "The link is on a known scam list."
@@ -701,8 +701,8 @@ clips:
   - {id: "ar_ae.investigator.lists", lang: ar_ae, text: "أطابقه مع قوائم النصب المعروفة."}
   - {id: "ar_ae.investigator.address", lang: ar_ae, text: "أشوف عنوان الموقع، يمكن فيه تشابه مخادع."}
   - {id: "ar_ae.investigator.page", lang: ar_ae, text: "أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي."}
-  - {id: "ar_ae.investigator.ai_second_look_local", lang: ar_ae, text: "نظرة ثانية بالذكاء الاصطناعي، بموديل محلي."}
-  - {id: "ar_ae.investigator.ai_second_look_cloud", lang: ar_ae, text: "نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي."}
+  - {id: "ar_ae.investigator.ai_second_look_local", lang: ar_ae, text: "نتأكد بنموذج الذكاء الاصطناعي اللغوي حقنا."}
+  - {id: "ar_ae.investigator.ai_second_look_cloud", lang: ar_ae, text: "نتأكد بنموذج الذكاء الاصطناعي اللغوي حقنا."}
   - {id: "ar_ae.find.none", lang: ar_ae, text: "ما لقينا شي ملفت في هذه الطبقة."}
   - {id: "ar_ae.investigator.wording", lang: ar_ae, text: "أقرا صياغة المسج، وأدوّر على الاستعجال والضغط."}
   - {id: "ar_ae.find.listed", lang: ar_ae, text: "الرابط مسجّل في قائمة نصب معروفة."}
@@ -1026,8 +1026,8 @@ clips:
   - {id: "en.investigator.lists", lang: en, text: "Checking known scam lists."}
   - {id: "en.investigator.address", lang: en, text: "Checking the web address for look-alike tricks."}
   - {id: "en.investigator.page", lang: en, text: "Opening the page in our isolated browser. Nothing is typed."}
-  - {id: "en.investigator.ai_second_look_local", lang: en, text: "AI second look, with our local model."}
-  - {id: "en.investigator.ai_second_look_cloud", lang: en, text: "AI second look, with a cloud language model."}
+  - {id: "en.investigator.ai_second_look_local", lang: en, text: "Checking with our AI language model (LLM)."}
+  - {id: "en.investigator.ai_second_look_cloud", lang: en, text: "Checking with our AI language model (LLM)."}
   - {id: "en.find.none", lang: en, text: "Nothing notable at this layer."}
   - {id: "en.investigator.wording", lang: en, text: "Reading the wording for urgency and pressure."}
   - {id: "en.find.listed", lang: en, text: "The link is on a known scam list."}

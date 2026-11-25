@@ -55,8 +55,8 @@ Lines: 351. Digits are written out in words (`num.0` to `num.100`).
 | أطابقه مع قوائم النصب المعروفة. | Checking known scam lists. |  |
 | أشوف عنوان الموقع، يمكن فيه تشابه مخادع. | Checking the web address for look-alike tricks. |  |
 | أفتح الصفحة في متصفح معزول عندنا، وما يندخل فيها شي. | Opening the page in our isolated browser. Nothing is typed. |  |
-| نظرة ثانية بالذكاء الاصطناعي، بموديل محلي. | AI second look, with our local model. |  |
-| نظرة ثانية بالذكاء الاصطناعي، بنموذج لغوي سحابي. | AI second look, with a cloud language model. |  |
+| نتأكد بنموذج الذكاء الاصطناعي اللغوي حقنا. | Checking with our AI language model (LLM). |  |
+| نتأكد بنموذج الذكاء الاصطناعي اللغوي حقنا. | Checking with our AI language model (LLM). |  |
 | ما لقينا شي ملفت في هذه الطبقة. | Nothing notable at this layer. |  |
 | أقرا صياغة المسج، وأدوّر على الاستعجال والضغط. | Reading the wording for urgency and pressure. |  |
 | الرابط مسجّل في قائمة نصب معروفة. | The link is on a known scam list. |  |

@@ -13,9 +13,25 @@ async function mocks(page: Page) {
     await page.route(`**/voice/${lang}/manifest.json`, (r) => r.fulfill({ json: list }));
     await page.route(new RegExp(`/voice/${lang}/[^/]+\\.mp3$`), (r) => r.fulfill({ contentType: "audio/mpeg", body: "x" }));
   }
+  // The assistant waits silently after the tap; the bare wake phrase (mocked reply) makes it greet, which gives the caption.
+  await page.route("**/api/voice", (r) =>
+    r.request().method() !== "POST"
+      ? r.continue()
+      : r.fulfill({ json: { transcript: "x", lang: "ar", wake: true, intent: "none", command: "", answerId: null, duration_ms: 1, model: "mock" } }),
+  );
   await page.addInitScript(() => {
     const w = window as any;
     w.__level = 0;
+    w.MediaRecorder = class extends EventTarget {
+      static isTypeSupported() { return true; }
+      start() {}
+      stop() {
+        const ev: any = new Event("dataavailable");
+        ev.data = new Blob(["x"], { type: "audio/webm;codecs=opus" });
+        this.dispatchEvent(ev);
+        this.dispatchEvent(new Event("stop"));
+      }
+    };
     Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: async () => ({ getTracks: () => [{ stop() {} }] }) } });
     w.AudioContext = class {
       state = "running";
@@ -50,7 +66,10 @@ for (const lang of ["ar", "en"] as const) {
         await page.getByTestId("voice-on").click();
         await expect(page.getByTestId("voice-state")).toHaveText(M["voice.state.listening"]);
         await expect(page.getByTestId("voice-clip-chip")).toBeVisible();
-        await expect(page.getByTestId("voice-caption")).toBeVisible(); // the greeting
+        await page.evaluate(() => { (window as any).__level = 0.3; }); // say the wake phrase alone
+        await page.waitForTimeout(1000);
+        await page.evaluate(() => { (window as any).__level = 0; });
+        await expect(page.getByTestId("voice-caption")).toBeVisible({ timeout: 10_000 }); // the greeting
         const card = (await page.locator(".voice-stage").boundingBox())!;
         const mic = (await page.locator(".voice-orb").boundingBox())!;
         const state = await box(page, "voice-state");
