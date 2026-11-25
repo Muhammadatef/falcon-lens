@@ -42,7 +42,7 @@ def test_main_path_has_at_most_one_click_per_slide_and_every_appendix_slide_link
     v2.LOGOS.clear()  # monogram badges: no browser needed
     facts = v2.bd.gather(ROOT)
     slides, n_main = v2.build_slides(facts, ROOT, None)
-    assert n_main == 8
+    assert n_main == 9
     keys = [s.key for s in slides]
     assert len(keys) == len(set(keys))
     for s in slides:

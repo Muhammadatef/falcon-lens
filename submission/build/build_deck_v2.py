@@ -345,8 +345,8 @@ def chrome(s: Slide) -> None:
     head: list[Any] = [
         Box(M, 0.5, 0.06, 0.28, accent, None, "round", 0.03),
         tb(M + 0.2, 0.48, 8.5, 0.32, p(s.eyebrow, 12.5, accent, True), anchor="m"),  # type: ignore[attr-defined]
-        tb(M, 0.86, 7.7, 0.74, p(s.title_en, 30, "text", True), anchor="m"),
-        tb(W - M - 4.9, 0.86, 4.9, 0.74, ar(s.title_ar, 26), anchor="m"),
+        tb(M, 0.86, 7.7, 0.74, p(s.title_en, 30 if len(s.title_en) < 36 else 24, "text", True), anchor="m"),
+        tb(W - M - 4.9, 0.86, 4.9, 0.74, ar(s.title_ar, 26 if len(s.title_ar) < 30 else 21), anchor="m"),
     ]
     foot: list[Any] = [
         *bd.lens_shapes(M, 6.98, 0.2, "faint"),
@@ -500,16 +500,16 @@ def slide_title(f: Facts) -> Slide:
 def slide_agenda(f: Facts) -> Slide:
     s = new("agenda", "Our three minutes", "دقائقنا الثلاث", "sky", "AGENDA · جدول العرض")
     rows = (
-        ("0:00 to 0:25", "Hook: Abu Saeed's story", "المشهد: قصة أبو سعيد", "voice", "hook"),
+        ("0:00 to 0:45", "Hook: Abu Saeed's story", "المشهد: قصة أبو سعيد", "voice", "hook"),
         (
-            "0:25 to 0:55",
+            "0:45 to 0:55",
             "Why voice · two agents · architecture",
             "لماذا الصوت · الوكيلان · المعمارية",
             "baseer",
             "why_voice",
         ),
         ("0:55 to 2:40", "Live demo, on this machine", "عرض مباشر على هذا الجهاز", "dir", "demo"),
-        ("2:40 to 3:00", "Close: five criteria, our evidence", "الختام: المعايير الخمسة وأدلتنا", "sky", "close"),
+        ("2:40 to 3:00", "Close: our vision, then five criteria", "الختام: رؤيتنا ثم معاييركم", "sky", "vision"),
     )
     lw, rh, gap, y0 = 7.35, 0.98, 0.14, 1.95
     for i, (time, t_en, t_ar, accent, key) in enumerate(rows):
@@ -1190,6 +1190,85 @@ def slide_demo(f: Facts) -> Slide:
     return s
 
 
+def slide_vision(f: Facts) -> Slide:
+    """The conclusion: the six principles the team set itself at the start. No figure is quoted here."""
+    s = new(
+        "vision",
+        "From day one: the vision behind Falcon Lens",
+        "منذ اليوم الأول: رؤيتنا لعدسة الصقر",
+        "baseer",
+        "CONCLUSION · الخلاصة",
+    )
+    s.logos = True  # type: ignore[attr-defined]
+    tiles: tuple[tuple[str, str, str, str, tuple[str, ...]], ...] = (
+        (
+            "sky",
+            "Data sovereignty and locality",
+            "سيادة البيانات ومحليّتها",
+            "Data stays in the UAE, on our own machines: every model call can run locally.",
+            (),
+        ),
+        (
+            "baseer",
+            "Robust AI agents, not a demo",
+            "وكلاء متينون لا عرض تجريبي",
+            "DSPy: typed, measured prompts. LangGraph: auditable, restart-resilient, human approval.",
+            ("dspy", "langgraph"),
+        ),
+        (
+            "voice",
+            "Built for older Emirati residents",
+            "لكبار السن من أهل الإمارات",
+            "The voice assistant «يا صقر» speaks their own dialect. No reading or typing needed.",
+            (),
+        ),
+        (
+            "dir",
+            "Local models",
+            "نماذج محلية",
+            "The whole product can run in local data centres: Inkling or Qwen, Whisper, Kokoro.",
+            ("ollama", "qwen", "whisper", "kokoro"),
+        ),
+        (
+            "sky",
+            "Runs anywhere",
+            "يعمل في أي مكان",
+            "Docker Compose: one command, on any operating system that runs Docker.",
+            ("docker",),
+        ),
+        (
+            "baseer",
+            "Trace everything",
+            "تتبّع كل شيء",
+            "Monitoring, alerting and tracing of every API and model call: OpenTelemetry, Phoenix, Prometheus, Grafana, Alertmanager.",
+            ("otel", "phoenix", "prometheus", "grafana"),
+        ),
+    )
+    cw = (CW - 0.4) / 3
+    ch = (6.7 - 1.9 - 0.16) / 2
+    for i, (accent, t_en, t_ar, body, tools) in enumerate(tiles):
+        x = M + (i % 3) * (cw + 0.2)
+        y = 1.9 + (i // 3) * (ch + 0.16)
+        shapes: list[Any] = [*panel(x, y, cw, ch, accent), *badge(x + 0.28, y + 0.2, 0.56, accent)]
+        for j, tool in enumerate(reversed(tools)):
+            shapes += mark(tool, x + cw - 0.6 - j * 0.44, y + 0.3, 0.34, accent)
+        shapes += [
+            tb(x + 0.28, y + 0.84, cw - 0.5, 0.4, p(t_en, 15, "text", True), anchor="m"),
+            tb(x + 0.28, y + 1.2, cw - 0.5, 0.38, ar(t_ar, 14.5), anchor="m"),
+            tb(x + 0.28, y + 1.6, cw - 0.5, ch - 1.66, p(body, 11.5, "muted")),
+        ]
+        s.add(grp(f"tile_{i}", *shapes))
+    s.motion = stagger([f"tile_{i}" for i in range(6)], "zoom", "click", 150, 380)
+    s.notes = notes(
+        "When we started, we set ourselves six principles. Data sovereignty: data stays in the UAE, on our own machines. Robust AI agents, not a demo: DSPy for typed, measured prompts, and LangGraph for an auditable, restart-resilient graph with human approval. Built for older Emirati residents: the voice assistant, Hey Falcon, in their own dialect, with no reading or typing. Local models: the whole product can run in local data centres. Runs anywhere: Docker Compose, one command. And trace everything: monitoring, alerting and tracing of every API and model call.",
+        "حين بدأنا وضعنا لأنفسنا ستة مبادئ: سيادة البيانات، فالبيانات تبقى في الإمارات وعلى أجهزتنا. ووكلاء متينون لا عرض تجريبي، بـDSPy وLangGraph. ومنتج لكبار السن من أهل الإمارات: المساعد الصوتي «يا صقر» بلهجتهم، دون قراءة أو كتابة. ونماذج محلية تعمل في مراكز بيانات محلية. وتشغيل في أي مكان بأمر واحد عبر Docker Compose. وتتبّع كل شيء: مراقبة وتنبيه وتتبّع لكل استدعاء.",
+        "A single click brings in all the tiles in turn. Then click on to the close slide.",
+        "",
+        "Does all data stay local? Every model call can; lookups about the checked site still use the internet through the egress proxy. DSPy: the pipeline ran, no prompt is adopted yet. Say no figure on this slide.",
+    )
+    return s
+
+
 def criteria_tiles(f: Facts) -> list[tuple[str, str, str, list[Run], str, str]]:
     """(link key, C-id, name, figure runs, label, source) for the five criteria. Every figure is read from an artifact."""
     out = []
@@ -1345,6 +1424,7 @@ def slide_index(f: Facts, entries: list[Slide]) -> Slide:
             Hot(x, y, cw, ch, e.key),
         )
     s.add(*pill(M + 3.2, 6.9, 2.3, "‹ Back to the close", "baseer", 12, 0.36), Hot(M + 3.2, 6.85, 2.3, 0.46, "close"))
+    s.add(*pill(M + 5.65, 6.9, 1.5, "‹ Vision", "baseer", 12, 0.36), Hot(M + 5.65, 6.85, 1.5, 0.46, "vision"))
     s.motion = stagger([f"card_{i}" for i in range(len(entries))], "zoom", "auto", 55, 300)
     s.transition = ("push_up", 600)
     s.notes = notes(
@@ -2555,6 +2635,7 @@ def build_slides(
         slide_agents(f),
         slide_architecture(f, arch),
         slide_demo(f),
+        slide_vision(f),
         slide_close(f),
     ]
     bd.criterion_slide = (
