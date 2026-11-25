@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CapBadge } from "@/components/CapBadge";
+import { FlowDiagram } from "@/components/arch/FlowDiagram";
 import { flag } from "@/lib/cap-flag";
 import type { Capabilities } from "@/lib/capabilities";
 import type { Lang } from "@/lib/contracts";
@@ -116,6 +117,7 @@ export function BuildingAgentsDoc({ lang, caps }: { lang: Lang; caps: Capabiliti
         <p className="ba-intro">{c.sentinel.intro}</p>
         <Legend c={c} />
         <Pipeline lanes={c.sentinel.lanes} label={c.sentinel.label} caps={caps} lang={lang} id="ba-sentinel" />
+        <div className="flow-section" data-testid="ba-sentinel-flow"><FlowDiagram spec="dir" lang={lang} caps={caps as unknown as Record<string, boolean>} /></div>
         <Items items={c.sentinel.notes} />
       </section>
 
@@ -124,6 +126,7 @@ export function BuildingAgentsDoc({ lang, caps }: { lang: Lang; caps: Capabiliti
         <p className="ba-intro">{c.dspy.intro}</p>
         <Legend c={c} />
         <Pipeline lanes={c.dspy.lanes} label={c.dspy.label} caps={caps} lang={lang} id="ba-dspy" />
+        <div className="flow-section" data-testid="ba-dspy-flow"><FlowDiagram spec="dspy" lang={lang} caps={caps as unknown as Record<string, boolean>} /></div>
         <Items items={c.dspy.notes} />
       </section>
 
