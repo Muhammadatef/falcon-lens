@@ -73,6 +73,9 @@ test.describe("design polish (audit 24 Nov)", () => {
         await page.goto(path);
         const layers = page.getByTestId("arch-layers");
         await expect(layers).toBeVisible();
+        // The animated diagram comes first; the same three layers in words are its text version (a native details).
+        await expect(layers.getByTestId("flow-main")).toBeVisible();
+        await layers.getByTestId("flow-main-alt").locator("summary").first().click();
         // Voice on top, the two agents in the middle, the platform at the bottom.
         const order = await layers.locator("details.al-layer").evaluateAll((els) => els.map((e) => [e.getAttribute("data-layer"), Math.round(e.getBoundingClientRect().top)] as const));
         expect(order.map((o) => o[0])).toEqual(["voice", "agents", "platform"]);
@@ -82,6 +85,10 @@ test.describe("design polish (audit 24 Nov)", () => {
         await expect(layers.getByTestId("al-group-baseer")).toContainText(lang === "ar" ? "«بصير»، المحقّق" : "Baseer, the Investigator");
         await expect(layers.getByTestId("al-group-dir")).toContainText(lang === "ar" ? "«درع»، الحارس" : "Dir', the Sentinel");
         expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), path).toBeLessThanOrEqual(0);
+        // Let the build-in finish before the audit (boxes fade in when the diagram scrolls into view).
+        await layers.scrollIntoViewIfNeeded();
+        await expect(layers.getByTestId("flow-main")).toHaveAttribute("data-built", "true");
+        await page.waitForTimeout(1700);
         const res = await new AxeBuilder({ page }).include('[data-testid="arch-layers"]').analyze();
         expect(res.violations.map((v) => `${path} ${v.id} ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
       }

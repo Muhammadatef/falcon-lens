@@ -241,3 +241,22 @@ Screenshots of the real app (production build, mocked API): `web/design/app-shot
 ## 11. Interactive architecture
 
 One connected diagram (`web/components/arch/ArchDiagram.tsx`) on `/docs/agents` (full) and `/agents` (business). It is HTML buttons in lanes, not an SVG or a library, so it is touch-sized (48 px), RTL-correct by logical properties and CSP-safe (no inline styles; the tooltip is a `role="tooltip"` element shown on hover or focus, dismissed with Esc). Click, Enter or Space opens a side panel (a bottom sheet under 720 px). Connections are dashed lines that flow only when reduced motion is not requested; the selected node highlights its connected nodes. Structure is data (`lib/arch-graph.ts`), words are in `lib/i18n-arch.ts`; unit tests check every node has English and Arabic tooltip and panel text and a repository path that exists. Screenshots: `web/design/app-shots/arch/`.
+
+## 12. Animated architecture with tool logos
+
+The main architecture and the agent architectures are animated diagrams built by one component, `web/components/arch/FlowDiagram.tsx`, from data in `web/lib/arch-flow.ts`. There are five specs: `main` (voice, the two agents, the platform; on `/docs`, `/agents` and `/docs/agents`), `baseer` (cascade, bounded loop, arbiter), `dir` (events, rules, the LangGraph graph, the human gate), `route` (redaction, router, cloud or local, traces) and `dspy` (offline tuning, frozen file, loader); the last four are on `/docs/agents`. The lane diagram of section 11 keeps its panel and gains tool badges and a walk-through bar.
+
+**Structure.** Boxes are real buttons in a responsive grid: one column on a phone, more as the width allows, mirrored in Arabic by logical properties. Each box has a badge, a label, one short line, its step number when it is on the request path, and its status. Wires and the travelling dot are two SVG layers placed from the measured centres of the boxes (`offsetLeft` and `offsetTop`, so a transform never skews them), redrawn by a `ResizeObserver`. Bands are in normal flow (painted under the wires), boxes and headings sit above the wires, and the dot layer sits above the boxes.
+
+**Badges.** Three kinds, never mixed up (`ToolBadge.tsx`): a vendored tool logo in its brand colour on a light tile (the tile is light in both themes, so dark marks stay visible); a neutral text badge for a tool whose logo is not vendored; one of our own icons for our own code. Sources and licences are in `web/public/logos/tools/LOGOS_LICENSES.md`. The footnote "Logos belong to their owners; shown to identify the tools used." is part of every diagram. No police, government, bank or telecom mark appears.
+
+**Motion.** The timeline is a lead-in while the layers rise in one after another, then one hop and one rest per step. The active box gets a brand ring and glow, finished boxes keep a brand outline, the wire fills behind the dot, and the caption shows the step in the reader's language. The player bar (Play or Pause, Replay, previous, next, step counter, caption) stays in view under the site header. The main diagram starts once when it scrolls into view and stops at the last step. Only `transform`, `opacity` and SVG stroke attributes change.
+
+**Reduced motion.** Nothing moves and nothing starts: the whole path is drawn, the dot layer is removed, every box keeps its label and number, the Play and Replay buttons are not offered, and the steps can still be read one at a time.
+
+**Accessibility.** Every box has a text label; the badge is decorative and the tool name is repeated as hidden text. Each diagram is a labelled group, and under each one a native `<details>` holds the text version: the request path as an ordered list, then every part with its tool and status. Selecting a box opens the detail panel of section 11, or a short tool card when the part has no entry there. Esc closes it and focus returns to the box.
+
+**README, GIF and video.** `docs/assets/architecture.svg` is generated from the same data by `web/scripts/build-arch-svg.mjs` and is a complete numbered picture when it does not animate. `web/tests/shots/arch-video.shots.ts` renders the site diagram frame by frame (the component accepts a `fl-flow-seek` event) to MP4, GIF and PNG. Screenshots: `web/design/app-shots/arch-flow/`.
+
+**Deck guidance.** Use the MP4 full-bleed on a dark slide with no added chrome, or the final-frame PNG where video is not possible. Do not crop the footnote line off without keeping the logo credit elsewhere on the slide.
+

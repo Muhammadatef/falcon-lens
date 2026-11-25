@@ -7,6 +7,8 @@ import { dt } from "@/lib/i18n-docs";
 import { flag } from "@/lib/cap-flag";
 import { ArchDiagram } from "@/components/arch/ArchDiagram";
 import { ArchLayers } from "@/components/arch/ArchLayers";
+import { FlowDiagram } from "@/components/arch/FlowDiagram";
+import { BASEER_FLOW, DIR_FLOW, ROUTE_FLOW, type FlowSpec } from "@/lib/arch-flow";
 import { VoiceAgentsSection } from "@/components/VoiceAgentsSection";
 import { WhyDspyLanggraph } from "@/components/arch/WhyDspyLanggraph";
 import { at } from "@/lib/i18n-arch";
@@ -88,17 +90,15 @@ function Agent({ id, block, c, caps, lang, badge, children }: { id: string; bloc
   );
 }
 
-const FIGS = {
-  investigator: { src: "/images/investigator.svg", width: 1200, height: 790, alt: { ar: "مخطط بنية بصير: الطبقات من الشلال الحتمي إلى المحكّم والمجيب.", en: "Diagram of the Investigator architecture: from the deterministic cascade to the arbiter and the responder." } },
-  sentinel: { src: "/images/sentinel.svg", width: 1200, height: 776, alt: { ar: "مخطط بنية درع: من تدفق الأحداث إلى الرسم والموافقة البشرية.", en: "Diagram of the Sentinel architecture: from the event stream to the graph and the human approval." } },
-} as const;
-
-function Fig({ id, lang }: { id: keyof typeof FIGS; lang: Lang }) {
-  const f = FIGS[id];
+/** One animated diagram with its title and lead (lib/arch-flow.ts). */
+function FlowSection({ spec, lang, caps, heading = "h3" }: { spec: FlowSpec; lang: Lang; caps: Capabilities; heading?: "h2" | "h3" }) {
+  const Heading = heading;
   return (
-    <div className="figure" dir="ltr" tabIndex={0} role="group" aria-label={f.alt[lang]}>
-      <img src={f.src} alt={f.alt[lang]} width={f.width} height={f.height} loading="lazy" decoding="async" />
-    </div>
+    <section className="flow-section" aria-labelledby={`flow-h-${spec.id}`} data-testid={`flow-section-${spec.id}`}>
+      {heading === "h2" ? <div className="sec-head"><Heading id={`flow-h-${spec.id}`}>{spec.title[lang]}</Heading></div> : <Heading id={`flow-h-${spec.id}`}>{spec.title[lang]}</Heading>}
+      <p>{spec.lead[lang]}</p>
+      <FlowDiagram spec={spec.id} lang={lang} caps={caps as unknown as Record<string, boolean>} />
+    </section>
   );
 }
 
@@ -107,7 +107,7 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
   const c = ARCH[lang];
   return (
     <>
-      <ArchLayers lang={lang} />
+      <ArchLayers lang={lang} caps={caps as unknown as Record<string, boolean>} />
 
       <section aria-labelledby="arch-h" className="arch-section">
         <div className="sec-head"><h2 id="arch-h">{at(lang, "arch.diagram.title")}</h2></div>
@@ -123,7 +123,7 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
 
       <Agent id="investigator" block={c.investigator} c={c} caps={caps} lang={lang} badge={flag(caps, "investigator")}>
         <LoopDiagram c={c} />
-        <Fig id="investigator" lang={lang} />
+        <FlowSection spec={BASEER_FLOW} lang={lang} caps={caps} />
         <div className="chips-wrap">
           <h3 className="h3">{c.toolsTitle}</h3>
           <ul className="chips">{c.tools.map((t) => <li className="chip mono" key={t}>{t}</li>)}</ul>
@@ -131,12 +131,14 @@ export function AgentsDoc({ lang, caps }: { lang: Lang; caps: Capabilities }) {
       </Agent>
 
       <Agent id="sentinel" block={c.sentinel} c={c} caps={caps} lang={lang} badge={flag(caps, "sentinel_agent")}>
-        <Fig id="sentinel" lang={lang} />
+        <FlowSection spec={DIR_FLOW} lang={lang} caps={caps} />
       </Agent>
 
       <VoiceAgentsSection lang={lang} caps={caps} view="tech" />
 
-      <WhyDspyLanggraph lang={lang} dspyLive={flag(caps, "dspy_compiled_prompts")} tracingLive={flag(caps, "llm_tracing")} />
+      <FlowSection spec={ROUTE_FLOW} lang={lang} caps={caps} heading="h2" />
+
+      <WhyDspyLanggraph lang={lang} caps={caps} dspyLive={flag(caps, "dspy_compiled_prompts")} tracingLive={flag(caps, "llm_tracing")} />
 
       <p><Link className="btn" href="/agents">{dt(lang, "docs.agents.back")}</Link></p>
     </>
