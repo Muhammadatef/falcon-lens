@@ -36,6 +36,7 @@ export function makeLens(parent) {
   const grad = s("radialGradient", { id: `${id}g`, cx: "42%", cy: "38%", r: "70%" }, s("stop", { offset: 0, "stop-color": "#1b2a4a" }), s("stop", { offset: 0.6, "stop-color": "#070b14" }), s("stop", { offset: 1, "stop-color": "#020409" }));
   const iris = s("radialGradient", { id: `${id}i`, cx: "50%", cy: "50%", r: "50%" }, s("stop", { offset: 0.35, "stop-color": "currentColor", "stop-opacity": 0 }), s("stop", { offset: 0.82, "stop-color": "currentColor", "stop-opacity": 0.42 }), s("stop", { offset: 1, "stop-color": "currentColor", "stop-opacity": 0 }));
   under.append(s("defs", {}, grad, iris));
+  const back = s("circle", { class: "lens-back", cx: 200, cy: 200, r: 197 }); // the magnifier's frame: hides what is behind the rim
   const halo = s("circle", { class: "lens-halo", cx: 200, cy: 200, r: 200 });
   const ticks = s("circle", { class: "lens-ticks", cx: 200, cy: 200, r: 190 });
   const majors = s("circle", { class: "lens-majors", cx: 200, cy: 200, r: 190 });
@@ -50,7 +51,7 @@ export function makeLens(parent) {
   const ring = s("circle", { class: "lens-ring", cx: 200, cy: 200, r: 152 });
   const disc = s("circle", { cx: 200, cy: 200, r: 141, fill: `url(#${id}g)` });
   const tint = s("circle", { class: "lens-tint", cx: 200, cy: 200, r: 141 });
-  under.append(halo, spin, ...arcsBase, ...arcsFill, ring, disc, tint);
+  under.append(back, halo, spin, ...arcsBase, ...arcsFill, ring, disc, tint);
 
   // Magnified content sits inside the glass, under the blades.
   const mag = h("div.lens-mag");
@@ -127,6 +128,7 @@ export function makeLens(parent) {
         lastAperture = ap;
       }
       halo.setAttribute("opacity", (0.1 + 0.14 * (st.halo ?? 0)).toFixed(3));
+      back.setAttribute("opacity", (0.9 * clamp(st.mag ?? 0)).toFixed(3));
       spin.setAttribute("transform", `rotate(${(st.tickRot ?? 0).toFixed(2)} 200 200)`);
       const arcs = st.arcs ?? [0, 0, 0, 0];
       for (let i = 0; i < 4; i++) {

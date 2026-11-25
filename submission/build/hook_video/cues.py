@@ -33,7 +33,7 @@ INTRO_TAPS = (INTRO_HIT1 + BEAT, INTRO_HIT1 + 1.5 * BEAT)
 INTRO_HIT2 = INTRO_HIT1 + 2 * BEAT  # the wordmark lands
 INTRO_OUT = 3.06  # whoosh into the cold open
 COLD_SEQUENCE = 4.5  # animated cold open when there is no footage
-END = 3.5  # end card
+END = 3.05  # end card; a deck holds on its last frame
 VERDICT_PRE = 0.50  # the evidence converges on the lens before the earcon
 EARCON = 0.54  # web/public/voice/sfx/dangerous.mp3
 HARD_MAX = 60.0  # the owner's hard limit for the whole hook
@@ -213,9 +213,9 @@ RUN_CHECK = (28.84, 29.88)
 RUN_THANKS = (54.30, 56.28)
 PLATE = (12.60, 12.78)  # the two-shot in the majlis: its six clean frames, then held as a blurred plate
 PIC_SON = (19.60, 20.50)  # Saeed pouring coffee (the shot starts on frame 588)
-PIC_HEY = (25.87, 26.85)  # Abu Saeed, close, teal light on his glasses (clean between two dissolves)
+PIC_HEY = (25.87, 26.78)  # Abu Saeed, close, teal light on his glasses (clean between two dissolves)
 PIC_THANKS = (54.30, 56.28)  # Abu Saeed smiling
-COLD_LEAD = 0.45  # buzz and the message landing before the first word
+COLD_LEAD = 0.38  # buzz and the message landing before the first word
 
 
 def split_words(text: str) -> list[str]:
@@ -341,7 +341,7 @@ def _answer(tl: Timeline, clip_len: dict[str, float], words: dict[str, list[list
     tl.wait(EARCON)
     for ln in by_scene["verdict"]:
         tl.say(ln, clip_len, words)
-    tl.wait(0.22)
+    tl.wait(0.16)
     tl.scene("dir")
     for ln in by_scene["dir"]:
         tl.say(ln, clip_len, words)
@@ -349,11 +349,11 @@ def _answer(tl: Timeline, clip_len: dict[str, float], words: dict[str, list[list
     tl.mark("dir.ping1", linked["t0"] + 0.30)
     tl.mark("dir.ping2", linked["t0"] + 0.70)
     tl.mark("dir.link", linked["t0"] + 1.25)
-    tl.wait(0.18)
+    tl.wait(0.12)
     tl.scene("todo")
     for ln in by_scene["todo"]:
         tl.say(ln, clip_len, words)
-    tl.wait(0.28)
+    tl.wait(0.2)
 
 
 def _end(tl: Timeline) -> None:

@@ -189,7 +189,7 @@ export function build(ctx) {
       const pl = win(t, baseer.t0 + 0.05, baseer.t1 - 0.1, 0.35, 0.25);
       put(plate, { x: 500, y: 176 + 14 * (1 - tw(t, baseer.t0 + 0.05, 0.4)), o: pl });
       const lp = lensPos(t);
-      const M = 1.55; // magnification
+      const M = 1.7; // magnification
       const f = M / lp.s;
       twin.card.style.transform = `translate(${(141 + (k.x - lp.x - (cw / 2) * k.s) * f).toFixed(2)}px,${(141 + (k.y - lp.y - (ch / 2) * k.s) * f).toFixed(2)}px) scale(${(k.s * f).toFixed(4)})`;
       twin.card.style.transformOrigin = "0 0";

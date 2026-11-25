@@ -91,7 +91,7 @@ export function build(ctx) {
       });
       wm.ar.style.transform = `translateX(${(70 * (1 - land)).toFixed(2)}px)`;
       wm.bar.style.transform = `scaleY(${tw(t, m.hit2 + 0.08, 0.35, E.spring).toFixed(3)})`;
-      if (!alone) flashAdd(E.in2(seg(t, intro.t1 - 0.12, intro.t1)) * (t < intro.t1 ? 1 : 0) + (1 - E.out3(seg(t, intro.t1, intro.t1 + 0.3))) * (t >= intro.t1 ? 1 : 0), "rgb(232 252 248)");
+      if (!alone) flashAdd(0.88 * (E.in2(seg(t, intro.t1 - 0.1, intro.t1)) * (t < intro.t1 ? 1 : 0) + (1 - E.out3(seg(t, intro.t1, intro.t1 + 0.24))) * (t >= intro.t1 ? 1 : 0)), "rgb(226 250 245)");
       else flashAdd(E.in2(seg(t, intro.t1 - 0.4, intro.t1 - 0.04)), "rgb(0 0 0)");
     } else put(wmAt, { o: 0 });
 

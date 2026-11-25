@@ -285,3 +285,14 @@ def storyboard(frames: list[Path], times: list[float], out: Path, *, portrait: b
             browser.close()
     finally:
         site.shutdown()
+
+
+def remux(video: Path, audio: Path) -> None:
+    """Replace the sound of a finished film without touching its picture."""
+    tmp = video.with_suffix(".remux.mp4")
+    subprocess.run(
+        ["ffmpeg", "-v", "error", "-y", "-i", str(video), "-i", str(audio), "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+         "-c:a", "aac", "-b:a", "256k", "-ar", "48000", "-ac", "2", "-movflags", "+faststart", "-shortest", str(tmp)],
+        check=True,
+    )  # fmt: skip
+    tmp.replace(video)

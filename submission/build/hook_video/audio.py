@@ -343,7 +343,7 @@ def score(tl: dict[str, Any]) -> tuple[Arr, Arr, Arr]:
     _place(sfx, sweep_noise(tl["scenes"][1]["t0"] - m["intro.out"], 500, 6000, 2.0, 17), m["intro.out"], db(-17))
 
     # Cold open: the phone buzzes, the message lands, a low note holds the tension.
-    _place(sfx, buzz(), m["cold.buzz"], db(-13))
+    _place(sfx, buzz(), m["cold.buzz"], db(-21))
     _place(sfx, thump(150, 70, 0.05), m["cold.land"], db(-12))
     _place(sfx, sweep_noise(0.3, 5000, 900, 1.0, 19, "pass"), m["cold.land"] - 0.14, db(-22))
     cold = _scene(tl, "cold")
@@ -364,8 +364,8 @@ def score(tl: dict[str, Any]) -> tuple[Arr, Arr, Arr]:
             _place(sfx, thump(54, 40, 0.09), m[name] + 0.27, db(-18))
 
     # The Falcon wakes: two rising sine notes, then a calm bed in D minor under the checks.
-    _place(sfx, _reverb(blip(NOTE["A4"], 0.11, 0.5), 1.0, 0.3, 25), m["wake.chime"], db(-17))
-    _place(sfx, _reverb(blip(NOTE["D5"], 0.16, 0.7), 1.0, 0.3, 26), m["wake.chime"] + 0.11, db(-16))
+    _place(sfx, _reverb(blip(NOTE["A4"], 0.11, 0.5), 1.0, 0.3, 25), m["wake.chime"], db(-19))
+    _place(sfx, _reverb(blip(NOTE["D5"], 0.16, 0.7), 1.0, 0.3, 26), m["wake.chime"] + 0.11, db(-18))
     _place(sfx, sweep_noise(0.35, 700, 5200, 1.8, 27), m["wake.snap"] - 0.3, db(-21))
     verdict = _scene(tl, "verdict")
     ai = _scene(tl, "ai")
@@ -380,7 +380,7 @@ def score(tl: dict[str, Any]) -> tuple[Arr, Arr, Arr]:
         k += 1
     # B flat under the last check, a riser into the verdict, then silence for the earcon.
     _place(bed, pad(B_FLAT, m["verdict.slam"] - ai[0] + 0.1, 0.5, 0.9, 0.12, 37), ai[0] - 0.1, db(-22))
-    _place(sfx, riser(m["verdict.slam"] - m["verdict.converge"] - 0.05), m["verdict.converge"], db(-21))
+    _place(sfx, riser(m["verdict.slam"] - m["verdict.converge"] - 0.05), m["verdict.converge"], db(-16))
 
     def at(sid: str) -> float:
         s = _scene(tl, sid)
@@ -401,7 +401,7 @@ def score(tl: dict[str, Any]) -> tuple[Arr, Arr, Arr]:
     _place(sfx, tick(44), at("found") + 0.42, db(-22), 0.2)
     lists = _scene(tl, "lists")
     assert lists
-    _place(sfx, flutter(lists[1] - lists[0] - 0.3), lists[0] + 0.25, db(-25))
+    _place(sfx, flutter(lists[1] - lists[0] - 0.3), lists[0] + 0.25, db(-20))
     address = _scene(tl, "address")
     assert address
     _place(sfx, thump(120, 80, 0.05), address[0] + 1.75, db(-20))

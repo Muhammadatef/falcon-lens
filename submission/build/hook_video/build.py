@@ -100,6 +100,16 @@ def build_variant(variant: str, args: argparse.Namespace, out: Path, work: Path)
         render.extract_live(footage, tl, live_dir)
     report: dict[str, Any] = {"seconds": tl["duration"], "audio": sound["reading"], "files": []}
     for fmt in args.formats:
+        if args.remux:  # new sound on the films that are already rendered
+            target = out / f"{NAMES[variant]}_{fmt}.mp4"
+            render.remux(target, vwork / "master.wav")
+            report["files"].append(target.name)
+            if variant == args.main:
+                w, h = KEYNOTE[fmt]
+                small = out / f"{NAMES[variant]}_{fmt}_keynote.mp4"
+                render.transcode(target, small, width=w, height=h, fps=30, max_mb=args.keynote_mb)
+                report["files"].append(small.name)
+            continue
         frames = vwork / f"frames_{fmt}"
         if frames.exists():
             shutil.rmtree(frames)
@@ -150,6 +160,9 @@ def main() -> int:
     ap.add_argument("--keynote-mb", type=float, default=14.0)
     ap.add_argument("--no-align", action="store_true", help="skip the local word alignment of the clips")
     ap.add_argument("--keep-frames", action="store_true")
+    ap.add_argument(
+        "--remux", action="store_true", help="rebuild only the sound and put it on the films already in --out"
+    )
     args = ap.parse_args()
     args.formats = [f for f in args.formats.split(",") if f]
     variants = [v for v in args.variants.split(",") if v]
