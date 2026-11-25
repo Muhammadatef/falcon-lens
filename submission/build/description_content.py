@@ -985,7 +985,11 @@ def build(a: Artifacts) -> list[Block]:
             "ul",
             [
                 "**Catch scam pages before they die.** "
-                + (f"In the fresh live test, {dead}. " if dead else "In the fresh live test, many listed pages were already offline. ")
+                + (
+                    f"In the fresh live test, {dead}. "
+                    if dead
+                    else "In the fresh live test, many listed pages were already offline. "
+                )
                 + "Plan: switch on continuous look-alike hunting (the built, off-by-default hunting job, with its kill switch and quotas); watch certificate-transparency logs once a licensed feed is in place; add search, ads and Maps hunting once API keys are provided (ready, needs a key); and take the first-visit snapshot sooner.",
                 "**Fully local quality.** "
                 + f"Sovereign proof today: {ev.sovereign_line() or 'not published'}. "
