@@ -269,7 +269,7 @@ export const narResult = (lang: Lang, i: number, v: Verdict | null): string =>
 /** The AI second look is named only when a model actually answered; the route says where. */
 export function aiStepText(lang: Lang, v: Verdict): string | null {
   if (v.model_route === "none") return null;
-  return vt(lang, "investigator.ai_second_look", { route: vt(lang, v.model_route === "local" ? "investigator.route.local" : "investigator.route.cloud") });
+  return vt(lang, "investigator.ai_second_look");
 }
 
 /* ── Sentinel hand-over ───────────────────────────────────────────────── */

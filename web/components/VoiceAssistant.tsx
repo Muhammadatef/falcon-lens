@@ -563,10 +563,11 @@ export function VoiceAssistant() {
         void playKeys(lang, ["stop"]);
         return;
       }
-      enqueue({ text: spoken(lang, ["wake.ack"]), keys: ["wake.ack"], lang, kind: "msg" }, token);
-      if (reply.intent === "none" && !reply.command.trim()) {
-        // Only the wake phrase: the next utterance (within a few seconds) is the command, no wake phrase needed.
-        await drain();
+      const bareWake = reply.intent === "none" && !reply.command.trim();
+      if (!bareWake) enqueue({ text: spoken(lang, ["wake.ack"]), keys: ["wake.ack"], lang, kind: "msg" }, token);
+      if (bareWake) {
+        // Only the wake phrase: greet, then the next utterance (within a few seconds) is the command, no wake phrase needed.
+        await say(voiceText(lang, "voice.say.greet"), lang, token, ["greet.hello"]);
         followUntil.current = Date.now() + FOLLOW_UP_MS;
       } else if (reply.intent === "help") await say(voiceText(lang, "voice.say.help"), lang, token, ["help"]);
       else if (reply.intent === "check_clipboard" || reply.intent === "check_text") {
@@ -732,10 +733,8 @@ export function VoiceAssistant() {
     }
     listener.current = startListener(stream, { onUtterance: (audio) => void sendUtterance(audio, token), onVoice: setVoiceActive, onLevel: setLevel });
     setPhase("listening");
-    // Greet once the mic is live (the same clip is the caption).
-    enqueue({ text: spoken(langRef.current, ["greet.hello"]), keys: ["greet.hello"], lang: langRef.current, kind: "msg" }, token);
-    void drain();
-  }, [playerFor, playKeys, sendUtterance, enqueue, drain]);
+    // Silent wait: nothing is spoken until the user says the wake phrase.
+  }, [playerFor, playKeys, sendUtterance]);
 
   // A browser that cannot read the clipboard at all (Safari): paste mode with a hint from the very start, nothing fails.
   useEffect(() => {
