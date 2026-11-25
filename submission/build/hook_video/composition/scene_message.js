@@ -38,7 +38,7 @@ function light(spans, p, color) {
 export function build(ctx) {
   const { stage, TL, D, mark, sc, lensPos, lens, L } = ctx;
   const cs = L.portrait ? 1.12 : 1.0; // the message is larger in the tall frame
-  const COLD = L.portrait ? [500, 500] : CARD.cold;
+  const COLD = L.portrait ? [500, 600] : CARD.cold;
   const { card, parts, ring, sheen } = smsCard(D);
   const anchor = h("div.at", {}, h("div.c", {}, card));
   const finger = h("div.at", {}, h("div.c", {}, h("div.finger")));
