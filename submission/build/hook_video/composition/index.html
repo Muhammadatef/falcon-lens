@@ -1,0 +1,27 @@
+<!doctype html>
+<!--
+  Falcon Lens hook film: the motion composition.
+  Every pixel is a pure function of time: main.js exposes window.__seek(seconds) and render.py steps it frame by
+  frame. There is no CSS animation, no transition and no timer, so a frame is the same on every run.
+  The page needs window.__HOOK__ = {timeline, format, options} (render.py injects it before load).
+-->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Falcon Lens | عدسة الصقر — hook</title>
+<link rel="stylesheet" href="hook.css">
+</head>
+<body>
+<div id="frame">
+  <canvas id="bg"></canvas>
+  <div id="live"></div>
+  <div id="world"><div id="stage"></div></div>
+  <canvas id="fx"></canvas>
+  <div id="hud"></div>
+  <div id="full"></div>
+  <div id="flash"></div>
+  <div id="chip"></div>
+</div>
+<script type="module" src="main.js"></script>
+</body>
+</html>

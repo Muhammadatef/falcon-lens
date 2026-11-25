@@ -1,0 +1,4 @@
+# Build-time tools for the hook film only. Not shipped, not in uv.lock (see DECISIONS.md).
+playwright==1.65.2
+numpy==2.5.5
+scipy==1.18.1
