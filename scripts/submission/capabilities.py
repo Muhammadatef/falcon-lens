@@ -235,6 +235,16 @@ CAPABILITIES: tuple[Capability, ...] = (
         ("path:web/lib/findings.ts", "path:web/lib/voice-progress.ts"),
     ),
     Capability(
+        "observability_links",
+        "Operator-only Phoenix and Grafana links on History, check, incident and /ops",
+        ("path:web/lib/observability.ts", "path:web/tests/unit/observability.test.ts"),
+    ),
+    Capability(
+        "mobile_ios",
+        "iPhone voice (audio/mp4) and mobile layout fixes, with iPhone and Pixel end-to-end tests",
+        ("path:web/tests/e2e/mobile.spec.ts", "path:web/tests/unit/vad-mime.test.ts"),
+    ),
+    Capability(
         "llm_route_selector",
         "Operator-selectable language-model route (cloud with local fallback, or local only)",
         ("path:web/lib/llm-route.ts", "grep:packages/falcon_core/src/falcon_core/llm/*.py::FL_LLM_ROUTE"),
