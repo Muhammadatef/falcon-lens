@@ -180,6 +180,8 @@ def test_curated_tool_groups_only_show_generated_tools() -> None:
 
 def test_deck_spoken_lines_are_the_run_sheet_lines() -> None:
     """Slides 3, 5, 7 and 14 speak the run-sheet word for word (DECK_DESIGN.md section 4)."""
+    pytest.importorskip("lxml")
+    pytest.importorskip("pptx")
     deck = load("build_deck")
     template = (ROOT / "submission" / "build" / "demo_template.md").read_text(encoding="utf-8")
     for line in (
@@ -198,6 +200,8 @@ def test_deck_spoken_lines_are_the_run_sheet_lines() -> None:
 
 def test_keynote_visible_motion_vocabulary() -> None:
     """Every build uses an effect Keynote imports as a visible build, and lasts long enough to be seen."""
+    pytest.importorskip("lxml")
+    pytest.importorskip("pptx")
     deck = load("build_deck")
     motion = sys.modules["deck_motion"]
     slides = deck.build_slides(deck.gather(ROOT), {})
@@ -211,6 +215,8 @@ def test_keynote_visible_motion_vocabulary() -> None:
 
 
 def test_video_timing_is_a_play_command_plus_a_media_node() -> None:
+    pytest.importorskip("lxml")
+    pytest.importorskip("pptx")
     load("build_deck")
     motion = sys.modules["deck_motion"]
     from lxml import etree
@@ -224,6 +230,8 @@ def test_video_timing_is_a_play_command_plus_a_media_node() -> None:
 
 
 def test_presentation_html_is_self_contained(tmp_path: Path) -> None:
+    pytest.importorskip("lxml")
+    pytest.importorskip("pptx")
     deck = load("build_deck")
     present = load("deck_present")
     slides = deck.build_slides(deck.gather(ROOT), {})
