@@ -69,10 +69,11 @@ def test_demo_script_has_the_pitch_timeline_and_ten_questions() -> None:
     text, problems = load("demo_script").build(ROOT)
     assert problems == []
     for stamp in (
-        "0:00 to 0:25",
-        "0:25 to 0:55",
-        "0:55 to 2:40",
-        "2:40 to 3:00",
+        "0:15 to 1:00",
+        "1:00 to 1:20",
+        "2:05 to 4:20",
+        "4:20 to 4:45",
+        "4:45 to 5:00",
         "M1",
         "/history",
         "/campaigns",

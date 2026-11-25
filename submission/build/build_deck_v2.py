@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ruff: noqa: E501, S603, S607  (slide copy reads better unwrapped; ffmpeg and git are fixed commands)
-"""Build the v2 pitch deck: a tight main path for the three minutes, and a linked deep-dive appendix for questions.
+"""Build the v2 pitch deck: a tight main path for the five minutes, and a linked deep-dive appendix for questions.
 
     uv run --no-project --with-requirements scripts/submission/requirements.txt --with lxml \
         python submission/build/build_deck_v2.py --out-dir <dir> [--qa-dir <dir>] [--hook-video media/hook.mp4]
@@ -492,52 +492,67 @@ def slide_title(f: Facts) -> Slide:
     s.notes = notes(
         "Good morning. We are Falcon Lens: two AI agents, Baseer and Dir', and a voice on top: Hey Falcon. You will watch a real check run on our own machine, in Arabic, by voice. We are an independent project: ready to connect, not connected.",
         "صباح الخير. نحن فريق «عدسة الصقر»: وكيلان بالذكاء الاصطناعي، «بصير» و«درع»، وفوقهما مساعد صوتي: «يا صقر». سترون فحصاً حقيقياً على جهازنا، بالعربية وبالصوت. مشروع مستقل: جاهز للربط وغير مربوط.",
-        "Holding slide; everything builds by itself. Click once to go to the agenda. The clock has not started.",
+        "Holding slide; everything builds by itself. Click once to go to the agenda. The clock is running: keep the title and the agenda short.",
     )
     return s
 
 
+# The five-minute main path (organiser format: five minutes of presentation and demo, then five of questions).
+TIMES = {
+    "title": "0:00 to 0:15",
+    "agenda": "0:00 to 0:15",
+    "hook": "0:15 to 1:00",
+    "why_voice": "1:00 to 1:20",
+    "agents": "1:20 to 1:45",
+    "architecture": "1:45 to 2:05",
+    "demo": "2:05 to 4:20",
+    "vision": "4:20 to 4:45",
+    "close": "4:45 to 5:00",
+}
+
+
 def slide_agenda(f: Facts) -> Slide:
-    s = new("agenda", "Our three minutes", "دقائقنا الثلاث", "sky", "AGENDA · جدول العرض")
+    s = new("agenda", "Our five minutes", "دقائقنا الخمس", "sky", "AGENDA · جدول العرض")
     rows = (
-        ("0:00 to 0:45", "Hook: Abu Saeed's story", "المشهد: قصة أبو سعيد", "voice", "hook"),
-        (
-            "0:45 to 0:55",
-            "Why voice · two agents · architecture",
-            "لماذا الصوت · الوكيلان · المعمارية",
-            "baseer",
-            "why_voice",
-        ),
-        ("0:55 to 2:40", "Live demo, on this machine", "عرض مباشر على هذا الجهاز", "dir", "demo"),
-        ("2:40 to 3:00", "Close: our vision, then five criteria", "الختام: رؤيتنا ثم معاييركم", "sky", "vision"),
+        ("hook", "Hook film", "المشهد", "voice"),
+        ("why_voice", "Why voice · two agents", "لماذا الصوت · الوكيلان", "baseer"),
+        ("architecture", "Architecture film", "المعمارية", "sky"),
+        ("demo", "Live demo, on this machine", "عرض مباشر", "dir"),
+        ("vision", "Conclusion: our vision", "الخلاصة: رؤيتنا", "baseer"),
+        ("close", "Close: criteria and evidence", "الختام: معاييركم وأدلتنا", "sky"),
     )
-    lw, rh, gap, y0 = 7.35, 0.98, 0.14, 1.95
-    for i, (time, t_en, t_ar, accent, key) in enumerate(rows):
+    lw, gap, y0 = 7.35, 0.1, 1.95
+    total = 4 * 0.98 + 3 * 0.14
+    rh = (total - gap * (len(rows) - 1)) / len(rows)
+    for i, (key, t_en, t_ar, accent) in enumerate(rows):
         y = y0 + i * (rh + gap)
+        time = TIMES[key] if key != "why_voice" else TIMES["why_voice"][:4] + " to " + TIMES["agents"][-4:]
         s.add(
             grp(
                 f"row_{i}",
                 *panel(M, y, lw, rh, accent),
-                *pill(M + 0.3, y + 0.32, 1.55, time, accent, 12.5, 0.34),
-                tb(M + 2.1, y + 0.1, lw - 2.3, 0.42, p(t_en, 18.5, "text", True), anchor="m"),
-                tb(M + 2.1, y + 0.52, lw - 2.3, 0.38, Para([Run(t_ar, 16, "sand", True)], "l", rtl=True), anchor="m"),
+                *pill(M + 0.3, y + (rh - 0.32) / 2, 1.55, time, accent, 12.5, 0.32),
+                tb(M + 2.1, y, 3.1, rh, p(t_en, 15.5, "text", True), anchor="m"),
+                tb(M + 5.1, y, lw - 5.3, rh, ar(t_ar, 14), anchor="m"),
             ),
             Hot(M, y, lw, rh, key),
         )
     rx, rw = M + lw + 0.3, CW - lw - 0.3
-    rh_all = 4 * rh + 3 * gap
+    rh_all = total
     lines = (
         "Five criteria, one slide each",
         "Baseer · Dir' · the voice layer",
         "Why LangGraph · why DSPy",
         "Tools · sovereignty · integration",
-        "Pilot path · honest limits",
+        "Pilot path · roadmap · honest limits",
     )
     s.add(
         grp(
             "deep",
             tinted(rx, y0, rw, rh_all, "sky"),
-            tb(rx + 0.3, y0 + 0.2, rw - 0.6, 0.34, p("THEN · TWO MINUTES OF QUESTIONS", 12.5, "sky", True), anchor="m"),
+            tb(
+                rx + 0.3, y0 + 0.2, rw - 0.6, 0.34, p("THEN · FIVE MINUTES OF QUESTIONS", 12.5, "sky", True), anchor="m"
+            ),
             tb(rx + 0.3, y0 + 0.56, rw - 0.6, 0.46, p("Deep dive", 24, "text", True), anchor="m"),
             tb(
                 rx + 0.3,
@@ -553,13 +568,13 @@ def slide_agenda(f: Facts) -> Slide:
         Hot(rx, y0, rw, rh_all, "index"),
     )
     s.motion = [
-        *stagger([f"row_{i}" for i in range(4)], "fly_from_left", "auto", 170, 350),
+        *stagger([f"row_{i}" for i in range(len(rows))], "fly_from_left", "auto", 140, 350),
         mo("deep", "fly_from_right", "after", 0, 400),
     ]
     s.notes = notes(
-        "Our path: a short scene, why a voice sits on top of two agents, the architecture, then a live demo, and we close on your five criteria. The deep-dive slides are for your questions.",
-        "مسار العرض: مشهد قصير، ثم لماذا وضعنا الصوت فوق وكيلين، ثم المعمارية، ثم عرض مباشر، ونختم بمعاييركم الخمسة. وشرائح التفاصيل لأسئلتكم.",
-        "Builds by itself. Every row is a link; 'Open the index' jumps to the deep-dive index. Click (not on a row) to go to the hook: the clock starts there.",
+        "Our five minutes: a short film, why a voice sits on top of two agents, the architecture, a live demo, the vision we started with, and we close on your five criteria. Then five minutes for your questions, with a deep-dive slide for each.",
+        "دقائقنا الخمس: مشهد قصير، ثم لماذا وضعنا الصوت فوق وكيلين، ثم المعمارية، ثم عرض مباشر، ثم رؤيتنا منذ البداية، ونختم بمعاييركم. وبعدها خمس دقائق لأسئلتكم، ولكل سؤال شريحة تفاصيل.",
+        "Builds by itself. Every row is a link; 'Open the index' jumps to the deep-dive index. Click (not on a row) to start the hook film.",
     )
     return s
 
@@ -1096,35 +1111,35 @@ def slide_demo(f: Facts) -> Slide:
     s = new("demo", "Live demo, on this machine", "عرض مباشر على هذا الجهاز", "dir", "LIVE · مباشر")
     beats = (
         (
-            "1:00 to 1:35",
+            "2:10 to 2:55",
             "voice",
             "«يا صقر، شيّك اللي نسخته»",
             "The Arabic SMS is checked step by step. The plate turns red: «خطِر». The falcon speaks the findings.",
             "Voice · Baseer",
         ),
         (
-            "1:35 to 1:55",
+            "2:55 to 3:20",
             "voice",
             "“Hey Falcon…” in English",
             "An English question. A short, sourced answer, in the language you asked in.",
             "Voice",
         ),
         (
-            "1:55 to 2:10",
+            "3:20 to 3:45",
             "baseer",
             "/history · evidence pack",
             "The trace of the check just made. One click downloads the evidence pack.",
             "Baseer",
         ),
         (
-            "2:10 to 2:25",
+            "3:45 to 4:05",
             "dir",
             "/campaigns · /results",
             "Dir' links similar checks into a campaign. Then our numbers, with their limits.",
             "Dir'",
         ),
         (
-            "2:25 to 2:40",
+            "4:05 to 4:20",
             "sky",
             "/ops · route selector",
             "Cloud model with a local fallback, or local only. Same checks, same arbiter.",
@@ -1183,7 +1198,7 @@ def slide_demo(f: Facts) -> Slide:
         bd.DEMO_EN
         + " Each step is real: the lists, the address, the page in a sealed browser, then the AI for the unclear part, then the Sentinel. Follow the run-sheet for every beat (submission/DEMO_SCRIPT.md).",
         bd.DEMO_AR + " كل خطوة حقيقية: القوائم، العنوان، الصفحة في متصفح معزول، ثم الذكاء الاصطناعي، ثم درع.",
-        "Builds by itself. Switch to the browser at once: the demo starts now. With twenty seconds left, come back to the deck and click on to the close.",
+        "Builds by itself. Switch to the browser at once: the demo window starts now (see TIME). With forty seconds left, come back to the deck and click on to the conclusion, then the close.",
         "Microphone fails: paste box on the Check page. Sound fails: read «خطِر» and the first reason aloud. Tunnel down: use localhost. Browser fails: click on and speak to the close slide and the criterion slides.",
         "If a beat runs long, drop /ops first, then the English question. Never narrate a verdict before it is on screen.",
     )
@@ -1403,7 +1418,13 @@ def slide_close(f: Facts) -> Slide:
 
 # ── appendix ─────────────────────────────────────────────────────────────────
 def slide_index(f: Facts, entries: list[Slide]) -> Slide:
-    s = new("index", "Deep dive: pick a question", "للأسئلة: اختر الموضوع", "sky", "INDEX · every card is a link")
+    s = new(
+        "index",
+        "Deep dive: pick a question",
+        "للأسئلة: اختر الموضوع",
+        "sky",
+        "INDEX · FIVE MINUTES OF QUESTIONS · every card is a link",
+    )
     cols = 4
     rows = -(-len(entries) // cols)
     gap = 0.14
@@ -1428,7 +1449,7 @@ def slide_index(f: Facts, entries: list[Slide]) -> Slide:
     s.motion = stagger([f"card_{i}" for i in range(len(entries))], "zoom", "auto", 55, 300)
     s.transition = ("push_up", 600)
     s.notes = notes(
-        "These are the deep-dive slides. Tell me which one you would like to see.",
+        "These are the deep-dive slides for our five minutes of questions. Tell me which one you would like to see.",
         "هذه شرائح التفاصيل. اختاروا الموضوع الذي تودّون رؤيته.",
         "Click a card to jump to its slide. Every deep-dive slide has '‹ Index' at the bottom right to come back here. '‹ Back to the close' returns to the closing slide.",
     )
@@ -2668,6 +2689,9 @@ def build_slides(
     )
     index = slide_index(f, appendix)
     slides = [*main, index, *appendix]
+    for s in main:
+        s.notes = f"TIME: {TIMES[s.key]}\n" + s.notes
+    index.notes = "TIME: five minutes of questions, after the close.\n" + index.notes
     for s in slides:
         chrome(s)
         for sh in walk(s.shapes):
