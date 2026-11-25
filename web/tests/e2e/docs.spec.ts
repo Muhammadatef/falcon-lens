@@ -151,7 +151,7 @@ test.describe("capability badges on docs follow the flags (default stack: bundle
     await expect(rows.nth(3).getByTestId("cap-badge")).toHaveCount(0);
     await expect(page.locator("#mcp").getByTestId("cap-badge")).toContainText(badgeWord(onDefaultStack("mcp"), "en"));
     await page.goto("/docs");
-    await expect(page.getByTestId("docs-cards").locator("li").nth(4).getByTestId("cap-badge")).toContainText(badgeWord(onDefaultStack("injection_defence"), "en"));
+    await expect(page.getByTestId("docs-cards").locator("li").filter({ has: page.locator('a[href="/docs/security"]') }).getByTestId("cap-badge")).toContainText(badgeWord(onDefaultStack("injection_defence"), "en"));
     await page.goto("/docs/cascade");
     await expect(page.getByTestId("tier-cards").locator(".how-card").nth(3).getByTestId("cap-badge")).toContainText(badgeWord(onDefaultStack("investigator"), "en"));
   });
@@ -162,7 +162,7 @@ test.describe("capability badges on docs with every flag true", () => {
     await forceCaps(context, baseURL!, "true");
     await setPrefs(context, baseURL!, { lang: "en" });
     await page.goto("/docs");
-    await expect(page.getByTestId("docs-cards").locator("li").nth(4).getByTestId("cap-badge")).toContainText("Live");
+    await expect(page.getByTestId("docs-cards").locator("li").filter({ has: page.locator('a[href="/docs/security"]') }).getByTestId("cap-badge")).toContainText("Live");
     await page.goto("/docs/cascade");
     await expect(page.getByTestId("tier-cards").locator(".how-card").nth(3).getByTestId("cap-badge")).toContainText("Live");
     await page.goto("/docs/integration");

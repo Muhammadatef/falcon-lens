@@ -47,7 +47,7 @@ const en: BuildingAgentsCopy = {
     title: "How we built our two agents",
     intro: "The same six habits shaped both agents. Each one is a rule in the repository, not a slogan.",
     items: [
-      { title: "Contracts first", body: "One typed tool registry is shared by the Investigator, the Sentinel and the MCP server. A model can only ask for a tool by emitting a typed action that the registry validates; there are no free-form calls. Schemas for verdicts, evidence, events and incidents were written before the services that use them.", path: "contracts/tools.schema.json" },
+      { title: "Contracts first", body: "One typed tool registry is shared by the Investigator and the Sentinel. The MCP server is separate: it exposes the same REST API for checks and verdicts. A model can only ask for a tool by emitting a typed action that the registry validates; there are no free-form calls. Schemas for verdicts, evidence, events and incidents were written before the services that use them.", path: "contracts/tools.schema.json" },
       { title: "The arbiter sets every score", body: "Signals return evidence, never a verdict. A deterministic arbiter turns evidence into the score and the band. A model never sets or changes a score, and never touches a rule or a threshold.", path: "packages/falcon_core/src/falcon_core/scoring/arbiter.py" },
       { title: "Evals before claims", body: "Every number the site shows is read from a generated evaluation artifact. Data is split into train, validation and a frozen test set, and a change is merged only when it holds up on held-out cases.", path: "evals/" },
       { title: "Red-team as a gate", body: "A suite of prompt-injection, obfuscation and SSRF cases runs against the shipped code. Untrusted text is delimited and datamarked before any model sees it, and the agents see structured evidence only.", path: "evals/redteam/" },
@@ -56,14 +56,14 @@ const en: BuildingAgentsCopy = {
     ],
   },
   sentinel: {
-    title: "The Sentinel architecture (Dir' | درع) on LangGraph",
+    title: "The Sentinel architecture on LangGraph",
     intro: "Events and rules decide what an incident is. The graph only enriches and explains it, and it stops for a person before any external action.",
     label: "Sentinel architecture: events, deterministic correlation and rules, then a LangGraph state graph with a human approval pause, and the platform services beneath it.",
     lanes: [
       { title: "Listen and decide (plain code)", nodes: [
         { id: "fl:events", name: "Redis Streams", note: "At-least-once events; handlers are idempotent.", kind: "store" },
         { id: "correlate", name: "Deterministic correlation", note: "Groups checks by kit fingerprint, brand, network and time.", kind: "code" },
-        { id: "rules.yaml", name: "Rule triggers", note: "Campaign, kit reuse, report burst, reputation flip, quality.", kind: "code" },
+        { id: "rules.yaml", name: "Rule triggers", note: "Campaign, kit reuse, report burst, reputation flip, quality, early warning.", kind: "code" },
       ] },
       { title: "Triage graph (one thread per incident)", nodes: [
         { id: "enrich", name: "Enrich", note: "Read-only lookups.", kind: "code" },
@@ -180,7 +180,7 @@ const ar: BuildingAgentsCopy = {
     title: "كيف بنينا وكيلينا",
     intro: "حكمت ست عادات بناء الوكيلين معاً. وكل واحدة منها قاعدة مكتوبة في المستودع، لا شعار.",
     items: [
-      { title: "العقود أولاً", body: "سجلّ أدوات مكتوب الأنواع واحد يشترك فيه «بصير» و«درع» وخادم MCP. لا يطلب النموذج أداة إلا بإخراج إجراء مكتوب يتحقق منه السجلّ، ولا استدعاءات حرة. وكُتبت مخططات الأحكام والأدلة والأحداث والحوادث قبل الخدمات التي تستعملها.", path: "contracts/tools.schema.json" },
+      { title: "العقود أولاً", body: "سجلّ أدوات مكتوب الأنواع واحد يشترك فيه «بصير» و«درع». أما خادم MCP فمستقل: يعرض واجهة REST نفسها للفحص والأحكام. لا يطلب النموذج أداة إلا بإخراج إجراء مكتوب يتحقق منه السجلّ، ولا استدعاءات حرة. وكُتبت مخططات الأحكام والأدلة والأحداث والحوادث قبل الخدمات التي تستعملها.", path: "contracts/tools.schema.json" },
       { title: "المحكّم هو من يحدّد كل درجة", body: "تُعيد الإشارات أدلة ولا تُعيد حكماً. ويحوّل محكّم حتمي الأدلة إلى الدرجة والنطاق. ولا يضع النموذج درجة ولا يغيّرها، ولا يمسّ قاعدة ولا عتبة.", path: "packages/falcon_core/src/falcon_core/scoring/arbiter.py" },
       { title: "التقييم قبل الادعاء", body: "كل رقم يعرضه الموقع يُقرأ من ملف تقييم مُولَّد. وتُقسَّم البيانات إلى تدريب وتحقق واختبار مجمَّد، ولا يُدمج تغيير إلا إذا صمد في حالات محجوزة.", path: "evals/" },
       { title: "الفريق الأحمر بوابةً للدمج", body: "تُشغَّل مجموعة حالات حقن تعليمات وتمويه وSSRF على الشيفرة المُسلَّمة. ويُحاط النص غير الموثوق بفواصل وعلامات قبل أن يراه أي نموذج، ولا يرى الوكيلان إلا أدلة منظَّمة.", path: "evals/redteam/" },
@@ -189,14 +189,14 @@ const ar: BuildingAgentsCopy = {
     ],
   },
   sentinel: {
-    title: "البنية الأولى: «درع» على LangGraph",
+    title: "بنية «درع» على LangGraph",
     intro: "الأحداث والقواعد هي التي تقرر ما هي الحادثة. ولا يفعل الرسم البياني سوى الإثراء والشرح، ويتوقف عند شخص قبل أي إجراء خارجي.",
     label: "بنية درع: الأحداث والربط الحتمي والقواعد، ثم رسم LangGraph بتوقف للموافقة البشرية، وتحته خدمات المنصة.",
     lanes: [
       { title: "الاستماع والقرار (شيفرة عادية)", nodes: [
         { id: "fl:events", name: "تدفقات Redis", note: "أحداث بتسليم مرة على الأقل، والمعالجات تتحمّل التكرار.", kind: "store" },
         { id: "correlate", name: "ربط حتمي", note: "يجمع الفحوص بحسب بصمة الأداة والعلامة والشبكة والزمن.", kind: "code" },
-        { id: "rules.yaml", name: "مشغّلات القواعد", note: "حملة، وإعادة استخدام أداة، وموجة بلاغات، وانقلاب سمعة، وجودة.", kind: "code" },
+        { id: "rules.yaml", name: "مشغّلات القواعد", note: "حملة، وإعادة استخدام أداة، وموجة بلاغات، وانقلاب سمعة، وجودة، وإنذار مبكر.", kind: "code" },
       ] },
       { title: "رسم الفرز (مسار لكل حادثة)", nodes: [
         { id: "enrich", name: "إثراء", note: "بحث للقراءة فقط.", kind: "code" },
@@ -224,7 +224,7 @@ const ar: BuildingAgentsCopy = {
     ],
   },
   dspy: {
-    title: "البنية الثانية: DSPy في مسارنا",
+    title: "بنية DSPy في مسارنا",
     intro: "يعمل DSPy خارج التشغيل. يقترح مطالبات أفضل، ولا تستورده الخدمات الإنتاجية بل تحمّل ملفاً مجمَّداً، وبعد أن تقرّ البوابة أن المكسب حقيقي.",
     label: "مسار DSPy: توقيع مكتوب لكل دور، ومُحسِّن خارج التشغيل لكل مسار، واختيار على التحقق، وبوابة الاعتماد، ثم مطالبات مُصرَّفة مجمَّدة أو المطالبة المكتوبة يدوياً.",
     lanes: [
@@ -260,7 +260,7 @@ const ar: BuildingAgentsCopy = {
     intro: "اخترنا LangGraph لـ«درع» لأن عمله طويل المدى، ويجب شرحه لاحقاً، ويجب أن يتوقف عند شخص.",
     items: [
       { title: "خريطة صريحة قابلة للتدقيق", body: "الرسم قائمة مرئية بالخطوات والحواف، ولكل خطوة مجموعة أدوات محددة يجوز لها استدعاؤها. يقرأ المراجع الخريطة بدل أن يستنتج السلوك من مطالبة." },
-      { title: "يصمد عند إعادة التشغيل ويستأنف", body: "يحفظ مُدقِّق حالة Postgres الحالة بعد كل عقدة، بمفتاح الحادثة. فلا يضيع تحقيق بسبب انقطاع أو نشر جديد، بل يستمر من آخر خطوة محفوظة." },
+      { title: "يصمد عند إعادة التشغيل ويستأنف", body: "يحفظ حافظ الحالة في Postgres الحالة بعد كل عقدة، بمفتاح الحادثة. فلا يضيع تحقيق بسبب انقطاع أو نشر جديد، بل يستمر من آخر خطوة محفوظة." },
       { title: "توقف مدمج قبل أي إجراء خارجي", body: "يوقف استدعاء interrupt الرسم داخل عقدة التنفيذ، ولا يستأنف إلا بقرار موافقة أو رفض. والتوقف جزء من البنية، فلا تستطيع تعليمة داخل رسالة أن تتجاوزه. وهذه أهم خاصية لسير عمل الشرطة." },
       { title: "إعادة محاولة وميزانية وتتبّع لكل عقدة", body: "لكل عقدة سياسة إعادة محاولة، ولكل حادثة ميزانية من الخطوات والرموز والزمن. وتُظهر المقاييس والتتبّع لكل عقدة أين يذهب الوقت والرموز." },
       { title: "مصمَّم للعمل على مدار الساعة", body: "«درع» وكيل خلفي يستهلك الأحداث دون توقف، لا معالج طلبات، والرسم ذو الحالة المحفوظة يناسب هذا الشكل." },
@@ -269,7 +269,7 @@ const ar: BuildingAgentsCopy = {
     coreTitle: "لماذا langchain-core فقط",
     core: "يحتاج LangGraph إلى واجهات النموذج والأداة من langchain-core، وهذا كل ما نستعمله. لا نستعمل السلاسل ولا الذاكرة ولا المُسترجِعات ولا الوكلاء الجاهزين، فكل منها يخفي مسار تحكم نريده مكتوباً ومختبَراً ومراجَعاً.",
     invTitle: "لماذا «بصير» ليس على LangGraph",
-    inv: "يحكم «بصير» على مُدخل واحد في ثوانٍ. وهو آلة حالات محدودة: خطّط ونفّذ وراقب وقرّر، بما لا يزيد على ست استدعاءات أدوات مكتوبة. هذا يُبقي الفحص سريعاً، ويقاوم الحقن لأن النموذج يُخرج إجراءً واحداً مكتوباً ولا يُخرج نصاً حراً يتصرف به شيء، ويُبقي النتائج قابلة للإعادة لأن المحكّم يحدّد الدرجة. ورسم بحالة محفوظة سيضيف ثقلاً لا حاجة إليه.",
+    inv: "يحكم «بصير» على مُدخل واحد في ثوانٍ. وهو آلة حالات محدودة: خطّط ونفّذ وراقب وقرّر، بما لا يزيد على ستة استدعاءات أدوات مكتوبة. هذا يُبقي الفحص سريعاً، ويقاوم الحقن لأن النموذج يُخرج إجراءً واحداً مكتوباً ولا يُخرج نصاً حراً يتصرف به شيء، ويُبقي النتائج قابلة للإعادة لأن المحكّم يحدّد الدرجة. ورسم بحالة محفوظة سيضيف ثقلاً لا حاجة إليه.",
   },
   whyDspy: {
     title: "لماذا DSPy",
@@ -296,7 +296,7 @@ const ar: BuildingAgentsCopy = {
     title: "ما تركناه عمداً",
     intro: "كان كل ما يلي أسرع في البداية. لكن كلاً منه يتنازل عن شيء لا تتنازل عنه أداة أمنية.",
     items: [
-      { title: "الوكلاء الجاهزون وحلقات الأدوات المستقلة", body: "نموذج يقرر خطوته التالية بلا حدّ ثابت يصعب تدقيقه ويسهل توجيهه بنص محقون. «بصير» محدود بست استدعاءات مكتوبة، وخطوات «درع» ثابتة في الرسم." },
+      { title: "الوكلاء الجاهزون وحلقات الأدوات المستقلة", body: "نموذج يقرر خطوته التالية بلا حدّ ثابت يصعب تدقيقه ويسهل توجيهه بنص محقون. «بصير» محدود بستة استدعاءات مكتوبة، وخطوات «درع» ثابتة في الرسم." },
       { title: "نموذج يضع الدرجة", body: "تأتي الدرجات من المحكّم، من أدلة وأوزان يمكن فحصها وإعادة تشغيلها. قد يشرح النموذج حكماً، لكنه لا يصدره." },
       { title: "السلاسل والذاكرة والمُسترجِعات", body: "تضيف حالة مخفية ومطالبات مخفية. ونحن نحفظ الحالة في الرسم وفي Postgres حيث تُقرأ وتُدقَّق." },
       { title: "DSPy وقت التشغيل", body: "استيراد مُحسِّن في الإنتاج يوسّع سطح الهجوم وكلفة البدء. والإنتاج لا يحمّل إلا ملفاً مجمَّداً." },
