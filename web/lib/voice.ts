@@ -266,7 +266,7 @@ export const narMessage = (lang: Lang, i: number): string => vt(lang, "investiga
 export const narResult = (lang: Lang, i: number, v: Verdict | null): string =>
   v ? vt(lang, `investigator.nar.${v.verdict}` as VoiceKey, { ord: ordinal(lang, i) }) : vt(lang, "voice.nar.res.failed", { ord: ordinal(lang, i) });
 
-/** The AI second look is named only when a model actually answered; the route says where. */
+/** The AI second look is named only when a model actually answered; one generic line for every route, so it never reveals which. */
 export function aiStepText(lang: Lang, v: Verdict): string | null {
   if (v.model_route === "none") return null;
   return vt(lang, "investigator.ai_second_look");

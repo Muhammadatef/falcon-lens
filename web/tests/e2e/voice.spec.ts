@@ -659,7 +659,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect.poll(async () => (await clips(page)).length).toBe(2);
     expect((await clips(page))[1]).toMatch(/^en\.offtopic\.[123]\.mp3$/);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
-    // "Hey Falcon" alone in English: the ack and the "One moment" follow the WAKE language; the Arabic follow-up is answered in Arabic.
+    // "Hey Falcon" alone in English: the greeting and the "One moment" follow the WAKE language; the Arabic follow-up is answered in Arabic.
     await say(page, "none-en");
     await expect.poll(async () => (await clipsAll(page)).length).toBe(3);
     expect((await clipsAll(page))[2]).toBe("en.greet.hello.mp3"); // the greeting follows the WAKE language
