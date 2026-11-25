@@ -564,12 +564,26 @@ def slide_agenda(f: Facts) -> Slide:
     return s
 
 
+HOOK_LANDSCAPE = False  # set by main() from the video's own size
+
+
 def slide_hook(f: Facts, media: tuple[Path, Path, int] | None) -> Slide:
     s = new("hook", "Hook", "المشهد", "voice", "")
     s.plain = True  # type: ignore[attr-defined]
     fh = 6.6
     fw = fh * 9 / 16
     fx, fy = (W - fw) / 2, (H - fh) / 2
+    if media and HOOK_LANDSCAPE:
+        # A 16:9 cut fills the slide and carries its own Dramatisation label on every frame: nothing else is drawn.
+        s.add(Movie(media[0], media[1], 0, 0, W, H, media[2], True))
+        s.transition = ("fade", 500)
+        s.notes = notes(
+            "Nothing over the video. When it ends, pause one second.",
+            "لا كلام فوق الفيديو. بعد انتهائه توقّف ثانية واحدة.",
+            "The video fills the slide, starts by itself, plays with sound and does not loop. Its Dramatisation label is in the video on every frame. Click to go on.",
+            f"Say, in Arabic then English: «{bd.HOOK_FAIL_AR}» {bd.HOOK_FAIL_EN} Then click on.",
+        )
+        return s
     if media:
         s.add(Movie(media[0], media[1], fx, fy, fw, fh, media[2], True))
     else:
@@ -2807,7 +2821,7 @@ def probe_video(
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(poster), str(still)], check=True)
     else:
         subprocess.run(
-            ["ffmpeg", "-y", "-loglevel", "error", "-ss", "0.5", "-i", str(small), "-frames:v", "1", str(still)],
+            ["ffmpeg", "-y", "-loglevel", "error", "-ss", "1.0", "-i", str(small), "-frames:v", "1", str(still)],
             check=True,
         )
     out = subprocess.run(
@@ -2843,13 +2857,46 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="the rendered animated architecture (.mp4); when the file exists it replaces the native diagram",
     )
+    ap.add_argument(
+        "--hook-html-src",
+        default="media/hook.mp4",
+        help="what the HTML deck plays on the hook slide (relative to the .html)",
+    )
+    ap.add_argument(
+        "--arch-html-src", default="arch/architecture-en.mp4", help="what the HTML deck plays on the architecture slide"
+    )
     ap.add_argument("--arch-poster", type=Path, default=None, help="final-frame PNG for --arch-video")
     args = ap.parse_args(argv)
     root = args.root.resolve()
     bd.set_font = set_font
     bd.html_shape = html_shape
     bd.PPTX_FONT = LATIN_FONT
-    media = probe_video(args.hook_video.resolve(), bd.CACHE) if args.hook_video and args.hook_video.is_file() else None
+    global HOOK_LANDSCAPE  # noqa: PLW0603
+    media = None
+    if args.hook_video and args.hook_video.is_file():
+        size = (
+            subprocess.run(
+                [
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-select_streams",
+                    "v:0",
+                    "-show_entries",
+                    "stream=width,height",
+                    "-of",
+                    "csv=p=0",
+                    str(args.hook_video),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            .stdout.strip()
+            .split(",")
+        )
+        HOOK_LANDSCAPE = int(size[0]) > int(size[1])
+        media = probe_video(args.hook_video.resolve(), bd.CACHE, "hook", "1280:-2" if HOOK_LANDSCAPE else "720:-2")
     arch = (
         probe_video(args.arch_video.resolve(), bd.CACHE, "arch", "1280:-2", args.arch_poster)
         if args.arch_video and args.arch_video.is_file()
@@ -2874,6 +2921,10 @@ def main(argv: list[str] | None = None) -> int:
     problems += check_motion(out_pptx, slides)
     deck_present.write(bd, slides, out_html, root)
     page = same_fonts(out_html.read_text(encoding="utf-8")).replace("</body>", f"<script>{LINK_JS}</script></body>")
+    # deck_present names one video file; v2 can carry two (hook, then architecture), each with its own source
+    for present, source in ((media, args.hook_html_src), (arch, args.arch_html_src)):
+        if present:
+            page = page.replace(f'<video src="{deck_present.VIDEO_REL}"', f'<video src="{html.escape(source)}"', 1)
     out_html.write_text(page, encoding="utf-8")
     problems += bd.check_text(out_pptx, facts.artifact, root / "evals" / "results" / "published")
     links = sum(1 for sl in slides for sh in walk(sl.shapes) if isinstance(sh, Hot))
