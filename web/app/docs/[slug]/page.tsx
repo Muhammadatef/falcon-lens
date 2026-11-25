@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AgentsDoc } from "@/components/docs/AgentsDoc";
+import { BuildingAgentsDoc } from "@/components/docs/BuildingAgentsDoc";
 import { DocBody } from "@/components/docs/DocBody";
 import { ARCH } from "@/lib/arch-content";
 import { loadCapabilities } from "@/lib/capabilities";
+import { BUILDING_AGENTS } from "@/lib/docs-building-agents";
 import { DOCS, DOC_SLUGS, isDocSlug } from "@/lib/docs-content";
 import { dt } from "@/lib/i18n-docs";
 import { pageMetadata } from "@/lib/meta";
@@ -16,7 +18,7 @@ export function generateStaticParams() {
 
 type Props = { params: Promise<{ slug: string }> };
 
-const leadOf = (lang: "ar" | "en", slug: (typeof DOC_SLUGS)[number]): string => (slug === "agents" ? ARCH[lang].lead : DOCS[lang][slug].lead);
+const leadOf = (lang: "ar" | "en", slug: (typeof DOC_SLUGS)[number]): string => (slug === "agents" ? ARCH[lang].lead : slug === "building-agents" ? BUILDING_AGENTS[lang].lead : DOCS[lang][slug].lead);
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -35,7 +37,7 @@ export default async function DocPageRoute({ params }: Props) {
       <span className="eyebrow">{dt(lang, "docs.eyebrow")}</span>
       <h1 className="page-title">{dt(lang, `docs.${slug}.title`)}</h1>
       <p className="page-lead">{leadOf(lang, slug)}</p>
-      {slug === "agents" ? <AgentsDoc lang={lang} caps={caps} /> : <DocBody page={DOCS[lang][slug]} lang={lang} caps={caps} />}
+      {slug === "agents" ? <AgentsDoc lang={lang} caps={caps} /> : slug === "building-agents" ? <BuildingAgentsDoc lang={lang} caps={caps} /> : <DocBody page={DOCS[lang][slug]} lang={lang} caps={caps} />}
     </main>
   );
 }

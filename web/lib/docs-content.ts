@@ -9,7 +9,7 @@
  */
 import type { Lang } from "./contracts";
 
-export const DOC_SLUGS = ["architecture", "agents", "cascade", "arbiter", "security", "evals", "integration", "privacy"] as const;
+export const DOC_SLUGS = ["architecture", "agents", "building-agents", "cascade", "arbiter", "security", "evals", "integration", "privacy"] as const;
 export type DocSlug = (typeof DOC_SLUGS)[number];
 export const isDocSlug = (s: string): s is DocSlug => (DOC_SLUGS as readonly string[]).includes(s);
 
@@ -42,7 +42,7 @@ export interface DocPage {
   callout?: string;
 }
 
-type Pages = Record<Exclude<DocSlug, "agents">, DocPage>;
+type Pages = Record<Exclude<DocSlug, "agents" | "building-agents">, DocPage>;
 
 const en: Pages = {
   architecture: {

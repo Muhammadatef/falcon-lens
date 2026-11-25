@@ -37,8 +37,8 @@ describe("agents: Investigator and Sentinel hand-over", () => {
   });
   it("names a model only when one answered, and credits the arbiter for the verdict", () => {
     expect(aiStepText("en", { ...DEMO_DANGEROUS, model_route: "none" })).toBeNull();
-    expect(aiStepText("en", { ...DEMO_DANGEROUS, model_route: "local" })).toContain("local model");
-    expect(aiStepText("en", { ...DEMO_DANGEROUS, model_route: "cloud" })).toContain("cloud model");
+    expect(aiStepText("en", { ...DEMO_DANGEROUS, model_route: "local" })).toBe("Checking with our AI language model (LLM).");
+    expect(aiStepText("en", { ...DEMO_DANGEROUS, model_route: "cloud" })).toBe("Checking with our AI language model (LLM).");
     expect(narResult("en", 1, DEMO_DANGEROUS)).toBe("The arbiter decided: the first message is dangerous.");
     expect(narResult("ar", 2, DEMO_NWS)).toContain("المحكّم");
   });

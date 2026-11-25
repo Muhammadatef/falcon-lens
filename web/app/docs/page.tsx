@@ -10,7 +10,7 @@ import { dt } from "@/lib/i18n-docs";
 import { pageMetadata } from "@/lib/meta";
 import { serverLang } from "@/lib/server-lang";
 
-const ICONS: Record<DocSlug, IconName> = { architecture: "box", agents: "spark", cascade: "list", arbiter: "scale", security: "keep", evals: "refresh", integration: "url", privacy: "eye" };
+const ICONS: Record<DocSlug, IconName> = { architecture: "box", agents: "spark", "building-agents": "list", cascade: "list", arbiter: "scale", security: "keep", evals: "refresh", integration: "url", privacy: "eye" };
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await serverLang();

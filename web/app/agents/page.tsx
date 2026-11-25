@@ -119,6 +119,7 @@ export default async function AgentsPage() {
         <div className="cta-row">
           <Link className="btn btn--primary" href="/">{t("agents.cta")}</Link>
           <Link className="btn" href="/docs/agents" data-testid="agents-docs-link">{t("agents.docs")}</Link>
+          <Link className="btn" href="/docs/building-agents" data-testid="agents-building-link">{t("agents.building")}</Link>
         </div>
       </div>
     </main>

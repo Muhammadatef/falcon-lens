@@ -9,6 +9,7 @@ import { serverLang } from "@/lib/server-lang";
 import { PrefsProvider, type Theme } from "@/lib/prefs";
 import "./globals.css";
 import "./arch.css";
+import "./building-agents.css";
 import "./audit-fixes.css";
 
 export async function generateMetadata(): Promise<Metadata> {

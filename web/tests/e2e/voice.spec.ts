@@ -113,6 +113,8 @@ async function installClipMocks(page: Page) {
 }
 const clips = async (page: Page): Promise<string[]> => ((await page.evaluate(() => (window as any).__clips)) as string[]).filter((c) => !c.includes(".greet.hello."));
 
+const clipsAll = async (page: Page): Promise<string[]> => (await page.evaluate(() => (window as any).__clips)) as string[];
+
 /** Speaks one utterance: loud for ~1 s, then silent until the detector ends it. */
 async function say(page: Page, voice: string) {
   await page.evaluate((v) => { (window as any).__voice = v; (window as any).__level = 0.3; }, voice);
@@ -183,12 +185,14 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await page.getByTestId("voice-on").click();
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR));
     await expect(page.getByTestId("voice-meter")).toBeVisible();
+    // The tap alone speaks nothing, not even the greeting: the user must call the assistant first.
+    expect(await spoken(page, true)).toEqual([]);
 
     // Not for us: ignored, stays listening, nothing spoken.
     await say(page, "noise");
     await expect(page.getByTestId("voice-heard")).toContainText("dinner");
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR));
-    expect(await spoken(page)).toEqual([]);
+    expect(await spoken(page, true)).toEqual([]);
 
     // Arabic speaker.
     await say(page, "check-ar");
@@ -594,9 +598,10 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["help"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
     await say(page, "none-ar");
+    await expect.poll(async () => (await spoken(page, true)).map((s) => s.text).join(" ")).toContain(SCRIPT.ar_ae["greet.hello"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
-    const afterBare = (await spoken(page)).map((s) => s.text).join(" ");
-    expect(afterBare).toContain(SCRIPT.ar_ae["wake.ack"]!); // just the wake phrase: "I'm listening", then the next utterance is the command
+    const afterBare = (await spoken(page, true)).map((s) => s.text).join(" ");
+    expect(afterBare).toContain(SCRIPT.ar_ae["greet.hello"]!); // just the wake phrase: the greeting, then the next utterance is the command
     expect(afterBare).not.toContain(SCRIPT.ar_ae["didnt"]!);
     await say(page, "stop");
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.stopped"]);
@@ -654,14 +659,14 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect.poll(async () => (await clips(page)).length).toBe(2);
     expect((await clips(page))[1]).toMatch(/^en\.offtopic\.[123]\.mp3$/);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
-    // "Hey Falcon" alone in English: the ack and the "One moment" follow the WAKE language; the Arabic follow-up is answered in Arabic.
+    // "Hey Falcon" alone in English: the greeting and the "One moment" follow the WAKE language; the Arabic follow-up is answered in Arabic.
     await say(page, "none-en");
-    await expect.poll(async () => (await clips(page)).length).toBe(3);
-    expect((await clips(page))[2]).toBe("en.wake.ack.mp3");
+    await expect.poll(async () => (await clipsAll(page)).length).toBe(3);
+    expect((await clipsAll(page))[2]).toBe("en.greet.hello.mp3"); // the greeting follows the WAKE language
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
     await say(page, "faq-follow-ar");
     await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["faq.clicked_link"]!);
-    await expect.poll(async () => (await clips(page)).slice(3)).toEqual(["en.ack.moment.mp3", "ar_ae.faq.clicked_link.mp3"]);
+    await expect.poll(async () => (await clipsAll(page)).slice(3)).toEqual(["en.ack.moment.mp3", "ar_ae.faq.clicked_link.mp3"]);
     expect(await spoken(page)).toEqual([]);
   });
 
@@ -820,20 +825,21 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await installClipMocks(page);
     await page.goto("/voice");
     await page.getByTestId("voice-on").click();
+    expect(await clipsAll(page)).toEqual([]); // the tap alone plays nothing
     await say(page, "none-ar");
-    await expect.poll(() => clips(page)).toEqual(["ar_ae.wake.ack.mp3"]);
+    await expect.poll(() => clipsAll(page)).toEqual(["ar_ae.greet.hello.mp3"]);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
     await say(page, "faq-follow-ar");
     await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["faq.clicked_link"]!);
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR), { timeout: 10_000 });
-    await expect.poll(() => clips(page)).toEqual(["ar_ae.wake.ack.mp3", "ar_ae.ack.moment.mp3", "ar_ae.faq.clicked_link.mp3"]);
+    await expect.poll(() => clips(page)).toEqual(["ar_ae.ack.moment.mp3", "ar_ae.faq.clicked_link.mp3"]);
     const tok = await page.evaluate(() => (window as any).__tok as string);
     const calls = ((await (await request.get("/__mock/voice")).json()) as { calls: { marker: string | null; followUp: string | null }[] }).calls.filter((c) => c.marker === tok);
     expect(calls.map((c) => c.followUp)).toEqual([null, "1"]);
     // The window closes after the answer: the next utterance is a normal one.
     await say(page, "noise");
     await expect(page.getByTestId("voice-state")).toHaveText(listening(AR));
-    expect(await clips(page)).toHaveLength(3);
+    expect(await clips(page)).toHaveLength(2);
   });
 
   const playedIds = (page: Page): Promise<string[]> => page.evaluate(() => (window as any).__played);
@@ -844,8 +850,8 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-paste")).toBeVisible();
     await expect(page.getByTestId("voice-paste-input")).toHaveAttribute("placeholder", "اكتب أو الصق الرسالة هنا…");
     await page.getByTestId("voice-on").click();
-    await expect.poll(() => playedIds(page)).toContain("ar_ae.greet.hello");
-    await expect(page.getByTestId("voice-caption")).toHaveText(SCRIPT.ar_ae["greet.hello"]!);
+    await expect(page.getByTestId("voice-state")).toHaveText(listening(AR));
+    expect(await playedIds(page)).toEqual([]); // silent until the wake phrase
     await page.getByTestId("voice-paste-input").fill(text.split("\n\n")[0]!);
     await page.getByTestId("voice-paste-input").press("Enter");
     await expect(page.getByTestId("voice-card")).toHaveCount(1);
@@ -861,7 +867,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     await expect(page.getByTestId("voice-clip-chip")).toHaveAttribute("data-state", "denied");
     await say(page, "check-ar");
     await expect(page.getByTestId("voice-paste-input")).toBeFocused();
-    await expect.poll(async () => (await playedIds(page)).filter((id) => id === "ar_ae.greet.hello").length).toBeGreaterThanOrEqual(2);
+    await expect.poll(async () => (await playedIds(page)).filter((id) => id === "ar_ae.greet.hello").length).toBeGreaterThanOrEqual(1);
     expect(await page.locator("main").innerText()).not.toMatch(/ما قدرت أقرا|لم أتمكن من قراءة|couldn't read|could not read/i);
     // Pasting into the box starts the check with no extra click.
     await page.evaluate((m) => {
