@@ -106,7 +106,7 @@ async function installClipMocks(page: Page) {
       destination = {};
       decodeAudioData(buf: ArrayBuffer) { return Promise.resolve({ file: new TextDecoder().decode(buf) }); }
       createBufferSource() {
-        return { buffer: null as any, onended: null as null | (() => void), connect() {}, stop() {}, start() { w.__clips.push(this.buffer.file); setTimeout(() => this.onended?.(), 20); } };
+        return { buffer: null as any, onended: null as null | (() => void), connect() {}, stop() {}, start() { if (this.buffer?.file) w.__clips.push(this.buffer.file); /* the silent iOS unlock sample has no file */ setTimeout(() => this.onended?.(), 20); } };
       }
     };
   });
@@ -123,7 +123,8 @@ async function say(page: Page, voice: string) {
 /** The clips played so far, as their script text (and the BCP-47 tag of their language). Device speech is NOT included: it must stay empty. */
 const spoken = async (page: Page, withGreeting = false): Promise<{ text: string; lang: string }[]> => {
   const ids: string[] = (await page.evaluate(() => (window as any).__played)).filter((id: string) => withGreeting || !id.endsWith(".greet.hello"));
-  return ids.map((id) => {
+  // Verdict earcons (sfx.*) are sounds, not speech: they carry no script text or language.
+  return ids.filter((id) => !id.startsWith("sfx.")).map((id) => {
     const ar = id.startsWith("ar_ae.");
     return { text: (ar ? SCRIPT.ar_ae : SCRIPT.en)[id.slice(ar ? 6 : 3)]!, lang: ar ? "ar-SA" : "en-GB" };
   });
@@ -156,6 +157,8 @@ async function mockClips(page: Page) {
     await page.route(`**/voice/${dir}/manifest.json`, (route) => route.fulfill({ json: list }));
     await page.route(new RegExp(`/voice/${dir}/[^/]+\\.mp3$`), (route) => route.fulfill({ contentType: "audio/mpeg", body: decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop()!.replace(/\.mp3$/, "")) }));
   }
+  // Language-neutral earcons: /voice/sfx/<name>.mp3 is recorded as the id `sfx.<name>`, like the clips above.
+  await page.route(/\/voice\/sfx\/[^/]+\.mp3$/, (route) => route.fulfill({ contentType: "audio/mpeg", body: `sfx.${decodeURIComponent(new URL(route.request().url()).pathname.split("/").pop()!.replace(/\.mp3$/, ""))}` }));
 }
 
 const listening = (lang: typeof AR | typeof EN) => lang["voice.state.listening"];
@@ -172,7 +175,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
   test("wake, three messages, live steps in order, spoken in each speaker's language, results and campaign", async ({ page, request }) => {
     const { ids } = await setup(page, request);
     await page.goto("/voice");
-    await expect(page.getByTestId("voice-preview")).toBeVisible();
+    await expect(page.getByTestId("voice-preview")).toHaveCount(0); // voice_assistant is live: no Preview chip
     await expect(page.getByTestId("voice-state")).toHaveText(AR["voice.state.off"]);
     await expect(page.getByTestId("voice-stop")).toBeVisible();
     expect(await page.evaluate(() => (window as any).__gum)).toBe(0); // the mic is never touched before the tap
@@ -292,12 +295,12 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
     expect(await items.first().evaluate((el) => getComputedStyle(el, "::before").content)).toContain("counter");
     const texts = (await items.allTextContents()).map((t) => t.trim());
     const played = await page.evaluate(() => (window as any).__played as string[]);
-    expect(played.every((id) => id.startsWith("ar_ae."))).toBe(true);
+    expect(played.filter((id) => !id.startsWith("sfx.")).every((id) => id.startsWith("ar_ae."))).toBe(true);
     const pieces = (await spoken(page)).map((p) => p.text);
     expect(texts.join(" ")).toBe(pieces.slice(1).join(" ")); // the first clip is the wake acknowledgement, shown as the caption
     await expect.poll(() => manifests["ar_ae"]?.length ?? 0).toBeGreaterThan(0);
     const byId = new Map(manifests["ar_ae"]!.map((e) => [e.id, e]));
-    for (const id of played) expect([byId.get(id)?.engine, byId.get(id)?.voice], id).toEqual(["polly", "Zayd"]);
+    for (const id of played.filter((p) => !p.startsWith("sfx."))) expect([byId.get(id)?.engine, byId.get(id)?.voice], id).toEqual(["polly", "Zayd"]);
   });
 
   test("Sentinel hand-over: a real incident linking these checks gets a card, its trace is narrated, approval is stated", async ({ page, request, context, baseURL }) => {
@@ -957,7 +960,7 @@ test.describe("voice assistant: hands-free mode with mocked microphone, clipboar
       await expect(page.getByTestId("voice-todo")).toBeVisible({ timeout: 25_000 });
       await page.waitForTimeout(600);
       expect(await scan()).toEqual([]);
-      await page.screenshot({ path: `design/app-shots/voice-${lang}-${page.viewportSize()?.width}.png`, fullPage: true });
+      if (test.info().project.name !== "iphone-15") await page.screenshot({ path: `design/app-shots/voice-${lang}-${page.viewportSize()?.width}.png`, fullPage: true });
     });
   }
 });

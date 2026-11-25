@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://falcon-lens.local/contracts/voice.schema.json",
   "title": "VoiceUtterance",
-  "description": "Response of POST /v1/voice/utterance (multipart: `audio` = audio/webm;codecs=opus | audio/wav | audio/ogg, max 15 s and 1 MB; optional `lang_hint` = ar|en; optional `follow_up` = 1). The audio is transcribed on our own machine and discarded; neither audio nor transcript is stored or logged. Wake phrase and intent are decided by fixed rules; when no rule matches, the transcript is also compared by a LOCAL embedding model (qwen3-embedding, on this machine, no text generated) with the FAQ questions, and goes nowhere else. Scope: read.",
+  "description": "Response of POST /v1/voice/utterance (multipart: `audio` = audio/webm;codecs=opus | audio/mp4 (AAC, iOS Safari) | audio/aac | audio/wav | audio/ogg, max 15 s and 1 MB; optional `lang_hint` = ar|en; optional `follow_up` = 1). The audio is transcribed on our own machine and discarded; neither audio nor transcript is stored or logged. Wake phrase and intent are decided by fixed rules; when no rule matches, the transcript is also compared by a LOCAL embedding model (qwen3-embedding, on this machine, no text generated) with the FAQ questions, and goes nowhere else. Scope: read.",
   "type": "object",
   "additionalProperties": false,
   "required": [

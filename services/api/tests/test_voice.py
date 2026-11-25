@@ -145,6 +145,15 @@ async def test_type_sniffing_and_lang_hint() -> None:
         webm = b"\x1a\x45\xdf\xa3" + b"\x00" * 64
         r = await c.post("/v1/voice/utterance", files=files(webm, "audio/webm;codecs=opus"), headers=h)
         assert r.status_code == 200
+        mp4 = b"\x00\x00\x00\x18ftypiso5\x00\x00\x02\x00" + b"\x00" * 64  # iOS Safari: audio/mp4 (AAC)
+        for ctype in ("audio/mp4", "audio/mp4;codecs=mp4a.40.2", "audio/x-m4a"):
+            assert (await c.post("/v1/voice/utterance", files=files(mp4, ctype), headers=h)).status_code == 200
+        adts = b"\xff\xf1\x50\x80\x02\x1f\xfc" + b"\x00" * 64
+        assert (await c.post("/v1/voice/utterance", files=files(adts, "audio/aac"), headers=h)).status_code == 200
+        # declared mp4 but the bytes are webm / an mp3 frame: refused
+        assert (await c.post("/v1/voice/utterance", files=files(webm, "audio/mp4"), headers=h)).status_code == 415
+        mp3 = b"\xff\xfb\x90\x00" + b"\x00" * 64
+        assert (await c.post("/v1/voice/utterance", files=files(mp3, "audio/aac"), headers=h)).status_code == 415
         bad = await c.post("/v1/voice/utterance", files=files(wav_bytes(1)), data={"lang_hint": "fr"}, headers=h)
         assert bad.status_code == 422
         good = await c.post("/v1/voice/utterance", files=files(wav_bytes(1)), data={"lang_hint": "ar"}, headers=h)

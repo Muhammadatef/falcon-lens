@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Protocol
 
-from falcon_api.auth import KeyRecord, StoreUnavailableError
+from falcon_api.auth import KeyConflictError, KeyRecord, StoreUnavailableError
 
 DDL = """
 CREATE TABLE IF NOT EXISTS api_keys (
@@ -85,6 +85,8 @@ class Db:
         pool = await self.pool()
         try:
             return await pool.fetch(sql, *args)
+        except asyncpg.UniqueViolationError as exc:
+            raise KeyConflictError(type(exc).__name__) from exc
         except (OSError, asyncpg.PostgresError, TimeoutError) as exc:
             raise StoreUnavailableError(type(exc).__name__) from exc
 
@@ -139,7 +141,7 @@ class PgKeyStore:
             "INSERT INTO api_keys (key_id, fingerprint, key_hash, scopes, rate_limit_per_min, label) "
             "VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (key_id) DO UPDATE SET fingerprint=EXCLUDED.fingerprint, "
             "key_hash=EXCLUDED.key_hash, scopes=EXCLUDED.scopes, rate_limit_per_min=EXCLUDED.rate_limit_per_min, "
-            "label=EXCLUDED.label, revoked_at=NULL",
+            "label=EXCLUDED.label",  # revoked_at is kept: seeding or re-keying never un-revokes a key
             rec.key_id,
             rec.fingerprint,
             rec.key_hash,

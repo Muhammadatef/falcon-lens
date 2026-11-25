@@ -25,7 +25,7 @@ export function VoiceProgress({ stages, tiers, lang, total, offline }: { stages:
           const ms = s.status === "active" ? now - s.startedAt : (s.ms ?? 0);
           const slow = s.status === "active" && ms > STAGE_BUDGET_MS[s.id];
           return (
-            <li key={s.id} className="voice-stage" data-testid="voice-stage" data-stage={s.id} data-status={s.status}>
+            <li key={s.id} className="voice-pstage" data-testid="voice-stage" data-stage={s.id} data-status={s.status}>
               <span className="voice-stage-mark" aria-hidden="true">{s.status === "done" ? <svg className="voice-tick" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" focusable="false"><path d="M5 12.5 10 17.5 19 7" /></svg> : <span className="voice-spin" />}</span>
               <span className="voice-stage-body">
                 <span className="voice-stage-label">{label(s)}</span>

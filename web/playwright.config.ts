@@ -47,7 +47,9 @@ export default defineConfig({
   },
   projects: [
     { name: "phone-390", testMatch: /e2e\/.*\.spec\.ts/, use: { ...devices["Pixel 7"], viewport: { width: 390, height: 844 } } },
-    { name: "desktop-1440", testMatch: /e2e\/.*\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
+    // Real iPhone profile on the WebKit engine (what iOS Safari runs): the mobile-readiness suite and the voice flow only.
+    { name: "iphone-15", testMatch: /e2e\/(mobile|voice)\.spec\.ts/, use: { ...devices["iPhone 15"], reducedMotion: "reduce" } },
+    { name: "desktop-1440", testMatch: /e2e\/.*\.spec\.ts/, testIgnore: /e2e\/mobile\.spec\.ts/, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
     // Screenshot capture, on demand only: SHOTS=1 pnpm exec playwright test --project=shots
     ...(process.env.SHOTS ? [{ name: "shots", testMatch: /shots\/.*\.shots\.ts/, timeout: 120_000, use: { ...devices["Desktop Chrome"] } }] : []),
     // Through the real gateway, on demand only: LIVE_BASE_URL=https://localhost:8443 pnpm exec playwright test --project=live

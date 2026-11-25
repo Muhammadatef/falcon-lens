@@ -24,7 +24,9 @@ def test_playlist_like_and_unknown_payloads_are_refused() -> None:
 
 
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not installed (only used to make test audio)")
-@pytest.mark.parametrize(("ext", "codec"), [("webm", "libopus"), ("ogg", "libvorbis"), ("wav", "pcm_s16le")])
+@pytest.mark.parametrize(
+    ("ext", "codec"), [("webm", "libopus"), ("ogg", "libvorbis"), ("wav", "pcm_s16le"), ("mp4", "aac"), ("aac", "aac")]
+)
 def test_real_containers_decode_in_memory(ext: str, codec: str, tmp_path: Path) -> None:
     out = tmp_path / f"t.{ext}"
     cmd = [
@@ -38,6 +40,7 @@ def test_real_containers_decode_in_memory(ext: str, codec: str, tmp_path: Path) 
         "sine=frequency=440:duration=1.5",
         "-c:a",
         codec,
+        *(["-movflags", "frag_keyframe+empty_moov"] if ext == "mp4" else []),  # what iOS Safari records
         str(out),
     ]
     r = subprocess.run(cmd, capture_output=True, check=False)  # noqa: S603

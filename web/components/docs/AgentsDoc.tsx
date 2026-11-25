@@ -96,7 +96,7 @@ const FIGS = {
 function Fig({ id, lang }: { id: keyof typeof FIGS; lang: Lang }) {
   const f = FIGS[id];
   return (
-    <div className="figure">
+    <div className="figure" dir="ltr" tabIndex={0} role="group" aria-label={f.alt[lang]}>
       <img src={f.src} alt={f.alt[lang]} width={f.width} height={f.height} loading="lazy" decoding="async" />
     </div>
   );

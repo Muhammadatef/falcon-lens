@@ -13,3 +13,4 @@ design/app-shots/*
 design/prototype/shots/
 !design/app-shots/committee/
 !design/app-shots/committee/*.jpg
+test-results-mobile/
