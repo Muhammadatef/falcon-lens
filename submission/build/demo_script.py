@@ -124,6 +124,7 @@ def evidence_values(published: Path) -> dict[str, str]:
         "FRESH_SECOND_SHORT": f"on hosts from a feed our stack does not query, {fresh2.split(': ', 1)[1]}"
         if fresh2
         else "no fresh-test run is published",
+        "DEAD_PAGES": ev.fresh_dead_line() or "many listed pages were already offline",
         "VOICE": ev.voice_line() or "no voice benchmark is published",
         "VOICE_SPEED": ev.voice_speed() or "not published",
         "SOVEREIGN": ev.sovereign_line() or "no sovereign proof is published",

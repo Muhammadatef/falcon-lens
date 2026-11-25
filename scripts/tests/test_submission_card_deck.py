@@ -65,7 +65,7 @@ def test_demo_script_numbers_come_from_the_artifact_and_trace() -> None:
     assert check_numbers.find_untraceable(check_numbers.strip_markdown(text), traceable, "DEMO_SCRIPT.md") == []
 
 
-def test_demo_script_has_the_pitch_timeline_and_ten_questions() -> None:
+def test_demo_script_has_the_pitch_timeline_and_eleven_questions() -> None:
     text, problems = load("demo_script").build(ROOT)
     assert problems == []
     for stamp in (
@@ -87,7 +87,7 @@ def test_demo_script_has_the_pitch_timeline_and_ten_questions() -> None:
         f"{{{k}}}" in text for k in ("ASKED", "FRESH_MAIN", "STATUS_TABLE", "HUNTER_BEAT")
     )  # every placeholder filled
     questions = [ln for ln in text.splitlines() if re.match(r"^\d+\. \*\*.*\?\*\*", ln)]
-    assert len(questions) == 10
+    assert len(questions) == 11
 
 
 def test_demo_script_marks_unmerged_features_as_planned() -> None:

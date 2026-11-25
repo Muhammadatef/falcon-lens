@@ -373,6 +373,16 @@ class Evidence:
             f"(the rest Suspicious), and {g[0]} of {g[1]} could not complete every check"
         )
 
+    def fresh_dead_line(self) -> str | None:
+        """How many listed phishing URLs (second feed) were already offline when the sandbox visited."""
+        dead = self._fresh_group("results_second_source", "phishing_dead_in_sandbox", "degraded")
+        total = self._fresh_group("results_second_source", "phishing_all", "degraded")
+        if not (dead and total):
+            return None
+        share = dead[0] / total[1] if total[1] else 0.0
+        how = "almost half" if 0.4 <= share < 0.5 else "about half" if 0.5 <= share < 0.6 else "a share"
+        return f"{how} of the listed phishing URLs in the second feed were already offline when the sandbox visited (the count is in the fresh-test artifact)"
+
     def fresh_caveat(self) -> str | None:
         if not self.fresh:
             return None
