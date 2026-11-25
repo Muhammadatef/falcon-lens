@@ -1311,20 +1311,22 @@ def slide_close(f: Facts) -> Slide:
 # ── appendix ─────────────────────────────────────────────────────────────────
 def slide_index(f: Facts, entries: list[Slide]) -> Slide:
     s = new("index", "Deep dive: pick a question", "للأسئلة: اختر الموضوع", "sky", "INDEX · every card is a link")
-    cols = 5
+    cols = 4
+    rows = -(-len(entries) // cols)
+    gap = 0.14
     cw = (CW - (cols - 1) * 0.17) / cols
-    ch = 1.48
+    ch = (6.7 - 1.9 - gap * (rows - 1)) / rows
     for i, e in enumerate(entries):
         x = M + (i % cols) * (cw + 0.17)
-        y = 1.9 + (i // cols) * (ch + 0.14)
+        y = 1.9 + (i // cols) * (ch + gap)
         accent = e.accent  # type: ignore[attr-defined]
         s.add(
             grp(
                 f"card_{i}",
                 *panel(x, y, cw, ch, accent),
-                *pill(x + 0.22, y + 0.16, 0.7, e.tag, accent, 12, 0.3),  # type: ignore[attr-defined]
-                tb(x + 0.24, y + 0.5, cw - 0.4, 0.56, p(e.short_en, 13.5, "text", True), anchor="m"),  # type: ignore[attr-defined]
-                tb(x + 0.24, y + 1.04, cw - 0.4, 0.36, ar(e.short_ar, 12.5), anchor="m"),  # type: ignore[attr-defined]
+                *pill(x + 0.22, y + 0.13, 0.7, e.tag, accent, 12, 0.28),  # type: ignore[attr-defined]
+                tb(x + 0.24, y + 0.44, cw - 0.4, 0.3, p(e.short_en, 13, "text", True), anchor="m"),  # type: ignore[attr-defined]
+                tb(x + 0.24, y + 0.74, cw - 0.4, 0.3, ar(e.short_ar, 12.5), anchor="m"),  # type: ignore[attr-defined]
             ),
             Hot(x, y, cw, ch, e.key),
         )
@@ -1339,6 +1341,12 @@ def slide_index(f: Facts, entries: list[Slide]) -> Slide:
     return s
 
 
+SHORT_EN = {
+    "c_early": "Early detection, coverage",
+    "c_explain": "Explainability, actions",
+    "c_uae": "UAE relevance, innovation",
+    "c_feasible": "Feasibility, presentation",
+}
 SHORT_AR = {
     "c_early": "الكشف المبكر",
     "c_explain": "التفسير والتنفيذ",
@@ -1468,7 +1476,7 @@ def criterion_slide(
         *stagger([f"how_{i}" for i in range(len(how))], "fly_from_right", "with", 130, 300),
         mo("amber", "fly_from_bottom", "after", 0, 350),
     ]
-    s.short_en, s.short_ar = t_en, SHORT_AR.get(key, t_ar)  # type: ignore[attr-defined]
+    s.short_en, s.short_ar = SHORT_EN.get(key, t_en), SHORT_AR.get(key, t_ar)  # type: ignore[attr-defined]
     s.notes = notes(
         note, say_ar, "Builds by itself. '‹ Index' at the bottom right goes back to the deep-dive index.", "", qa
     )
@@ -1587,7 +1595,7 @@ def slide_dir(f: Facts) -> Slide:
         "AGENT · a backend agent that runs around the clock",
         appendix=True,
     )
-    s.short_en, s.short_ar = "Dir': campaigns and approval", "درع: الحملات والموافقة"  # type: ignore[attr-defined]
+    s.short_en, s.short_ar = "Dir': campaigns, approval", "درع: الحملات والموافقة"  # type: ignore[attr-defined]
     steps = (
         ("Listen", "Every finished check arrives as an event on the bus."),
         ("Correlate", "Similar checks are linked: same host, same script, same look."),
@@ -2291,6 +2299,148 @@ def slide_pilot(f: Facts) -> Slide:
     return s
 
 
+def slide_roadmap(f: Facts) -> Slide:
+    """The optimisation roadmap for a pilot. Every item is PLANNED: nothing here is claimed as shipped or measured."""
+    s = new(
+        "d_roadmap",
+        "Optimisation roadmap for the pilot",
+        "خارطة التحسين في التجربة",
+        "baseer",
+        "PLANNED · not shipped, not measured yet",
+        appendix=True,
+    )
+    s.short_en, s.short_ar = "Optimisation roadmap", "خارطة التحسين"  # type: ignore[attr-defined]
+    hunting = "Switch on continuous look-alike hunting in Dir' (built, off by default)."
+    phases = (
+        (
+            "Pilot · month one",
+            "الشهر الأول",
+            "shadow mode",
+            (
+                ("A", "dir", "Catch pages before they die", hunting),
+                (
+                    "C",
+                    "baseer",
+                    "Start learning from real data",
+                    "Labelled History and analyst feedback, collected from the first day.",
+                ),
+                ("D", "voice", "UAE brand coverage", "Load the authorities' official lists of brands and domains."),
+            ),
+        ),
+        (
+            "Months two to three",
+            "الشهران الثاني والثالث",
+            "shadow, then canary",
+            (
+                (
+                    "B",
+                    "sky",
+                    "Fully-local quality",
+                    "Schema-constrained JSON for local models: a model-written Sentinel summary on the local route.",
+                ),
+                (
+                    "C",
+                    "baseer",
+                    "Retrain and recalibrate",
+                    "Retrain the classifier, recalibrate arbiter bands on temporal splits, re-run DSPy on real labels per route.",
+                ),
+                ("A", "dir", "Certificate-log monitoring", "Once a licensed feed is in place."),
+            ),
+        ),
+        (
+            "Scale",
+            "التوسّع",
+            "after the gate, step by step",
+            (
+                (
+                    "C",
+                    "baseer",
+                    "Emirati-Arabic fine-tuning",
+                    "LoRA or QLoRA fine-tuning of Qwen and Inkling on Emirati-Arabic scam language.",
+                ),
+                ("A", "dir", "Search, ads and Maps hunting", "Once API keys are provided; the connectors are written."),
+                ("D", "voice", "Wider coverage", "More official lists and more workers, added as the load grows."),
+            ),
+        ),
+    )
+    gap = 0.56
+    cw = (CW - 2 * gap) / 3
+    top, ph = 1.9, 3.72
+    for i, (t_en, t_ar, mode, items) in enumerate(phases):
+        x = M + i * (cw + gap)
+        shapes: list[Any] = [
+            *panel(x, top, cw, ph),
+            Box(x + 0.25, top + 0.2, 0.2, 0.2, "baseer", None, "oval"),
+            tb(x + 0.56, top + 0.08, cw - 0.75, 0.42, p(t_en, 16, "text", True), anchor="m"),
+            tb(x + 0.25, top + 0.5, cw - 0.5, 0.3, Para([Run(mode, 12, "baseer", True)]), anchor="m"),
+            tb(x + 0.25, top + 0.5, cw - 0.5, 0.3, ar(t_ar, 12.5), anchor="m"),
+            Box(x + 0.25, top + 0.86, cw - 0.5, 0.012, "border"),
+        ]
+        for j, (letter, accent, head, body) in enumerate(items):
+            y = top + 0.98 + j * 0.9
+            shapes += [
+                *pill(x + 0.25, y + 0.03, 0.34, letter, accent, 12, 0.3),
+                tb(
+                    x + 0.72,
+                    y,
+                    cw - 0.95,
+                    0.86,
+                    Para([Run(head, 13, tones(accent)[0], True)], after=1),
+                    p(body, 11.5, "muted"),
+                ),
+            ]
+        s.add(grp(f"phase_{i}", *shapes))
+    for i in range(2):
+        gx = M + (i + 1) * cw + i * gap + gap / 2
+        s.add(
+            grp(
+                f"gate_{i}",
+                Box(gx - 0.02, top + 0.5, 0.04, ph - 1.0, "sky_line", None, "rect"),
+                Box(gx - 0.2, top + ph / 2 - 0.2, 0.4, 0.4, "sky", None, "diamond"),
+            )
+        )
+    gy = top + ph + 0.14
+    s.add(
+        grp(
+            "gate",
+            Box(M, gy, CW, 6.7 - gy, "sky_tint", "sky_line", "round", 0.14),
+            Box(M + 0.3, gy + (6.7 - gy) / 2 - 0.17, 0.34, 0.34, "sky", None, "diamond"),
+            tb(
+                M + 0.85,
+                gy + 0.03,
+                CW - 1.1,
+                6.7 - gy - 0.06,
+                Para(
+                    [Run("One adoption gate for every change · بوابة اعتماد واحدة لكل تغيير", 13.5, "sky", True)],
+                    after=2,
+                ),
+                p(
+                    "A change is adopted only when the paired confidence interval of its gain excludes zero on held-out data and it adds no new false alarms. It runs on a shadow or canary route first. This is the gate that has kept every DSPy candidate out so far.",
+                    12.5,
+                    "text",
+                ),
+                anchor="m",
+            ),
+        )
+    )
+    s.motion = [
+        mo("phase_0", "wipe_from_left", "auto", 100, 450),
+        mo("gate_0", "zoom", "after", 0, 300),
+        mo("phase_1", "wipe_from_left", "after", 0, 450),
+        mo("gate_1", "zoom", "after", 0, 300),
+        mo("phase_2", "wipe_from_left", "after", 0, 450),
+        mo("gate", "fly_from_bottom", "after", 0, 350),
+    ]
+    s.notes = notes(
+        "This is what we would optimise during a pilot, and all of it is planned, not shipped. The tracks. A: catch pages before they die, with continuous look-alike hunting, then certificate-log monitoring once a licensed feed is in place, then search, ads and Maps once keys are provided. B: fully-local quality, with schema-constrained output so the Sentinel summary is model-written on the local route. C: learning from real pilot data: labelled history and analyst feedback, retraining, recalibration, DSPy on real data, and fine-tuning for Emirati-Arabic scam language. D: wider UAE brand coverage from the authorities' official lists. Everything passes the same adoption gate, on a shadow or canary route first.",
+        "هذا ما سنحسّنه خلال التجربة، وكله مخطَّط وليس منجَزاً: رصد الصفحات قبل أن تختفي، وجودة المسار المحلي الكامل، والتعلّم من بيانات التجربة الحقيقية، وتوسيع تغطية العلامات الإماراتية من القوائم الرسمية. وكل تغيير يمرّ من بوابة الاعتماد نفسها، على مسار المراقبة أولاً.",
+        "Builds by itself, phase by phase, with the gate between phases. '‹ Index' goes back.",
+        "",
+        "Is any of this live? No: hunting is built and off by default; everything else is planned. What is the gate? The paired confidence interval of the gain must exclude zero on held-out data, with no new false alarms. Do not quote a figure for any roadmap item.",
+    )
+    return s
+
+
 def slide_limits(f: Facts) -> Slide:
     s = new(
         "d_limits", "Honest limits", "حدودنا بصراحة", "warn", "LIMITS · said by us, with the numbers", appendix=True
@@ -2411,10 +2561,16 @@ def build_slides(
         slide_sovereignty(f),
         slide_integration(f),
         slide_pilot(f),
+        slide_roadmap(f),
         slide_limits(f),
     ]
     for i, s in enumerate(appendix):
         s.tag = f"A{i + 1}"  # type: ignore[attr-defined]
+    pilot = next(s for s in appendix if s.key == "d_pilot")
+    pilot.add(
+        *pill(W - M - 3.1, 6.03, 2.8, "Optimisation roadmap  ›", "dir", 12.5, 0.36, solid=True),
+        Hot(W - M - 3.2, 5.95, 3.0, 0.52, "d_roadmap"),
+    )
     index = slide_index(f, appendix)
     slides = [*main, index, *appendix]
     for s in slides:

@@ -52,5 +52,10 @@ def test_main_path_has_at_most_one_click_per_slide_and_every_appendix_slide_link
         assert all(link in keys for link in links), s.key
         if getattr(s, "appendix", False):
             assert "index" in links, s.key
+    assert "d_roadmap" in {
+        sh.link for s in slides if s.key == "d_pilot" for sh in v2.walk(s.shapes) if isinstance(sh, v2.Hot)
+    }
+    roadmap = next(s for s in slides if s.key == "d_roadmap")
+    assert "PLANNED" in roadmap.eyebrow
     index = slides[n_main]
     assert {sh.link for sh in v2.walk(index.shapes) if isinstance(sh, v2.Hot)} >= {s.key for s in slides[n_main + 1 :]}
